@@ -3,7 +3,7 @@ export type ProjectStatus = 'creating' | 'ready' | 'running' | 'stopped' | 'erro
 
 export interface Project {
   id: string
-  user_id: string
+  user_github_id: string
   name: string
   type: ProjectType
   status: ProjectStatus

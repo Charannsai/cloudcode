@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
     "dockerode": "^4.0.9",
+    "jsonwebtoken": "^9.0.3",
     "next": "16.2.0",
     "node-pty": "^1.1.0",
     "react": "19.2.4",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@types/dockerode": "^4.0.1",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

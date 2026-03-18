@@ -1,22 +1,46 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
-import { User } from '@supabase/supabase-js'
+import { CloudCodeUser, getToken, saveToken, deleteToken, decodeToken } from '@/lib/auth'
 
 interface AuthState {
-  user: User | null
+  user: CloudCodeUser | null
+  token: string | null
   loading: boolean
-  setUser: (user: User | null) => void
-  setLoading: (loading: boolean) => void
+  setToken: (token: string) => void
+  loadStoredToken: () => Promise<void>
   signOut: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  token: null,
   loading: true,
-  setUser: (user) => set({ user }),
-  setLoading: (loading) => set({ loading }),
+
+  /** Call on app startup to restore session from SecureStore */
+  loadStoredToken: async () => {
+    const token = await getToken()
+    if (token) {
+      const user = decodeToken(token)
+      if (user) {
+        set({ user, token, loading: false })
+        return
+      }
+      // Token expired — clear it
+      await deleteToken()
+    }
+    set({ user: null, token: null, loading: false })
+  },
+
+  /** Called after GitHub OAuth callback with a new token */
+  setToken: (token: string) => {
+    const user = decodeToken(token)
+    if (user) {
+      saveToken(token).catch(console.error)
+      set({ user, token })
+    }
+  },
+
   signOut: async () => {
-    await supabase.auth.signOut()
-    set({ user: null })
+    await deleteToken()
+    set({ user: null, token: null })
   },
 }))
