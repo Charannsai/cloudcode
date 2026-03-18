@@ -1,16 +1,13 @@
 import { WebSocket, WebSocketServer } from 'ws'
 import { IncomingMessage } from 'http'
-import { supabaseAdmin } from './supabase'
+import { verifyToken } from './auth'
 import Docker from 'dockerode'
+import { supabaseAdmin } from './supabase'
 
 const docker = new Docker({
   socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock',
 })
 
-/**
- * Global WebSocket server for terminal streaming.
- * Initialize this in your custom server or Next.js instrumentation.
- */
 let wss: WebSocketServer | null = null
 
 export function getWss(): WebSocketServer {
@@ -22,8 +19,8 @@ export function getWss(): WebSocketServer {
 }
 
 /**
- * Handle a new WebSocket connection.
- * URL format: ws://server/api/terminal/<project-id>?token=<jwt>
+ * Handle a new WebSocket terminal connection.
+ * URL: ws://server/api/terminal/<project-id>?token=<jwt>
  */
 async function handleTerminalConnection(ws: WebSocket, req: IncomingMessage) {
   const url = new URL(req.url || '', `http://${req.headers.host}`)
@@ -31,26 +28,26 @@ async function handleTerminalConnection(ws: WebSocket, req: IncomingMessage) {
   const pathParts = url.pathname.split('/')
   const projectId = pathParts[pathParts.length - 1]
 
-  // Authenticate user
+  // Verify our own JWT (not Supabase)
   if (!token) {
     ws.close(4001, 'Missing auth token')
     return
   }
 
-  const { data, error } = await supabaseAdmin.auth.getUser(token)
-  if (error || !data.user) {
-    ws.close(4001, 'Invalid auth token')
+  const user = verifyToken(token)
+  if (!user) {
+    ws.close(4001, 'Invalid or expired token')
     return
   }
 
-  // Get project + container ID from DB
+  // Get project + container_id from DB
   const { data: project } = await supabaseAdmin
     .from('projects')
-    .select('container_id, user_id')
+    .select('container_id, user_github_id')
     .eq('id', projectId)
     .single()
 
-  if (!project || project.user_id !== data.user.id) {
+  if (!project || project.user_github_id !== user.id) {
     ws.close(4003, 'Project not found or unauthorized')
     return
   }
@@ -60,9 +57,9 @@ async function handleTerminalConnection(ws: WebSocket, req: IncomingMessage) {
     return
   }
 
-  // Create a PTY exec inside the container
+  // Attach PTY to the Docker container
   const container = docker.getContainer(project.container_id)
-  
+
   try {
     const exec = await container.exec({
       Cmd: ['/bin/sh'],
@@ -74,14 +71,14 @@ async function handleTerminalConnection(ws: WebSocket, req: IncomingMessage) {
 
     const stream = await exec.start({ hijack: true, stdin: true, Tty: true })
 
-    // Forward container output → WebSocket client
+    // Container output → WebSocket client
     stream.on('data', (chunk: Buffer) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'output', data: chunk.toString('utf8') }))
       }
     })
 
-    // Forward WebSocket input → container stdin
+    // WebSocket client input → container stdin
     ws.on('message', (msg) => {
       try {
         const parsed = JSON.parse(msg.toString())
@@ -95,19 +92,11 @@ async function handleTerminalConnection(ws: WebSocket, req: IncomingMessage) {
       }
     })
 
-    stream.on('end', () => {
-      ws.close(1000, 'Terminal closed')
-    })
+    stream.on('end', () => ws.close(1000, 'Terminal closed'))
+    ws.on('close', () => stream.destroy())
+    ws.on('error', () => stream.destroy())
 
-    ws.on('close', () => {
-      stream.destroy()
-    })
-
-    ws.on('error', () => {
-      stream.destroy()
-    })
-
-    ws.send(JSON.stringify({ type: 'ready', message: 'Terminal connected' }))
+    ws.send(JSON.stringify({ type: 'ready', message: `Terminal ready — ${user.login}@cloudcode` }))
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to attach terminal'
     ws.close(4005, message)

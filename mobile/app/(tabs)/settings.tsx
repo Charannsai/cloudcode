@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native'
 import { useAuthStore } from '@/store/auth'
 
 export default function SettingsScreen() {
@@ -21,14 +21,18 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>ACCOUNT</Text>
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.email?.[0]?.toUpperCase() || '?'}
-            </Text>
-          </View>
+          {user?.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {user?.login?.[0]?.toUpperCase() || '?'}
+              </Text>
+            </View>
+          )}
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.user_metadata?.user_name || 'User'}</Text>
-            <Text style={styles.profileEmail}>{user?.email}</Text>
+            <Text style={styles.profileName}>{user?.name || `@${user?.login}` || 'User'}</Text>
+            <Text style={styles.profileEmail}>{user?.email || 'No public email'}</Text>
           </View>
         </View>
       </View>
@@ -38,13 +42,13 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>ABOUT</Text>
         <View style={styles.infoCard}>
           {[
+            { label: 'Cloud ID', value: user?.id || '—' },
             { label: 'App Version', value: '1.0.0' },
-            { label: 'Runtime', value: 'Node.js 20' },
             { label: 'Phase', value: 'Phase 0' },
           ].map(({ label, value }) => (
             <View key={label} style={styles.infoRow}>
               <Text style={styles.infoLabel}>{label}</Text>
-              <Text style={styles.infoValue}>{value}</Text>
+              <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
             </View>
           ))}
         </View>
@@ -80,17 +84,23 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff0d',
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1e1e30',
+  },
+  avatarPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#7c6bff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 22, fontWeight: '700', color: '#fff' },
+  avatarText: { fontSize: 24, fontWeight: '800', color: '#fff' },
   profileInfo: { flex: 1 },
-  profileName: { fontSize: 17, fontWeight: '700', color: '#ffffff', marginBottom: 2 },
-  profileEmail: { fontSize: 13, color: '#5a5a7a' },
+  profileName: { fontSize: 18, fontWeight: '800', color: '#ffffff', marginBottom: 2 },
+  profileEmail: { fontSize: 14, color: '#5a5a7a' },
   infoCard: {
     backgroundColor: '#0e0e1a',
     borderRadius: 16,
@@ -104,18 +114,20 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#ffffff0a',
+    gap: 10,
   },
   infoLabel: { fontSize: 15, color: '#8a8a9a' },
-  infoValue: { fontSize: 15, color: '#ffffff', fontWeight: '600' },
+  infoValue: { fontSize: 15, color: '#ffffff', fontWeight: '600', flex: 1, textAlign: 'right' },
   signOutBtn: {
     margin: 20,
-    marginTop: 40,
-    backgroundColor: '#ef444420',
-    padding: 16,
+    marginTop: 'auto',
+    marginBottom: 40,
+    backgroundColor: '#ef444415',
+    padding: 18,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ef444440',
+    borderColor: '#ef444430',
   },
-  signOutText: { color: '#ef4444', fontWeight: '700', fontSize: 16 },
+  signOutText: { color: '#ef4444', fontWeight: '800', fontSize: 17 },
 })

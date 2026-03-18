@@ -1,15 +1,19 @@
-import { useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
+import { useEffect, useState } from 'react'
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  ActivityIndicator, Dimensions, Linking,
+} from 'react-native'
 import { useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 
 const { width } = Dimensions.get('window')
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default function WelcomeScreen() {
   const { user, loading } = useAuthStore()
   const router = useRouter()
+  const [signingIn, setSigningIn] = useState(false)
 
   useEffect(() => {
     if (!loading && user) {
@@ -17,14 +21,33 @@ export default function WelcomeScreen() {
     }
   }, [user, loading, router])
 
-  async function signInWithGithub() {
-    const redirectUrl = process.env.EXPO_PUBLIC_API_URL + '/api/auth/callback'
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: { redirectTo: redirectUrl },
-    })
-    if (error) { console.error(error); return }
-    if (data.url) await WebBrowser.openBrowserAsync(data.url)
+  async function signInWithGitHub() {
+    setSigningIn(true)
+    try {
+      // Opens our backend which redirects to GitHub OAuth
+      // GitHub will redirect back to our backend callback
+      // which then deep-links cloudcode://auth?token=...
+      const githubOAuthUrl = `${API_URL}/api/auth/github`
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        githubOAuthUrl,
+        'cloudcode://auth', // redirect URL scheme to listen for
+        {
+          showInRecents: true,
+          preferEphemeralSession: false,
+        }
+      )
+
+      if (result.type === 'success' && result.url) {
+        // The URL is cloudcode://auth?token=...
+        // The root _layout.tsx deep link listener will handle extracting the token
+        Linking.openURL(result.url)
+      }
+    } catch (err) {
+      console.error('Sign in error:', err)
+    } finally {
+      setSigningIn(false)
+    }
   }
 
   if (loading) {
@@ -37,44 +60,64 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Gradient orbs */}
+      {/* Background orbs */}
       <View style={styles.orb1} />
       <View style={styles.orb2} />
 
+      {/* Hero */}
       <View style={styles.hero}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoIcon}>☁️</Text>
-          <Text style={styles.logo}>CloudCode</Text>
+        <View style={styles.logoRow}>
+          <Text style={styles.logoEmoji}>☁️</Text>
+          <Text style={styles.logoText}>CloudCode</Text>
         </View>
         <Text style={styles.tagline}>
           Your dev environment,{'\n'}always in your pocket.
         </Text>
         <Text style={styles.sub}>
-          Full terminal access. Live preview.{'\n'}Real projects. From your phone.
+          Full terminal. Live preview. Real projects.{'\n'}From your phone.
         </Text>
       </View>
 
+      {/* Feature pills */}
       <View style={styles.features}>
         {[
-          { icon: '📦', text: 'Isolated containers per project' },
-          { icon: '⚡', text: 'Live terminal streaming' },
-          { icon: '🌐', text: 'In-app live preview' },
-          { icon: '🐙', text: 'Import from GitHub' },
-        ].map(({ icon, text }) => (
-          <View key={text} style={styles.featureRow}>
+          { icon: '📦', label: 'Isolated containers per project' },
+          { icon: '⚡', label: 'Live terminal streaming' },
+          { icon: '🌐', label: 'In-app live preview' },
+          { icon: '🐙', label: 'Import any GitHub repo' },
+        ].map(({ icon, label }) => (
+          <View key={label} style={styles.featureRow}>
             <Text style={styles.featureIcon}>{icon}</Text>
-            <Text style={styles.featureText}>{text}</Text>
+            <Text style={styles.featureLabel}>{label}</Text>
           </View>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.githubBtn} onPress={signInWithGithub}>
-        <Text style={styles.githubBtnIcon}>🐙</Text>
-        <Text style={styles.githubBtnText}>Continue with GitHub</Text>
+      {/* GitHub Sign In */}
+      <TouchableOpacity
+        style={[styles.githubBtn, signingIn && styles.githubBtnDisabled]}
+        onPress={signInWithGitHub}
+        disabled={signingIn}
+        activeOpacity={0.85}
+      >
+        {signingIn ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <>
+            <Text style={styles.githubIcon}>🐙</Text>
+            <Text style={styles.githubBtnText}>Continue with GitHub</Text>
+          </>
+        )}
       </TouchableOpacity>
 
+      {signingIn && (
+        <Text style={styles.signingInHint}>
+          Opening GitHub in your browser...
+        </Text>
+      )}
+
       <Text style={styles.terms}>
-        By continuing, you agree to our Terms of Service
+        By continuing you agree to our Terms of Service
       </Text>
     </View>
   )
@@ -90,40 +133,38 @@ const styles = StyleSheet.create({
   },
   orb1: {
     position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: '#7c6bff22',
-    top: -80,
-    right: -80,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: '#7c6bff18',
+    top: -100,
+    right: -100,
   },
   orb2: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: '#00d4ff15',
-    bottom: 60,
-    left: -60,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: '#00d4ff12',
+    bottom: 80,
+    left: -80,
   },
   hero: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 44,
   },
-  logoContainer: {
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 22,
   },
-  logoIcon: {
-    fontSize: 36,
-  },
-  logo: {
-    fontSize: 36,
+  logoEmoji: { fontSize: 38 },
+  logoText: {
+    fontSize: 38,
     fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: -1,
+    letterSpacing: -1.5,
   },
   tagline: {
     fontSize: 28,
@@ -131,65 +172,68 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     textAlign: 'center',
     lineHeight: 36,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   sub: {
     fontSize: 15,
-    color: '#8a8a9a',
+    color: '#6a6a8a',
     textAlign: 'center',
     lineHeight: 22,
   },
   features: {
     width: '100%',
-    backgroundColor: '#141420',
+    backgroundColor: '#0e0e1a',
     borderRadius: 20,
     padding: 20,
     gap: 16,
-    marginBottom: 32,
+    marginBottom: 28,
     borderWidth: 1,
-    borderColor: '#ffffff10',
+    borderColor: '#ffffff0d',
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
   },
-  featureIcon: {
-    fontSize: 22,
-  },
-  featureText: {
-    fontSize: 15,
-    color: '#c0c0d0',
-    fontWeight: '500',
-  },
+  featureIcon: { fontSize: 22 },
+  featureLabel: { fontSize: 15, color: '#b0b0c0', fontWeight: '500' },
   githubBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#7c6bff',
-    paddingVertical: 16,
+    backgroundColor: '#24292e',
+    paddingVertical: 17,
     paddingHorizontal: 32,
     borderRadius: 16,
     width: '100%',
     justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: '#7c6bff',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#ffffff20',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
+    minHeight: 56,
   },
-  githubBtnIcon: {
-    fontSize: 20,
-  },
+  githubBtnDisabled: { opacity: 0.6 },
+  githubIcon: { fontSize: 22 },
   githubBtnText: {
     fontSize: 17,
     fontWeight: '700',
     color: '#ffffff',
   },
+  signingInHint: {
+    color: '#5a5a7a',
+    fontSize: 13,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   terms: {
     fontSize: 12,
-    color: '#4a4a5a',
+    color: '#3a3a5a',
     textAlign: 'center',
+    marginTop: 4,
   },
 })

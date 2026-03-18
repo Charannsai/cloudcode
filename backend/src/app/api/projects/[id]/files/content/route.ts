@@ -8,7 +8,7 @@ type Params = { params: Promise<{ id: string }> }
 
 // GET /api/projects/[id]/files/content?path=src/index.js
 export async function GET(req: NextRequest, { params }: Params) {
-  const user = await getUserFromRequest(req)
+  const user = getUserFromRequest(req)
   if (!user) return errorResponse('Unauthorized', 401)
   const { id } = await params
 
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     .from('projects')
     .select('id')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_github_id', user.id)
     .single()
 
   if (!project) return errorResponse('Project not found', 404)
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 // PUT /api/projects/[id]/files/content
 export async function PUT(req: NextRequest, { params }: Params) {
-  const user = await getUserFromRequest(req)
+  const user = getUserFromRequest(req)
   if (!user) return errorResponse('Unauthorized', 401)
   const { id } = await params
 
@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     .from('projects')
     .select('id')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_github_id', user.id)
     .single()
 
   if (!project) return errorResponse('Project not found', 404)

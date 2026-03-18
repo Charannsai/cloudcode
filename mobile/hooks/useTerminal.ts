@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getToken } from '@/lib/auth'
 import { TerminalMessage } from '@/types'
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
@@ -28,8 +28,7 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
     let ws: WebSocket | null = null
 
     async function connect() {
-      const { data } = await supabase.auth.getSession()
-      const token = data.session?.access_token
+      const token = await getToken()
       if (!token) {
         setError('Not authenticated')
         return
