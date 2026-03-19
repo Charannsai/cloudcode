@@ -20,7 +20,12 @@ async function resolveTarget(containerId: string, port: number | string, subPath
   // Get container IP from the bridge network
   const networks = (info.NetworkSettings as any).Networks
   const firstNetwork = networks ? Object.values(networks)[0] as any : null
-  const containerIp = firstNetwork?.IPAddress || '127.0.0.1'
+  const containerIp = firstNetwork?.IPAddress
+  
+  if (!containerIp) {
+    throw new Error('Container IP not found. Is it running?')
+  }
+  
   return `http://${containerIp}:${port}${subPath}`
 }
 
