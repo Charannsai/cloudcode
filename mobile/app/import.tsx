@@ -6,9 +6,12 @@ import {
 import { useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { useProjectsStore } from '@/store/projects'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { Github, ChevronLeft, Loader2, Link2, Folder } from 'lucide-react-native'
 
 export default function ImportScreen() {
   const router = useRouter()
+  const { colors } = useAppTheme()
   const { addProject } = useProjectsStore()
   const [name, setName] = useState('')
   const [githubUrl, setGithubUrl] = useState('')
@@ -16,7 +19,8 @@ export default function ImportScreen() {
 
   function extractName(url: string) {
     const parts = url.replace(/\.git$/, '').split('/')
-    return parts[parts.length - 1] || ''
+    const lastPart = parts[parts.length - 1] || ''
+    return lastPart.charAt(0).toUpperCase() + lastPart.slice(1)
   }
 
   function handleUrlChange(url: string) {
@@ -46,139 +50,189 @@ export default function ImportScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.scroll}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>✕</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Import from GitHub</Text>
-          <View style={{ width: 36 }} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              style={[styles.backBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <ChevronLeft size={24} color={colors.text} strokeWidth={2.5} />
+            </TouchableOpacity>
+            <Text style={[styles.title, { color: colors.text }]}>Import Workspace</Text>
+            <View style={{ width: 44 }} />
+          </View>
+
+          <View style={styles.form}>
+            <View style={styles.heroIconContainer}>
+              <View style={[styles.ghostCircle, { backgroundColor: colors.card, borderColor: colors.border }]} />
+              <Github size={48} color={colors.text} strokeWidth={1.5} />
+            </View>
+
+            <Text style={[styles.instruction, { color: colors.textSecondary }]}>
+              Enter a GitHub repository URL to clone it into a secure container.
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <Link2 size={12} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.label, { color: colors.textSecondary }]}>REPOSITORY URL</Text>
+              </View>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: colors.card, 
+                  borderColor: colors.border, 
+                  color: colors.text,
+                }]}
+                placeholder="https://github.com/user/repo"
+                placeholderTextColor={colors.textSecondary + '80'}
+                value={githubUrl}
+                onChangeText={handleUrlChange}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <Folder size={12} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.label, { color: colors.textSecondary }]}>WORKSPACE NAME</Text>
+              </View>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: colors.card, 
+                  borderColor: colors.border, 
+                  color: colors.text,
+                }]}
+                placeholder="My Project"
+                placeholderTextColor={colors.textSecondary + '80'}
+                value={name}
+                onChangeText={setName}
+                autoCorrect={false}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitBtn, { backgroundColor: colors.text, opacity: loading ? 0.7 : 1 }]}
+              onPress={handleImport}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.card} />
+              ) : (
+                <>
+                  <Text style={[styles.submitBtnText, { color: colors.card }]}>Clone Repository</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {loading && (
+              <View style={styles.loadingInfo}>
+                <Loader2 size={16} color={colors.textSecondary} style={styles.spinIcon} />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                  Spinning up container and cloning files...
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
-
-        <View style={styles.iconContainer}>
-          <Text style={styles.bigIcon}>🐙</Text>
-        </View>
-
-        <Text style={styles.instruction}>
-          Paste a GitHub repo URL and CloudCode will clone it into a new container.
-        </Text>
-
-        <View style={styles.section}>
-          <Text style={styles.label}>GITHUB URL</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="https://github.com/user/repo"
-            placeholderTextColor="#3a3a5a"
-            value={githubUrl}
-            onChangeText={handleUrlChange}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.label}>PROJECT NAME</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="my-repo"
-            placeholderTextColor="#3a3a5a"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.importBtn, loading && styles.importBtnDisabled]}
-          onPress={handleImport}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.importBtnText}>🐙 Import Repository</Text>
-          )}
-        </TouchableOpacity>
-
-        {loading && (
-          <Text style={styles.hint}>
-            📦 Cloning repository and setting up container...{'\n'}
-            This may take 30–60 seconds.
-          </Text>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0f' },
-  scroll: { flex: 1, padding: 20, paddingTop: 60 },
+  container: { flex: 1 },
+  content: { flex: 1, padding: 24, paddingTop: 60 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   backBtn: {
-    width: 36, height: 36,
-    backgroundColor: '#1e1e30',
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
-  backText: { color: '#8a8a9a', fontSize: 16, fontWeight: '700' },
-  title: { fontSize: 20, fontWeight: '800', color: '#ffffff' },
-  iconContainer: { alignItems: 'center', marginBottom: 20 },
-  bigIcon: { fontSize: 64 },
+  title: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
+  },
+  heroIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    height: 100,
+  },
+  ghostCircle: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1,
+    opacity: 0.5,
+  },
+  form: { flex: 1 },
   instruction: {
-    color: '#6a6a8a',
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 32,
+    marginBottom: 40,
+    paddingHorizontal: 20,
   },
-  section: { marginBottom: 20 },
+  inputGroup: { marginBottom: 24 },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
   label: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#4a4a6a',
-    letterSpacing: 1,
-    marginBottom: 10,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: '#0e0e1a',
     borderWidth: 1,
-    borderColor: '#ffffff15',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     fontSize: 15,
-    color: '#ffffff',
-    fontFamily: 'monospace',
+    fontFamily: 'JetBrainsMono_500Medium',
   },
-  importBtn: {
-    backgroundColor: '#1c1c2e',
-    borderWidth: 1,
-    borderColor: '#7c6bff60',
-    padding: 18,
-    borderRadius: 16,
+  submitBtn: {
+    height: 58,
+    borderRadius: 18,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    marginTop: 12,
   },
-  importBtnDisabled: { opacity: 0.6 },
-  importBtnText: { fontSize: 17, fontWeight: '700', color: '#7c6bff' },
-  hint: {
-    color: '#4a4a6a',
+  submitBtnText: {
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+  },
+  loadingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  loadingText: {
     fontSize: 13,
-    textAlign: 'center',
-    marginTop: 20,
-    lineHeight: 20,
+    fontFamily: 'Inter_500Medium',
+    marginLeft: 8,
   },
+  spinIcon: {
+    // Add animation if possible via Reanimated, but keep it simple for now
+  }
 })
