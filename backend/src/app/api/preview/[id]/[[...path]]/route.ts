@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getUserFromRequest, errorResponse } from '@/lib/auth'
+import { getUserFromRequest, verifyToken, errorResponse } from '@/lib/auth'
 import Docker from 'dockerode'
 
 const docker = new Docker({
@@ -11,22 +11,13 @@ type Params = { params: Promise<{ id: string; path?: string[] }> }
 
 /**
  * Resolve the target URL inside the container.
- * Tries host-mapped port first, then falls back to container IP.
+ * Tries container's internal IP via Docker networking.
  */
 async function resolveTarget(containerId: string, port: number | string, subPath: string): Promise<string> {
   const container = docker.getContainer(containerId)
   const info = await container.inspect()
 
-  // Try host-mapped port first
-  const containerPort = `${port}/tcp`
-  const portMappings = (info.NetworkSettings as any).Ports?.[containerPort]
-  const hostPort = portMappings?.[0]?.HostPort
-
-  if (hostPort) {
-    return `http://127.0.0.1:${hostPort}${subPath}`
-  }
-
-  // Fallback to container's internal IP
+  // Get container IP from the bridge network
   const networks = (info.NetworkSettings as any).Networks
   const firstNetwork = networks ? Object.values(networks)[0] as any : null
   const containerIp = firstNetwork?.IPAddress || '127.0.0.1'
@@ -34,14 +25,24 @@ async function resolveTarget(containerId: string, port: number | string, subPath
 }
 
 /**
- * GET /api/preview/[id]/[...path]
+ * GET /api/preview/[id]/[[...path]]
  *
  * Catch-all proxy: forwards ANY request (HTML, CSS, JS, images, fonts, etc.)
- * into the running Docker container. This makes the preview work exactly
- * like opening localhost on a PC — all relative paths resolve correctly.
+ * into the running Docker container.
+ *
+ * Auth is accepted via:
+ *   - Authorization: Bearer <token> header (initial page load)
+ *   - ?token=<jwt> query param (sub-resource loads like CSS/JS/images)
  */
 export async function GET(req: NextRequest, { params }: Params) {
-  const user = getUserFromRequest(req)
+  // Accept auth from EITHER header OR query param
+  let user = getUserFromRequest(req)
+  if (!user) {
+    const tokenParam = req.nextUrl.searchParams.get('token')
+    if (tokenParam) {
+      user = verifyToken(tokenParam)
+    }
+  }
   if (!user) return errorResponse('Unauthorized', 401)
 
   const { id, path: pathSegments } = await params
@@ -61,11 +62,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   // Build the sub-path from the catch-all segments
   const subPath = '/' + (pathSegments?.join('/') || '')
 
-  // Preserve query string (e.g. ?v=123 for cache busting)
-  const queryString = req.nextUrl.search || ''
-
   try {
-    const targetUrl = await resolveTarget(project.container_id, port, subPath + queryString)
+    const targetUrl = await resolveTarget(project.container_id, port, subPath)
 
     const response = await fetch(targetUrl, {
       headers: {
@@ -90,7 +88,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   } catch (err) {
     console.error(`Preview proxy error [${subPath}]:`, err)
 
-    // Only show the fancy error page for the root HTML request
+    // Only show the error page for the root HTML request
     if (subPath === '/' || subPath === '') {
       return new Response(`
         <!DOCTYPE html>
@@ -111,7 +109,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       })
     }
 
-    // For asset requests (CSS/JS/images), return a proper 502
     return new Response('', { status: 502 })
   }
 }
+
