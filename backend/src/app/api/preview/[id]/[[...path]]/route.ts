@@ -117,7 +117,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     // 3. Set Session Cookies
     const tokenParam = req.nextUrl.searchParams.get('token')
-    const cookieOptions = '; Path=/api/preview; HttpOnly; SameSite=Lax; Max-Age=3600'
+    const cookieOptions = '; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600'
     
     // Refresh auth cookie if token provided
     if (tokenParam && user) {
