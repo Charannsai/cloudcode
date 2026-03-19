@@ -39,23 +39,37 @@ async function resolveTarget(containerId: string, port: number | string, subPath
  *   - Authorization: Bearer <token> header (initial page load)
  *   - ?token=<jwt> query param (sub-resource loads like CSS/JS/images)
  */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function GET(req: NextRequest, { params }: Params) {
-  // Accept auth from EITHER header OR query param
+  // 1. Auth: Accept from header, query token, or preview_token cookie
   let user = getUserFromRequest(req)
   if (!user) {
     const tokenParam = req.nextUrl.searchParams.get('token')
-    if (tokenParam) {
-      user = verifyToken(tokenParam)
-    }
+    if (tokenParam) user = verifyToken(tokenParam)
   }
   if (!user) return errorResponse('Unauthorized', 401)
 
   const { id, path: pathSegments } = await params
+  
+  // 2. Resolve Project ID: Check if URL 'id' is a valid UUID or a filename
+  let projectId = id
+  let finalPathSegments = pathSegments || []
+
+  if (!UUID_REGEX.test(id)) {
+    // This looks like a filename (e.g. /api/preview/style.css)
+    // Fallback to the last visited project for this session
+    const cookieProjId = req.cookies.get('preview_project_id')?.value
+    if (!cookieProjId) return errorResponse('Missing project context', 400)
+    
+    projectId = cookieProjId
+    finalPathSegments = [id, ...finalPathSegments]
+  }
 
   const { data: project } = await supabaseAdmin
     .from('projects')
     .select('id, user_github_id, port, container_id')
-    .eq('id', id)
+    .eq('id', projectId)
     .eq('user_github_id', user.id)
     .single()
 
@@ -63,10 +77,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (!project.container_id) return errorResponse('Container not running', 503)
 
   const port = req.nextUrl.searchParams.get('port') || project.port || 3000
-
-  // Build the sub-path from the catch-all segments
-  // Build the sub-path from the catch-all segments
-  const subPath = '/' + (pathSegments?.join('/') || '')
+  const subPath = '/' + (finalPathSegments.join('/') || '')
 
   try {
     const targetUrl = await resolveTarget(project.container_id, port, subPath)
@@ -92,17 +103,24 @@ export async function GET(req: NextRequest, { params }: Params) {
       },
     })
 
-    // Persist session if token was provided in query
+    // 3. Set Session Cookies
     const tokenParam = req.nextUrl.searchParams.get('token')
+    const cookieOptions = '; Path=/api/preview; HttpOnly; SameSite=Lax; Max-Age=3600'
+    
+    // Refresh auth cookie if token provided
     if (tokenParam && user) {
-      res.headers.set('Set-Cookie', `preview_token=${tokenParam}; Path=/api/preview; HttpOnly; SameSite=Lax; Max-Age=3600`)
+      res.headers.append('Set-Cookie', `preview_token=${tokenParam}${cookieOptions}`)
+    }
+    
+    // Always persist projectId if we confirmed it's valid
+    if (UUID_REGEX.test(projectId)) {
+      res.headers.append('Set-Cookie', `preview_project_id=${projectId}${cookieOptions}`)
     }
 
     return res
   } catch (err) {
     console.error(`Preview proxy error [${subPath}]:`, err)
 
-    // Only show the error page for the root HTML request
     if (subPath === '/' || subPath === '') {
       return new Response(`
         <!DOCTYPE html>
@@ -112,9 +130,9 @@ export async function GET(req: NextRequest, { params }: Params) {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
         <body style="font-family:-apple-system,sans-serif;background:#0a0a0f;color:#c8d3e0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:20px">
-          <h1 style="font-size:48px;margin-bottom:0">🔌</h1>
+          <h1>🔌</h1>
           <h2 style="color:#fff">Server not responding on port ${port}</h2>
-          <p style="color:#5a5a7a">Run <code style="color:#22c55e">npm run dev</code> or <code style="color:#22c55e">npx serve .</code> in Terminal first.</p>
+          <p style="color:#5a5a7a">Ensure <code style="color:#22c55e">npm run dev</code> is running in Terminal.</p>
         </body>
         </html>
       `, {

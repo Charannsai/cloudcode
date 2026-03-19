@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  trailingSlash: true,
   // Allow WebSocket upgrades for terminal
   serverExternalPackages: ['ws', 'node-pty', 'dockerode'],
 
