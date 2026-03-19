@@ -32,15 +32,25 @@ export async function GET(req: NextRequest, { params }: Params) {
   const path = req.nextUrl.searchParams.get('path') || '/'
   
   try {
-    // 🔍 Get the container's internal IP address
+    // 🔍 Get container info and find the MAPPED host port
     const container = docker.getContainer(project.container_id)
     const info = await container.inspect()
-    // Dockerode types can be tricky, using any to get the IP
-    const networks = (info.NetworkSettings as any).Networks
-    const containerIp = (networks && Object.values(networks)[0] ? (Object.values(networks)[0] as any).IPAddress : null) || (info.NetworkSettings as any).IPAddress || '127.0.0.1'
+    
+    // Find the host port mapped to the container's port (default 3000)
+    const containerPort = `${port}/tcp`
+    const portMappings = (info.NetworkSettings as any).Ports[containerPort]
+    const hostPort = portMappings ? portMappings[0].HostPort : null
 
-    // Proxy to the internal CONTAINER IP
-    const targetUrl = `http://${containerIp}:${port}${path}`
+    let targetUrl: string
+    if (hostPort) {
+      // ✅ Use stable Host mapping
+      targetUrl = `http://127.0.0.1:${hostPort}${path}`
+    } else {
+      // ⚠️ Fallback to container IP
+      const networks = (info.NetworkSettings as any).Networks
+      const containerIp = (networks && Object.values(networks)[0] ? (Object.values(networks)[0] as any).IPAddress : null) || (info.NetworkSettings as any).IPAddress || '127.0.0.1'
+      targetUrl = `http://${containerIp}:${port}${path}`
+    }
 
     const response = await fetch(targetUrl, {
       headers: {
