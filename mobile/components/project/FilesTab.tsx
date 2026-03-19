@@ -17,7 +17,6 @@ function FileRow({ node, depth, onFilePress }: {
 }) {
   const { colors } = useAppTheme()
   const [expanded, setExpanded] = useState(depth < 2)
-
   const isDir = node.type === 'directory'
 
   return (
@@ -25,7 +24,7 @@ function FileRow({ node, depth, onFilePress }: {
       <TouchableOpacity
         style={[
           styles.fileRow, 
-          { paddingLeft: 20 + depth * 20, borderBottomColor: colors.border + '15' }
+          { paddingLeft: 16 + depth * 18 }
         ]}
         onPress={() => {
           if (isDir) setExpanded((e) => !e)
@@ -34,26 +33,26 @@ function FileRow({ node, depth, onFilePress }: {
         activeOpacity={0.6}
       >
         <Ionicons 
-          name={isDir ? (expanded ? 'folder-open' : 'folder') : getIconName(node.name)} 
+          name={isDir ? (expanded ? 'folder-open' : 'folder') : getIconInfo(node.name).icon} 
           size={18} 
-          color={isDir ? colors.primary : colors.textSecondary} 
+          color={isDir ? '#d1a8ff' : getIconInfo(node.name).color} 
         />
         <Text style={[
           styles.fileName, 
-          { color: isDir ? colors.text : colors.textSecondary },
+          { color: isDir ? colors.text : colors.textSecondary + 'ee' },
           isDir && styles.dirName
-        ]}>
+        ]} numberOfLines={1}>
           {node.name}
         </Text>
         {isDir && (
           <Ionicons 
             name={expanded ? "chevron-down" : "chevron-forward"} 
-            size={14} 
-            color={colors.textSecondary + '60'} 
+            size={12} 
+            color={colors.textSecondary + '40'} 
           />
         )}
         {!isDir && node.size != null && (
-          <Text style={[styles.fileSize, { color: colors.textSecondary + '40' }]}>{formatSize(node.size)}</Text>
+          <Text style={[styles.fileSize, { color: colors.textSecondary + '30' }]}>{formatSize(node.size)}</Text>
         )}
       </TouchableOpacity>
 
@@ -62,6 +61,20 @@ function FileRow({ node, depth, onFilePress }: {
       ))}
     </View>
   )
+}
+
+function getIconInfo(name: string): { icon: any, color: string } {
+  const ext = name.split('.').pop()?.toLowerCase();
+  switch(ext) {
+    case 'js': case 'jsx': return { icon: 'logo-javascript', color: '#f7df1e' };
+    case 'ts': case 'tsx': return { icon: 'document-text', color: '#3178c6' };
+    case 'html': return { icon: 'logo-html5', color: '#e34f26' };
+    case 'css': return { icon: 'logo-css3', color: '#1572b6' };
+    case 'json': return { icon: 'settings', color: '#cbcb41' };
+    case 'md': return { icon: 'document-text-outline', color: '#00add8' };
+    case 'env': return { icon: 'key', color: '#ffcc00' };
+    default: return { icon: 'document-outline', color: '#888' };
+  }
 }
 
 export default function FilesTab({ projectId }: Props) {
@@ -140,18 +153,6 @@ export default function FilesTab({ projectId }: Props) {
       </ScrollView>
     </View>
   )
-}
-
-function getIconName(name: string): any {
-  if (name.endsWith('.js') || name.endsWith('.jsx')) return 'logo-javascript'
-  if (name.endsWith('.ts') || name.endsWith('.tsx')) return 'document-text-outline'
-  if (name.endsWith('.json')) return 'settings-outline'
-  if (name.endsWith('.md')) return 'document-outline'
-  if (name.endsWith('.css')) return 'brush-outline'
-  if (name.endsWith('.html')) return 'code-slash'
-  if (name.endsWith('.env')) return 'key-outline'
-  if (name === 'package.json') return 'cube-outline'
-  return 'document-outline'
 }
 
 function formatSize(bytes: number): string {
