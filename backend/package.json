@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx watch src/server.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "tsx src/server.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -16,6 +16,7 @@
     "node-pty": "^1.1.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "tsx": "^4.19.3",
     "uuid": "^13.0.0",
     "ws": "^8.19.0",
     "zod": "^4.3.6"
