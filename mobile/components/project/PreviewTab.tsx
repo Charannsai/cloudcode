@@ -13,7 +13,7 @@ interface Props {
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default function PreviewTab({ projectId, port: initialPort }: Props) {
-  const { colors, isDark } = useAppTheme()
+  const { colors } = useAppTheme()
   const [port, setPort] = useState(initialPort.toString())
   const [activePort, setActivePort] = useState(initialPort.toString())
   const [token, setToken] = useState<string | null>(null)
@@ -23,7 +23,10 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
     getToken().then(setToken)
   }, [])
 
-  const previewUrl = `${API_URL}/api/preview/${projectId}?port=${activePort}`
+  // The catch-all route: /api/preview/[id]/ will serve root HTML,
+  // and /api/preview/[id]/style.css will serve CSS, etc.
+  const baseUrl = `${API_URL}/api/preview/${projectId}`
+  const previewUrl = `${baseUrl}/?port=${activePort}`
 
   const handleRefresh = () => {
     setActivePort(port)
@@ -32,6 +35,21 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   }
 
   if (!token) return null
+
+  // Inject a <base> tag so all relative URLs (./style.css, ./script.js)
+  // resolve through our catch-all proxy route
+  const injectedJS = `
+    (function() {
+      // Set base href so relative paths go through our proxy
+      var base = document.querySelector('base');
+      if (!base) {
+        base = document.createElement('base');
+        document.head.prepend(base);
+      }
+      base.href = '${baseUrl}/?port=${activePort}&path=';
+      true;
+    })();
+  `
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -61,9 +79,11 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
         source={{
           uri: previewUrl,
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
           }
         }}
+        injectedJavaScriptBeforeContentLoaded={injectedJS}
+        originWhitelist={['*']}
         style={[styles.webView, { backgroundColor: '#fff' }]}
         renderLoading={() => (
           <View style={[styles.loading, { backgroundColor: colors.background }]}>
@@ -82,6 +102,7 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
         startInLoadingState
         javaScriptEnabled
         domStorageEnabled
+        allowsInlineMediaPlayback
       />
     </View>
   )
@@ -134,5 +155,3 @@ const styles = StyleSheet.create({
   errorTitle: { fontSize: 18, fontWeight: '800', marginTop: 8 },
   errorHint: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
 })
-
-
