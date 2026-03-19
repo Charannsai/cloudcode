@@ -19,40 +19,43 @@ export interface ThemeColors {
   tabBar: string
   tabBarActive: string
   tabBarInactive: string
+  highlight: string
 }
 
 export const themes: Record<ThemeType, ThemeColors> = {
   dark: {
-    background: '#0a0a0a',
-    card: '#161616',
-    text: '#ffffff',
-    textSecondary: '#9ca3af',
-    border: '#ffffff0a',
+    background: '#09090b',
+    card: '#1c1c1f',
+    text: '#fafafa',
+    textSecondary: '#a1a1aa',
+    border: '#27272a',
     primary: '#ffffff',
-    accent: '#38bdf8',
+    accent: '#cbd5e1',
     error: '#ef4444',
-    errorBackground: '#ef444420',
-    success: '#22c55e',
-    inputBackground: '#0a0a0a',
-    tabBar: '#0a0a0a',
+    errorBackground: '#450a0a',
+    success: '#10b981',
+    inputBackground: '#1c1c1f',
+    tabBar: '#1c1c1f',
     tabBarActive: '#ffffff',
-    tabBarInactive: '#666666',
+    tabBarInactive: '#a1a1aa',
+    highlight: '#27272a',
   },
   light: {
-    background: '#f3f4f6',
+    background: '#f4f4f5',
     card: '#ffffff',
-    text: '#1a1a1a',
-    textSecondary: '#6b7280',
-    border: '#0000000a',
-    primary: '#1a1a1a',
-    accent: '#3b82f6',
+    text: '#09090b',
+    textSecondary: '#71717a',
+    border: '#e4e4e7',
+    primary: '#18181b',
+    accent: '#18181b', // Dark highlight for light theme
     error: '#dc3545',
-    errorBackground: '#dc354510',
+    errorBackground: '#fef2f2',
     success: '#10b981',
-    inputBackground: '#f9fafb',
+    inputBackground: '#ffffff',
     tabBar: '#ffffff',
-    tabBarActive: '#1a1a1a',
-    tabBarInactive: '#9ca3af',
+    tabBarActive: '#09090b',
+    tabBarInactive: '#71717a',
+    highlight: '#18181b10', // Dark highlight for light theme
   },
 }
 

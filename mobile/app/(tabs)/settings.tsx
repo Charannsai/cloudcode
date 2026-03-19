@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Switch, ScrollView } from 'react-native'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Ionicons } from '@expo/vector-icons'
+import { Moon, Sun, User, Info, LogOut, ChevronRight, Github, Shield } from 'lucide-react-native'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuthStore()
-  const { theme, colors, toggleTheme, isDark } = useAppTheme()
+  const { colors, toggleTheme, isDark } = useAppTheme()
 
   function handleSignOut() {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -14,75 +14,121 @@ export default function SettingsScreen() {
     ])
   }
 
+  const ThemeIcon = isDark ? Moon : Sun
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
       </View>
 
-      {/* Theme Toggle */}
+      {/* Profile Section */}
+      <View style={styles.section}>
+        <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.avatarContainer}>
+            {user?.avatar_url ? (
+              <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: colors.text }]}>
+                <Text style={[styles.avatarText, { color: colors.card }]}>
+                  {user?.login?.[0]?.toUpperCase() || '?'}
+                </Text>
+              </View>
+            )}
+            <View style={[styles.githubBadge, { backgroundColor: colors.text }]}>
+              <Github size={10} color={colors.card} strokeWidth={3} />
+            </View>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileName, { color: colors.text }]}>
+              {user?.name || `@${user?.login}`}
+            </Text>
+            <View style={styles.profileStatus}>
+              <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
+              <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>
+                {user?.email || 'Connected via GitHub'}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Appearance Section */}
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>APPEARANCE</Text>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.row}>
-            <View style={styles.rowLead}>
-              <View style={[styles.iconBox, { backgroundColor: isDark ? '#333' : '#eee' }]}>
-                <Ionicons name={isDark ? "moon" : "sunny"} size={20} color={colors.primary} />
+            <View style={styles.rowLeft}>
+              <View style={[styles.iconBox, { backgroundColor: colors.background }]}>
+                <ThemeIcon size={20} color={colors.text} strokeWidth={2} />
               </View>
               <Text style={[styles.rowLabel, { color: colors.text }]}>Dark Mode</Text>
             </View>
             <Switch
               value={isDark}
               onValueChange={toggleTheme}
-              trackColor={{ false: '#ccc', true: colors.primary }}
-              thumbColor="#fff"
+              trackColor={{ false: colors.border, true: colors.text }}
+              thumbColor={colors.card}
+              ios_backgroundColor={colors.border}
             />
           </View>
         </View>
       </View>
 
-      {/* Profile */}
+      {/* Account Section */}
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>ACCOUNT</Text>
-        <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarText}>
-                {user?.login?.[0]?.toUpperCase() || '?'}
-              </Text>
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>ACCOUNT & SECURITY</Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity style={styles.row}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.iconBox, { backgroundColor: colors.background }]}>
+                <Shield size={20} color={colors.text} strokeWidth={2} />
+              </View>
+              <Text style={[styles.rowLabel, { color: colors.text }]}>Active Sessions</Text>
             </View>
-          )}
-          <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: colors.text }]}>{user?.name || `@${user?.login}` || 'User'}</Text>
-            <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>{user?.email || 'No public email'}</Text>
-          </View>
+            <ChevronRight size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* About */}
+      {/* About Section */}
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>ABOUT</Text>
-        <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>SYSTEM INFO</Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {[
-            { label: 'Cloud ID', value: user?.id || '—' },
-            { label: 'App Version', value: '1.2.0' },
-            { label: 'Engine', value: 'CloudCore Node/20' },
-          ].map(({ label, value }) => (
-            <View key={label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]} numberOfLines={1}>{value}</Text>
+            { label: 'CloudCore Engine', value: 'v2.4.0', icon: Info },
+            { label: 'Workspace Hub', value: 'Stable', icon: User },
+          ].map((item, idx, arr) => (
+            <View 
+              key={item.label} 
+              style={[
+                styles.row, 
+                idx !== arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
+              ]}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: colors.background }]}>
+                  <item.icon size={20} color={colors.text} strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>{item.label}</Text>
+              </View>
+              <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{item.value}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      <TouchableOpacity style={[styles.signOutBtn, { borderColor: colors.error + '40', backgroundColor: colors.error + '10' }]} onPress={handleSignOut}>
+      <TouchableOpacity 
+        style={[styles.signOutBtn, { backgroundColor: colors.errorBackground, borderColor: colors.error + '20' }]} 
+        onPress={handleSignOut}
+      >
+        <LogOut size={20} color={colors.error} strokeWidth={2.5} style={{ marginRight: 12 }} />
         <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
       </TouchableOpacity>
-      
-      <Text style={[styles.footerText, { color: colors.textSecondary }]}>Made with ❤️ for developers</Text>
+
+      <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+        CloudCode Mobile Edition • Made with care
+      </Text>
     </ScrollView>
   )
 }
@@ -92,85 +138,109 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingTop: 64,
-    paddingBottom: 24,
-    borderBottomWidth: 1,
+    paddingBottom: 20,
   },
-  title: { fontSize: 32, fontWeight: '900', letterSpacing: -0.5 },
-  section: { paddingHorizontal: 24, paddingTop: 32 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', letterSpacing: 1.2, marginBottom: 12, opacity: 0.8 },
+  title: { 
+    fontSize: 28, 
+    fontFamily: 'Inter_900Black', 
+    letterSpacing: -1,
+  },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionLabel: { 
+    fontSize: 11, 
+    fontFamily: 'Inter_700Bold', 
+    letterSpacing: 1, 
+    marginBottom: 12, 
+    marginLeft: 8,
+    opacity: 0.6 
+  },
   card: {
-    borderRadius: 20,
-    padding: 4,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
   },
+  profileCard: {
+    borderRadius: 28,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  avatarPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontSize: 24, fontFamily: 'Inter_800ExtraBold' },
+  githubBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  profileInfo: { flex: 1, marginLeft: 16 },
+  profileName: { fontSize: 18, fontFamily: 'Inter_700Bold', marginBottom: 4 },
+  profileStatus: { flexDirection: 'row', alignItems: 'center' },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  profileEmail: { fontSize: 13, fontFamily: 'Inter_500Medium' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    paddingRight: 16,
+    padding: 14,
+    minHeight: 64,
   },
-  rowLead: {
+  rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
   },
-  rowLabel: { fontSize: 17, fontWeight: '600' },
   iconBox: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 16,
   },
-  profileCard: {
-    borderRadius: 22,
-    padding: 20,
+  rowLabel: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
+  infoValue: { fontSize: 14, fontFamily: 'Inter_500Medium' },
+  signOutBtn: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 18,
+    borderRadius: 20,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    borderWidth: 1,
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#333',
-  },
-  avatarPlaceholder: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarText: { fontSize: 28, fontWeight: '800', color: '#fff' },
-  profileInfo: { flex: 1, gap: 4 },
-  profileName: { fontSize: 20, fontWeight: '800' },
-  profileEmail: { fontSize: 15, opacity: 0.7 },
-  infoCard: {
-    borderRadius: 22,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 18,
-    borderBottomWidth: 1,
-    gap: 12,
-  },
-  infoLabel: { fontSize: 16, opacity: 0.8, fontWeight: '500' },
-  infoValue: { fontSize: 16, fontWeight: '700', flex: 1, textAlign: 'right' },
-  signOutBtn: {
-    margin: 24,
-    marginTop: 40,
-    padding: 20,
-    borderRadius: 22,
-    alignItems: 'center',
     borderWidth: 1,
   },
-  signOutText: { fontWeight: '900', fontSize: 18 },
-  footerText: { textAlign: 'center', fontSize: 13, marginBottom: 48, opacity: 0.5 },
+  signOutText: { 
+    fontFamily: 'Inter_700Bold', 
+    fontSize: 16,
+  },
+  footerText: { 
+    textAlign: 'center', 
+    fontSize: 12, 
+    fontFamily: 'Inter_500Medium',
+    marginTop: 32,
+    marginBottom: 60, 
+    opacity: 0.4 
+  },
 })
 

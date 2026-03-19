@@ -6,15 +6,18 @@ import {
 import { useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { useProjectsStore } from '@/store/projects'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { Terminal, Atom, FileCode, ChevronLeft, Loader2, Check } from 'lucide-react-native'
 
 const TEMPLATES = [
-  { id: 'node', label: 'Node.js', icon: '🟢', desc: 'Simple HTTP server, ready to run' },
-  { id: 'react', label: 'React + Vite', icon: '⚛️', desc: 'Modern React app with Vite' },
-  { id: 'empty', label: 'Empty', icon: '📄', desc: 'Blank workspace, start from scratch' },
+  { id: 'node', label: 'Node.js', icon: Terminal, desc: 'Ready-to-run HTTP server environment' },
+  { id: 'react', label: 'React + Vite', icon: Atom, desc: 'Bootstrap a modern React application' },
+  { id: 'empty', label: 'Empty', icon: FileCode, desc: 'Start with a blank workspace' },
 ] as const
 
 export default function NewProjectScreen() {
   const router = useRouter()
+  const { colors } = useAppTheme()
   const { addProject } = useProjectsStore()
   const [name, setName] = useState('')
   const [type, setType] = useState<'node' | 'react' | 'empty'>('node')
@@ -22,7 +25,7 @@ export default function NewProjectScreen() {
 
   async function handleCreate() {
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter a project name')
+      Alert.alert('Error', 'Please enter a workspace name')
       return
     }
     setLoading(true)
@@ -31,165 +34,190 @@ export default function NewProjectScreen() {
       addProject(project)
       router.replace(`/project/${project.id}`)
     } catch (err) {
-      Alert.alert('Failed to create project', (err as Error).message)
+      Alert.alert('Failed to create workspace', (err as Error).message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>✕</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>New Project</Text>
-          <View style={{ width: 36 }} />
-        </View>
-
-        {/* Name input */}
-        <View style={styles.section}>
-          <Text style={styles.label}>PROJECT NAME</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="my-awesome-app"
-            placeholderTextColor="#3a3a5a"
-            value={name}
-            onChangeText={setName}
-            autoFocus
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        {/* Template picker */}
-        <View style={styles.section}>
-          <Text style={styles.label}>TEMPLATE</Text>
-          {TEMPLATES.map((t) => (
-            <TouchableOpacity
-              key={t.id}
-              style={[styles.templateCard, type === t.id && styles.templateCardActive]}
-              onPress={() => setType(t.id)}
-              activeOpacity={0.8}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              style={[styles.backBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
-              <View style={styles.templateLeft}>
-                <Text style={styles.templateIcon}>{t.icon}</Text>
-                <View>
-                  <Text style={[styles.templateLabel, type === t.id && styles.templateLabelActive]}>
-                    {t.label}
-                  </Text>
-                  <Text style={styles.templateDesc}>{t.desc}</Text>
-                </View>
-              </View>
-              {type === t.id && <Text style={styles.checkmark}>✓</Text>}
+              <ChevronLeft size={24} color={colors.text} strokeWidth={2.5} />
             </TouchableOpacity>
-          ))}
-        </View>
+            <Text style={[styles.title, { color: colors.text }]}>New Workspace</Text>
+            <View style={{ width: 44 }} />
+          </View>
 
-        {/* Create button */}
-        <TouchableOpacity
-          style={[styles.createBtn, loading && styles.createBtnDisabled]}
-          onPress={handleCreate}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.createBtnText}>Create Project</Text>
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>WORKSPACE NAME</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: colors.card, 
+                borderColor: colors.border, 
+                color: colors.text,
+              }]}
+              placeholder="my-cool-project"
+              placeholderTextColor={colors.textSecondary + '80'}
+              value={name}
+              onChangeText={setName}
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>SELECT TEMPLATE</Text>
+            {TEMPLATES.map((t) => (
+              <TouchableOpacity
+                key={t.id}
+                style={[
+                  styles.templateCard, 
+                  { backgroundColor: colors.card, borderColor: type === t.id ? colors.text : colors.border }
+                ]}
+                onPress={() => setType(t.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.templateLeft}>
+                  <View style={[styles.iconWrapper, { backgroundColor: type === t.id ? colors.text : colors.background }]}>
+                    <t.icon size={22} color={type === t.id ? colors.card : colors.textSecondary} strokeWidth={2.5} />
+                  </View>
+                  <View style={styles.templateInfo}>
+                    <Text style={[styles.templateLabel, { color: colors.text }]}>
+                      {t.label}
+                    </Text>
+                    <Text style={[styles.templateDesc, { color: colors.textSecondary }]}>{t.desc}</Text>
+                  </View>
+                </View>
+                {type === t.id && (
+                  <View style={[styles.checkCircle, { backgroundColor: colors.text }]}>
+                    <Check size={14} color={colors.card} strokeWidth={4} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.createBtn, { backgroundColor: colors.text, opacity: loading ? 0.7 : 1 }]}
+            onPress={handleCreate}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.card} />
+            ) : (
+              <Text style={[styles.createBtnText, { color: colors.card }]}>Create Workspace</Text>
+            )}
+          </TouchableOpacity>
+
+          {loading && (
+            <View style={styles.loadingInfo}>
+              <Loader2 size={16} color={colors.textSecondary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                Provisioning your workspace...
+              </Text>
+            </View>
           )}
-        </TouchableOpacity>
-
-        {loading && (
-          <Text style={styles.loadingHint}>
-            ⚙️ Setting up your container... this may take a moment
-          </Text>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0f' },
-  scroll: { padding: 20, paddingTop: 60 },
+  container: { flex: 1 },
+  scroll: { padding: 24, paddingTop: 60 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    backgroundColor: '#1e1e30',
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
-  backText: { color: '#8a8a9a', fontSize: 16, fontWeight: '700' },
-  title: { fontSize: 20, fontWeight: '800', color: '#ffffff' },
-  section: { marginBottom: 28 },
+  title: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.5,
+  },
+  section: { marginBottom: 32 },
   label: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#4a4a6a',
-    letterSpacing: 1,
-    marginBottom: 10,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    marginLeft: 4,
   },
   input: {
-    backgroundColor: '#0e0e1a',
     borderWidth: 1,
-    borderColor: '#ffffff15',
-    borderRadius: 14,
-    padding: 16,
-    fontSize: 17,
-    color: '#ffffff',
-    fontFamily: 'monospace',
+    borderRadius: 16,
+    padding: 18,
+    fontSize: 15,
+    fontFamily: 'JetBrainsMono_500Medium',
   },
   templateCard: {
-    backgroundColor: '#0e0e1a',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ffffff0d',
+    marginBottom: 12,
+    borderWidth: 1.5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  templateCardActive: {
-    borderColor: '#7c6bff',
-    backgroundColor: '#7c6bff15',
-  },
-  templateLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  templateIcon: { fontSize: 28 },
-  templateLabel: { fontSize: 16, fontWeight: '700', color: '#8a8a9a', marginBottom: 2 },
-  templateLabelActive: { color: '#ffffff' },
-  templateDesc: { fontSize: 13, color: '#4a4a6a' },
-  checkmark: { fontSize: 18, color: '#7c6bff', fontWeight: '800' },
-  createBtn: {
-    backgroundColor: '#7c6bff',
-    padding: 18,
-    borderRadius: 16,
+  templateLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  iconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#7c6bff',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
+    justifyContent: 'center',
   },
-  createBtnDisabled: { opacity: 0.6 },
-  createBtnText: { fontSize: 17, fontWeight: '700', color: '#ffffff' },
-  loadingHint: {
-    color: '#5a5a7a',
+  templateInfo: { flex: 1 },
+  templateLabel: { fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 2 },
+  templateDesc: { fontSize: 13, fontFamily: 'Inter_400Regular' },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createBtn: {
+    height: 60,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  createBtnText: {
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+  },
+  loadingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    gap: 8,
+  },
+  loadingText: {
     fontSize: 13,
-    textAlign: 'center',
-    marginTop: 16,
-    lineHeight: 20,
+    fontFamily: 'Inter_500Medium',
   },
 })
