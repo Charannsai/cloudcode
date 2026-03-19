@@ -1,10 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { FileNode } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Ionicons } from '@expo/vector-icons'
+import { 
+  Folder, 
+  File, 
+  ChevronRight, 
+  ChevronDown, 
+  RefreshCw, 
+  FileText, 
+  Code, 
+  Hash, 
+  Settings, 
+  FileJson, 
+  FileCode,
+  Search
+} from 'lucide-react-native'
 
 interface Props {
   projectId: string
@@ -16,43 +29,64 @@ function FileRow({ node, depth, onFilePress }: {
   onFilePress: (path: string) => void
 }) {
   const { colors } = useAppTheme()
-  const [expanded, setExpanded] = useState(depth < 2)
+  const [expanded, setExpanded] = useState(depth < 1)
   const isDir = node.type === 'directory'
+  
+  const iconInfo = useMemo(() => {
+    if (isDir) {
+      return { 
+        icon: expanded ? Folder : Folder, 
+        color: '#60a5fa',
+        size: 18 
+      }
+    }
+    const ext = node.name.split('.').pop()?.toLowerCase()
+    switch(ext) {
+      case 'js': case 'jsx': return { icon: FileCode, color: '#eab308' };
+      case 'ts': case 'tsx': return { icon: FileCode, color: '#3b82f6' };
+      case 'html': return { icon: Code, color: '#f97316' };
+      case 'css': return { icon: Hash, color: '#3b82f6' };
+      case 'json': return { icon: FileJson, color: '#a855f7' };
+      case 'md': return { icon: FileText, color: '#94a3b8' };
+      case 'env': return { icon: Settings, color: '#facc15' };
+      default: return { icon: File, color: colors.textSecondary };
+    }
+  }, [node.name, isDir, expanded, colors.textSecondary])
+
+  const IconComponent = iconInfo.icon
 
   return (
     <View>
       <TouchableOpacity
         style={[
           styles.fileRow, 
-          { paddingLeft: 16 + depth * 18 }
+          { paddingLeft: 12 + depth * 16 }
         ]}
         onPress={() => {
           if (isDir) setExpanded((e) => !e)
           else onFilePress(node.path)
         }}
-        activeOpacity={0.6}
+        activeOpacity={0.4}
       >
-        <Ionicons 
-          name={isDir ? (expanded ? 'folder-open' : 'folder') : getIconInfo(node.name).icon} 
+        <View style={styles.chevronContainer}>
+          {isDir ? (
+            expanded ? <ChevronDown size={14} color={colors.textSecondary} /> : <ChevronRight size={14} color={colors.textSecondary} />
+          ) : null}
+        </View>
+        <IconComponent 
           size={18} 
-          color={isDir ? '#d1a8ff' : getIconInfo(node.name).color} 
+          color={iconInfo.color} 
+          strokeWidth={2}
         />
         <Text style={[
           styles.fileName, 
-          { color: isDir ? colors.text : colors.textSecondary + 'ee' },
+          { color: colors.text, fontFamily: 'Inter_500Medium' },
           isDir && styles.dirName
         ]} numberOfLines={1}>
           {node.name}
         </Text>
-        {isDir && (
-          <Ionicons 
-            name={expanded ? "chevron-down" : "chevron-forward"} 
-            size={12} 
-            color={colors.textSecondary + '40'} 
-          />
-        )}
         {!isDir && node.size != null && (
-          <Text style={[styles.fileSize, { color: colors.textSecondary + '30' }]}>{formatSize(node.size)}</Text>
+          <Text style={[styles.fileSize, { color: colors.textSecondary + '60' }]}>{formatSize(node.size)}</Text>
         )}
       </TouchableOpacity>
 
@@ -61,20 +95,6 @@ function FileRow({ node, depth, onFilePress }: {
       ))}
     </View>
   )
-}
-
-function getIconInfo(name: string): { icon: any, color: string } {
-  const ext = name.split('.').pop()?.toLowerCase();
-  switch(ext) {
-    case 'js': case 'jsx': return { icon: 'logo-javascript', color: '#f7df1e' };
-    case 'ts': case 'tsx': return { icon: 'document-text', color: '#3178c6' };
-    case 'html': return { icon: 'logo-html5', color: '#e34f26' };
-    case 'css': return { icon: 'logo-css3', color: '#1572b6' };
-    case 'json': return { icon: 'settings', color: '#cbcb41' };
-    case 'md': return { icon: 'document-text-outline', color: '#00add8' };
-    case 'env': return { icon: 'key', color: '#ffcc00' };
-    default: return { icon: 'document-outline', color: '#888' };
-  }
 }
 
 export default function FilesTab({ projectId }: Props) {
@@ -103,20 +123,19 @@ export default function FilesTab({ projectId }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Indexing files...</Text>
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.text} size="small" />
+        <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Indexing environment...</Text>
       </View>
     )
   }
 
   if (error) {
     return (
-      <View style={styles.centered}>
-        <Ionicons name="alert-circle" size={40} color={colors.error} />
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-        <TouchableOpacity onPress={fetchFiles} style={[styles.retryBtn, { backgroundColor: colors.card }]}>
-          <Text style={[styles.retryText, { color: colors.primary }]}>Try Again</Text>
+        <TouchableOpacity onPress={fetchFiles} style={[styles.retryBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.retryText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Try Again</Text>
         </TouchableOpacity>
       </View>
     )
@@ -124,20 +143,23 @@ export default function FilesTab({ projectId }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.toolbar, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.toolbarTitle, { color: colors.textSecondary }]}>FILE EXPLORER</Text>
-        <TouchableOpacity onPress={fetchFiles} style={[styles.refreshBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="refresh" size={14} color={colors.primary} />
-          <Text style={[styles.refreshText, { color: colors.primary }]}>Refresh</Text>
+      <View style={[styles.toolbar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <View style={styles.toolbarLeft}>
+          <Text style={[styles.toolbarTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>EXPLORER</Text>
+          <Text style={[styles.projectBadge, { color: colors.textSecondary, backgroundColor: colors.background, borderColor: colors.border }]}>SRC</Text>
+        </View>
+        <TouchableOpacity onPress={fetchFiles} activeOpacity={0.7} style={styles.refreshBtn}>
+          <RefreshCw size={14} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
+      
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingVertical: 8 }}
       >
         {files.length === 0 ? (
           <View style={styles.centered}>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Project is empty</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Empty Workspace</Text>
           </View>
         ) : (
           files.map((node) => (
@@ -156,9 +178,9 @@ export default function FilesTab({ projectId }: Props) {
 }
 
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  if (bytes < 1024) return `${bytes}B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`
 }
 
 const styles = StyleSheet.create({
@@ -167,40 +189,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderBottomWidth: 1,
   },
-  toolbarTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  refreshBtn: {
+  toolbarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 6,
+    gap: 8,
   },
-  refreshText: { fontSize: 12, fontWeight: '700' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 16 },
-  loadingText: { fontSize: 14, fontWeight: '600' },
-  errorText: { fontSize: 14, fontWeight: '600', textAlign: 'center', paddingHorizontal: 40 },
-  emptyText: { fontSize: 14, fontWeight: '500' },
+  toolbarTitle: { 
+    fontSize: 10, 
+    letterSpacing: 1.2,
+    opacity: 0.8,
+  },
+  projectBadge: {
+    fontSize: 9,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  refreshBtn: {
+    padding: 4,
+  },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  loadingText: { fontSize: 13, opacity: 0.8 },
+  errorText: { fontSize: 13, textAlign: 'center', paddingHorizontal: 40 },
+  emptyText: { fontSize: 13, opacity: 0.6 },
   retryBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  retryText: { fontWeight: '700' },
+  retryText: { fontSize: 13 },
   fileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingRight: 16,
-    borderBottomWidth: 1,
-    gap: 12,
+    gap: 8,
   },
-  fileName: { flex: 1, fontSize: 15, fontWeight: '500' },
-  dirName: { fontWeight: '700' },
-  fileSize: { fontSize: 10, fontWeight: '600' },
+  chevronContainer: {
+    width: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fileName: { flex: 1, fontSize: 14 },
+  dirName: { opacity: 0.9 },
+  fileSize: { fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' },
 })
 

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Ionicons } from '@expo/vector-icons'
+import { LayoutGrid, Settings } from 'lucide-react-native'
 
 export default function TabsLayout() {
   const { colors } = useAppTheme()
@@ -13,27 +13,28 @@ export default function TabsLayout() {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 90,
-          paddingBottom: 30,
+          height: 84,
+          paddingBottom: 28,
           paddingTop: 12,
           elevation: 0,
           shadowOpacity: 0,
         },
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '700',
+          fontSize: 11,
+          fontFamily: 'Inter_700Bold',
           marginTop: 4,
+          letterSpacing: 0.2,
         },
       }}
     >
       <Tabs.Screen
         name="projects"
         options={{
-          title: 'Projects',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "folder-open" : "folder-outline"} size={22} color={color} />
+          title: 'Workspaces',
+          tabBarIcon: ({ color, size }) => (
+            <LayoutGrid size={size - 2} color={color} strokeWidth={2.5} />
           ),
         }}
       />
@@ -41,8 +42,8 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "settings" : "settings-outline"} size={22} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Settings size={size - 2} color={color} strokeWidth={2.5} />
           ),
         }}
       />

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Dimensions, ScrollView, Platform,
+  ActivityIndicator, Dimensions, ScrollView,
 } from 'react-native'
 import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Ionicons } from '@expo/vector-icons'
+import { Cloud, Terminal, Github, Box, Zap, ChevronRight } from 'lucide-react-native'
 import { StatusBar } from 'expo-status-bar'
 
 const { width, height } = Dimensions.get('window')
@@ -54,7 +54,7 @@ export default function WelcomeScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
+        <ActivityIndicator color={colors.text} size="large" />
       </View>
     )
   }
@@ -63,43 +63,42 @@ export default function WelcomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       
-      {/* Background orbs */}
-      <View style={[styles.orb1, { backgroundColor: colors.primary + '15' }]} />
-      <View style={[styles.orb2, { backgroundColor: colors.accent + '10' }]} />
-
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Logo Section */}
+        <View style={styles.header}>
+           <View style={styles.logoRow}>
+              <Cloud size={24} color={colors.text} strokeWidth={2.5} />
+              <Text style={[styles.logoText, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]}>Taskk</Text>
+           </View>
+        </View>
+
         {/* Hero Section */}
         <View style={styles.hero}>
-          <View style={[styles.logoContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Ionicons name="cloud" size={40} color={colors.primary} />
-          </View>
-          <Text style={[styles.logoText, { color: colors.text }]}>CloudCode</Text>
-          <Text style={[styles.tagline, { color: colors.text }]}>
-            Develop anywhere.{'\n'}Deploy everywhere.
+          <Text style={[styles.tagline, { color: colors.text, fontFamily: 'Inter_900Black' }]}>
+            Develop Systems,{'\n'}Master <Text style={{ color: '#f97316' }}>Logic.</Text>
           </Text>
-          <Text style={[styles.sub, { color: colors.textSecondary }]}>
-            The first IDE built for mobile first.{'\n'}Full shell access, live preview, and Docker control.
+          <Text style={[styles.sub, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+            A cloud-native IDE designed for builders.{'\n'}Full shell access, Docker, and zero-latency preview.
           </Text>
         </View>
 
-        {/* Feature Grid alternative */}
-        <View style={styles.grid}>
+        {/* Visual Cue - Cards like the image */}
+        <View style={styles.featureGrid}>
           {[
-            { icon: 'terminal', label: 'Real Terminal', sub: 'Low latency streaming' },
-            { icon: 'logo-github', label: 'GitHub Sync', sub: 'Instant repo import' },
-            { icon: 'cube-outline', label: 'Sandboxed', sub: 'Isolated Docker nodes' },
-            { icon: 'flash-outline', label: 'Fast Preview', sub: 'Hot reloading tunnel' },
-          ].map(({ icon, label, sub }) => (
-            <View key={label} style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={[styles.gridIcon, { backgroundColor: colors.background }]}>
-                <Ionicons name={icon as any} size={22} color={colors.primary} />
+            { icon: Terminal, label: 'Terminal', sub: 'Streaming Shell', color: '#10b981' },
+            { icon: Box, label: 'Docker', sub: 'Isolated Nodes', color: '#3b82f6' },
+            { icon: Zap, label: 'Preview', sub: 'Hot Reloading', color: '#f59e0b' },
+          ].map((item, idx) => (
+            <View key={idx} style={[styles.featureCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.iconBox, { backgroundColor: item.color + '15' }]}>
+                <item.icon size={20} color={item.color} strokeWidth={2.5} />
               </View>
               <View>
-                <Text style={[styles.gridLabel, { color: colors.text }]}>{label}</Text>
-                <Text style={[styles.gridSub, { color: colors.textSecondary }]}>{sub}</Text>
+                <Text style={[styles.featureLabel, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>{item.label}</Text>
+                <Text style={[styles.featureSub, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>{item.sub}</Text>
               </View>
             </View>
           ))}
@@ -108,23 +107,27 @@ export default function WelcomeScreen() {
         {/* Action area */}
         <View style={styles.actionArea}>
           <TouchableOpacity
-            style={[styles.githubBtn, signingIn && styles.githubBtnDisabled]}
+            style={[styles.primaryBtn, { backgroundColor: colors.primary }, signingIn && styles.btnDisabled]}
             onPress={signInWithGitHub}
             disabled={signingIn}
-            activeOpacity={0.85}
+            activeOpacity={0.9}
           >
             {signingIn ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.background} />
             ) : (
               <>
-                <Ionicons name="logo-github" size={24} color="#fff" />
-                <Text style={styles.githubBtnText}>Continue with GitHub</Text>
+                <Text style={[styles.primaryBtnText, { color: colors.background, fontFamily: 'Inter_700Bold' }]}>Connect with GitHub</Text>
+                <Github size={20} color={colors.background} strokeWidth={2.5} />
               </>
             )}
           </TouchableOpacity>
 
-          <Text style={[styles.terms, { color: colors.textSecondary }]}>
-            Secure. Private. Open Source.{'\n'}By signing in, you agree to our <Text style={{ color: colors.primary, fontWeight: '700' }}>Terms</Text>.
+          <TouchableOpacity style={styles.secondaryBtn} activeOpacity={0.7}>
+            <Text style={[styles.secondaryBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Explore Projects</Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.terms, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+            By continuing, you agree to our Terms of Service.{'\n'}Secure OAuth via GitHub.
           </Text>
         </View>
       </ScrollView>
@@ -135,121 +138,102 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: height * 0.12,
+    paddingHorizontal: 32,
+    paddingTop: 60,
     paddingBottom: 60,
   },
-  orb1: {
-    position: 'absolute',
-    width: width * 1.2,
-    height: width * 1.2,
-    borderRadius: width * 0.6,
-    top: -width * 0.4,
-    right: -width * 0.3,
+  header: {
+    marginBottom: 60,
   },
-  orb2: {
-    position: 'absolute',
-    width: width * 1,
-    height: width * 1,
-    borderRadius: width * 0.5,
-    bottom: -width * 0.2,
-    left: -width * 0.4,
-  },
-  hero: {
+  logoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 48,
-  },
-  logoContainer: {
-    width: 84,
-    height: 84,
-    borderRadius: 28,
-    alignItems: 'center',
+    gap: 8,
     justifyContent: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
   },
   logoText: {
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: 20,
-    opacity: 0.8,
+    fontSize: 20,
+    letterSpacing: -0.5,
   },
-  tagline: {
-    fontSize: 34,
-    fontWeight: '900',
-    textAlign: 'center',
-    lineHeight: 42,
-    letterSpacing: -1,
-    marginBottom: 16,
-  },
-  sub: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    opacity: 0.8,
-    fontWeight: '500',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+  hero: {
     marginBottom: 48,
   },
-  gridItem: {
-    width: (width - 56 - 12) / 2,
-    padding: 16,
-    borderRadius: 24,
-    borderWidth: 1,
-    gap: 12,
+  tagline: {
+    fontSize: 38,
+    lineHeight: 46,
+    letterSpacing: -1.5,
+    marginBottom: 16,
+    textAlign: 'center',
   },
-  gridIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  sub: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 24,
+    opacity: 0.7,
+  },
+  featureGrid: {
+    gap: 12,
+    marginBottom: 64,
+  },
+  featureCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 16,
+  },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gridLabel: { fontSize: 16, fontWeight: '800' },
-  gridSub: { fontSize: 12, opacity: 0.7, fontWeight: '500' },
+  featureLabel: {
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  featureSub: {
+    fontSize: 12,
+    opacity: 0.6,
+  },
   actionArea: {
     width: '100%',
     alignItems: 'center',
+    gap: 16,
   },
-  githubBtn: {
+  primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    backgroundColor: '#000',
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 24,
-    width: '100%',
     justifyContent: 'center',
-    marginBottom: 24,
+    gap: 12,
+    paddingVertical: 18,
+    borderRadius: 18,
+    width: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  githubBtnDisabled: { opacity: 0.6 },
-  githubBtnText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#ffffff',
+  btnDisabled: { opacity: 0.7 },
+  primaryBtnText: {
+    fontSize: 16,
+  },
+  secondaryBtn: {
+    paddingVertical: 12,
+  },
+  secondaryBtnText: {
+    fontSize: 15,
+    opacity: 0.8,
   },
   terms: {
-    fontSize: 13,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 20,
-    opacity: 0.6,
+    lineHeight: 18,
+    marginTop: 20,
+    opacity: 0.5,
   },
 })
 

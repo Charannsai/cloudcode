@@ -1,23 +1,21 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Dimensions,
+  KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native'
 import { useTerminal } from '@/hooks/useTerminal'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Ionicons } from '@expo/vector-icons'
+import { Terminal as TerminalIcon, StopCircle, Trash2, ChevronRight, ArrowUp } from 'lucide-react-native'
 
 interface Props {
   projectId: string
 }
 
 const QUICK_COMMANDS = [
-  'npx serve .',
   'npm install',
   'npm run dev',
   'ls -la',
   'git status',
-  'git pull',
   'node index.js',
   'clear',
 ]
@@ -44,25 +42,32 @@ export default function TerminalTab({ projectId }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: isDark ? '#121212' : '#f0f0f0' }]}
+      style={[styles.container, { backgroundColor: isDark ? '#000' : '#f9fafb' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={120}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
     >
       {/* Status bar */}
       <View style={[styles.statusBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={[styles.connDot, { backgroundColor: connected ? '#22c55e' : '#ef4444' }]} />
-        <Text style={[styles.connText, { color: colors.textSecondary }]}>
-          {connected ? 'Cloud Shell' : error ? 'Disconnected' : 'Connecting...'}
-        </Text>
+        <View style={styles.statusLeft}>
+          <TerminalIcon size={14} color={connected ? '#10b981' : colors.textSecondary} strokeWidth={2.5} />
+          <Text style={[styles.statusText, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+            {connected ? 'MAIN_SHELL' : 'CONNECTING...'}
+          </Text>
+        </View>
         <View style={styles.statusActions}>
           <TouchableOpacity 
             onPress={() => sendInput('\x03')} 
-            style={[styles.miniBtn, { borderColor: colors.error + '40' }]}
+            style={[styles.actionBtn, { backgroundColor: colors.background }]}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.miniBtnText, { color: colors.error }]}>STOP (⌃C)</Text>
+            <StopCircle size={14} color={colors.error} strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={clear} style={[styles.miniBtn, { borderColor: colors.border }]}>
-            <Text style={[styles.miniBtnText, { color: colors.textSecondary }]}>Clear</Text>
+          <TouchableOpacity 
+            onPress={clear} 
+            style={[styles.actionBtn, { backgroundColor: colors.background }]}
+            activeOpacity={0.7}
+          >
+            <Trash2 size={14} color={colors.textSecondary} strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -76,26 +81,29 @@ export default function TerminalTab({ projectId }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         {!connected && !error && (
-          <Text style={[styles.connectingText, { color: colors.textSecondary }]}>Initializing secure tunnel...</Text>
+          <View style={styles.centerLoading}>
+            <ActivityIndicator color={colors.textSecondary} size="small" />
+            <Text style={[styles.connectingText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>Initializing secure tunnel...</Text>
+          </View>
         )}
         {output ? (
-          <Text style={[styles.output, { color: isDark ? '#e0e0e0' : '#1a1a1a' }]} selectable>
+          <Text style={[styles.output, { color: isDark ? '#e5e7eb' : '#111827', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
             {output}
+            {connected && <Text style={{ color: colors.primary }}>█</Text>}
           </Text>
         ) : connected ? (
-          <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>
-            Terminal ready. Type a command or use shortcuts below.
+          <Text style={[styles.placeholderText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
+            Node environment ready.
           </Text>
         ) : null}
-        <Text style={[styles.cursor, { color: colors.primary }]}>{connected ? '█' : ''}</Text>
       </ScrollView>
 
-      {/* Quick commands */}
-      <View style={{ backgroundColor: colors.card }}>
+      {/* Input row */}
+      <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={[styles.quickScroll, { borderTopColor: colors.border }]}
+          style={styles.quickScroll}
           contentContainerStyle={styles.quickContent}
           keyboardShouldPersistTaps="always"
         >
@@ -104,22 +112,22 @@ export default function TerminalTab({ projectId }: Props) {
               key={cmd}
               style={[styles.quickCmd, { backgroundColor: colors.background, borderColor: colors.border }]}
               onPress={() => runQuick(cmd)}
+              activeOpacity={0.8}
             >
-              <Text style={[styles.quickCmdText, { color: colors.primary }]}>{cmd}</Text>
+              <Text style={[styles.quickCmdText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>{cmd}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* Input row */}
-        <View style={[styles.inputRow, { borderTopColor: colors.border }]}>
-          <Ionicons name="chevron-forward" size={18} color={colors.success} />
+        <View style={styles.inputRow}>
+          <ChevronRight size={18} color="#10b981" strokeWidth={3} />
           <TextInput
-            style={[styles.input, { color: colors.text }]}
+            style={[styles.input, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={submit}
-            placeholder="Run command..."
-            placeholderTextColor={colors.textSecondary + '80'}
+            placeholder="Type a command..."
+            placeholderTextColor={colors.textSecondary + '60'}
             returnKeyType="send"
             autoCapitalize="none"
             autoCorrect={false}
@@ -127,11 +135,14 @@ export default function TerminalTab({ projectId }: Props) {
             blurOnSubmit={false}
           />
           <TouchableOpacity 
-            style={[styles.sendBtn, { backgroundColor: inputText.trim() ? colors.primary : colors.textSecondary + '40' }]} 
+            style={[
+              styles.sendBtn, 
+              { backgroundColor: inputText.trim() ? colors.primary : colors.background }
+            ]} 
             onPress={submit}
             disabled={!inputText.trim()}
           >
-            <Ionicons name="arrow-up" size={20} color="#fff" />
+            <ArrowUp size={18} color={inputText.trim() ? colors.background : colors.textSecondary} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </View>
@@ -144,68 +155,78 @@ const styles = StyleSheet.create({
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
+  },
+  statusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
-  connDot: { width: 4, height: 4, borderRadius: 4 },
-  connText: { fontSize: 13, fontWeight: '700', flex: 1 },
-  statusActions: { flexDirection: 'row', gap: 8 },
-  miniBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  statusText: { 
+    fontSize: 10, 
+    letterSpacing: 1,
+  },
+  statusActions: { 
+    flexDirection: 'row', 
+    gap: 8,
+  },
+  actionBtn: {
+    width: 28,
+    height: 28,
     borderRadius: 8,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  miniBtnText: { fontSize: 11, fontWeight: '800' },
   outputArea: { flex: 1 },
-  outputContent: { padding: 16, paddingBottom: 24 },
-  connectingText: { fontSize: 14, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
-  output: {
-    fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    lineHeight: 22,
+  outputContent: { padding: 16, paddingBottom: 40 },
+  centerLoading: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 12,
   },
-  placeholderText: { fontSize: 14, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', opacity: 0.6 },
-  cursor: { fontSize: 14, marginTop: 4 },
-  quickScroll: {
-    maxHeight: 56,
+  connectingText: { fontSize: 13, opacity: 0.6 },
+  output: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  placeholderText: { fontSize: 13, opacity: 0.4 },
+  inputContainer: {
     borderTopWidth: 1,
+  },
+  quickScroll: {
+    paddingVertical: 10,
   },
   quickContent: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 10,
-    alignItems: 'center',
+    gap: 8,
   },
   quickCmd: {
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
-  quickCmdText: { fontSize: 13, fontWeight: '700', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
+  quickCmdText: { fontSize: 11 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
+    paddingTop: 4,
     gap: 12,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontSize: 15,
     paddingVertical: 8,
   },
   sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
