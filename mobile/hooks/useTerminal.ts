@@ -18,6 +18,16 @@ interface UseTerminalReturn {
   clear: () => void
 }
 
+/**
+ * Filter terminal control characters (ANSI codes).
+ * This makes the output "clean" for basic text components.
+ */
+function stripAnsi(text: string): string {
+  // Regex for most ANSI escape sequences including colors, movements, and erasures
+  const ansiRegex = /[\u001b\u009b][[[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+  return text.replace(ansiRegex, '');
+}
+
 export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerminalReturn {
   const [output, setOutput] = useState('')
   const [connected, setConnected] = useState(false)
@@ -43,16 +53,23 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
       ws.onmessage = (event) => {
         try {
           const msg: TerminalMessage = JSON.parse(event.data)
-          if (msg.type === 'output' && msg.data) {
-            setOutput((prev) => prev + msg.data)
+          if (msg.type === 'output' && typeof msg.data === 'string') {
+            const data = msg.data;
+            // Check for clear screen code (ESC[2J or \f)
+            if (data.includes('\u001b[2J') || data.includes('\u001b[H')) {
+              setOutput(stripAnsi(data))
+            } else {
+              setOutput((prev) => prev + stripAnsi(data))
+            }
           } else if (msg.type === 'ready') {
             onReady?.()
           } else if (msg.type === 'error') {
             setError(msg.message || 'Terminal error')
           }
         } catch {
-          // Non-JSON message
-          setOutput((prev) => prev + event.data)
+          // Non-JSON message?
+          const data = typeof event.data === 'string' ? event.data : ''
+          setOutput((prev) => prev + stripAnsi(data))
         }
       }
 
@@ -88,3 +105,4 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
 
   return { output, connected, error, sendInput, resize, clear }
 }
+

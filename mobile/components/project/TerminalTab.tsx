@@ -12,6 +12,7 @@ interface Props {
 }
 
 const QUICK_COMMANDS = [
+  'npx serve .',
   'npm install',
   'npm run dev',
   'ls -la',
