@@ -25,8 +25,8 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
 
   // The catch-all route: /api/preview/[id]/ will serve root HTML,
   // and /api/preview/[id]/style.css will serve CSS, etc.
-  const baseUrl = `${API_URL}/api/preview/${projectId}`
-  const previewUrl = `${baseUrl}/?port=${activePort}&token=${token}`
+  const baseUrl = `${API_URL}/api/preview/${projectId}/`
+  const previewUrl = `${baseUrl}?port=${activePort}&token=${token}`
 
   const handleRefresh = () => {
     setActivePort(port)
@@ -45,7 +45,7 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
         base = document.createElement('base');
         document.head.prepend(base);
       }
-      base.href = '${baseUrl}/?port=${activePort}&token=${token}&_=';
+      base.href = '${baseUrl}?port=${activePort}&token=${token}&_=';
       true;
     })();
   `
