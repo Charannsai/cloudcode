@@ -82,9 +82,14 @@ const startServer = async () => {
     }
 
     try {
+      // Get project name for the prompt
+      const { data: projDetails } = await supabaseAdmin.from('projects').select('name').eq('id', projectId).single()
+      const projectName = projDetails?.name || 'workspace'
+
       const container = docker.getContainer(project.container_id)
       const exec = await container.exec({
-        Cmd: ['/bin/sh'],
+        // Use sh with custom prompt and Env
+        Cmd: ['/bin/sh', '-c', `export PS1="${projectName} # "; exec /bin/sh`],
         AttachStdin: true,
         AttachStdout: true,
         AttachStderr: true,
