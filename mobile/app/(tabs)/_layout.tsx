@@ -1,24 +1,30 @@
 import { Tabs } from 'expo-router'
-import { Text } from 'react-native'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { Ionicons } from '@expo/vector-icons'
 
 export default function TabsLayout() {
+  const { colors } = useAppTheme()
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0e0e1a',
-          borderTopColor: '#ffffff12',
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 88,
-          paddingBottom: 24,
-          paddingTop: 10,
+          height: 90,
+          paddingBottom: 30,
+          paddingTop: 12,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        tabBarActiveTintColor: '#7c6bff',
-        tabBarInactiveTintColor: '#4a4a6a',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
+          fontSize: 12,
+          fontWeight: '700',
+          marginTop: 4,
         },
       }}
     >
@@ -26,16 +32,21 @@ export default function TabsLayout() {
         name="projects"
         options={{
           title: 'Projects',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>📁</Text>,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "folder-open" : "folder-outline"} size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>⚙️</Text>,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "settings" : "settings-outline"} size={22} color={color} />
+          ),
         }}
       />
     </Tabs>
   )
 }
+

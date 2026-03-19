@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Dimensions,
+  ActivityIndicator, Dimensions, ScrollView, Platform,
 } from 'react-native'
 import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { useAuthStore } from '@/store/auth'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { Ionicons } from '@expo/vector-icons'
+import { StatusBar } from 'expo-status-bar'
 
-const { width } = Dimensions.get('window')
+const { width, height } = Dimensions.get('window')
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default function WelcomeScreen() {
   const { user, loading } = useAuthStore()
+  const { colors, isDark } = useAppTheme()
   const router = useRouter()
   const [signingIn, setSigningIn] = useState(false)
 
@@ -25,15 +29,12 @@ export default function WelcomeScreen() {
   async function signInWithGitHub() {
     setSigningIn(true)
     try {
-      // 1. Get our actual dynamic deep link (e.g. exp://... in Expo Go)
       const expoDeepLink = Linking.createURL('/auth')
-      
-      // 2. Pass it to our backend so it knows where to redirect back after GitHub login
       const githubOAuthUrl = `${API_URL}/api/auth/github?redirect_uri=${encodeURIComponent(expoDeepLink)}`
 
       const result = await WebBrowser.openAuthSessionAsync(
         githubOAuthUrl,
-        'cloudcode://auth', // fallback scheme
+        'cloudcode://auth',
         {
           showInRecents: true,
           preferEphemeralSession: false,
@@ -41,7 +42,6 @@ export default function WelcomeScreen() {
       )
 
       if (result.type === 'success' && result.url) {
-        // The URL is handled by our backend redirect
         Linking.openURL(result.url)
       }
     } catch (err) {
@@ -53,188 +53,203 @@ export default function WelcomeScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator color="#7c6bff" size="large" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      
       {/* Background orbs */}
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
+      <View style={[styles.orb1, { backgroundColor: colors.primary + '15' }]} />
+      <View style={[styles.orb2, { backgroundColor: colors.accent + '10' }]} />
 
-      {/* Hero */}
-      <View style={styles.hero}>
-        <View style={styles.logoRow}>
-          <Text style={styles.logoEmoji}>☁️</Text>
-          <Text style={styles.logoText}>CloudCode</Text>
-        </View>
-        <Text style={styles.tagline}>
-          Your dev environment,{'\n'}always in your pocket.
-        </Text>
-        <Text style={styles.sub}>
-          Full terminal. Live preview. Real projects.{'\n'}From your phone.
-        </Text>
-      </View>
-
-      {/* Feature pills */}
-      <View style={styles.features}>
-        {[
-          { icon: '📦', label: 'Isolated containers per project' },
-          { icon: '⚡', label: 'Live terminal streaming' },
-          { icon: '🌐', label: 'In-app live preview' },
-          { icon: '🐙', label: 'Import any GitHub repo' },
-        ].map(({ icon, label }) => (
-          <View key={label} style={styles.featureRow}>
-            <Text style={styles.featureIcon}>{icon}</Text>
-            <Text style={styles.featureLabel}>{label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* GitHub Sign In */}
-      <TouchableOpacity
-        style={[styles.githubBtn, signingIn && styles.githubBtnDisabled]}
-        onPress={signInWithGitHub}
-        disabled={signingIn}
-        activeOpacity={0.85}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {signingIn ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Text style={styles.githubIcon}>🐙</Text>
-            <Text style={styles.githubBtnText}>Continue with GitHub</Text>
-          </>
-        )}
-      </TouchableOpacity>
+        {/* Hero Section */}
+        <View style={styles.hero}>
+          <View style={[styles.logoContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Ionicons name="cloud" size={40} color={colors.primary} />
+          </View>
+          <Text style={[styles.logoText, { color: colors.text }]}>CloudCode</Text>
+          <Text style={[styles.tagline, { color: colors.text }]}>
+            Develop anywhere.{'\n'}Deploy everywhere.
+          </Text>
+          <Text style={[styles.sub, { color: colors.textSecondary }]}>
+            The first IDE built for mobile first.{'\n'}Full shell access, live preview, and Docker control.
+          </Text>
+        </View>
 
-      {signingIn && (
-        <Text style={styles.signingInHint}>
-          Opening GitHub in your browser...
-        </Text>
-      )}
+        {/* Feature Grid alternative */}
+        <View style={styles.grid}>
+          {[
+            { icon: 'terminal', label: 'Real Terminal', sub: 'Low latency streaming' },
+            { icon: 'logo-github', label: 'GitHub Sync', sub: 'Instant repo import' },
+            { icon: 'cube-outline', label: 'Sandboxed', sub: 'Isolated Docker nodes' },
+            { icon: 'flash-outline', label: 'Fast Preview', sub: 'Hot reloading tunnel' },
+          ].map(({ icon, label, sub }) => (
+            <View key={label} style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.gridIcon, { backgroundColor: colors.background }]}>
+                <Ionicons name={icon as any} size={22} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={[styles.gridLabel, { color: colors.text }]}>{label}</Text>
+                <Text style={[styles.gridSub, { color: colors.textSecondary }]}>{sub}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
 
-      <Text style={styles.terms}>
-        By continuing you agree to our Terms of Service
-      </Text>
+        {/* Action area */}
+        <View style={styles.actionArea}>
+          <TouchableOpacity
+            style={[styles.githubBtn, signingIn && styles.githubBtnDisabled]}
+            onPress={signInWithGitHub}
+            disabled={signingIn}
+            activeOpacity={0.85}
+          >
+            {signingIn ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="logo-github" size={24} color="#fff" />
+                <Text style={styles.githubBtnText}>Continue with GitHub</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <Text style={[styles.terms, { color: colors.textSecondary }]}>
+            Secure. Private. Open Source.{'\n'}By signing in, you agree to our <Text style={{ color: colors.primary, fontWeight: '700' }}>Terms</Text>.
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0a0f',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+  container: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 28,
+    paddingTop: height * 0.12,
+    paddingBottom: 60,
   },
   orb1: {
     position: 'absolute',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: '#7c6bff18',
-    top: -100,
-    right: -100,
+    width: width * 1.2,
+    height: width * 1.2,
+    borderRadius: width * 0.6,
+    top: -width * 0.4,
+    right: -width * 0.3,
   },
   orb2: {
     position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: '#00d4ff12',
-    bottom: 80,
-    left: -80,
+    width: width * 1,
+    height: width * 1,
+    borderRadius: width * 0.5,
+    bottom: -width * 0.2,
+    left: -width * 0.4,
   },
   hero: {
     alignItems: 'center',
-    marginBottom: 44,
+    marginBottom: 48,
   },
-  logoRow: {
-    flexDirection: 'row',
+  logoContainer: {
+    width: 84,
+    height: 84,
+    borderRadius: 28,
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 22,
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  logoEmoji: { fontSize: 38 },
   logoText: {
-    fontSize: 38,
-    fontWeight: '800',
-    color: '#ffffff',
-    letterSpacing: -1.5,
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 20,
+    opacity: 0.8,
   },
   tagline: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontSize: 34,
+    fontWeight: '900',
     textAlign: 'center',
-    lineHeight: 36,
-    marginBottom: 14,
+    lineHeight: 42,
+    letterSpacing: -1,
+    marginBottom: 16,
   },
   sub: {
-    fontSize: 15,
-    color: '#6a6a8a',
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
+    opacity: 0.8,
+    fontWeight: '500',
   },
-  features: {
-    width: '100%',
-    backgroundColor: '#0e0e1a',
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
-    marginBottom: 28,
-    borderWidth: 1,
-    borderColor: '#ffffff0d',
-  },
-  featureRow: {
+  grid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 48,
   },
-  featureIcon: { fontSize: 22 },
-  featureLabel: { fontSize: 15, color: '#b0b0c0', fontWeight: '500' },
+  gridItem: {
+    width: (width - 56 - 12) / 2,
+    padding: 16,
+    borderRadius: 24,
+    borderWidth: 1,
+    gap: 12,
+  },
+  gridIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gridLabel: { fontSize: 16, fontWeight: '800' },
+  gridSub: { fontSize: 12, opacity: 0.7, fontWeight: '500' },
+  actionArea: {
+    width: '100%',
+    alignItems: 'center',
+  },
   githubBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#24292e',
-    paddingVertical: 17,
+    gap: 14,
+    backgroundColor: '#000',
+    paddingVertical: 18,
     paddingHorizontal: 32,
-    borderRadius: 16,
+    borderRadius: 24,
     width: '100%',
     justifyContent: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#ffffff20',
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
-    minHeight: 56,
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 12,
   },
   githubBtnDisabled: { opacity: 0.6 },
-  githubIcon: { fontSize: 22 },
   githubBtnText: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: '#ffffff',
   },
-  signingInHint: {
-    color: '#5a5a7a',
-    fontSize: 13,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
   terms: {
-    fontSize: 12,
-    color: '#3a3a5a',
+    fontSize: 13,
     textAlign: 'center',
-    marginTop: 4,
+    lineHeight: 20,
+    opacity: 0.6,
   },
 })
+

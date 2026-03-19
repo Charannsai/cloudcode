@@ -4,17 +4,16 @@ import {
   KeyboardAvoidingView, Platform, Dimensions,
 } from 'react-native'
 import { useTerminal } from '@/hooks/useTerminal'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { Ionicons } from '@expo/vector-icons'
 
 interface Props {
   projectId: string
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window')
-
 const QUICK_COMMANDS = [
   'npm install',
   'npm run dev',
-  'npm start',
   'ls -la',
   'git status',
   'git pull',
@@ -24,10 +23,10 @@ const QUICK_COMMANDS = [
 
 export default function TerminalTab({ projectId }: Props) {
   const { output, connected, error, sendInput, clear } = useTerminal({ projectId })
+  const { colors, isDark } = useAppTheme()
   const [inputText, setInputText] = useState('')
   const scrollRef = useRef<ScrollView>(null)
 
-  // Auto-scroll to bottom when output changes
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: false })
   }, [output])
@@ -44,27 +43,20 @@ export default function TerminalTab({ projectId }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: isDark ? '#121212' : '#f0f0f0' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={120}
     >
       {/* Status bar */}
-      <View style={styles.statusBar}>
+      <View style={[styles.statusBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={[styles.connDot, { backgroundColor: connected ? '#22c55e' : '#ef4444' }]} />
-        <Text style={styles.connText}>{connected ? 'Connected' : error ? 'Error' : 'Connecting...'}</Text>
-        <View style={styles.statusActions}>
-          <TouchableOpacity onPress={clear} style={styles.actionBtn}>
-            <Text style={styles.actionBtnText}>Clear</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.connText, { color: colors.textSecondary }]}>
+          {connected ? 'Cloud Shell Active' : error ? 'Disconnected' : 'Connecting...'}
+        </Text>
+        <TouchableOpacity onPress={clear} style={[styles.actionBtn, { backgroundColor: colors.background }]}>
+          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>Clear</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Error banner */}
-      {error && (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
-        </View>
-      )}
 
       {/* Terminal output */}
       <ScrollView
@@ -75,167 +67,134 @@ export default function TerminalTab({ projectId }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         {!connected && !error && (
-          <Text style={styles.connectingText}>Connecting to terminal...</Text>
+          <Text style={[styles.connectingText, { color: colors.textSecondary }]}>Initializing secure tunnel...</Text>
         )}
         {output ? (
-          <Text style={styles.output} selectable>
+          <Text style={[styles.output, { color: isDark ? '#e0e0e0' : '#1a1a1a' }]} selectable>
             {output}
           </Text>
         ) : connected ? (
-          <Text style={styles.placeholderText}>
-            Terminal ready. Type a command or use quick commands below.
+          <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>
+            Terminal ready. Type a command or use shortcuts below.
           </Text>
         ) : null}
-        <Text style={styles.cursor}>{connected ? '█' : ''}</Text>
+        <Text style={[styles.cursor, { color: colors.primary }]}>{connected ? '█' : ''}</Text>
       </ScrollView>
 
       {/* Quick commands */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.quickScroll}
-        contentContainerStyle={styles.quickContent}
-        keyboardShouldPersistTaps="always"
-      >
-        {QUICK_COMMANDS.map((cmd) => (
-          <TouchableOpacity
-            key={cmd}
-            style={styles.quickCmd}
-            onPress={() => runQuick(cmd)}
-          >
-            <Text style={styles.quickCmdText}>{cmd}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={{ backgroundColor: colors.card }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={[styles.quickScroll, { borderTopColor: colors.border }]}
+          contentContainerStyle={styles.quickContent}
+          keyboardShouldPersistTaps="always"
+        >
+          {QUICK_COMMANDS.map((cmd) => (
+            <TouchableOpacity
+              key={cmd}
+              style={[styles.quickCmd, { backgroundColor: colors.background, borderColor: colors.border }]}
+              onPress={() => runQuick(cmd)}
+            >
+              <Text style={[styles.quickCmdText, { color: colors.primary }]}>{cmd}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-      {/* Input row */}
-      <View style={styles.inputRow}>
-        <Text style={styles.prompt}>$</Text>
-        <TextInput
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-          onSubmitEditing={submit}
-          placeholder="enter command..."
-          placeholderTextColor="#2a2a4a"
-          returnKeyType="send"
-          autoCapitalize="none"
-          autoCorrect={false}
-          spellCheck={false}
-          blurOnSubmit={false}
-        />
-        <TouchableOpacity style={styles.sendBtn} onPress={submit}>
-          <Text style={styles.sendBtnText}>↵</Text>
-        </TouchableOpacity>
+        {/* Input row */}
+        <View style={[styles.inputRow, { borderTopColor: colors.border }]}>
+          <Ionicons name="chevron-forward" size={18} color={colors.success} />
+          <TextInput
+            style={[styles.input, { color: colors.text }]}
+            value={inputText}
+            onChangeText={setInputText}
+            onSubmitEditing={submit}
+            placeholder="Run command..."
+            placeholderTextColor={colors.textSecondary + '80'}
+            returnKeyType="send"
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity 
+            style={[styles.sendBtn, { backgroundColor: inputText.trim() ? colors.primary : colors.textSecondary + '40' }]} 
+            onPress={submit}
+            disabled={!inputText.trim()}
+          >
+            <Ionicons name="arrow-up" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#080810',
-  },
+  container: { flex: 1 },
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: '#0c0c18',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ffffff08',
-    gap: 8,
+    gap: 10,
   },
-  connDot: { width: 8, height: 8, borderRadius: 4 },
-  connText: { color: '#4a4a6a', fontSize: 12, flex: 1 },
-  statusActions: { flexDirection: 'row', gap: 8 },
+  connDot: { width: 4, height: 4, borderRadius: 4 },
+  connText: { fontSize: 13, fontWeight: '700', flex: 1 },
   actionBtn: {
-    backgroundColor: '#1c1c2e',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  actionBtnText: { color: '#6a6a8a', fontSize: 12 },
-  errorBanner: {
-    backgroundColor: '#ef444420',
-    padding: 10,
-    margin: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ef444440',
   },
-  errorText: { color: '#ef4444', fontSize: 12 },
+  actionBtnText: { fontSize: 12, fontWeight: '700' },
   outputArea: { flex: 1 },
-  outputContent: { padding: 14, paddingBottom: 8 },
-  connectingText: { color: '#3a3a5a', fontSize: 13, fontFamily: 'monospace' },
+  outputContent: { padding: 16, paddingBottom: 24 },
+  connectingText: { fontSize: 14, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
   output: {
-    color: '#c8d3e0',
-    fontSize: 13,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    lineHeight: 20,
-    letterSpacing: 0.2,
-  },
-  placeholderText: { color: '#2a2a4a', fontSize: 13, fontFamily: 'monospace' },
-  cursor: {
-    color: '#7c6bff',
     fontSize: 14,
-    marginTop: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    lineHeight: 22,
   },
+  placeholderText: { fontSize: 14, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', opacity: 0.6 },
+  cursor: { fontSize: 14, marginTop: 4 },
   quickScroll: {
-    maxHeight: 48,
+    maxHeight: 56,
     borderTopWidth: 1,
-    borderTopColor: '#ffffff08',
   },
   quickContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
     alignItems: 'center',
   },
   quickCmd: {
-    backgroundColor: '#151525',
     borderWidth: 1,
-    borderColor: '#ffffff10',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
   },
-  quickCmdText: {
-    color: '#7c9aff',
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
+  quickCmdText: { fontSize: 13, fontWeight: '700', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0e0e1a',
-    borderTopWidth: 1,
-    borderTopColor: '#ffffff10',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 10,
-  },
-  prompt: {
-    color: '#22c55e',
-    fontSize: 16,
-    fontFamily: 'monospace',
-    fontWeight: '700',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
   },
   input: {
     flex: 1,
-    color: '#ffffff',
-    fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    paddingVertical: 6,
+    fontSize: 16,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    paddingVertical: 8,
   },
   sendBtn: {
-    width: 38,
-    height: 38,
-    backgroundColor: '#7c6bff',
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
 })
+
