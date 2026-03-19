@@ -30,14 +30,16 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     AttachStdin: true,
     AttachStdout: true,
     AttachStderr: true,
-    HostConfig: {
-      Binds: [`${hostPath}:${WORKSPACE_ROOT}`],
-      NetworkMode: 'bridge',
-      RestartPolicy: { Name: 'unless-stopped' },
-    },
     ExposedPorts: {
       '3000/tcp': {},
-      '8080/tcp': {},
+    },
+    HostConfig: {
+      Binds: [`${hostPath}:${WORKSPACE_ROOT}`],
+      PortBindings: {
+        '3000/tcp': [{ HostPort: '' }], // Map to a random host port
+      },
+      NetworkMode: 'bridge',
+      RestartPolicy: { Name: 'unless-stopped' },
     },
   })
 
