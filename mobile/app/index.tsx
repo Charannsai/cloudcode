@@ -24,14 +24,15 @@ export default function WelcomeScreen() {
   async function signInWithGitHub() {
     setSigningIn(true)
     try {
-      // Opens our backend which redirects to GitHub OAuth
-      // GitHub will redirect back to our backend callback
-      // which then deep-links cloudcode://auth?token=...
-      const githubOAuthUrl = `${API_URL}/api/auth/github`
+      // 1. Get our actual dynamic deep link (e.g. exp://... in Expo Go)
+      const expoDeepLink = Linking.createURL('/auth')
+      
+      // 2. Pass it to our backend so it knows where to redirect back after GitHub login
+      const githubOAuthUrl = `${API_URL}/api/auth/github?redirect_uri=${encodeURIComponent(expoDeepLink)}`
 
       const result = await WebBrowser.openAuthSessionAsync(
         githubOAuthUrl,
-        'cloudcode://auth', // redirect URL scheme to listen for
+        'cloudcode://auth', // fallback scheme
         {
           showInRecents: true,
           preferEphemeralSession: false,
@@ -39,8 +40,7 @@ export default function WelcomeScreen() {
       )
 
       if (result.type === 'success' && result.url) {
-        // The URL is cloudcode://auth?token=...
-        // The root _layout.tsx deep link listener will handle extracting the token
+        // The URL is handled by our backend redirect
         Linking.openURL(result.url)
       }
     } catch (err) {
