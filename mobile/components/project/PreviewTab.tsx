@@ -26,7 +26,7 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   // The catch-all route: /api/preview/[id]/ will serve root HTML,
   // and /api/preview/[id]/style.css will serve CSS, etc.
   const baseUrl = `${API_URL}/api/preview/${projectId}`
-  const previewUrl = `${baseUrl}/?port=${activePort}`
+  const previewUrl = `${baseUrl}/?port=${activePort}&token=${token}`
 
   const handleRefresh = () => {
     setActivePort(port)
@@ -37,16 +37,15 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   if (!token) return null
 
   // Inject a <base> tag so all relative URLs (./style.css, ./script.js)
-  // resolve through our catch-all proxy route
+  // resolve through our catch-all proxy route with the token
   const injectedJS = `
     (function() {
-      // Set base href so relative paths go through our proxy
       var base = document.querySelector('base');
       if (!base) {
         base = document.createElement('base');
         document.head.prepend(base);
       }
-      base.href = '${baseUrl}/?port=${activePort}&path=';
+      base.href = '${baseUrl}/?port=${activePort}&token=${token}&_=';
       true;
     })();
   `
