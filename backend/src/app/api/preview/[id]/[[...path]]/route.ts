@@ -65,6 +65,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const port = req.nextUrl.searchParams.get('port') || project.port || 3000
 
   // Build the sub-path from the catch-all segments
+  // Build the sub-path from the catch-all segments
   const subPath = '/' + (pathSegments?.join('/') || '')
 
   try {
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const contentType = response.headers.get('content-type') || 'application/octet-stream'
     const body = await response.arrayBuffer()
 
-    return new Response(body, {
+    const res = new Response(body, {
       status: response.status,
       headers: {
         'Content-Type': contentType,
@@ -90,6 +91,14 @@ export async function GET(req: NextRequest, { params }: Params) {
         'Cache-Control': 'no-cache',
       },
     })
+
+    // Persist session if token was provided in query
+    const tokenParam = req.nextUrl.searchParams.get('token')
+    if (tokenParam && user) {
+      res.headers.set('Set-Cookie', `preview_token=${tokenParam}; Path=/api/preview; HttpOnly; SameSite=Lax; Max-Age=3600`)
+    }
+
+    return res
   } catch (err) {
     console.error(`Preview proxy error [${subPath}]:`, err)
 

@@ -36,10 +36,19 @@ export function verifyToken(token: string): CloudCodeUser | null {
  * Returns null if missing or invalid.
  */
 export function getUserFromRequest(req: NextRequest): CloudCodeUser | null {
+  // Try Authorization header first
   const authHeader = req.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  const token = authHeader.slice(7)
-  return verifyToken(token)
+  if (authHeader?.startsWith('Bearer ')) {
+    return verifyToken(authHeader.slice(7))
+  }
+
+  // Fallback to 'preview_token' cookie (convenient for WebView proxy)
+  const cookie = req.cookies.get('preview_token')
+  if (cookie?.value) {
+    return verifyToken(cookie.value)
+  }
+
+  return null
 }
 
 export function errorResponse(message: string, status = 400) {
