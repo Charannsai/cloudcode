@@ -1,24 +1,31 @@
 import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'
-import { WebSocketServer } from 'ws'
-import { verifyToken } from './lib/auth'
-import { supabaseAdmin } from './lib/supabase'
-import Docker from 'dockerode'
+import { loadEnvConfig } from '@next/env'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
 const port = parseInt(process.env.PORT || '3000', 10)
 
-// Load Next.js app
-const app = next({ dev, hostname, port })
-const handle = app.getRequestHandler()
+// Load env vars from .env files!
+loadEnvConfig(process.cwd())
 
-const docker = new Docker({
-  socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock',
-})
+// Use dynamic imports to ensure they load AFTER env is populated
+const startServer = async () => {
+  const { WebSocketServer } = await import('ws')
+  const { verifyToken } = await import('./lib/auth')
+  const { supabaseAdmin } = await import('./lib/supabase')
+  const { default: Docker } = await import('dockerode')
 
-app.prepare().then(() => {
+  const app = next({ dev, hostname, port })
+  const handle = app.getRequestHandler()
+
+  const docker = new Docker({
+    socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock',
+  })
+
+  await app.prepare()
+
   const httpServer = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url!, true)
@@ -115,4 +122,10 @@ app.prepare().then(() => {
     console.log(`> Ready on http://${hostname}:${port}`)
     console.log(`> WebSocket terminal proxy active`)
   })
+}
+
+startServer().catch((err) => {
+  console.error('Failed to start server:', err)
+  process.exit(1)
 })
+
