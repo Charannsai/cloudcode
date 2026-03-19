@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { Ionicons } from '@expo/vector-icons'
+import { getToken } from '@/lib/auth'
 
 interface Props {
   projectId: string
@@ -15,7 +16,12 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   const { colors, isDark } = useAppTheme()
   const [port, setPort] = useState(initialPort.toString())
   const [activePort, setActivePort] = useState(initialPort.toString())
-  const [key, setKey] = useState(0) // Used to force reload WebView
+  const [token, setToken] = useState<string | null>(null)
+  const [key, setKey] = useState(0)
+
+  useEffect(() => {
+    getToken().then(setToken)
+  }, [])
 
   const previewUrl = `${API_URL}/api/preview/${projectId}?port=${activePort}`
 
@@ -25,9 +31,10 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
     Keyboard.dismiss()
   }
 
+  if (!token) return null
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Browser-like URL bar */}
       <View style={[styles.urlBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={[styles.addressBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Ionicons name="lock-closed" size={14} color={colors.success} />
@@ -51,23 +58,24 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
 
       <WebView
         key={key}
-        source={{ uri: previewUrl }}
+        source={{
+          uri: previewUrl,
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }}
         style={[styles.webView, { backgroundColor: '#fff' }]}
         renderLoading={() => (
           <View style={[styles.loading, { backgroundColor: colors.background }]}>
             <Text style={[styles.loadingText, { color: colors.primary }]}>Connecting to port {activePort}...</Text>
-            <Text style={[styles.loadingHint, { color: colors.textSecondary }]}>
-              Ensure your server is running in the Terminal first.
-            </Text>
           </View>
         )}
         renderError={() => (
           <View style={[styles.loading, { backgroundColor: colors.background }]}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
-            <Text style={[styles.errorTitle, { color: colors.text }]}>Side-car not responding</Text>
+            <Text style={[styles.errorTitle, { color: colors.text }]}>Service not responding</Text>
             <Text style={[styles.errorHint, { color: colors.textSecondary }]}>
-              Nothing is serving on port <Text style={{ color: colors.primary, fontWeight: '700' }}>{activePort}</Text> yet.{'\n'}
-              Try <Text style={{ color: colors.success, fontWeight: '700' }}>npx serve . -p {activePort}</Text> in Terminal.
+              Nothing is serving on port <Text style={{ color: colors.primary, fontWeight: '700' }}>{activePort}</Text> yet.
             </Text>
           </View>
         )}
@@ -123,8 +131,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: { fontSize: 16, fontWeight: '700' },
-  loadingHint: { fontSize: 14, textAlign: 'center', opacity: 0.7 },
   errorTitle: { fontSize: 18, fontWeight: '800', marginTop: 8 },
   errorHint: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
 })
+
 

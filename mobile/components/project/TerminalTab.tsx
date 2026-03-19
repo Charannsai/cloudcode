@@ -52,11 +52,19 @@ export default function TerminalTab({ projectId }: Props) {
       <View style={[styles.statusBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={[styles.connDot, { backgroundColor: connected ? '#22c55e' : '#ef4444' }]} />
         <Text style={[styles.connText, { color: colors.textSecondary }]}>
-          {connected ? 'Cloud Shell Active' : error ? 'Disconnected' : 'Connecting...'}
+          {connected ? 'Cloud Shell' : error ? 'Disconnected' : 'Connecting...'}
         </Text>
-        <TouchableOpacity onPress={clear} style={[styles.actionBtn, { backgroundColor: colors.background }]}>
-          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>Clear</Text>
-        </TouchableOpacity>
+        <View style={styles.statusActions}>
+          <TouchableOpacity 
+            onPress={() => sendInput('\x03')} 
+            style={[styles.miniBtn, { borderColor: colors.error + '40' }]}
+          >
+            <Text style={[styles.miniBtnText, { color: colors.error }]}>STOP (⌃C)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={clear} style={[styles.miniBtn, { borderColor: colors.border }]}>
+            <Text style={[styles.miniBtnText, { color: colors.textSecondary }]}>Clear</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Terminal output */}
@@ -143,12 +151,16 @@ const styles = StyleSheet.create({
   },
   connDot: { width: 4, height: 4, borderRadius: 4 },
   connText: { fontSize: 13, fontWeight: '700', flex: 1 },
-  actionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  statusActions: { flexDirection: 'row', gap: 8 },
+  miniBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  actionBtnText: { fontSize: 12, fontWeight: '700' },
+  miniBtnText: { fontSize: 11, fontWeight: '800' },
   outputArea: { flex: 1 },
   outputContent: { padding: 16, paddingBottom: 24 },
   connectingText: { fontSize: 14, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },

@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { FileNode } from '@/types'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { Ionicons } from '@expo/vector-icons'
 
 interface Props {
   projectId: string
@@ -13,30 +15,49 @@ function FileRow({ node, depth, onFilePress }: {
   depth: number
   onFilePress: (path: string) => void
 }) {
+  const { colors } = useAppTheme()
   const [expanded, setExpanded] = useState(depth < 2)
+
+  const isDir = node.type === 'directory'
 
   return (
     <View>
       <TouchableOpacity
-        style={[styles.fileRow, { paddingLeft: 16 + depth * 16 }]}
+        style={[
+          styles.fileRow, 
+          { paddingLeft: 20 + depth * 20, borderBottomColor: colors.border + '15' }
+        ]}
         onPress={() => {
-          if (node.type === 'directory') setExpanded((e) => !e)
+          if (isDir) setExpanded((e) => !e)
           else onFilePress(node.path)
         }}
-        activeOpacity={0.7}
+        activeOpacity={0.6}
       >
-        <Text style={styles.fileIcon}>
-          {node.type === 'directory' ? (expanded ? '📂' : '📁') : getFileIcon(node.name)}
-        </Text>
-        <Text style={[styles.fileName, node.type === 'directory' && styles.dirName]}>
+        <Ionicons 
+          name={isDir ? (expanded ? 'folder-open' : 'folder') : getIconName(node.name)} 
+          size={18} 
+          color={isDir ? colors.primary : colors.textSecondary} 
+        />
+        <Text style={[
+          styles.fileName, 
+          { color: isDir ? colors.text : colors.textSecondary },
+          isDir && styles.dirName
+        ]}>
           {node.name}
         </Text>
-        {node.size != null && (
-          <Text style={styles.fileSize}>{formatSize(node.size)}</Text>
+        {isDir && (
+          <Ionicons 
+            name={expanded ? "chevron-down" : "chevron-forward"} 
+            size={14} 
+            color={colors.textSecondary + '60'} 
+          />
+        )}
+        {!isDir && node.size != null && (
+          <Text style={[styles.fileSize, { color: colors.textSecondary + '40' }]}>{formatSize(node.size)}</Text>
         )}
       </TouchableOpacity>
 
-      {node.type === 'directory' && expanded && node.children?.map((child) => (
+      {isDir && expanded && node.children?.map((child) => (
         <FileRow key={child.path} node={child} depth={depth + 1} onFilePress={onFilePress} />
       ))}
     </View>
@@ -45,6 +66,7 @@ function FileRow({ node, depth, onFilePress }: {
 
 export default function FilesTab({ projectId }: Props) {
   const router = useRouter()
+  const { colors } = useAppTheme()
   const [files, setFiles] = useState<FileNode[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -69,8 +91,8 @@ export default function FilesTab({ projectId }: Props) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color="#7c6bff" />
-        <Text style={styles.loadingText}>Loading files...</Text>
+        <ActivityIndicator color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Indexing files...</Text>
       </View>
     )
   }
@@ -78,26 +100,31 @@ export default function FilesTab({ projectId }: Props) {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>⚠️ {error}</Text>
-        <TouchableOpacity onPress={fetchFiles} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Retry</Text>
+        <Ionicons name="alert-circle" size={40} color={colors.error} />
+        <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+        <TouchableOpacity onPress={fetchFiles} style={[styles.retryBtn, { backgroundColor: colors.card }]}>
+          <Text style={[styles.retryText, { color: colors.primary }]}>Try Again</Text>
         </TouchableOpacity>
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.toolbar}>
-        <Text style={styles.toolbarTitle}>File Explorer</Text>
-        <TouchableOpacity onPress={fetchFiles} style={styles.refreshBtn}>
-          <Text style={styles.refreshText}>↻ Refresh</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.toolbar, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.toolbarTitle, { color: colors.textSecondary }]}>FILE EXPLORER</Text>
+        <TouchableOpacity onPress={fetchFiles} style={[styles.refreshBtn, { backgroundColor: colors.card }]}>
+          <Ionicons name="refresh" size={14} color={colors.primary} />
+          <Text style={[styles.refreshText, { color: colors.primary }]}>Refresh</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
         {files.length === 0 ? (
           <View style={styles.centered}>
-            <Text style={styles.emptyText}>No files yet</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Project is empty</Text>
           </View>
         ) : (
           files.map((node) => (
@@ -115,64 +142,64 @@ export default function FilesTab({ projectId }: Props) {
   )
 }
 
-function getFileIcon(name: string): string {
-  if (name.endsWith('.js') || name.endsWith('.jsx')) return '🟡'
-  if (name.endsWith('.ts') || name.endsWith('.tsx')) return '🔷'
-  if (name.endsWith('.json')) return '📋'
-  if (name.endsWith('.md')) return '📝'
-  if (name.endsWith('.css')) return '🎨'
-  if (name.endsWith('.html')) return '🌐'
-  if (name.endsWith('.env')) return '🔒'
-  if (name === 'package.json') return '📦'
-  return '📄'
+function getIconName(name: string): any {
+  if (name.endsWith('.js') || name.endsWith('.jsx')) return 'logo-javascript'
+  if (name.endsWith('.ts') || name.endsWith('.tsx')) return 'document-text-outline'
+  if (name.endsWith('.json')) return 'settings-outline'
+  if (name.endsWith('.md')) return 'document-outline'
+  if (name.endsWith('.css')) return 'brush-outline'
+  if (name.endsWith('.html')) return 'code-slash'
+  if (name.endsWith('.env')) return 'key-outline'
+  if (name === 'package.json') return 'cube-outline'
+  return 'document-outline'
 }
 
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)}MB`
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1 },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ffffff08',
-  },
-  toolbarTitle: { color: '#5a5a7a', fontSize: 12, fontWeight: '600', letterSpacing: 0.5 },
-  refreshBtn: {
-    backgroundColor: '#1c1c2e',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  refreshText: { color: '#7c6bff', fontSize: 12, fontWeight: '600' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 12 },
-  loadingText: { color: '#4a4a6a', fontSize: 14 },
-  errorText: { color: '#ef4444', fontSize: 14 },
-  emptyText: { color: '#3a3a5a', fontSize: 14 },
-  retryBtn: {
-    backgroundColor: '#1c1c2e',
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
-  retryText: { color: '#7c6bff', fontWeight: '600' },
+  toolbarTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  refreshBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  refreshText: { fontSize: 12, fontWeight: '700' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 16 },
+  loadingText: { fontSize: 14, fontWeight: '600' },
+  errorText: { fontSize: 14, fontWeight: '600', textAlign: 'center', paddingHorizontal: 40 },
+  emptyText: { fontSize: 14, fontWeight: '500' },
+  retryBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  retryText: { fontWeight: '700' },
   fileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 14,
+    paddingRight: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ffffff05',
-    gap: 10,
+    gap: 12,
   },
-  fileIcon: { fontSize: 16 },
-  fileName: { flex: 1, color: '#b0b0c0', fontSize: 14 },
-  dirName: { color: '#d0d0e0', fontWeight: '600' },
-  fileSize: { color: '#3a3a5a', fontSize: 11 },
+  fileName: { flex: 1, fontSize: 15, fontWeight: '500' },
+  dirName: { fontWeight: '700' },
+  fileSize: { fontSize: 10, fontWeight: '600' },
 })
+
