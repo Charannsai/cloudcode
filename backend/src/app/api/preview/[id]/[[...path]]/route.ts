@@ -84,23 +84,35 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const response = await fetch(targetUrl, {
       headers: {
-        'X-Forwarded-For': req.headers.get('x-forwarded-for') || '127.0.0.1',
-        'X-Forwarded-Host': req.headers.get('host') || 'localhost',
         'Accept': req.headers.get('accept') || '*/*',
+        'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
       },
+      redirect: 'manual', // Intercept redirects
       signal: AbortSignal.timeout(8000),
     })
 
     const contentType = response.headers.get('content-type') || 'application/octet-stream'
     const body = await response.arrayBuffer()
 
+    const resHeaders = new Headers()
+    resHeaders.set('Content-Type', contentType)
+    resHeaders.set('Access-Control-Allow-Origin', '*')
+    resHeaders.set('Cache-Control', 'no-cache')
+
+    // Rewrite Location header for redirects
+    const location = response.headers.get('location')
+    if (location) {
+      // If it's a relative redirect (e.g. /dashboard)
+      if (location.startsWith('/')) {
+        resHeaders.set('Location', `/api/preview/${projectId}${location}`)
+      } else {
+        resHeaders.set('Location', location)
+      }
+    }
+
     const res = new Response(body, {
       status: response.status,
-      headers: {
-        'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-cache',
-      },
+      headers: resHeaders,
     })
 
     // 3. Set Session Cookies
