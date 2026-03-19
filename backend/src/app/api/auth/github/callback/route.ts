@@ -35,11 +35,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
+  const mobileRedirectOverride = searchParams.get('state') // retrieved app deep link (e.g. exp://...)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   // GitHub denied access
   if (error) {
-    return Response.redirect(`cloudcode://auth/error?message=${encodeURIComponent(error)}`)
+    const errorBase = mobileRedirectOverride || 'cloudcode://auth/error'
+    return Response.redirect(`${errorBase}?message=${encodeURIComponent(error)}`)
   }
 
   if (!code) {
@@ -123,8 +125,9 @@ export async function GET(req: NextRequest) {
     const appToken = signToken(cloudcodeUser)
 
     // ── Step 5: Redirect to mobile deep link ──────────────────────────────
-    // cloudcode://auth?token=<jwt>
-    const deepLink = `cloudcode://auth?token=${encodeURIComponent(appToken)}`
+    // Fallback to cloudcode:// if no override provided in state
+    const deepLinkBase = mobileRedirectOverride || 'cloudcode://auth'
+    const deepLink = `${deepLinkBase}${deepLinkBase.includes('?') ? '&' : '?'}token=${encodeURIComponent(appToken)}`
 
     // Return an HTML page that redirects to deep link AND shows a fallback
     return new Response(
