@@ -41,27 +41,33 @@ async function resolveTarget(containerId: string, port: number | string, subPath
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export async function GET(req: NextRequest, { params }: Params) {
-  // 1. Auth: Accept from header, query token, or preview_token cookie
-  let user = getUserFromRequest(req)
-  if (!user) {
-    const tokenParam = req.nextUrl.searchParams.get('token')
-    if (tokenParam) user = verifyToken(tokenParam)
+function withCookies(res: Response, projectId: string, token: string | null) {
+  const cookieOptions = '; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600'
+  if (token) {
+    res.headers.append('Set-Cookie', `preview_token=${token}${cookieOptions}`)
   }
-  if (!user) return errorResponse('Unauthorized', 401)
+  if (UUID_REGEX.test(projectId)) {
+    res.headers.append('Set-Cookie', `preview_project_id=${projectId}${cookieOptions}`)
+  }
+  return res
+}
 
+export async function GET(req: NextRequest, { params }: Params) {
   const { id, path: pathSegments } = await params
   
-  // 2. Resolve Project ID: Check if URL 'id' is a valid UUID or a filename
+  // 1. Resolve Project ID & Auth
+  let token = req.nextUrl.searchParams.get('token')
+  let user = getUserFromRequest(req)
+  if (!user && token) user = verifyToken(token)
+
+  if (!user) return withCookies(errorResponse('Unauthorized', 401), '', token)
+
   let projectId = id
   let finalPathSegments = pathSegments || []
 
   if (!UUID_REGEX.test(id)) {
-    // This looks like a filename (e.g. /api/preview/style.css)
-    // Fallback to the last visited project for this session
     const cookieProjId = req.cookies.get('preview_project_id')?.value
-    if (!cookieProjId) return errorResponse('Missing project context', 400)
-    
+    if (!cookieProjId) return withCookies(errorResponse('Missing project context', 400), '', token)
     projectId = cookieProjId
     finalPathSegments = [id, ...finalPathSegments]
   }
@@ -73,8 +79,8 @@ export async function GET(req: NextRequest, { params }: Params) {
     .eq('user_github_id', user.id)
     .single()
 
-  if (!project) return errorResponse('Project not found', 404)
-  if (!project.container_id) return errorResponse('Container not running', 503)
+  if (!project) return withCookies(errorResponse('Project not found', 404), projectId, token)
+  if (!project.container_id) return withCookies(errorResponse('Container not running', 503), projectId, token)
 
   const port = req.nextUrl.searchParams.get('port') || project.port || 3000
   const subPath = '/' + (finalPathSegments.join('/') || '')
@@ -91,50 +97,24 @@ export async function GET(req: NextRequest, { params }: Params) {
       signal: AbortSignal.timeout(8000),
     })
 
-    const contentType = response.headers.get('content-type') || 'application/octet-stream'
     const body = await response.arrayBuffer()
-
-    const resHeaders = new Headers()
-    resHeaders.set('Content-Type', contentType)
+    const resHeaders = new Headers(response.headers)
     resHeaders.set('Access-Control-Allow-Origin', '*')
     resHeaders.set('Cache-Control', 'no-cache')
 
     // Rewrite Location header for redirects
     const location = response.headers.get('location')
-    if (location) {
-      // If it's a relative redirect (e.g. /dashboard)
-      if (location.startsWith('/')) {
-        resHeaders.set('Location', `/api/preview/${projectId}${location}`)
-      } else {
-        resHeaders.set('Location', location)
-      }
+    if (location?.startsWith('/')) {
+      resHeaders.set('Location', `/api/preview/${projectId}${location}`)
     }
 
-    const res = new Response(body, {
-      status: response.status,
-      headers: resHeaders,
-    })
+    return withCookies(new Response(body, { status: response.status, headers: resHeaders }), projectId, token)
 
-    // 3. Set Session Cookies
-    const tokenParam = req.nextUrl.searchParams.get('token')
-    const cookieOptions = '; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600'
-    
-    // Refresh auth cookie if token provided
-    if (tokenParam && user) {
-      res.headers.append('Set-Cookie', `preview_token=${tokenParam}${cookieOptions}`)
-    }
-    
-    // Always persist projectId if we confirmed it's valid
-    if (UUID_REGEX.test(projectId)) {
-      res.headers.append('Set-Cookie', `preview_project_id=${projectId}${cookieOptions}`)
-    }
-
-    return res
   } catch (err) {
     console.error(`Preview proxy error [${subPath}]:`, err)
 
     if (subPath === '/' || subPath === '') {
-      return new Response(`
+      const errorHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -145,15 +125,13 @@ export async function GET(req: NextRequest, { params }: Params) {
           <h1>🔌</h1>
           <h2 style="color:#fff">Server not responding on port ${port}</h2>
           <p style="color:#5a5a7a">Ensure <code style="color:#22c55e">npm run dev</code> is running in Terminal.</p>
+          <p style="font-size:12px;opacity:0.5;margin-top:20px">${err instanceof Error ? err.message : 'Connection Refused'}</p>
         </body>
         </html>
-      `, {
-        status: 502,
-        headers: { 'Content-Type': 'text/html' },
-      })
+      `
+      return withCookies(new Response(errorHtml, { status: 502, headers: { 'Content-Type': 'text/html' } }), projectId, token)
     }
 
-    return new Response('', { status: 502 })
+    return withCookies(new Response('', { status: 502 }), projectId, token)
   }
 }
-
