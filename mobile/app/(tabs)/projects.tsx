@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Alert,
@@ -9,10 +9,21 @@ import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
-import { Ionicons } from '@expo/vector-icons'
+import { 
+  Plus, 
+  Github, 
+  Trash2, 
+  FolderOpen, 
+  Download, 
+  Box, 
+  Code2, 
+  Terminal,
+  ChevronRight,
+  MoreHorizontal
+} from 'lucide-react-native'
 
 const STATUS_COLOR: Record<string, string> = {
-  ready: '#22c55e',
+  ready: '#10b981',
   running: '#3b82f6',
   creating: '#f59e0b',
   stopped: '#6b7280',
@@ -25,6 +36,16 @@ function ProjectCard({ project, onPress, onDelete, colors }: {
   onDelete: () => void
   colors: any
 }) {
+  const Icon = useMemo(() => {
+    switch(project.type) {
+      case 'react': return Code2;
+      case 'node': return Terminal;
+      default: return Box;
+    }
+  }, [project.type]);
+
+  const statusColor = STATUS_COLOR[project.status] || '#6b7280';
+
   return (
     <TouchableOpacity 
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
@@ -32,35 +53,40 @@ function ProjectCard({ project, onPress, onDelete, colors }: {
       activeOpacity={0.8}
     >
       <View style={styles.cardHeader}>
-        <View style={styles.cardTitleRow}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
-            <Text style={styles.cardIcon}>
-              {project.type === 'react' ? '⚛️' : project.type === 'node' ? '🟢' : '📄'}
-            </Text>
-          </View>
-          <View style={styles.cardNameCol}>
-            <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={1}>{project.name}</Text>
-            <Text style={[styles.cardType, { color: colors.textSecondary }]}>{project.type.toUpperCase()}</Text>
-          </View>
+        <View style={[styles.iconContainer, { backgroundColor: statusColor + '10' }]}>
+          <Icon size={22} color={statusColor} strokeWidth={2.5} />
+        </View>
+        <View style={styles.cardInfo}>
+          <Text style={[styles.cardName, { color: colors.text, fontFamily: 'Inter_700Bold' }]} numberOfLines={1}>
+            {project.name}
+          </Text>
+          <Text style={[styles.cardType, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+            {project.type.toUpperCase()} • {project.status.toUpperCase()}
+          </Text>
         </View>
         <TouchableOpacity
           onPress={onDelete}
-          style={styles.deleteBtn}
+          style={styles.moreBtn}
+          activeOpacity={0.6}
         >
-          <Ionicons name="trash-outline" size={18} color={colors.textSecondary} />
+          <Trash2 size={16} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.cardFooter}>
-        <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLOR[project.status] || '#6b7280') + '15' }]}>
-          <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[project.status] || '#6b7280' }]} />
-          <Text style={[styles.statusText, { color: STATUS_COLOR[project.status] || '#6b7280' }]}>{project.status}</Text>
+        <View style={styles.footerLeft}>
+          {project.github_url ? (
+            <View style={styles.githubRow}>
+              <Github size={12} color={colors.textSecondary} />
+              <Text style={[styles.githubUrl, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]} numberOfLines={1}>
+                {project.github_url.split('/').pop()}
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.githubUrl, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Local Workspace</Text>
+          )}
         </View>
-        {project.github_url && (
-          <Text style={[styles.githubUrl, { color: colors.textSecondary }]} numberOfLines={1}>
-            <Ionicons name="logo-github" size={12} /> {project.github_url.split('/').pop()}
-          </Text>
-        )}
+        <ChevronRight size={16} color={colors.textSecondary} opacity={0.4} />
       </View>
     </TouchableOpacity>
   )
@@ -70,7 +96,7 @@ export default function ProjectsScreen() {
   const router = useRouter()
   const { projects, loading, error, fetchProjects, removeProject } = useProjectsStore()
   const { user } = useAuthStore()
-  const { colors } = useAppTheme()
+  const { colors, isDark } = useAppTheme()
 
   useEffect(() => {
     if (user) fetchProjects()
@@ -78,12 +104,12 @@ export default function ProjectsScreen() {
 
   const handleDelete = useCallback((project: Project) => {
     Alert.alert(
-      'Delete Project',
-      `Are you sure you want to delete "${project.name}"? This cannot be undone.`,
+      'Archive Workspace',
+      `Are you sure you want to delete "${project.name}"? This will prune the container.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Archive',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -103,48 +129,55 @@ export default function ProjectsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.greeting, { color: colors.text }]}>Your Projects</Text>
-          <Text style={[styles.sub, { color: colors.textSecondary }]}>{projects.length} workspace{projects.length !== 1 ? 's' : ''}</Text>
+          <Text style={[styles.greeting, { color: colors.text, fontFamily: 'Inter_900Black' }]}>Workspaces</Text>
+          <Text style={[styles.sub, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+            {projects.length} ACTIVE NODE{projects.length !== 1 ? 'S' : ''}
+          </Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => router.push('/import')}
+            activeOpacity={0.7}
           >
-            <Ionicons name="cloud-download-outline" size={20} color={colors.text} />
+            <Download size={20} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.newBtn, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/new-project')}
+            activeOpacity={0.9}
           >
-            <Ionicons name="add" size={24} color="#fff" />
+            <Plus size={24} color={colors.background} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </View>
 
       {error && (
-        <View style={[styles.errorBanner, { backgroundColor: colors.error + '15', borderColor: colors.error + '30' }]}>
-          <Text style={[styles.errorText, { color: colors.error }]}>⚠️ {error}</Text>
+        <View style={[styles.errorBanner, { backgroundColor: colors.error + '10', borderColor: colors.error + '20' }]}>
+          <Text style={[styles.errorText, { color: colors.error, fontFamily: 'Inter_600SemiBold' }]}>DISCONNECTED: {error}</Text>
         </View>
       )}
 
       {loading && projects.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator color={colors.primary} size="large" />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Waking up containers...</Text>
+          <ActivityIndicator color={colors.text} size="small" />
+          <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Syncing cloud state...</Text>
         </View>
       ) : projects.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <View style={[styles.emptyIconBox, { backgroundColor: colors.card }]}>
-            <Ionicons name="folder-open-outline" size={48} color={colors.textSecondary} />
+          <View style={[styles.emptyIconBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <FolderOpen size={40} color={colors.textSecondary} strokeWidth={1.5} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No projects yet</Text>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Create a new project or import from GitHub to get started.</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]}>No Workspaces</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+            Your ephemeral environments will appear here once created.
+          </Text>
           <TouchableOpacity 
             style={[styles.emptyBtn, { backgroundColor: colors.primary }]} 
             onPress={() => router.push('/new-project')}
+            activeOpacity={0.9}
           >
-            <Text style={styles.emptyBtnText}>Create your first project</Text>
+            <Text style={[styles.emptyBtnText, { color: colors.background, fontFamily: 'Inter_700Bold' }]}>Create Workspace</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -164,7 +197,7 @@ export default function ProjectsScreen() {
             <RefreshControl
               refreshing={loading}
               onRefresh={fetchProjects}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -180,106 +213,109 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 64,
-    paddingBottom: 20,
+    paddingHorizontal: 28,
+    paddingTop: 72,
+    paddingBottom: 24,
   },
-  greeting: { fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
-  sub: { fontSize: 14, fontWeight: '500', marginTop: 2 },
+  greeting: { 
+    fontSize: 32, 
+    letterSpacing: -1.2,
+  },
+  sub: { 
+    fontSize: 10, 
+    marginTop: 4,
+    opacity: 0.6,
+    letterSpacing: 1,
+  },
   headerActions: { flexDirection: 'row', gap: 12 },
   actionBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  newBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  errorBanner: {
-    marginHorizontal: 24,
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  errorText: { fontSize: 14, fontWeight: '600' },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  loadingText: { fontSize: 15, fontWeight: '600' },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 48 },
-  emptyIconBox: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  emptyTitle: { fontSize: 24, fontWeight: '800', marginBottom: 10 },
-  emptyText: { fontSize: 16, textAlign: 'center', lineHeight: 24, marginBottom: 32, opacity: 0.8 },
-  emptyBtn: {
-    paddingHorizontal: 28,
-    paddingVertical: 16,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  emptyBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  list: { padding: 24, gap: 16 },
-  card: {
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
-  iconContainer: {
     width: 48,
     height: 48,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
-  cardIcon: { fontSize: 24 },
-  cardNameCol: { flex: 1, gap: 2 },
-  cardName: { fontSize: 19, fontWeight: '800' },
-  cardType: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  deleteBtn: {
-    width: 32,
-    height: 32,
+  newBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  errorBanner: {
+    marginHorizontal: 24,
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  errorText: { fontSize: 12, textAlign: 'center' },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  loadingText: { fontSize: 13 },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 48 },
+  emptyIconBox: {
+    width: 84,
+    height: 84,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+  },
+  emptyTitle: { fontSize: 24, marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32, opacity: 0.6 },
+  emptyBtn: {
+    paddingHorizontal: 32,
+    paddingVertical: 18,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  emptyBtnText: { fontSize: 16 },
+  list: { paddingHorizontal: 24, paddingBottom: 100, gap: 14 },
+  card: {
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+  },
+  cardHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 16, 
+    marginBottom: 16 
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusBadge: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
+  cardInfo: { flex: 1, gap: 2 },
+  cardName: { fontSize: 17, letterSpacing: -0.4 },
+  cardType: { fontSize: 10, opacity: 0.6, letterSpacing: 0.5 },
+  moreBtn: {
+    padding: 8,
   },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusText: { fontSize: 13, fontWeight: '700', textTransform: 'capitalize' },
-  githubUrl: { fontSize: 13, fontWeight: '500', opacity: 0.6 },
+  cardFooter: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#0000000a',
+  },
+  footerLeft: { flex: 1 },
+  githubRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  githubUrl: { fontSize: 12, opacity: 0.5 },
 })
 

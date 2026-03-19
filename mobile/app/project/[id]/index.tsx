@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Ionicons } from '@expo/vector-icons'
+import { ChevronLeft, RefreshCw, Folder, Terminal, Globe } from 'lucide-react-native'
 
 // Lazy-load tab screens
 import FilesTab from '@/components/project/FilesTab'
@@ -14,9 +14,9 @@ import TerminalTab from '@/components/project/TerminalTab'
 import PreviewTab from '@/components/project/PreviewTab'
 
 const TABS = [
-  { id: 'Files', icon: 'folder-outline', activeIcon: 'folder' },
-  { id: 'Terminal', icon: 'terminal-outline', activeIcon: 'terminal' },
-  { id: 'Preview', icon: 'globe-outline', activeIcon: 'globe' },
+  { id: 'Terminal', icon: Terminal },
+  { id: 'Files', icon: Folder },
+  { id: 'Preview', icon: Globe },
 ] as const
 
 type Tab = typeof TABS[number]['id']
@@ -47,8 +47,8 @@ export default function ProjectScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Waking up container...</Text>
+        <ActivityIndicator color={colors.text} size="small" />
+        <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Resuming environment...</Text>
       </View>
     )
   }
@@ -56,9 +56,9 @@ export default function ProjectScreen() {
   if (!project) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error }]}>Project not found</Text>
+        <Text style={[styles.errorText, { color: colors.error, fontFamily: 'Inter_700Bold' }]}>Project not found</Text>
         <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Text style={[styles.backBtnText, { color: colors.primary }]}>Go Back</Text>
+          <Text style={[styles.backBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Go Back</Text>
         </TouchableOpacity>
       </View>
     )
@@ -68,47 +68,71 @@ export default function ProjectScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.headerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={[styles.headerBtn, { backgroundColor: colors.card }]}
+          activeOpacity={0.7}
+        >
+          <ChevronLeft size={20} color={colors.textSecondary} />
         </TouchableOpacity>
+        
         <View style={styles.headerInfo}>
-          <Text style={[styles.projectName, { color: colors.text }]} numberOfLines={1}>{project.name}</Text>
+          <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]} numberOfLines={1}>
+            {project.name}
+          </Text>
           <View style={styles.statusRow}>
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: project.status === 'ready' ? '#22c55e' : '#f59e0b' },
+                { backgroundColor: project.status === 'ready' ? '#10b981' : '#f59e0b' },
               ]}
             />
-            <Text style={[styles.statusText, { color: colors.textSecondary }]}>{project.container_status || project.status}</Text>
+            <Text style={[styles.statusText, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+              {project.container_status || project.status}
+            </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={fetchProject} style={[styles.headerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Ionicons name="refresh" size={18} color={colors.primary} />
+
+        <TouchableOpacity 
+          onPress={fetchProject} 
+          style={[styles.headerBtn, { backgroundColor: colors.card }]}
+          activeOpacity={0.7}
+        >
+          <RefreshCw size={18} color={project.status === 'ready' ? colors.success : colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
-      {/* Tab bar */}
-      <View style={[styles.tabBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id
-          return (
-            <TouchableOpacity
-              key={tab.id}
-              style={[styles.tab, isActive && { borderBottomColor: colors.primary }]}
-              onPress={() => setActiveTab(tab.id)}
-            >
-              <Ionicons 
-                name={isActive ? tab.activeIcon : tab.icon} 
-                size={20} 
-                color={isActive ? colors.primary : colors.textSecondary} 
-              />
-              <Text style={[styles.tabText, { color: isActive ? colors.primary : colors.textSecondary }, isActive && styles.tabTextActive]}>
-                {tab.id}
-              </Text>
-            </TouchableOpacity>
-          )
-        })}
+      {/* Segmented Tab Bar - Like the image */}
+      <View style={styles.tabBarContainer}>
+        <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id
+            const Icon = tab.icon
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                style={[
+                  styles.tab, 
+                  isActive && { backgroundColor: isDark ? colors.background : '#f3f4f6' }
+                ]}
+                onPress={() => setActiveTab(tab.id)}
+                activeOpacity={0.8}
+              >
+                <Icon 
+                  size={16} 
+                  color={isActive ? colors.text : colors.textSecondary} 
+                  strokeWidth={2.5}
+                />
+                <Text style={[
+                  styles.tabText, 
+                  { color: isActive ? colors.text : colors.textSecondary, fontFamily: isActive ? 'Inter_700Bold' : 'Inter_600SemiBold' }
+                ]}>
+                  {tab.id}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
       </View>
 
       {/* Tab content */}
@@ -130,53 +154,68 @@ export default function ProjectScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  loadingText: { fontSize: 16, fontWeight: '600' },
-  errorText: { fontSize: 18, fontWeight: '800' },
+  loadingText: { fontSize: 13 },
+  errorText: { fontSize: 16 },
   backBtn: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 16,
     marginTop: 16,
   },
-  backBtnText: { fontWeight: '700' },
+  backBtnText: { fontSize: 14 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 56,
     paddingBottom: 16,
-    borderBottomWidth: 1,
     gap: 14,
   },
   headerBtn: {
-    width: 40, height: 40,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   headerInfo: { flex: 1 },
-  projectName: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusText: { fontSize: 12, textTransform: 'uppercase', fontWeight: '700', letterSpacing: 1 },
+  projectName: { 
+    fontSize: 20, 
+    letterSpacing: -0.8,
+  },
+  statusRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    marginTop: 2,
+    opacity: 0.8,
+  },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  statusText: { 
+    fontSize: 10, 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5,
+  },
+  tabBarContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
   tabBar: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    paddingHorizontal: 12,
+    padding: 4,
+    borderRadius: 16,
+    borderWidth: 1,
   },
   tab: {
     flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
   },
-  tabText: { fontSize: 14, fontWeight: '600' },
-  tabTextActive: { fontWeight: '800' },
+  tabText: { fontSize: 13 },
   content: { flex: 1 },
 })
 

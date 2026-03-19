@@ -5,10 +5,13 @@ import {
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { ArrowLeft, Save, Check } from 'lucide-react-native'
 
 export default function EditorScreen() {
   const { id, path } = useLocalSearchParams<{ id: string; path: string }>()
   const router = useRouter()
+  const { colors } = useAppTheme()
   const [content, setContent] = useState('')
   const [originalContent, setOriginalContent] = useState('')
   const [loading, setLoading] = useState(true)
@@ -39,7 +42,7 @@ export default function EditorScreen() {
     try {
       await api.files.write(id as string, path as string, content)
       setOriginalContent(content)
-      Alert.alert('Saved ✓', 'File saved successfully')
+      // Subtle feedback instead of Alert if possible, but keeping it for now
     } catch (err) {
       Alert.alert('Save failed', (err as Error).message)
     } finally {
@@ -51,45 +54,65 @@ export default function EditorScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={[styles.backBtn, { backgroundColor: colors.card }]}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={18} color={colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={styles.fileName} numberOfLines={1}>{fileName}</Text>
+        
+        <View style={styles.titleContainer}>
+          <Text style={[styles.fileName, { color: colors.text, fontFamily: 'Inter_700Bold' }]} numberOfLines={1}>
+            {fileName}
+          </Text>
+          <Text style={[styles.pathText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
+            {path}
+          </Text>
+        </View>
+
         <TouchableOpacity
-          style={[styles.saveBtn, hasChanges && styles.saveBtnActive]}
+          style={[
+            styles.saveBtn, 
+            { backgroundColor: hasChanges ? colors.primary : colors.card }
+          ]}
           onPress={handleSave}
           disabled={!hasChanges || saving}
+          activeOpacity={0.8}
         >
           {saving ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={hasChanges ? colors.background : colors.textSecondary} size="small" />
           ) : (
-            <Text style={[styles.saveBtnText, hasChanges && styles.saveBtnTextActive]}>
-              {hasChanges ? 'Save' : 'Saved'}
-            </Text>
+            hasChanges ? (
+              <Save size={18} color={colors.background} />
+            ) : (
+              <Check size={18} color={colors.textSecondary} />
+            )
           )}
         </TouchableOpacity>
       </View>
 
-      {/* File path */}
-      <View style={styles.pathBar}>
-        <Text style={styles.pathText} numberOfLines={1}>📄 {path}</Text>
-        {hasChanges && <View style={styles.unsavedDot} />}
-      </View>
-
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color="#7c6bff" />
-          <Text style={styles.loadingText}>Loading file...</Text>
+          <ActivityIndicator color={colors.text} size="small" />
+          <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Opening file...</Text>
         </View>
       ) : (
         <ScrollView style={styles.editorScroll} keyboardShouldPersistTaps="handled">
           <TextInput
-            style={styles.editor}
+            style={[
+              styles.editor, 
+              { 
+                color: colors.text, 
+                backgroundColor: colors.background,
+                fontFamily: 'JetBrainsMono_400Regular' 
+              }
+            ]}
             value={content}
             onChangeText={setContent}
             multiline
@@ -98,6 +121,7 @@ export default function EditorScreen() {
             autoCorrect={false}
             spellCheck={false}
             scrollEnabled={false}
+            selectionColor={colors.accent}
           />
         </ScrollView>
       )}
@@ -106,58 +130,49 @@ export default function EditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 12,
+    paddingTop: 54,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#ffffff0a',
     gap: 12,
   },
   backBtn: {
-    width: 36, height: 36,
-    backgroundColor: '#1e1e30',
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backText: { color: '#8a8a9a', fontSize: 20, fontWeight: '700' },
-  fileName: { flex: 1, color: '#ffffff', fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
+  titleContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  fileName: { 
+    fontSize: 15,
+  },
+  pathText: { 
+    fontSize: 10,
+    opacity: 0.6,
+  },
   saveBtn: {
-    backgroundColor: '#1e1e30',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
-    minWidth: 64,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  saveBtnActive: { backgroundColor: '#7c6bff' },
-  saveBtnText: { color: '#4a4a6a', fontWeight: '700', fontSize: 14 },
-  saveBtnTextActive: { color: '#ffffff' },
-  pathBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ffffff06',
-    gap: 8,
-  },
-  pathText: { flex: 1, color: '#3a3a5a', fontSize: 12, fontFamily: 'monospace' },
-  unsavedDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#f59e0b' },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { color: '#4a4a6a', fontSize: 14 },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  loadingText: { fontSize: 13 },
   editorScroll: { flex: 1 },
   editor: {
-    color: '#c8d3e0',
     fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     lineHeight: 22,
-    padding: 16,
-    minHeight: 600,
-    letterSpacing: 0.2,
+    padding: 20,
+    minHeight: '100%',
+    letterSpacing: -0.2,
   },
 })
