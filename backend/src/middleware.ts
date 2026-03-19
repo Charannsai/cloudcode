@@ -3,17 +3,25 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone()
+  const { pathname } = url
   
-  // 1. Check if we're hitting a potential "lost" asset at the root
-  // (e.g. /logo.png, /_next/static/...)
-  const isApi = url.pathname.startsWith('/api')
-  const isInternal = url.pathname.startsWith('/_next') || url.pathname.includes('.')
+  // 1. Never intercept internal API or Dashboard routes
+  if (pathname.startsWith('/api') || pathname.startsWith('/projects') || pathname === '/') {
+    return NextResponse.next()
+  }
+
+  // 2. Identify requests that should be proxied to a container
+  // This includes any request that isn't for our main app,
+  // typically assets (/logo.png, /_next/static, etc.)
+  const lastProjectId = req.cookies.get('preview_project_id')?.value
   
-  if (!isApi && isInternal) {
-    const lastProjectId = req.cookies.get('preview_project_id')?.value
-    if (lastProjectId) {
-      // Rewrite root assets to the last known project proxy
-      url.pathname = `/api/preview/${lastProjectId}${url.pathname}`
+  if (lastProjectId) {
+    // Check if the referer is telling us this is from a preview page
+    const referer = req.headers.get('referer') || ''
+    const isFromPreview = referer.includes('/api/preview/') || pathname.startsWith('/_next/') || pathname.includes('.')
+    
+    if (isFromPreview) {
+      url.pathname = `/api/preview/${lastProjectId}${pathname}`
       return NextResponse.rewrite(url)
     }
   }
@@ -21,9 +29,9 @@ export function middleware(req: NextRequest) {
   return NextResponse.next()
 }
 
-// Only match root-level assets and Next.js internal paths
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|projects).*)',
+    // Capture everything except root, dashboard, and public/api assets
+    '/((?!api|projects|favicon.ico|$).*)',
   ],
 }
