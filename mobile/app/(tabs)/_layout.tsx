@@ -189,11 +189,20 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export default function TabsLayout() {
+  const { isDark, colors } = useAppTheme()
+
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
+      // @ts-ignore - sceneContainerStyle is supported but may not be in the typing for the wrapper
+      sceneContainerStyle={{ backgroundColor: colors.background }}
       screenOptions={{
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          position: 'absolute',
+          elevation: 0,
+        },
       }}
     >
       <Tabs.Screen
