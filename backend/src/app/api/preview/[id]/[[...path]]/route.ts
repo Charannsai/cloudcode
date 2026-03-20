@@ -89,10 +89,15 @@ export async function GET(req: NextRequest, { params }: Params) {
   const cookiePort = req.cookies.get('preview_port')?.value
   const port = queryPort || cookiePort || project.port || 3000
   
+  const searchParams = new URLSearchParams(req.nextUrl.search)
+  searchParams.delete('token')
+  searchParams.delete('port')
+  const search = searchParams.toString() ? '?' + searchParams.toString() : ''
+  
   const subPath = '/' + (finalPathSegments.join('/') || '')
 
   try {
-    const targetUrl = await resolveTarget(project.container_id, port, subPath)
+    const targetUrl = await resolveTarget(project.container_id, port, subPath + search)
 
     const response = await fetch(targetUrl, {
       headers: {
@@ -151,8 +156,11 @@ export async function GET(req: NextRequest, { params }: Params) {
             // Naive but effective replacement for common attributes
             const replacement = `/api/preview/${projectId}/`
             htmlText = htmlText.replaceAll('src="/', `src="${replacement}`)
+            htmlText = htmlText.replaceAll('srcset="/', `srcset="${replacement}`)
             htmlText = htmlText.replaceAll('href="/', `href="${replacement}`)
             htmlText = htmlText.replaceAll('action="/', `action="${replacement}`)
+            htmlText = htmlText.replaceAll('poster="/', `poster="${replacement}`)
+            htmlText = htmlText.replaceAll('data-src="/', `data-src="${replacement}`)
             finalBody = new TextEncoder().encode(htmlText)
         } catch (e) {
             console.error('HTML Proxy rewrite failed:', e)
