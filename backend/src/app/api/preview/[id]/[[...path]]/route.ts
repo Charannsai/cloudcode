@@ -41,13 +41,16 @@ async function resolveTarget(containerId: string, port: number | string, subPath
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function withCookies(res: Response, projectId: string, token: string | null) {
+function withCookies(res: Response, projectId: string, token: string | null, port?: string | null) {
   const cookieOptions = '; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600'
   if (token) {
     res.headers.append('Set-Cookie', `preview_token=${token}${cookieOptions}`)
   }
   if (UUID_REGEX.test(projectId)) {
     res.headers.append('Set-Cookie', `preview_project_id=${projectId}${cookieOptions}`)
+  }
+  if (port) {
+    res.headers.append('Set-Cookie', `preview_port=${port}${cookieOptions}`)
   }
   return res
 }
@@ -82,7 +85,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (!project) return withCookies(errorResponse('Project not found', 404), projectId, token)
   if (!project.container_id) return withCookies(errorResponse('Container not running', 503), projectId, token)
 
-  const port = req.nextUrl.searchParams.get('port') || project.port || 3000
+  const queryPort = req.nextUrl.searchParams.get('port')
+  const cookiePort = req.cookies.get('preview_port')?.value
+  const port = queryPort || cookiePort || project.port || 3000
+  
   const subPath = '/' + (finalPathSegments.join('/') || '')
 
   try {
@@ -105,17 +111,15 @@ export async function GET(req: NextRequest, { params }: Params) {
       resHeaders.delete('content-length')
       resHeaders.delete('transfer-encoding')
       
-      return withCookies(new Response(null, { status: response.status, headers: resHeaders }), projectId, token)
+      return withCookies(new Response(null, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
     }
 
-    const body = await response.arrayBuffer()
     const resHeaders = new Headers(response.headers)
     
     // !! ESSENTIAL: Strip hop-by-hop and encoding headers
-    // When we use arrayBuffer(), the content is usually decoded by fetch.
-    // If we pass original headers, the browser will try to double-decode.
     resHeaders.delete('content-encoding')
     resHeaders.delete('content-length')
+    // ... other deletes ...
     resHeaders.delete('transfer-encoding')
     resHeaders.delete('connection')
     resHeaders.delete('keep-alive')
@@ -135,7 +139,27 @@ export async function GET(req: NextRequest, { params }: Params) {
       resHeaders.set('Location', `/api/preview/${projectId}${location}`)
     }
 
-    return withCookies(new Response(body, { status: response.status, headers: resHeaders }), projectId, token)
+    // HTML Content Rewriting: Fix absolute paths for assets (/logo.png -> /api/preview/id/logo.png)
+    const body = await response.arrayBuffer()
+    const contentType = response.headers.get('content-type') || ''
+    let finalBody: BodyInit = body
+
+    if (contentType.includes('text/html')) {
+        try {
+            const decoder = new TextDecoder()
+            let htmlText = decoder.decode(body)
+            // Naive but effective replacement for common attributes
+            const replacement = `/api/preview/${projectId}/`
+            htmlText = htmlText.replaceAll('src="/', `src="${replacement}`)
+            htmlText = htmlText.replaceAll('href="/', `href="${replacement}`)
+            htmlText = htmlText.replaceAll('action="/', `action="${replacement}`)
+            finalBody = new TextEncoder().encode(htmlText)
+        } catch (e) {
+            console.error('HTML Proxy rewrite failed:', e)
+        }
+    }
+
+    return withCookies(new Response(finalBody, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
 
   } catch (err) {
     console.error(`Preview proxy error [${subPath}]:`, err)
