@@ -49,6 +49,13 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
 
   const injectedJS = `
     (function() {
+      // 1. Force set cookies on the client side for sub-resources
+      var cookieBase = 'Path=/; Max-Age=3600; SameSite=Lax';
+      document.cookie = 'preview_token=${token}; ' + cookieBase;
+      document.cookie = 'preview_project_id=${projectId}; ' + cookieBase;
+      document.cookie = 'preview_port=${activePort}; ' + cookieBase;
+
+      // 2. Set base href for relative URLs
       var base = document.querySelector('base');
       if (!base) {
         base = document.createElement('base');
