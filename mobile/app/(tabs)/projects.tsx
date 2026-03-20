@@ -29,9 +29,12 @@ const TYPE_ICON: Record<string, any> = {
   empty: Cpu,
 }
 
+import { useScrollVisibility } from '@/hooks/useScrollVisibility'
+
 export default function ProjectsScreen() {
   const router = useRouter()
   const { colors } = useAppTheme()
+  const { handleScroll } = useScrollVisibility()
   const { projects, loading, fetchProjects, removeProject } = useProjectsStore()
 
   useEffect(() => {
@@ -123,6 +126,8 @@ export default function ProjectsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={loading ? null : emptyState}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={fetchProjects} tintColor={colors.text} />
         }
