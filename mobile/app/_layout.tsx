@@ -81,7 +81,6 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="new-project" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="import" options={{ presentation: 'modal' }} />
         <Stack.Screen name="project/[id]/index" />
         <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
       </Stack>

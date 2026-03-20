@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, ActivityIndicator } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Shield, RefreshCw, AlertCircle, Globe } from 'lucide-react-native'
+import { Shield, RefreshCw, AlertCircle, Globe, Terminal, Play } from 'lucide-react-native'
 import { getToken } from '@/lib/auth'
 
 interface Props {
@@ -16,6 +16,7 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   const { colors, isDark } = useAppTheme()
   const [port, setPort] = useState(initialPort.toString())
   const [activePort, setActivePort] = useState(initialPort.toString())
+  const [hasConnected, setHasConnected] = useState(false)
   const [token, setToken] = useState<string | null>(null)
   const [key, setKey] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -27,10 +28,21 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   const baseUrl = `${API_URL}/api/preview/${projectId}/`
   const previewUrl = `${baseUrl}?port=${activePort}&token=${token}`
 
+  const handleConnect = () => {
+    setActivePort(port)
+    setHasConnected(true)
+    setKey(k => k + 1)
+    Keyboard.dismiss()
+  }
+
   const handleRefresh = () => {
     setActivePort(port)
     setKey(k => k + 1)
     Keyboard.dismiss()
+  }
+
+  const handleDisconnect = () => {
+    setHasConnected(false)
   }
 
   if (!token) return null
@@ -46,6 +58,69 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
       true;
     })();
   `
+
+  if (!hasConnected) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.emptyContainer}>
+          <View style={[styles.svgContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Globe size={64} color={isDark ? '#3b82f6' : '#2563eb'} opacity={0.6} />
+            <View style={styles.badgeContainer}>
+              <Play size={20} color={colors.background} fill={colors.text} />
+            </View>
+          </View>
+          
+          <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]}>
+            Preview Ready
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+            Start your development server in the terminal to see changes live.
+          </Text>
+
+          <View style={[styles.portCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.portLabelRow}>
+              <Terminal size={14} color={colors.textSecondary} />
+              <Text style={[styles.portLabel, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+                Target Port
+              </Text>
+            </View>
+            
+            <View style={styles.portInputRow}>
+              <Text style={[styles.localhostText, { color: colors.text, opacity: 0.5, fontFamily: 'Inter_600SemiBold' }]}>
+                localhost:
+              </Text>
+              <TextInput
+                style={[styles.portTextInput, { color: colors.text, fontFamily: 'Inter_700Bold' }]}
+                value={port}
+                onChangeText={setPort}
+                keyboardType="number-pad"
+                placeholder="3000"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.connectBtn, { backgroundColor: '#3b82f6' }]} 
+              onPress={handleConnect}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.connectBtnText, { color: '#fff', fontFamily: 'Inter_700Bold' }]}>
+                View Preview
+              </Text>
+              <Play size={16} color="#fff" fill="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.hintContainer}>
+            <Shield size={12} color={colors.textSecondary} opacity={0.5} />
+            <Text style={[styles.hintText, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+              Secure preview via Docker bridge
+            </Text>
+          </View>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -69,6 +144,14 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
           activeOpacity={0.7}
         >
           <RefreshCw size={18} color={colors.textSecondary} strokeWidth={2} />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.closeBtn, { backgroundColor: colors.background }]} 
+          onPress={handleDisconnect}
+          activeOpacity={0.7}
+        >
+          <AlertCircle size={18} color={colors.textSecondary} strokeWidth={2} />
         </TouchableOpacity>
       </View>
 
@@ -118,13 +201,109 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  svgContainer: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    borderStyle: 'dashed',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    backgroundColor: '#fff',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#3b82f6',
+  },
+  emptyTitle: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    opacity: 0.8,
+    marginBottom: 32,
+  },
+  portCard: {
+    width: '100%',
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    gap: 16,
+  },
+  portLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  portLabel: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  portInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 16,
+  },
+  localhostText: {
+    fontSize: 16,
+  },
+  portTextInput: {
+    fontSize: 16,
+    flex: 1,
+    marginLeft: 4,
+  },
+  connectBtn: {
+    height: 54,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 8,
+  },
+  connectBtnText: {
+    fontSize: 16,
+  },
+  hintContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 24,
+    opacity: 0.6,
+  },
+  hintText: {
+    fontSize: 11,
+  },
   urlBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    gap: 12,
+    gap: 8,
   },
   addressBox: {
     flex: 1,
@@ -144,6 +323,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   refreshBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtn: {
     width: 40,
     height: 40,
     borderRadius: 14,
