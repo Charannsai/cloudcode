@@ -54,7 +54,7 @@ export default function RootLayout() {
       if (parsed.path === 'auth' && parsed.queryParams?.token) {
         const token = parsed.queryParams.token as string
         setToken(token)
-        router.replace('/(tabs)/projects')
+        router.replace('/(tabs)/dashboard')
       }
     }
 
