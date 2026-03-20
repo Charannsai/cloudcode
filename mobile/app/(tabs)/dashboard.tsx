@@ -81,7 +81,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 24, paddingTop: 64, paddingBottom: 100 },
+  content: { padding: 24, paddingTop: 64, paddingBottom: 160 },
   header: { marginBottom: 32 },
   title: { fontSize: 28, fontFamily: 'Inter_700Bold', marginBottom: 4 },
   subtitle: { fontSize: 15, fontFamily: 'Inter_400Regular' },

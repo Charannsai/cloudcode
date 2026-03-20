@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: { paddingHorizontal: 24, paddingBottom: 100 },
+  list: { paddingHorizontal: 24, paddingBottom: 160 },
   listActions: { 
     flexDirection: 'row', 
     gap: 12, 

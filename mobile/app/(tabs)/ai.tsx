@@ -62,7 +62,7 @@ export default function AIScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 24, paddingTop: 64, paddingBottom: 120 },
+  content: { padding: 24, paddingTop: 64, paddingBottom: 160 },
   header: { alignItems: 'center', marginBottom: 40 },
   aiBadge: {
     flexDirection: 'row',
