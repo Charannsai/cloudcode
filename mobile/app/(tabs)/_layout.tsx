@@ -15,11 +15,9 @@ import { useState, useCallback, memo } from 'react'
 
 const TAB_BAR_HEIGHT = 64
 const SPRING_CONFIG = {
-  damping: 20,
-  stiffness: 300,
-  mass: 0.4,
-  restDisplacementThreshold: 0.01,
-  restSpeedThreshold: 0.01,
+  damping: 28,
+  stiffness: 180,
+  mass: 1,
 }
 
 const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isDark }: any) => {
@@ -98,6 +96,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       width: withSpring(width, SPRING_CONFIG),
       transform: [
         { translateX: withSpring(x, SPRING_CONFIG) },
+        // Add a subtle organic bounce/stretch while moving
+        { scaleY: withSpring(1, { ...SPRING_CONFIG, damping: 10 }) },
       ],
     }
   }, [state.index, tabWidths, tabPositions])
