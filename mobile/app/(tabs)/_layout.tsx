@@ -30,7 +30,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="projects"
         options={{
-          title: 'Nodes',
+          title: 'Workspaces',
           tabBarIcon: ({ color }) => (
             <Database size={18} color={color} strokeWidth={2} />
           ),
