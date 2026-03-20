@@ -50,7 +50,7 @@ export default function AIScreen() {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.container, { backgroundColor: isDark ? '#050505' : '#FCFCFC' }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
     >
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: isDark ? '#111' : '#EEE' }]}>
