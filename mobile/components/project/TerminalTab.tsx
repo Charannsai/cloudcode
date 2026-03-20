@@ -43,8 +43,8 @@ export default function TerminalTab({ projectId }: Props) {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: isDark ? '#000' : '#f9fafb' }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 160}
     >
       {/* Status bar */}
       <View style={[styles.statusBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
@@ -79,6 +79,7 @@ export default function TerminalTab({ projectId }: Props) {
         contentContainerStyle={styles.outputContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
       >
         {!connected && !error && (
           <View style={styles.centerLoading}>
@@ -120,7 +121,7 @@ export default function TerminalTab({ projectId }: Props) {
         </ScrollView>
 
         <View style={styles.inputRow}>
-          <ChevronRight size={18} color="#10b981" strokeWidth={3} />
+          <Text style={[styles.promptSymbol, { color: '#10b981', fontFamily: 'JetBrainsMono_700Bold' }]}>{'>'}</Text>
           <TextInput
             style={[styles.input, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
             value={inputText}
@@ -133,6 +134,7 @@ export default function TerminalTab({ projectId }: Props) {
             autoCorrect={false}
             spellCheck={false}
             blurOnSubmit={false}
+            onFocus={() => scrollRef.current?.scrollToEnd({ animated: true })}
           />
           <TouchableOpacity 
             style={[
@@ -214,7 +216,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
+    paddingBottom: 16,
     paddingTop: 4,
     gap: 12,
   },
@@ -229,6 +231,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  promptSymbol: {
+    fontSize: 18,
+    marginRight: 4,
   },
 })
 
