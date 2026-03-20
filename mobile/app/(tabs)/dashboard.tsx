@@ -10,9 +10,11 @@ import {
   Code2,
   Cpu
 } from 'lucide-react-native'
+import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 
 export default function DashboardScreen() {
   const { colors } = useAppTheme()
+  const { handleScroll } = useScrollVisibility()
 
   const stats = [
     { label: 'Workspaces', value: '12', icon: LayoutDashboard, color: '#6366f1' },
@@ -25,6 +27,8 @@ export default function DashboardScreen() {
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
     >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Dashboard</Text>

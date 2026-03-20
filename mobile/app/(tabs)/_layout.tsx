@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Tabs } from 'expo-router'
-import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent, Keyboard } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { LayoutDashboard, Database, Sparkles, Settings } from 'lucide-react-native'
 import Animated, { 
@@ -9,9 +9,10 @@ import Animated, {
   useSharedValue,
   FadeIn,
   FadeOut,
+  interpolate,
 } from 'react-native-reanimated'
-import { BlurView } from 'expo-blur'
 import { useState, useCallback, memo } from 'react'
+import { useUIStore } from '@/store/ui'
 
 const TAB_BAR_HEIGHT = 64
 const SPRING_CONFIG = {
@@ -72,6 +73,26 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const [tabWidths, setTabWidths] = useState<number[]>(new Array(state.routes.length).fill(0))
   const [tabPositions, setTabPositions] = useState<number[]>(new Array(state.routes.length).fill(0))
   
+  const { tabBarVisible } = useUIStore()
+  const isVisible = useSharedValue(1)
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => {
+      isVisible.value = withSpring(0, SPRING_CONFIG)
+    })
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      isVisible.value = withSpring(1, SPRING_CONFIG)
+    })
+    return () => {
+      showSub.remove()
+      hideSub.remove()
+    }
+  }, [])
+
+  useEffect(() => {
+    isVisible.value = withSpring(tabBarVisible ? 1 : 0, SPRING_CONFIG)
+  }, [tabBarVisible])
+
   const handleLayout = useCallback((index: number, event: LayoutChangeEvent) => {
     const { x, width } = event.nativeEvent.layout
     setTabWidths(prev => {
@@ -96,14 +117,22 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       width: withSpring(width, SPRING_CONFIG),
       transform: [
         { translateX: withSpring(x, SPRING_CONFIG) },
-        // Add a subtle organic bounce/stretch while moving
         { scaleY: withSpring(1, { ...SPRING_CONFIG, damping: 10 }) },
       ],
     }
   }, [state.index, tabWidths, tabPositions])
 
+  const wrapperStyle = useAnimatedStyle(() => {
+    return {
+      opacity: isVisible.value,
+      transform: [
+        { translateY: interpolate(isVisible.value, [0, 1], [150, 0]) }
+      ],
+    }
+  })
+
   return (
-    <View style={styles.tabBarWrapper} pointerEvents="box-none">
+    <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
       <View
         style={[
           styles.tabBarContainer,
@@ -155,7 +184,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           )
         })}
       </View>
-    </View>
+    </Animated.View>
   )
 }
 

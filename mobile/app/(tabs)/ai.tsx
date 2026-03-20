@@ -3,8 +3,11 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Keyboa
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { Sparkles, Send, Brain, Code, Terminal, MessageSquare } from 'lucide-react-native'
 
+import { useScrollVisibility } from '@/hooks/useScrollVisibility'
+
 export default function AIScreen() {
   const { colors } = useAppTheme()
+  const { handleScroll } = useScrollVisibility()
 
   const suggestions = [
     { label: 'Optimize my current project', icon: Brain },
@@ -18,7 +21,11 @@ export default function AIScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
         <View style={styles.header}>
           <View style={[styles.aiBadge, { backgroundColor: colors.text + '10' }]}>
             <Sparkles size={16} color={colors.text} />
