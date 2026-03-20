@@ -40,7 +40,7 @@ export default function NewProjectScreen() {
 
   async function handleCreate() {
     if (!name.trim()) {
-      Alert.alert('Error', 'Designate a name for this node.')
+      Alert.alert('Error', 'Designate a name for this workspace.')
       return
     }
 
@@ -99,7 +99,7 @@ export default function NewProjectScreen() {
           </View>
 
           <View style={styles.hero}>
-            <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Provision Node</Text>
+            <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Provision Workspace</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Initialize from local templates or remote sources.</Text>
           </View>
 
@@ -110,7 +110,7 @@ export default function NewProjectScreen() {
               onPress={() => setMode('template')}
             >
               <Text style={[styles.tabLabel, { color: mode === 'template' ? colors.background : colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                New Node
+                New Project
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -126,10 +126,10 @@ export default function NewProjectScreen() {
           {mode === 'template' ? (
             <View>
               <View style={styles.section}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>IDENTIFIER</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>WORKSPACE NAME</Text>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                  placeholder="e.g. cloud-node-01"
+                  placeholder="e.g. cloud-workspace-01"
                   placeholderTextColor={colors.textSecondary + '60'}
                   value={name}
                   onChangeText={setName}
@@ -138,7 +138,7 @@ export default function NewProjectScreen() {
               </View>
 
               <View style={styles.section}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>BLANK PROJECT</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>BLANK WORKSPACE</Text>
                 {TEMPLATES.filter(t => t.group === 'PROJECT').map(renderOption)}
               </View>
 
@@ -166,12 +166,12 @@ export default function NewProjectScreen() {
               </View>
 
               <View style={styles.section}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>NODE NAME</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>PROJECT NAME</Text>
                 <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
                    <Folder size={16} color={colors.textSecondary} />
                    <TextInput
                      style={[styles.inputField, { color: colors.text }]}
-                     placeholder="My Node"
+                     placeholder="My Project"
                      placeholderTextColor={colors.textSecondary + '60'}
                      value={name}
                      onChangeText={setName}
@@ -193,7 +193,7 @@ export default function NewProjectScreen() {
               <>
                 {mode === 'clone' && <Github size={18} color={colors.background} style={{ marginRight: 8 }} />}
                 <Text style={[styles.createBtnText, { color: colors.background, fontFamily: 'Inter_500Medium' }]}>
-                  {mode === 'clone' ? 'Clone Repository' : 'Provision Node'}
+                  {mode === 'clone' ? 'Clone Repository' : 'Provision Workspace'}
                 </Text>
               </>
             )}

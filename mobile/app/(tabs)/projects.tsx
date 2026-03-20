@@ -39,7 +39,7 @@ export default function ProjectsScreen() {
   }, [fetchProjects])
 
   const handleDelete = useCallback((id: string, name: string) => {
-    Alert.alert('De-provision', `Confirm termination of node: ${name}?`, [
+    Alert.alert('De-provision', `Confirm termination of workspace: ${name}?`, [
       { text: 'Cancel', style: 'cancel' },
       { 
         text: 'Terminate', 
@@ -87,7 +87,7 @@ export default function ProjectsScreen() {
             <Text style={[styles.statText, { color: colors.textSecondary }]}>{p.status.toUpperCase()}</Text>
           </View>
           <Text style={[styles.statText, { color: colors.textSecondary }]}>
-            {p.type === 'node' ? 'Node.js Cluster' : p.type === 'react' ? 'React Frontend' : 'Basic Node'}
+            {p.type === 'node' ? 'Engine Instance' : p.type === 'react' ? 'Application Project' : 'Blank Workspace'}
           </Text>
         </View>
       </TouchableOpacity>
@@ -97,8 +97,8 @@ export default function ProjectsScreen() {
   const emptyState = (
     <View style={styles.empty}>
       <Activity size={40} color={colors.textSecondary} strokeWidth={1} />
-      <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>No Active Nodes</Text>
-      <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Initialize a node to begin development.</Text>
+      <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>No Active Projects</Text>
+      <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Initialize a workspace to begin development.</Text>
     </View>
   )
 
@@ -106,8 +106,8 @@ export default function ProjectsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Active Nodes</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{projects.length} running instances</Text>
+          <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Projects</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{projects.length} active workspaces</Text>
         </View>
         <TouchableOpacity 
           style={[styles.addBtn, { backgroundColor: colors.text }]}
