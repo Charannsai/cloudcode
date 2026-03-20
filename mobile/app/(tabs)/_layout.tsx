@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Tabs } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -6,69 +7,120 @@ import Animated, {
   useAnimatedStyle, 
   withSpring, 
   useSharedValue,
+  FadeIn,
+  FadeOut,
 } from 'react-native-reanimated'
 import { BlurView } from 'expo-blur'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, memo } from 'react'
 
 const TAB_BAR_HEIGHT = 64
 const SPRING_CONFIG = {
-  damping: 18,
-  stiffness: 120,
-  mass: 0.8,
+  damping: 20,
+  stiffness: 300,
+  mass: 0.4,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 0.01,
 }
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
-  const { colors, isDark } = useAppTheme()
-  const [tabWidths, setTabWidths] = useState<number[]>([])
-  const [tabPositions, setTabPositions] = useState<number[]>([])
-  
-  const indicatorWidth = useSharedValue(0)
-  const indicatorX = useSharedValue(0)
+const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isDark }: any) => {
+  const Icon = options.tabBarIcon
+  const scale = useSharedValue(1)
 
+  useEffect(() => {
+    scale.value = withSpring(isFocused ? 1.2 : 1, SPRING_CONFIG)
+  }, [isFocused])
+
+  const iconStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }]
+    }
+  })
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onPress}
+      onLayout={(e) => onLayout(index, e)}
+      style={styles.tabItem}
+    >
+      <Animated.View style={iconStyle}>
+        <Icon 
+          color={isFocused 
+            ? (isDark ? '#000000' : '#ffffff') 
+            : (isDark ? '#999999' : '#666666')
+          } 
+          size={20} 
+          strokeWidth={isFocused ? 2.5 : 2}
+        />
+      </Animated.View>
+      {isFocused && (
+        <Animated.Text 
+          entering={FadeIn.springify()}
+          exiting={FadeOut.duration(100)}
+          style={[
+            styles.tabLabel, 
+            { color: isDark ? '#000000' : '#ffffff' }
+          ]}
+        >
+          {options.title || route.name}
+        </Animated.Text>
+      )}
+    </TouchableOpacity>
+  )
+})
+
+function CustomTabBar({ state, descriptors, navigation }: any) {
+  const { isDark } = useAppTheme()
+  const [tabWidths, setTabWidths] = useState<number[]>(new Array(state.routes.length).fill(0))
+  const [tabPositions, setTabPositions] = useState<number[]>(new Array(state.routes.length).fill(0))
+  
   const handleLayout = useCallback((index: number, event: LayoutChangeEvent) => {
     const { x, width } = event.nativeEvent.layout
     setTabWidths(prev => {
+      if (prev[index] === width) return prev
       const next = [...prev]
       next[index] = width
       return next
     })
     setTabPositions(prev => {
+      if (prev[index] === x) return prev
       const next = [...prev]
       next[index] = x
       return next
     })
-    
-    // Initial position
-    if (index === state.index) {
-      indicatorWidth.value = width
-      indicatorX.value = x
-    }
-  }, [state.index, indicatorWidth, indicatorX])
+  }, [])
 
   const indicatorStyle = useAnimatedStyle(() => {
+    const width = tabWidths[state.index] || 0
+    const x = tabPositions[state.index] || 0
+    
     return {
-      width: withSpring(tabWidths[state.index] || 0, SPRING_CONFIG),
-      transform: [{ translateX: withSpring(tabPositions[state.index] || 0, SPRING_CONFIG) }],
+      width: withSpring(width, SPRING_CONFIG),
+      transform: [
+        { translateX: withSpring(x, SPRING_CONFIG) },
+      ],
     }
-  })
+  }, [state.index, tabWidths, tabPositions])
 
   return (
-    <View style={styles.tabBarWrapper}>
-      <BlurView
-        intensity={Platform.OS === 'ios' ? 40 : 100}
-        tint={isDark ? 'dark' : 'light'}
+    <View style={styles.tabBarWrapper} pointerEvents="box-none">
+      <View
         style={[
           styles.tabBarContainer,
           { 
-            backgroundColor: isDark ? 'rgba(15, 15, 15, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+            backgroundColor: isDark ? '#050505' : '#ffffff',
+            borderColor: isDark ? '#1a1a1a' : '#eeeeee',
+            shadowOpacity: isDark ? 0.6 : 0.08,
+            borderWidth: 1,
           }
         ]}
       >
         <Animated.View 
           style={[
             styles.indicator, 
-            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' },
+            { 
+              backgroundColor: isDark ? '#ffffffff' : '#1b1b1bff',
+            },
             indicatorStyle
           ]} 
         />
@@ -89,32 +141,20 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             }
           }
 
-          const Icon = options.tabBarIcon
-
           return (
-            <TouchableOpacity
-              key={index}
+            <TabItem 
+              key={route.key}
+              route={route}
+              options={options}
+              isFocused={isFocused}
+              index={index}
               onPress={onPress}
-              onLayout={(e) => handleLayout(index, e)}
-              style={[
-                styles.tabItem,
-                isFocused && styles.activeTabItem
-              ]}
-            >
-              <Icon 
-                color={isFocused ? colors.text : colors.textSecondary} 
-                size={20} 
-                strokeWidth={isFocused ? 2.5 : 2}
-              />
-              {isFocused && (
-                <Text style={[styles.tabLabel, { color: colors.text }]}>
-                  {options.title || route.name}
-                </Text>
-              )}
-            </TouchableOpacity>
+              onLayout={handleLayout}
+              isDark={isDark}
+            />
           )
         })}
-      </BlurView>
+      </View>
     </View>
   )
 }
@@ -157,7 +197,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Sys',
+          title: 'System',
           tabBarIcon: ({ color, size }: any) => (
             <Settings size={size || 20} color={color} />
           ),
@@ -186,6 +226,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 8,
   },
   indicator: {
     position: 'absolute',
@@ -203,7 +247,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     gap: 8,
   },
-  activeTabItem: {},
   tabLabel: {
     fontSize: 13,
     fontFamily: 'Inter_600SemiBold',

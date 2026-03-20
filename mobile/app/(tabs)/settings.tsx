@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 11,
     marginTop: 40,
-    marginBottom: 100,
+    marginBottom: 160,
     opacity: 0.4,
   },
 })
