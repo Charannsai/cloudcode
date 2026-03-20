@@ -54,7 +54,12 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
         try {
           const msg: TerminalMessage = JSON.parse(event.data)
           if (msg.type === 'output' && typeof msg.data === 'string') {
-            const data = msg.data;
+            let data = msg.data;
+            
+            // Post-process the output to change # to > as requested
+            // We only want to target the end of the prompt, usually # followed by a space or end of line
+            data = data.replace(/([#])(?=\s|$)/g, '>')
+
             // Check for clear screen code (ESC[2J or \f)
             if (data.includes('\u001b[2J') || data.includes('\u001b[H')) {
               setOutput(stripAnsi(data))
@@ -68,7 +73,8 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
           }
         } catch {
           // Non-JSON message?
-          const data = typeof event.data === 'string' ? event.data : ''
+          let data = typeof event.data === 'string' ? event.data : ''
+          data = data.replace(/([#])(?=\s|$)/g, '>')
           setOutput((prev) => prev + stripAnsi(data))
         }
       }
