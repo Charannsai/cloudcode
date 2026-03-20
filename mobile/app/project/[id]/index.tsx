@@ -137,15 +137,9 @@ export default function ProjectScreen() {
 
       {/* Tab content */}
       <View style={styles.content}>
-        <View style={{ flex: 1, display: activeTab === 'Files' ? 'flex' : 'none' }}>
-          <FilesTab projectId={project.id} />
-        </View>
-        <View style={{ flex: 1, display: activeTab === 'Terminal' ? 'flex' : 'none' }}>
-          <TerminalTab projectId={project.id} />
-        </View>
-        <View style={{ flex: 1, display: activeTab === 'Preview' ? 'flex' : 'none' }}>
-          <PreviewTab projectId={project.id} port={project.port || 3000} />
-        </View>
+        {activeTab === 'Files' && <FilesTab projectId={project.id} />}
+        {activeTab === 'Terminal' && <TerminalTab projectId={project.id} />}
+        {activeTab === 'Preview' && <PreviewTab projectId={project.id} port={project.port || 3000} />}
       </View>
     </View>
   )
