@@ -92,15 +92,42 @@ export async function GET(req: NextRequest, { params }: Params) {
       headers: {
         'Accept': req.headers.get('accept') || '*/*',
         'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
+        'Accept-Encoding': 'identity', // Strongly request uncompressed
       },
-      redirect: 'manual', // Intercept redirects
-      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000),
     })
+
+    // Handle 304 Not Modified & other bodyless responses
+    if (response.status === 304 || response.status === 204 || !response.body) {
+      const resHeaders = new Headers(response.headers)
+      resHeaders.delete('content-encoding')
+      resHeaders.delete('content-length')
+      resHeaders.delete('transfer-encoding')
+      
+      return withCookies(new Response(null, { status: response.status, headers: resHeaders }), projectId, token)
+    }
 
     const body = await response.arrayBuffer()
     const resHeaders = new Headers(response.headers)
+    
+    // !! ESSENTIAL: Strip hop-by-hop and encoding headers
+    // When we use arrayBuffer(), the content is usually decoded by fetch.
+    // If we pass original headers, the browser will try to double-decode.
+    resHeaders.delete('content-encoding')
+    resHeaders.delete('content-length')
+    resHeaders.delete('transfer-encoding')
+    resHeaders.delete('connection')
+    resHeaders.delete('keep-alive')
+    resHeaders.delete('proxy-authenticate')
+    resHeaders.delete('proxy-authorization')
+    resHeaders.delete('te')
+    resHeaders.delete('trailers')
+    resHeaders.delete('upgrade')
+
     resHeaders.set('Access-Control-Allow-Origin', '*')
-    resHeaders.set('Cache-Control', 'no-cache')
+    resHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    resHeaders.set('X-Proxy-Target', targetUrl)
 
     // Rewrite Location header for redirects
     const location = response.headers.get('location')
@@ -120,12 +147,22 @@ export async function GET(req: NextRequest, { params }: Params) {
         <head>
           <title>Preview not available</title>
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: -apple-system, system-ui, sans-serif; background: #0a0a0f; color: #c8d3e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; padding: 20px; }
+            .card { background: #12121e; border: 1px solid #2a2a3c; padding: 40px; borderRadius: 24px; maxWidth: 400px; width: 100%; }
+            h1 { font-size: 48px; margin: 0 0 16px 0; }
+            h2 { color: #fff; margin: 0 0 12px 0; font-size: 20px; }
+            p { color: #8a8a9a; line-height: 1.5; margin: 0 0 24px 0; font-size: 14px; }
+            code { background: #1d1d2b; padding: 4px 8px; border-radius: 6px; color: #3b82f6; font-family: monospace; }
+          </style>
         </head>
-        <body style="font-family:-apple-system,sans-serif;background:#0a0a0f;color:#c8d3e0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:20px">
-          <h1>🔌</h1>
-          <h2 style="color:#fff">Server not responding on port ${port}</h2>
-          <p style="color:#5a5a7a">Ensure <code style="color:#22c55e">npm run dev</code> is running in Terminal.</p>
-          <p style="font-size:12px;opacity:0.5;margin-top:20px">${err instanceof Error ? err.message : 'Connection Refused'}</p>
+        <body>
+          <div class="card">
+            <h1>🔌</h1>
+            <h2>Server Not Found</h2>
+            <p>We couldn't reach 127.0.0.1:<b>${port}</b> inside your project container. Make sure your dev server is running.</p>
+            <p style="font-size:12px;opacity:0.6">${err instanceof Error ? err.message : 'Connection Refused'}</p>
+          </div>
         </body>
         </html>
       `
