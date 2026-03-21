@@ -39,19 +39,17 @@ export default function TerminalTab({ projectId }: Props) {
   const submit = useCallback(() => {
     if (!inputText.trim() && inputText !== '') return
     sendInput(inputText + '\n')
-    appendOutput(`\n$ ${inputText}\n`)
     
     setHistory(prev => [...prev, inputText.trim()])
     setHistoryIndex(-1)
     setIsRunning(true)
     setInputText('')
-  }, [inputText, sendInput, appendOutput])
+  }, [inputText, sendInput])
 
   const runQuick = useCallback((cmd: string) => {
     sendInput(cmd + '\n')
-    appendOutput(`\n$ ${cmd}\n`)
     setIsRunning(true)
-  }, [sendInput, appendOutput])
+  }, [sendInput])
 
   const handleClear = useCallback(() => {
     runQuick('clear')
@@ -132,9 +130,9 @@ export default function TerminalTab({ projectId }: Props) {
             {lines.map((line, i) => (
               <Text key={i} style={[styles.output, { color: isDark ? '#e5e7eb' : '#111827', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
                 {line}
+                {connected && i === lines.length - 1 && <Text style={{ color: colors.primary }}>█</Text>}
               </Text>
             ))}
-            {connected && <Text style={{ color: colors.primary }}>█</Text>}
           </View>
         ) : connected ? (
           <Text style={[styles.placeholderText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
