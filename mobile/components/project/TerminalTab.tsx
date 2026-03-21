@@ -14,6 +14,7 @@ interface Props {
 const QUICK_COMMANDS = [
   'npm install',
   'npm run dev',
+  'pkill -f node',
   'ls -la',
   'git status',
   'node index.js',
