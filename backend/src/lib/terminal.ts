@@ -62,7 +62,7 @@ async function handleTerminalConnection(ws: WebSocket, req: IncomingMessage) {
 
   try {
     const exec = await container.exec({
-      Cmd: ['/bin/sh'],
+      Cmd: [process.env.SHELL || '/bin/bash'],
       AttachStdin: true,
       AttachStdout: true,
       AttachStderr: true,

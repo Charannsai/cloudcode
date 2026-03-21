@@ -1,17 +1,25 @@
 import Docker from 'dockerode'
 import path from 'path'
+import fs from 'fs'
+
+function ensureProjectDir(path: string) {
+  if (!fs.existsSync(path)) {
+    fs.mkdirSync(path, { recursive: true })
+  }
+}
 
 // Connect to Docker daemon (works locally AND on VPS)
 const docker = new Docker({
   socketPath: process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock',
 })
 
-const IMAGE = process.env.DOCKER_IMAGE || 'node:20-alpine'
+const IMAGE = process.env.DOCKER_IMAGE || 'cloudcode-base'
 const WORKSPACE_ROOT = process.env.CONTAINER_WORKSPACE || '/workspace'
 
 export interface ContainerInfo {
   containerId: string
   status: string
+  port?: string
 }
 
 /**
@@ -20,6 +28,7 @@ export interface ContainerInfo {
  */
 export async function createContainer(projectId: string): Promise<ContainerInfo> {
   const hostPath = getHostPath(projectId)
+  ensureProjectDir(hostPath)
 
   const container = await docker.createContainer({
     Image: IMAGE,
@@ -35,6 +44,8 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     },
     HostConfig: {
       Binds: [`${hostPath}:${WORKSPACE_ROOT}`],
+      Memory: 512 * 1024 * 1024, // 512MB
+      CpuShares: 512,
       PortBindings: {
         '3000/tcp': [{ HostPort: '' }], // Map to a random host port
       },
@@ -46,9 +57,12 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
   await container.start()
   const info = await container.inspect()
 
+  const port = info.NetworkSettings.Ports['3000/tcp']?.[0]?.HostPort
+
   return {
     containerId: info.Id,
     status: info.State.Status,
+    port,
   }
 }
 
