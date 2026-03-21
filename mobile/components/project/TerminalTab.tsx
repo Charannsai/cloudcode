@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useTerminal } from '@/hooks/useTerminal'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Terminal as TerminalIcon, StopCircle, Trash2, ChevronRight, ArrowUp } from 'lucide-react-native'
+import { Terminal as TerminalIcon, StopCircle, Trash2, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react-native'
 
 interface Props {
   projectId: string
@@ -21,10 +21,15 @@ const QUICK_COMMANDS = [
 ]
 
 export default function TerminalTab({ projectId }: Props) {
-  const { output, connected, error, sendInput, clear } = useTerminal({ projectId })
+  const { output, connected, error, sendInput, clear, appendOutput } = useTerminal({ projectId })
   const { colors, isDark } = useAppTheme()
   const [inputText, setInputText] = useState('')
+  const [history, setHistory] = useState<string[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+  const [isRunning, setIsRunning] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
+
+  const lines = useMemo(() => output.split('\n'), [output])
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: false })
@@ -33,12 +38,46 @@ export default function TerminalTab({ projectId }: Props) {
   const submit = useCallback(() => {
     if (!inputText.trim() && inputText !== '') return
     sendInput(inputText + '\n')
+    appendOutput(`\n$ ${inputText}\n`)
+    
+    setHistory(prev => [...prev, inputText.trim()])
+    setHistoryIndex(-1)
+    setIsRunning(true)
     setInputText('')
-  }, [inputText, sendInput])
+  }, [inputText, sendInput, appendOutput])
 
   const runQuick = useCallback((cmd: string) => {
     sendInput(cmd + '\n')
-  }, [sendInput])
+    appendOutput(`\n$ ${cmd}\n`)
+    setIsRunning(true)
+  }, [sendInput, appendOutput])
+
+  const handleClear = useCallback(() => {
+    runQuick('clear')
+    clear()
+    setIsRunning(false)
+  }, [runQuick, clear])
+
+  const goHistoryUp = () => {
+    if (history.length > 0) {
+      const newIndex = historyIndex === -1 ? history.length - 1 : Math.max(0, historyIndex - 1)
+      setHistoryIndex(newIndex)
+      setInputText(history[newIndex])
+    }
+  }
+
+  const goHistoryDown = () => {
+    if (historyIndex !== -1) {
+      const newIndex = historyIndex + 1
+      if (newIndex >= history.length) {
+        setHistoryIndex(-1)
+        setInputText('')
+      } else {
+        setHistoryIndex(newIndex)
+        setInputText(history[newIndex])
+      }
+    }
+  }
 
   return (
     <KeyboardAvoidingView
@@ -63,7 +102,7 @@ export default function TerminalTab({ projectId }: Props) {
             <StopCircle size={14} color={colors.error} strokeWidth={2} />
           </TouchableOpacity>
           <TouchableOpacity 
-            onPress={clear} 
+            onPress={handleClear} 
             style={[styles.actionBtn, { backgroundColor: colors.background }]}
             activeOpacity={0.7}
           >
@@ -88,10 +127,14 @@ export default function TerminalTab({ projectId }: Props) {
           </View>
         )}
         {output ? (
-          <Text style={[styles.output, { color: isDark ? '#e5e7eb' : '#111827', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
-            {output}
+          <View style={{ paddingBottom: 16 }}>
+            {lines.map((line, i) => (
+              <Text key={i} style={[styles.output, { color: isDark ? '#e5e7eb' : '#111827', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
+                {line}
+              </Text>
+            ))}
             {connected && <Text style={{ color: colors.primary }}>█</Text>}
-          </Text>
+          </View>
         ) : connected ? (
           <Text style={[styles.placeholderText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
             Node environment ready.
@@ -121,13 +164,12 @@ export default function TerminalTab({ projectId }: Props) {
         </ScrollView>
 
         <View style={styles.inputRow}>
-          <Text style={[styles.promptSymbol, { color: '#10b981', fontFamily: 'JetBrainsMono_700Bold' }]}>{'>'}</Text>
           <TextInput
             style={[styles.input, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={submit}
-            placeholder="Type a command..."
+            placeholder={isRunning ? "Running process..." : "Type a command..."}
             placeholderTextColor={colors.textSecondary + '60'}
             returnKeyType="send"
             autoCapitalize="none"
@@ -136,16 +178,28 @@ export default function TerminalTab({ projectId }: Props) {
             blurOnSubmit={false}
             onFocus={() => scrollRef.current?.scrollToEnd({ animated: true })}
           />
-          <TouchableOpacity 
-            style={[
-              styles.sendBtn, 
-              { backgroundColor: inputText.trim() ? colors.primary : colors.background }
-            ]} 
-            onPress={submit}
-            disabled={!inputText.trim()}
-          >
-            <ArrowUp size={18} color={inputText.trim() ? colors.background : colors.textSecondary} strokeWidth={2.5} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {history.length > 0 && (
+              <View style={{ flexDirection: 'column', gap: 4 }}>
+                <TouchableOpacity onPress={goHistoryUp} style={{ padding: 2, backgroundColor: colors.background, borderRadius: 4 }}>
+                  <ArrowUp size={12} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={goHistoryDown} style={{ padding: 2, backgroundColor: colors.background, borderRadius: 4 }}>
+                  <ArrowDown size={12} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            <TouchableOpacity 
+              style={[
+                styles.sendBtn, 
+                { backgroundColor: inputText.trim() ? colors.primary : colors.background }
+              ]} 
+              onPress={submit}
+              disabled={!inputText.trim()}
+            >
+              <ArrowUp size={18} color={inputText.trim() ? colors.background : colors.textSecondary} strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -233,8 +287,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   promptSymbol: {
-    fontSize: 18,
-    marginRight: 4,
+    fontSize: 12,
+    marginRight: 8,
   },
 })
 

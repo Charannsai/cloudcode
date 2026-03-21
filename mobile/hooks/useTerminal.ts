@@ -16,6 +16,7 @@ interface UseTerminalReturn {
   sendInput: (text: string) => void
   resize: (cols: number, rows: number) => void
   clear: () => void
+  appendOutput: (text: string) => void
 }
 
 /**
@@ -108,7 +109,8 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
   }, [])
 
   const clear = useCallback(() => setOutput(''), [])
+  const appendOutput = useCallback((text: string) => setOutput((prev) => prev + text), [])
 
-  return { output, connected, error, sendInput, resize, clear }
+  return { output, connected, error, sendInput, resize, clear, appendOutput }
 }
 
