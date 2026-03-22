@@ -53,6 +53,10 @@ async function cloneAndProvision(projectId: string, githubUrl: string) {
       timeout: 60000,
       stdio: 'pipe',
     })
+    
+    // Grant full permissions recursively so the Docker "coder" user can read/write the cloned code!
+    execSync(`chmod -R 777 "${workspacePath}"`, { stdio: 'ignore' })
+
     const { containerId } = await createContainer(projectId)
     await supabaseAdmin
       .from('projects')
