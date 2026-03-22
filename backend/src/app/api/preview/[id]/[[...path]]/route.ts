@@ -106,7 +106,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         'Accept-Encoding': 'identity', // Strongly request uncompressed
       },
       redirect: 'manual',
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(60000), // Increased from 10s to 60s for slow first-compilations (Next/Vite)
     })
 
     // Handle 304 Not Modified & other bodyless responses
