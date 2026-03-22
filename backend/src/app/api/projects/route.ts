@@ -87,7 +87,7 @@ async function seedTemplate(dir: string, type: string) {
       JSON.stringify({
         name: 'cloudcode-react',
         version: '1.0.0',
-        scripts: { dev: 'vite', build: 'vite build', start: 'vite preview' },
+        scripts: { dev: 'vite --host 0.0.0.0 --port 3000', build: 'vite build', start: 'vite preview --host 0.0.0.0 --port 3000' },
         dependencies: { react: '^18.0.0', 'react-dom': '^18.0.0' },
         devDependencies: { vite: '^5.0.0', '@vitejs/plugin-react': '^4.0.0' },
       }, null, 2)
