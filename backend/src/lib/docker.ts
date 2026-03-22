@@ -45,7 +45,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     },
     HostConfig: {
       Binds: [`${hostPath}:${WORKSPACE_ROOT}`],
-      Memory: 512 * 1024 * 1024, // 512MB
+      Memory: 2048 * 1024 * 1024, // Increased to 2GB because Next.js Turbopack crashes 512MB
       CpuShares: 512,
       PortBindings: {
         '3000/tcp': [{ HostPort: '' }], // Map to a random host port
