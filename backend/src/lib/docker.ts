@@ -35,6 +35,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     name: `cloudcode-${projectId}`,
     Cmd: ['tail', '-f', '/dev/null'], // Keep alive
     WorkingDir: WORKSPACE_ROOT,
+    Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0'], // Force Next.js & Vite to listen on all interfaces
     Tty: true,
     AttachStdin: true,
     AttachStdout: true,
