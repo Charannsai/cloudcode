@@ -39,7 +39,7 @@ export default function TerminalTab({ projectId }: Props) {
   const submit = useCallback(() => {
     if (!inputText.trim() && inputText !== '') return
     sendInput(inputText + '\n')
-    
+
     setHistory(prev => [...prev, inputText.trim()])
     setHistoryIndex(-1)
     setIsRunning(true)
@@ -93,15 +93,15 @@ export default function TerminalTab({ projectId }: Props) {
           </Text>
         </View>
         <View style={styles.statusActions}>
-          <TouchableOpacity 
-            onPress={() => sendInput('\x03')} 
+          <TouchableOpacity
+            onPress={() => sendInput('\x03')}
             style={[styles.actionBtn, { backgroundColor: colors.background }]}
             activeOpacity={0.7}
           >
             <StopCircle size={14} color={colors.error} strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={handleClear} 
+          <TouchableOpacity
+            onPress={handleClear}
             style={[styles.actionBtn, { backgroundColor: colors.background }]}
             activeOpacity={0.7}
           >
@@ -141,7 +141,6 @@ export default function TerminalTab({ projectId }: Props) {
         ) : null}
       </ScrollView>
 
-      {/* Input row */}
       <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <ScrollView
           horizontal
@@ -188,11 +187,11 @@ export default function TerminalTab({ projectId }: Props) {
                 </TouchableOpacity>
               </View>
             )}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.sendBtn, 
+                styles.sendBtn,
                 { backgroundColor: inputText.trim() ? colors.primary : colors.background }
-              ]} 
+              ]}
               onPress={submit}
               disabled={!inputText.trim()}
             >
@@ -220,12 +219,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  statusText: { 
-    fontSize: 10, 
+  statusText: {
+    fontSize: 10,
     letterSpacing: 1,
   },
-  statusActions: { 
-    flexDirection: 'row', 
+  statusActions: {
+    flexDirection: 'row',
     gap: 8,
   },
   actionBtn: {
