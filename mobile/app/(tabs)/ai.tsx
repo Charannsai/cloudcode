@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
-  Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal,
+  Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, Loader2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon
 } from 'lucide-react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -13,7 +13,7 @@ import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { useAIStore, ChatMessage, ToolCallInfo } from '@/store/ai'
 import { useProjectsStore } from '@/store/projects'
-import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated'
+import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated'
 import Markdown from 'react-native-markdown-display'
 import * as Clipboard from 'expo-clipboard'
 
@@ -41,27 +41,33 @@ function ToolCallCard({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: bo
   const label = labelMap[tool.name] || tool.name
   const target = (tool.args?.path || tool.args?.command || '') as string
 
-  const opacity = useSharedValue(1)
+  const isRunning = tool.status === 'running'
+  const pulse = useSharedValue(0)
+  const rotation = useSharedValue(0)
 
   useEffect(() => {
-    if (tool.status === 'running') {
-      opacity.value = withRepeat(
-        withSequence(withTiming(0.4, { duration: 600 }), withTiming(1, { duration: 600 })),
-        -1,
-        true
-      )
+    if (isRunning) {
+      pulse.value = withRepeat(withSequence(withTiming(0.4, { duration: 600 }), withTiming(0, { duration: 600 })), -1, true)
+      rotation.value = withRepeat(withTiming(360, { duration: 1500, easing: Easing.linear }), -1, false)
     } else {
-      opacity.value = withTiming(1, { duration: 300 })
+      pulse.value = withTiming(0, { duration: 300 })
+      rotation.value = 0
     }
-  }, [tool.status])
+  }, [isRunning])
 
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+  const glowStyle = useAnimatedStyle(() => ({ opacity: pulse.value }))
+  const spinStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.value}deg` }] }))
 
   return (
-    <Animated.View style={[styles.toolCard, animStyle, { backgroundColor: isDark ? '#111' : '#fcfcfc', borderColor: isDark ? '#222' : '#eaeaea' }]}>
+    <View style={[styles.toolCard, { backgroundColor: isDark ? '#111' : '#fcfcfc', borderColor: isDark ? '#222' : '#eaeaea', overflow: 'hidden' }]}>
+      {isRunning && (
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }, glowStyle]} />
+      )}
       <View style={styles.toolHeader}>
-        {tool.status === 'running' ? (
-          <ActivityIndicator size={10} color={isDark ? '#fff' : '#000'} />
+        {isRunning ? (
+          <Animated.View style={spinStyle}>
+            <Loader size={12} color={isDark ? '#fff' : '#000'} />
+          </Animated.View>
         ) : tool.status === 'done' ? (
           <CheckCircle2 size={12} color={isDark ? '#fff' : '#000'} />
         ) : (
@@ -75,7 +81,7 @@ function ToolCallCard({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: bo
           {target}
         </Text>
       </View>
-    </Animated.View>
+    </View>
   )
 }
 
@@ -192,6 +198,31 @@ export default function AIScreen() {
   useEffect(() => {
     if (projects.length === 0) fetchProjects()
   }, [])
+
+  // Bouncing dots for Thinking state
+  const dot1 = useSharedValue(0)
+  const dot2 = useSharedValue(0)
+  const dot3 = useSharedValue(0)
+
+  useEffect(() => {
+    const isThinking = isStreaming && !currentStreamText && currentToolCalls.length === 0
+    if (isThinking) {
+      const animateDot = (dot: any, delay: number) => {
+        setTimeout(() => {
+          dot.value = withRepeat(withSequence(withTiming(-5, { duration: 350, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 350, easing: Easing.inOut(Easing.ease) })), -1, true)
+        }, delay)
+      }
+      animateDot(dot1, 0)
+      animateDot(dot2, 180)
+      animateDot(dot3, 360)
+    } else {
+      dot1.value = 0; dot2.value = 0; dot3.value = 0;
+    }
+  }, [isStreaming, currentStreamText, currentToolCalls.length])
+
+  const dotStyle1 = useAnimatedStyle(() => ({ transform: [{ translateY: dot1.value }] }))
+  const dotStyle2 = useAnimatedStyle(() => ({ transform: [{ translateY: dot2.value }] }))
+  const dotStyle3 = useAnimatedStyle(() => ({ transform: [{ translateY: dot3.value }] }))
 
   // Auto-select first project
   useEffect(() => {
@@ -352,8 +383,10 @@ export default function AIScreen() {
                 </Markdown>
               ) : currentToolCalls.length === 0 ? (
                 <View style={styles.typingIndicator}>
-                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }]} />
-                  <Text style={[styles.typingText, { color: isDark ? '#a1a1aa' : '#71717a' }]}>Thinking...</Text>
+                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }, dotStyle1]} />
+                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }, dotStyle2]} />
+                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }, dotStyle3]} />
+                  <Text style={[styles.typingText, { color: isDark ? '#a1a1aa' : '#71717a', marginLeft: 6 }]}>Thinking...</Text>
                 </View>
               ) : null}
             </View>
