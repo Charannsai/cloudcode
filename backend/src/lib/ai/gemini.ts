@@ -1,7 +1,7 @@
 import { execInContainer } from '../docker'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
-const GEMINI_MODEL = 'gemini-3.0-flash'
+const GEMINI_MODEL = 'gemini-3-flash-preview'
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`
 
 export interface GeminiMessage {
