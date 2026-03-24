@@ -6,16 +6,18 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { ChevronLeft, RefreshCw, Folder, Terminal, Globe } from 'lucide-react-native'
+import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch } from 'lucide-react-native'
 
 // Lazy-load tab screens
 import FilesTab from '@/components/project/FilesTab'
 import TerminalTab from '@/components/project/TerminalTab'
 import PreviewTab from '@/components/project/PreviewTab'
+import GitTab from '@/components/project/GitTab'
 
 const TABS = [
   { id: 'Terminal', icon: Terminal },
   { id: 'Files', icon: Folder },
+  { id: 'Git', icon: GitBranch },
   { id: 'Preview', icon: Globe },
 ] as const
 
@@ -102,7 +104,7 @@ export default function ProjectScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Segmented Tab Bar - Like the image */}
+      {/* Segmented Tab Bar */}
       <View style={styles.tabBarContainer}>
         <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {TABS.map((tab) => {
@@ -142,6 +144,9 @@ export default function ProjectScreen() {
         </View>
         <View style={{ flex: 1, display: activeTab === 'Terminal' ? 'flex' : 'none' }}>
           <TerminalTab projectId={project.id} />
+        </View>
+        <View style={{ flex: 1, display: activeTab === 'Git' ? 'flex' : 'none' }}>
+          <GitTab projectId={project.id} />
         </View>
         <View style={{ flex: 1, display: activeTab === 'Preview' ? 'flex' : 'none' }}>
           <PreviewTab projectId={project.id} port={project.port || 3000} />
@@ -213,9 +218,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
   },
-  tabText: { fontSize: 13 },
+  tabText: { fontSize: 11 },
   content: { flex: 1 },
 })
-

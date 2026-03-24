@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, ActivityIndicator } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, ActivityIndicator, Dimensions } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Shield, RefreshCw, AlertCircle, Globe, Terminal, Play } from 'lucide-react-native'
+import { Shield, RefreshCw, AlertCircle, Globe, Terminal, Play, Smartphone, Tablet, Monitor, Maximize } from 'lucide-react-native'
 import { getToken } from '@/lib/auth'
 
 interface Props {
@@ -12,6 +12,17 @@ interface Props {
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
+const SCREEN_WIDTH = Dimensions.get('window').width
+
+const DEVICES = [
+  { id: 'responsive', label: 'Auto', icon: Maximize, width: 0 },
+  { id: 'mobile', label: 'Mobile', icon: Smartphone, width: 390 },
+  { id: 'tablet', label: 'Tablet', icon: Tablet, width: 768 },
+  { id: 'desktop', label: 'Desktop', icon: Monitor, width: 1440 },
+] as const
+
+type DeviceId = typeof DEVICES[number]['id']
+
 export default function PreviewTab({ projectId, port: initialPort }: Props) {
   const { colors, isDark } = useAppTheme()
   const [port, setPort] = useState(initialPort.toString())
@@ -20,6 +31,8 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   const [token, setToken] = useState<string | null>(null)
   const [key, setKey] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [selectedDevice, setSelectedDevice] = useState<DeviceId>('responsive')
+  const webViewRef = useRef<WebView>(null)
 
   useEffect(() => {
     getToken().then(setToken)
@@ -47,21 +60,35 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
 
   if (!token) return null
 
-  const injectedJS = `
+  // Calculate viewport width and scale for device simulation
+  const deviceConfig = DEVICES.find(d => d.id === selectedDevice)!
+  const targetWidth = deviceConfig.width || SCREEN_WIDTH
+  const containerWidth = SCREEN_WIDTH - 32 // 16px padding on each side
+  const scale = targetWidth > containerWidth ? containerWidth / targetWidth : 1
+  const scaledHeight = targetWidth > containerWidth ? `${100 / scale}%` : '100%'
+
+  const viewportJS = `
     (function() {
-      // 1. Force set cookies on the client side for sub-resources
+      // Set cookies for sub-resources
       var cookieBase = 'Path=/; Max-Age=3600; SameSite=Lax';
       document.cookie = 'preview_token=${token}; ' + cookieBase;
       document.cookie = 'preview_project_id=${projectId}; ' + cookieBase;
       document.cookie = 'preview_port=${activePort}; ' + cookieBase;
 
-      // 2. Set base href for relative URLs
+      // Set base href for relative URLs
       var base = document.querySelector('base');
       if (!base) {
         base = document.createElement('base');
         document.head.prepend(base);
       }
       base.href = '${baseUrl}?port=${activePort}&token=${token}&_=';
+
+      ${deviceConfig.width > 0 ? `
+      // Set viewport meta for device simulation
+      var meta = document.querySelector('meta[name=viewport]');
+      if (!meta) { meta = document.createElement('meta'); meta.name = 'viewport'; document.head.appendChild(meta); }
+      meta.content = 'width=${deviceConfig.width}';
+      ` : ''}
       true;
     })();
   `
@@ -131,6 +158,7 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* URL Bar */}
       <View style={[styles.urlBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={[styles.addressBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Shield size={14} color="#10b981" strokeWidth={2.5} />
@@ -162,37 +190,107 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.webContainer}>
-        <WebView
-          key={key}
-          source={{
-            uri: previewUrl,
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            }
-          }}
-          injectedJavaScriptBeforeContentLoaded={injectedJS}
-          originWhitelist={['*']}
-          style={[styles.webView, { opacity: loading ? 0 : 1 }]}
-          onLoadStart={() => setLoading(true)}
-          onLoadEnd={() => setLoading(false)}
-          renderError={() => (
-            <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-              <AlertCircle size={48} color={colors.error} strokeWidth={1.5} />
-              <Text style={[styles.errorTitle, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]}>Connection Refused</Text>
-              <Text style={[styles.errorHint, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                Port <Text style={{ color: colors.text }}>{activePort}</Text> is not responding. Make sure your server is running in the terminal.
+      {/* Device Switcher */}
+      <View style={[styles.deviceBar, { backgroundColor: isDark ? '#0a0a0a' : '#f8f9fa', borderBottomColor: colors.border }]}>
+        {DEVICES.map((device) => {
+          const isActive = selectedDevice === device.id
+          const Icon = device.icon
+          return (
+            <TouchableOpacity
+              key={device.id}
+              style={[
+                styles.deviceBtn,
+                {
+                  backgroundColor: isActive
+                    ? (isDark ? '#1e40af' : '#3b82f6')
+                    : 'transparent',
+                  borderColor: isActive
+                    ? (isDark ? '#2563eb' : '#60a5fa')
+                    : 'transparent',
+                }
+              ]}
+              onPress={() => {
+                setSelectedDevice(device.id)
+                setKey(k => k + 1)
+              }}
+              activeOpacity={0.7}
+            >
+              <Icon
+                size={14}
+                color={isActive ? '#fff' : (isDark ? '#888' : '#666')}
+                strokeWidth={2}
+              />
+              <Text style={[
+                styles.deviceLabel,
+                { color: isActive ? '#fff' : (isDark ? '#888' : '#666') }
+              ]}>
+                {device.label}
               </Text>
-              <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.card }]} onPress={handleRefresh}>
-                 <Text style={[styles.retryText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Retry Connection</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          startInLoadingState
-          javaScriptEnabled
-          domStorageEnabled
-          allowsInlineMediaPlayback
-        />
+              {device.width > 0 && (
+                <Text style={[
+                  styles.deviceSize,
+                  { color: isActive ? 'rgba(255,255,255,0.7)' : (isDark ? '#555' : '#999') }
+                ]}>
+                  {device.width}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )
+        })}
+      </View>
+
+      {/* Preview */}
+      <View style={styles.webContainer}>
+        {/* Device frame indicator */}
+        {selectedDevice !== 'responsive' && (
+          <View style={[styles.deviceFrame, { borderColor: isDark ? '#222' : '#ddd' }]}>
+            <Text style={[styles.deviceFrameText, { color: colors.textSecondary }]}>
+              {deviceConfig.width}px × viewport
+            </Text>
+          </View>
+        )}
+
+        <View style={[
+          styles.webViewWrapper,
+          selectedDevice !== 'responsive' && {
+            width: targetWidth,
+            transform: [{ scale }],
+            transformOrigin: 'top left',
+          }
+        ]}>
+          <WebView
+            ref={webViewRef}
+            key={key}
+            source={{
+              uri: previewUrl,
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              }
+            }}
+            injectedJavaScriptBeforeContentLoaded={viewportJS}
+            originWhitelist={['*']}
+            style={[styles.webView, { opacity: loading ? 0 : 1 }]}
+            onLoadStart={() => setLoading(true)}
+            onLoadEnd={() => setLoading(false)}
+            renderError={() => (
+              <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+                <AlertCircle size={48} color={colors.error} strokeWidth={1.5} />
+                <Text style={[styles.errorTitle, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]}>Connection Refused</Text>
+                <Text style={[styles.errorHint, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+                  Port <Text style={{ color: colors.text }}>{activePort}</Text> is not responding. Make sure your server is running in the terminal.
+                </Text>
+                <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.card }]} onPress={handleRefresh}>
+                   <Text style={[styles.retryText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Retry Connection</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            startInLoadingState
+            javaScriptEnabled
+            domStorageEnabled
+            allowsInlineMediaPlayback
+          />
+        </View>
+
         {loading && (
           <View style={[styles.loadingOverlay, { backgroundColor: colors.background }]}>
             <ActivityIndicator color={colors.text} size="small" />
@@ -307,43 +405,79 @@ const styles = StyleSheet.create({
   urlBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    gap: 8,
+    gap: 6,
   },
   addressBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
-    borderRadius: 14,
+    height: 36,
+    borderRadius: 12,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    gap: 6,
+    paddingHorizontal: 10,
+    gap: 4,
   },
-  hostText: { fontSize: 13 },
+  hostText: { fontSize: 12 },
   portInput: {
-    fontSize: 14,
+    fontSize: 13,
     flex: 1,
     paddingVertical: 0,
     height: '100%',
   },
   refreshBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  webContainer: { flex: 1 },
+  deviceBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 4,
+    borderBottomWidth: 1,
+  },
+  deviceBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  deviceLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  deviceSize: {
+    fontSize: 9,
+    fontFamily: 'JetBrainsMono_400Regular',
+  },
+  deviceFrame: {
+    alignItems: 'center',
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderStyle: 'dashed',
+  },
+  deviceFrameText: {
+    fontSize: 10,
+    fontFamily: 'JetBrainsMono_400Regular',
+  },
+  webContainer: { flex: 1, overflow: 'hidden' },
+  webViewWrapper: { flex: 1 },
   webView: { flex: 1 },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
