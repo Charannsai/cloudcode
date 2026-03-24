@@ -21,6 +21,7 @@ import {
 
 interface Props {
   projectId: string
+  isActive: boolean
 }
 
 function FileRow({ node, depth, onFilePress }: {
@@ -97,31 +98,36 @@ function FileRow({ node, depth, onFilePress }: {
   )
 }
 
-export default function FilesTab({ projectId }: Props) {
+export default function FilesTab({ projectId, isActive }: Props) {
   const router = useRouter()
   const { colors } = useAppTheme()
   const [files, setFiles] = useState<FileNode[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchFiles()
-  }, [projectId])
+    if (isActive) {
+      fetchFiles(files.length > 0)
+    }
+  }, [projectId, isActive])
 
-  async function fetchFiles() {
-    setLoading(true)
+  async function fetchFiles(isBackground = false) {
+    if (!isBackground) setLoading(true)
+    setRefreshing(true)
     setError(null)
     try {
       const tree = await api.files.list(projectId)
       setFiles(tree)
     } catch (err) {
-      setError((err as Error).message)
+      if (!isBackground) setError((err as Error).message)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
-  if (loading) {
+  if (loading && files.length === 0) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.text} size="small" />
@@ -130,11 +136,11 @@ export default function FilesTab({ projectId }: Props) {
     )
   }
 
-  if (error) {
+  if (error && files.length === 0) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-        <TouchableOpacity onPress={fetchFiles} style={[styles.retryBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <TouchableOpacity onPress={() => fetchFiles(false)} style={[styles.retryBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.retryText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Try Again</Text>
         </TouchableOpacity>
       </View>
@@ -148,8 +154,12 @@ export default function FilesTab({ projectId }: Props) {
           <Text style={[styles.toolbarTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>EXPLORER</Text>
           <Text style={[styles.projectBadge, { color: colors.textSecondary, backgroundColor: colors.background, borderColor: colors.border }]}>SRC</Text>
         </View>
-        <TouchableOpacity onPress={fetchFiles} activeOpacity={0.7} style={styles.refreshBtn}>
-          <RefreshCw size={14} color={colors.textSecondary} />
+        <TouchableOpacity onPress={() => fetchFiles(true)} activeOpacity={0.7} style={styles.refreshBtn}>
+          {refreshing ? (
+            <ActivityIndicator size={14} color={colors.textSecondary} />
+          ) : (
+            <RefreshCw size={14} color={colors.textSecondary} />
+          )}
         </TouchableOpacity>
       </View>
       
