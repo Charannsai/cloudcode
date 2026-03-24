@@ -38,20 +38,20 @@ function ToolCallCard({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: bo
   const target = (tool.args?.path || tool.args?.command || '') as string
 
   return (
-    <View style={[styles.toolCard, { backgroundColor: isDark ? '#0d1117' : '#f0f4f8', borderColor: isDark ? '#1c2432' : '#d0d7de' }]}>
+    <View style={[styles.toolCard, { backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent' }]}>
       <View style={styles.toolHeader}>
         {tool.status === 'running' ? (
-          <ActivityIndicator size={12} color="#f59e0b" />
+          <ActivityIndicator size={10} color="#818cf8" />
         ) : tool.status === 'done' ? (
-          <CheckCircle2 size={14} color="#10b981" />
+          <CheckCircle2 size={12} color="#10b981" />
         ) : (
-          <AlertCircle size={14} color="#ef4444" />
+          <AlertCircle size={12} color="#ef4444" />
         )}
-        <Icon size={14} color={isDark ? '#8b949e' : '#656d76'} />
-        <Text style={[styles.toolLabel, { color: isDark ? '#c9d1d9' : '#1f2328' }]}>
+        <Icon size={12} color={isDark ? '#8b949e' : '#656d76'} />
+        <Text style={[styles.toolLabel, { color: isDark ? '#a1a1aa' : '#52525b' }]}>
           {label}
         </Text>
-        <Text style={[styles.toolTarget, { color: isDark ? '#58a6ff' : '#0969da' }]} numberOfLines={1}>
+        <Text style={[styles.toolTarget, { color: isDark ? '#818cf8' : '#4f46e5' }]} numberOfLines={1}>
           {target}
         </Text>
       </View>
@@ -70,16 +70,16 @@ function MessageBubble({ message, isDark, colors }: {
       style={[styles.messageBubbleWrapper, isUser ? styles.userWrapper : styles.modelWrapper]}
     >
       {!isUser && (
-        <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1a1a2e' : '#eef2ff' }]}>
-          <Sparkles size={16} color={isDark ? '#818cf8' : '#6366f1'} />
+        <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1a1a24' : '#f4f4f5', borderColor: isDark ? '#2a2a35' : '#e4e4e7', borderWidth: 1 }]}>
+          <Bot size={16} color={isDark ? '#a1a1aa' : '#52525b'} />
         </View>
       )}
 
       <View style={[
         styles.bubble,
         isUser
-          ? [styles.userBubble, { backgroundColor: isDark ? '#1e40af' : '#3b82f6' }]
-          : [styles.modelBubble, { backgroundColor: isDark ? '#111827' : '#f8fafc', borderColor: isDark ? '#1f2937' : '#e2e8f0' }]
+          ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(99,102,241,0.95)' : '#4f46e5', shadowColor: '#4f46e5' }]
+          : [styles.modelBubble, { backgroundColor: isDark ? 'rgba(25,25,30,0.8)' : '#ffffff', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0' }]
       ]}>
         {/* Tool calls */}
         {message.toolCalls?.map((tc, i) => (
@@ -88,15 +88,15 @@ function MessageBubble({ message, isDark, colors }: {
 
         <Text style={[
           styles.messageText,
-          { color: isUser ? '#ffffff' : (isDark ? '#e5e7eb' : '#1e293b') }
+          { color: isUser ? '#ffffff' : (isDark ? '#f4f4f5' : '#27272a') }
         ]}>
           {message.text}
         </Text>
       </View>
 
       {isUser && (
-        <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1e3a5f' : '#dbeafe' }]}>
-          <User size={16} color={isDark ? '#60a5fa' : '#3b82f6'} />
+        <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1e1b4b' : '#eef2ff' }]}>
+          <User size={16} color={isDark ? '#818cf8' : '#6366f1'} />
         </View>
       )}
     </Animated.View>
@@ -248,22 +248,22 @@ export default function AIScreen() {
         {/* Streaming indicator */}
         {isStreaming && (
           <Animated.View entering={FadeInDown.duration(200)} style={[styles.messageBubbleWrapper, styles.modelWrapper]}>
-            <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1a1a2e' : '#eef2ff' }]}>
-              <Sparkles size={16} color={isDark ? '#818cf8' : '#6366f1'} />
+            <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1a1a24' : '#f4f4f5', borderColor: isDark ? '#2a2a35' : '#e4e4e7', borderWidth: 1 }]}>
+              <Bot size={16} color={isDark ? '#a1a1aa' : '#52525b'} />
             </View>
-            <View style={[styles.bubble, styles.modelBubble, { backgroundColor: isDark ? '#111827' : '#f8fafc', borderColor: isDark ? '#1f2937' : '#e2e8f0' }]}>
+            <View style={[styles.bubble, styles.modelBubble, { backgroundColor: isDark ? 'rgba(25,25,30,0.8)' : '#ffffff', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0' }]}>
               {currentToolCalls.map((tc, i) => (
                 <ToolCallCard key={i} tool={tc} isDark={isDark} colors={colors} />
               ))}
               {currentStreamText ? (
-                <Text style={[styles.messageText, { color: isDark ? '#e5e7eb' : '#1e293b' }]}>
+                <Text style={[styles.messageText, { color: isDark ? '#f4f4f5' : '#27272a' }]}>
                   {currentStreamText}
                   <Text style={{ color: colors.primary }}>▊</Text>
                 </Text>
               ) : currentToolCalls.length === 0 ? (
                 <View style={styles.typingIndicator}>
-                  <ActivityIndicator size="small" color={colors.textSecondary} />
-                  <Text style={[styles.typingText, { color: colors.textSecondary }]}>Thinking...</Text>
+                  <Animated.View style={styles.typingDot} />
+                  <Text style={[styles.typingText, { color: isDark ? '#a1a1aa' : '#71717a' }]}>Thinking...</Text>
                 </View>
               ) : null}
             </View>
@@ -319,75 +319,83 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 12,
+    paddingBottom: 16,
     borderBottomWidth: 1,
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   aiIcon: {
-    width: 40, height: 40, borderRadius: 14,
+    width: 44, height: 44, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#6366f1', shadowOpacity: 0.2, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10,
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Inter_700Bold' },
-  headerSubtitle: { fontSize: 12, fontFamily: 'Inter_500Medium', marginTop: 1 },
+  headerTitle: { fontSize: 20, fontFamily: 'Inter_700Bold', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 2 },
   clearBtn: {
-    width: 36, height: 36, borderRadius: 12,
+    width: 40, height: 40, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
   },
-  projectBar: { maxHeight: 48 },
-  projectBarContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+  projectBar: { maxHeight: 54 },
+  projectBarContent: { paddingHorizontal: 16, paddingVertical: 12, gap: 10 },
   projectChip: {
-    paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1, marginRight: 8,
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 24, borderWidth: 1, marginRight: 8,
   },
-  projectChipText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
-  messagesContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 },
+  projectChipText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', letterSpacing: -0.2 },
+  messagesContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 120 },
   emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 20 },
   emptyIcon: {
     width: 80, height: 80, borderRadius: 28,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+    borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
   },
-  emptyTitle: { fontSize: 24, fontFamily: 'Inter_700Bold', marginBottom: 8 },
+  emptyTitle: { fontSize: 28, fontFamily: 'Inter_700Bold', marginBottom: 12, letterSpacing: -0.8 },
   emptySubtitle: {
-    fontSize: 15, fontFamily: 'Inter_400Regular', textAlign: 'center',
-    lineHeight: 22, opacity: 0.7, marginBottom: 30,
+    fontSize: 16, fontFamily: 'Inter_400Regular', textAlign: 'center',
+    lineHeight: 24, opacity: 0.7, marginBottom: 36,
   },
-  quickPrompts: { width: '100%', gap: 8 },
+  quickPrompts: { width: '100%', gap: 10 },
   quickPrompt: {
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderRadius: 14, borderWidth: 1,
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderRadius: 16, borderWidth: 1,
   },
-  quickPromptText: { fontSize: 14, fontFamily: 'Inter_500Medium' },
+  quickPromptText: { fontSize: 15, fontFamily: 'Inter_500Medium', letterSpacing: -0.3 },
   messageBubbleWrapper: {
-    flexDirection: 'row', marginBottom: 16, gap: 8,
-    alignItems: 'flex-start',
+    flexDirection: 'row', marginBottom: 20, gap: 10,
+    alignItems: 'flex-end',
   },
   userWrapper: { justifyContent: 'flex-end' },
   modelWrapper: { justifyContent: 'flex-start' },
   avatarCircle: {
-    width: 32, height: 32, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center', marginTop: 2,
+    width: 34, height: 34, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
   },
   bubble: {
-    maxWidth: SCREEN_WIDTH * 0.72, borderRadius: 18, padding: 14,
+    maxWidth: SCREEN_WIDTH * 0.74, borderRadius: 20, padding: 16,
   },
-  userBubble: { borderBottomRightRadius: 4 },
-  modelBubble: { borderBottomLeftRadius: 4, borderWidth: 1 },
+  userBubble: { 
+    borderBottomRightRadius: 6,
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 4,
+  },
+  modelBubble: { borderBottomLeftRadius: 6, borderWidth: 1 },
   messageText: {
-    fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 21,
+    fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24, letterSpacing: -0.2,
   },
   toolCard: {
-    borderRadius: 10, padding: 10, marginBottom: 8,
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 8,
     borderWidth: 1,
   },
   toolHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
   },
-  toolLabel: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
-  toolTarget: { fontSize: 11, fontFamily: 'JetBrainsMono_400Regular', flex: 1 },
+  toolLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  toolTarget: { fontSize: 12, fontFamily: 'JetBrainsMono_400Regular', flex: 1 },
   typingIndicator: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6,
   },
-  typingText: { fontSize: 13, fontFamily: 'Inter_500Medium' },
+  typingDot: {
+    width: 8, height: 8, borderRadius: 4, backgroundColor: '#818cf8',
+  },
+  typingText: { fontSize: 14, fontFamily: 'Inter_500Medium', fontStyle: 'italic' },
   inputContainer: {
     paddingHorizontal: 16, paddingVertical: 12,
     borderTopWidth: 1,
@@ -396,15 +404,15 @@ const styles = StyleSheet.create({
   },
   inputBox: {
     flexDirection: 'row', alignItems: 'flex-end',
-    borderRadius: 20, borderWidth: 1, paddingHorizontal: 16,
-    paddingVertical: 8, gap: 8,
+    borderRadius: 24, borderWidth: 1, paddingHorizontal: 16,
+    paddingVertical: 10, gap: 10,
   },
   input: {
     flex: 1, fontSize: 15, fontFamily: 'Inter_400Regular',
-    maxHeight: 120, paddingVertical: 6,
+    maxHeight: 120, paddingVertical: 6, lineHeight: 22,
   },
   sendBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
   },
 })

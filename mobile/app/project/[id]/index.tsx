@@ -140,7 +140,7 @@ export default function ProjectScreen() {
       {/* Tab content */}
       <View style={styles.content}>
         <View style={{ flex: 1, display: activeTab === 'Files' ? 'flex' : 'none' }}>
-          <FilesTab projectId={project.id} />
+          <FilesTab projectId={project.id} isActive={activeTab === 'Files'} />
         </View>
         <View style={{ flex: 1, display: activeTab === 'Terminal' ? 'flex' : 'none' }}>
           <TerminalTab projectId={project.id} />

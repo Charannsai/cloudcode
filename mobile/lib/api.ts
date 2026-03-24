@@ -1,5 +1,6 @@
 import { getToken } from './auth'
 import { Project, FileNode } from '@/types'
+import EventSource from 'react-native-sse'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -108,7 +109,6 @@ export const api = {
   },
 
   ai: {
-    /** Stream AI chat via SSE — returns a ReadableStream */
     chat: async (
       projectId: string,
       messages: { role: 'user' | 'model'; text: string }[],
@@ -116,44 +116,38 @@ export const api = {
       onChunk?: (chunk: AIStreamChunk) => void
     ) => {
       const token = await getToken()
-      const response = await fetch(`${API_URL}/api/ai/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ projectId, messages, openFile }),
-      })
 
-      if (!response.ok) {
-        throw new Error(`AI request failed: ${response.status}`)
-      }
+      return new Promise<void>((resolve, reject) => {
+        const es = new EventSource(`${API_URL}/api/ai/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ projectId, messages, openFile }),
+        })
 
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error('No response body')
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim()
-            if (data === '[DONE]') return
-            try {
-              const chunk = JSON.parse(data) as AIStreamChunk
-              onChunk?.(chunk)
-            } catch {}
+        es.addEventListener('message', (event) => {
+          if (!event.data) return
+          if (event.data === '[DONE]') {
+            es.close()
+            resolve()
+            return
           }
-        }
-      }
+          try {
+            const chunk = JSON.parse(event.data) as AIStreamChunk
+            onChunk?.(chunk)
+          } catch (e) {
+            console.error('Failed to parse SSE data:', e)
+          }
+        })
+
+        es.addEventListener('error', (event) => {
+          console.error('SSE Error:', event)
+          es.close()
+          reject(new Error('AI stream failed or closed prematurely'))
+        })
+      })
     },
   },
 }

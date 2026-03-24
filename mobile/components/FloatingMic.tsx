@@ -10,8 +10,9 @@ import { useAIStore } from '@/store/ai'
 import { useProjectsStore } from '@/store/projects'
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withRepeat,
-  withTiming, interpolate, Easing, cancelAnimation,
+  withTiming, Easing,
 } from 'react-native-reanimated'
+import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice'
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
 const MIC_SIZE = 56
@@ -28,48 +29,112 @@ export default function FloatingMic({ onTranscript }: FloatingMicProps) {
   const { sendMessage } = useAIStore()
   const { projects } = useProjectsStore()
 
-  const [isRecording, setIsRecording] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isAwake, setIsAwake] = useState(false)
   const [showInput, setShowInput] = useState(false)
   const [voiceText, setVoiceText] = useState('')
-
-  // Animation values
-  const pulseScale = useSharedValue(1)
-  const pulseOpacity = useSharedValue(0)
-  const micScale = useSharedValue(1)
-
-  // Position for the floating button (bottom right by default)
-  const pan = useRef(new RNAnimated.ValueXY({ x: SCREEN_W - MIC_SIZE - 20, y: SCREEN_H - MIC_SIZE - 140 })).current
+  
+  // Animation values for the "Dynamic Island" pill
+  const pillWidth = useSharedValue(160)
+  const pulseOpacity = useSharedValue(0.4)
+  const [hasVoiceModule, setHasVoiceModule] = useState(true)
+  const nativeReady = useRef(false)
 
   useEffect(() => {
-    if (isRecording) {
-      pulseScale.value = withRepeat(
-        withTiming(1.5, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      )
-      pulseOpacity.value = withRepeat(
-        withTiming(0.6, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      )
-      micScale.value = withSpring(1.1)
-    } else {
-      cancelAnimation(pulseScale)
-      cancelAnimation(pulseOpacity)
-      pulseScale.value = withSpring(1)
-      pulseOpacity.value = withTiming(0, { duration: 200 })
-      micScale.value = withSpring(1)
+    // Subtle background pulsing to indicate "listening"
+    pulseOpacity.value = withRepeat(
+      withTiming(0.1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
+
+    // Setup Voice recognition (will fail in vanilla Expo Go, wrapped in try-catch)
+    const initVoice = async () => {
+      try {
+        Voice.onSpeechResults = onSpeechResults
+        Voice.onSpeechError = onSpeechError
+        Voice.onSpeechEnd = onSpeechEnd
+
+        nativeReady.current = true
+        startContinuousListening()
+      } catch (e) {
+        console.warn('Voice module not available. Falling back to simulated wake-word.')
+        setHasVoiceModule(false)
+        nativeReady.current = false
+      }
     }
-  }, [isRecording])
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
+    initVoice()
+
+    return () => {
+      if (!nativeReady.current) return
+      try {
+        // Prevent fatal Uncaught promises if native module is null during unmount
+        Voice.destroy().then(() => Voice.removeAllListeners()).catch(() => {})
+      } catch (e) {}
+    }
+  }, [])
+
+  const startContinuousListening = useCallback(async () => {
+    if (isAwake || showInput || !nativeReady.current) return
+    try {
+      await Voice.start('en-US')
+    } catch (e: any) {
+      if (e?.message?.includes('null') || e?.message?.includes('startSpeech')) {
+        setHasVoiceModule(false)
+        nativeReady.current = false
+      }
+    }
+  }, [isAwake, showInput])
+
+  const onSpeechResults = useCallback((e: SpeechResultsEvent) => {
+    const text = (e.value || [])[0]?.toLowerCase() || ''
+    if (text.includes('hey cloud')) {
+      // Detected wake word!
+      handleWakeWordReal(text)
+    }
+  }, [])
+
+  const onSpeechError = useCallback((e: SpeechErrorEvent) => {
+    // It will timeout occasionally, we just restart to keep listening in background
+    if (!isAwake && !showInput) {
+      setTimeout(startContinuousListening, 500)
+    }
+  }, [isAwake, showInput, startContinuousListening])
+
+  const onSpeechEnd = useCallback(() => {
+    if (!isAwake && !showInput) {
+      setTimeout(startContinuousListening, 500)
+    }
+  }, [isAwake, showInput, startContinuousListening])
+
+  const handleWakeWordReal = useCallback(async (fullText: string) => {
+    setIsAwake(true)
+    pillWidth.value = withSpring(SCREEN_W - 40, { damping: 15 })
+
+    // Check if they said the wake word + command all at once
+    // E.g. "hey cloud fix my bugs"
+    const commandMatch = fullText.split('hey cloud ')[1]
+    
+    try { if (nativeReady.current) await Voice.stop() } catch (e) {}
+
+    setTimeout(() => {
+      setIsAwake(false)
+      pillWidth.value = withSpring(160)
+      if (commandMatch && commandMatch.length > 2) {
+        // We caught the full command already
+        setVoiceText(commandMatch)
+        setShowInput(true)
+      } else {
+        // They only said "Hey Cloud", open input and wait for command
+        setVoiceText('')
+        setShowInput(true)
+      }
+    }, 600)
+  }, [])
+
+  const pillAnimStyle = useAnimatedStyle(() => ({
+    width: pillWidth.value,
     opacity: pulseOpacity.value,
-  }))
-
-  const micAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: micScale.value }],
   }))
 
   const getScreenContext = useCallback(() => {
@@ -81,29 +146,18 @@ export default function FloatingMic({ onTranscript }: FloatingMicProps) {
     return 'general'
   }, [pathname])
 
-  const handleMicPress = useCallback(async () => {
-    if (isRecording) {
-      // Stop recording
-      setIsRecording(false)
-      setIsProcessing(true)
-      
-      // Since we're using free tier and can't rely on expo-av recording without native setup,
-      // we'll show a text input modal as a voice input fallback
-      // In production, this would use @react-native-voice/voice or expo-av
-      setIsProcessing(false)
-      setShowInput(true)
-      return
-    }
-
-    // Start recording
-    setIsRecording(true)
+  const handleWakeWordSimulated = useCallback(async () => {
+    // Trigger wake state
+    setIsAwake(true)
+    pillWidth.value = withSpring(SCREEN_W - 40, { damping: 15 })
     
-    // Auto-stop after 10 seconds
+    // Simulate short processing before opening the prompt
     setTimeout(() => {
-      setIsRecording(false)
       setShowInput(true)
-    }, 10000)
-  }, [isRecording])
+      setIsAwake(false)
+      pillWidth.value = withSpring(160)
+    }, 600)
+  }, [])
 
   const handleSendVoice = useCallback(async () => {
     if (!voiceText.trim()) return
@@ -138,48 +192,34 @@ export default function FloatingMic({ onTranscript }: FloatingMicProps) {
     }
   }, [voiceText, getScreenContext, projects, sendMessage, pathname, router])
 
-  // Don't show on certain screens
+  // Don't show on certain screens like login
   if (pathname === '/' || pathname === '/auth') return null
 
   return (
     <>
-      {/* Floating Mic Button */}
-      <RNAnimated.View
-        style={[
-          styles.floatingContainer,
-          { transform: pan.getTranslateTransform() },
-        ]}
-      >
-        {/* Pulse ring */}
-        <Animated.View style={[styles.pulseRing, pulseStyle, {
-          backgroundColor: isDark ? '#6366f1' : '#4f46e5',
-        }]} />
-
-        {/* Main mic button */}
-        <Animated.View style={micAnimStyle}>
-          <TouchableOpacity
-            style={[
-              styles.micButton,
-              {
-                backgroundColor: isRecording
-                  ? '#ef4444'
-                  : (isDark ? '#6366f1' : '#4f46e5'),
-                shadowColor: isRecording ? '#ef4444' : '#6366f1',
-              }
-            ]}
-            onPress={handleMicPress}
-            activeOpacity={0.8}
+      <View style={styles.topContainer} pointerEvents="box-none">
+        <Animated.View style={[
+          styles.wakePill,
+          pillAnimStyle,
+          {
+            backgroundColor: isDark ? 'rgba(20,20,25,0.85)' : 'rgba(255,255,255,0.9)',
+            borderColor: isDark ? 'rgba(99,102,241,0.3)' : 'rgba(79,70,229,0.2)',
+          }
+        ]}>
+          <TouchableOpacity 
+            style={styles.pillContent} 
+            onPress={handleWakeWordSimulated}
+            activeOpacity={0.7}
           >
-            {isProcessing ? (
-              <Loader2 size={24} color="#fff" />
-            ) : isRecording ? (
-              <MicOff size={24} color="#fff" />
-            ) : (
-              <Mic size={24} color="#fff" />
-            )}
+            <View style={styles.micCircle}>
+              <Mic size={14} color="#fff" />
+            </View>
+            <Text style={[styles.pillText, { color: colors.text }]}>
+              {isAwake ? 'Waking up...' : (hasVoiceModule ? 'Say "Hey Cloud"' : 'Tap for "Hey Cloud"')}
+            </Text>
           </TouchableOpacity>
         </Animated.View>
-      </RNAnimated.View>
+      </View>
 
       {/* Voice Input Modal (fallback for text-based voice input) */}
       {showInput && (
@@ -251,30 +291,43 @@ export default function FloatingMic({ onTranscript }: FloatingMicProps) {
 }
 
 const styles = StyleSheet.create({
-  floatingContainer: {
+  topContainer: {
     position: 'absolute',
-    zIndex: 9999,
-    width: MIC_SIZE,
-    height: MIC_SIZE,
+    top: Platform.OS === 'ios' ? 55 : 40,
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    zIndex: 9000,
   },
-  pulseRing: {
-    position: 'absolute',
-    width: PULSE_SIZE,
-    height: PULSE_SIZE,
-    borderRadius: PULSE_SIZE / 2,
-  },
-  micButton: {
-    width: MIC_SIZE,
-    height: MIC_SIZE,
-    borderRadius: MIC_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+  wakePill: {
+    height: 38,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  pillContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  micCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#6366f1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillText: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
   },
   voiceOverlay: {
     ...StyleSheet.absoluteFillObject,
