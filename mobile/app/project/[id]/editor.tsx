@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  ActivityIndicator, Alert, Platform, ScrollView, Modal, Keyboard
+  ActivityIndicator, Alert, Platform, ScrollView, Modal, Keyboard,
+  KeyboardAvoidingView
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
@@ -200,29 +201,26 @@ export default function EditorScreen() {
   // If text grows beyond 1 char -> user typed something. If it becomes empty -> backspace.
   const SENTINEL = '|'
   const [nativeBuffer, setNativeBuffer] = useState(SENTINEL)
-  const [keyboardHeight, setKeyboardHeight] = useState(0)
 
   const hasChanges = content !== originalContent
 
-  // Track keyboard show/hide to resize the WebView container dynamically
+  // Scroll Monaco to cursor when keyboard opens & blur input when keyboard hides
   useEffect(() => {
     const showSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => {
-        setKeyboardHeight(e.endCoordinates.height)
+      () => {
         // Tell Monaco to scroll to cursor after keyboard opens
         setTimeout(() => {
           webViewRef.current?.injectJavaScript(`
             if (window.editor) { window.editor.revealPositionInCenter(window.editor.getPosition()); }
             true;
           `)
-        }, 100)
+        }, 150)
       }
     )
     const hideSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
-        setKeyboardHeight(0)
         nativeInputRef.current?.blur()
       }
     )
@@ -358,52 +356,58 @@ export default function EditorScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.webViewContainer, { marginBottom: keyboardHeight }]}>
-        <WebView
-          ref={webViewRef}
-          source={{ html: MONACO_HTML, baseUrl: 'https://cdnjs.cloudflare.com' }}
-          originWhitelist={['*']}
-          onMessage={(event) => {
-            try {
-              const msg = JSON.parse(event.nativeEvent.data)
-              if (msg.type === 'EDITOR_READY') {
-                setEditorReady(true)
-              } else if (msg.type === 'CONTENT_CHANGE') {
-                setContent(msg.content)
-              } else if (msg.type === 'REQUEST_KEYBOARD') {
-                openKeyboard()
-              }
-            } catch (e) { console.warn("Monaco event parse error", e) }
-          }}
-          style={{ backgroundColor: 'transparent', flex: 1 }}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          androidLayerType="hardware"
-        />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <View style={styles.webViewContainer}>
+          <WebView
+            ref={webViewRef}
+            source={{ html: MONACO_HTML, baseUrl: 'https://cdnjs.cloudflare.com' }}
+            originWhitelist={['*']}
+            onMessage={(event) => {
+              try {
+                const msg = JSON.parse(event.nativeEvent.data)
+                if (msg.type === 'EDITOR_READY') {
+                  setEditorReady(true)
+                } else if (msg.type === 'CONTENT_CHANGE') {
+                  setContent(msg.content)
+                } else if (msg.type === 'REQUEST_KEYBOARD') {
+                  openKeyboard()
+                }
+              } catch (e) { console.warn("Monaco event parse error", e) }
+            }}
+            style={{ backgroundColor: 'transparent', flex: 1 }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            androidLayerType="hardware"
+          />
 
-        {/* Hidden native TextInput that GUARANTEES keyboard popup on Android */}
-        <TextInput
-          ref={nativeInputRef}
-          style={styles.hiddenInput}
-          value={nativeBuffer}
-          onChangeText={handleNativeInput}
-          onSubmitEditing={handleSubmitEditing}
-          blurOnSubmit={false}
-          autoCapitalize="none"
-          autoCorrect={false}
-          spellCheck={false}
-          multiline={false}
-        />
+          {/* Hidden native TextInput that GUARANTEES keyboard popup on Android */}
+          <TextInput
+            ref={nativeInputRef}
+            style={styles.hiddenInput}
+            value={nativeBuffer}
+            onChangeText={handleNativeInput}
+            onSubmitEditing={handleSubmitEditing}
+            blurOnSubmit={false}
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            multiline={false}
+          />
 
-        {(loading || !editorReady) && (
-          <View style={[StyleSheet.absoluteFill, styles.loadingOverlay, { backgroundColor: colors.background }]}>
-            <ActivityIndicator color={colors.text} size="small" />
-            <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-              {loading ? "Opening file..." : "Booting IDE Engine..."}
-            </Text>
-          </View>
-        )}
-      </View>
+          {(loading || !editorReady) && (
+            <View style={[StyleSheet.absoluteFill, styles.loadingOverlay, { backgroundColor: colors.background }]}>
+              <ActivityIndicator color={colors.text} size="small" />
+              <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+                {loading ? "Opening file..." : "Booting IDE Engine..."}
+              </Text>
+            </View>
+          )}
+        </View>
+      </KeyboardAvoidingView>
 
       {/* File Picker Modal */}
       <Modal visible={showFilePicker} animationType="slide" transparent onRequestClose={() => setShowFilePicker(false)}>
