@@ -22,7 +22,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#0a0a0f"
       },
-      "package": "com.cloudcode.app"
+      "package": "com.cloudcode.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png",
