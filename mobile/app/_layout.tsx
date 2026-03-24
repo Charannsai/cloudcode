@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { View } from 'react-native'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
@@ -6,6 +7,7 @@ import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import * as SplashScreen from 'expo-splash-screen'
+import FloatingMic from '@/components/FloatingMic'
 import { 
   useFonts, 
   Inter_400Regular, 
@@ -71,7 +73,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack screenOptions={{ 
         headerShown: false, 
@@ -84,6 +86,9 @@ export default function RootLayout() {
         <Stack.Screen name="project/[id]/index" />
         <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
       </Stack>
-    </>
+      
+      {/* Global Floating Mic — visible everywhere */}
+      <FloatingMic />
+    </View>
   )
 }
