@@ -1,19 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard
+  KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal,
-  CheckCircle2, Loader2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft
+  CheckCircle2, Loader2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon
 } from 'lucide-react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { useAIStore, ChatMessage, ToolCallInfo } from '@/store/ai'
 import { useProjectsStore } from '@/store/projects'
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated'
+import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated'
+import Markdown from 'react-native-markdown-display'
+import * as Clipboard from 'expo-clipboard'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -39,8 +41,24 @@ function ToolCallCard({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: bo
   const label = labelMap[tool.name] || tool.name
   const target = (tool.args?.path || tool.args?.command || '') as string
 
+  const opacity = useSharedValue(1)
+
+  useEffect(() => {
+    if (tool.status === 'running') {
+      opacity.value = withRepeat(
+        withSequence(withTiming(0.4, { duration: 600 }), withTiming(1, { duration: 600 })),
+        -1,
+        true
+      )
+    } else {
+      opacity.value = withTiming(1, { duration: 300 })
+    }
+  }, [tool.status])
+
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+
   return (
-    <View style={[styles.toolCard, { backgroundColor: isDark ? '#111' : '#fcfcfc', borderColor: isDark ? '#222' : '#eaeaea' }]}>
+    <Animated.View style={[styles.toolCard, animStyle, { backgroundColor: isDark ? '#111' : '#fcfcfc', borderColor: isDark ? '#222' : '#eaeaea' }]}>
       <View style={styles.toolHeader}>
         {tool.status === 'running' ? (
           <ActivityIndicator size={10} color={isDark ? '#fff' : '#000'} />
@@ -57,7 +75,7 @@ function ToolCallCard({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: bo
           {target}
         </Text>
       </View>
-    </View>
+    </Animated.View>
   )
 }
 
@@ -65,6 +83,17 @@ function MessageBubble({ message, isDark, colors }: {
   message: ChatMessage; isDark: boolean; colors: any
 }) {
   const isUser = message.role === 'user'
+
+  const mdStyles = {
+    body: { color: isDark ? '#f4f4f5' : '#27272a', fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24 },
+    heading1: { fontSize: 22, fontFamily: 'Inter_700Bold', marginTop: 16, marginBottom: 8, color: isDark ? '#fff' : '#000' },
+    heading2: { fontSize: 18, fontFamily: 'Inter_600SemiBold', marginTop: 12, marginBottom: 6, color: isDark ? '#fff' : '#000' },
+    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#222' : '#f5f5f5', color: isDark ? '#fff' : '#000', fontSize: 13, padding: 4, borderRadius: 4 },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#222' : '#f5f5f5', color: isDark ? '#eee' : '#111', fontSize: 13, padding: 12, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 8, borderWidth: 1, borderColor: isDark ? '#333' : '#eaeaea' },
+    paragraph: { marginTop: 4, marginBottom: 4 },
+    list_item: { marginTop: 2, marginBottom: 2 },
+    link: { color: isDark ? '#60a5fa' : '#3b82f6', textDecorationLine: 'underline' } as const,
+  }
 
   return (
     <Animated.View
@@ -88,12 +117,42 @@ function MessageBubble({ message, isDark, colors }: {
           <ToolCallCard key={i} tool={tc} isDark={isDark} colors={colors} />
         ))}
 
-        <Text style={[
-          styles.messageText,
-          { color: isUser ? '#ffffff' : (isDark ? '#f4f4f5' : '#27272a') }
-        ]}>
-          {message.text}
-        </Text>
+        {isUser ? (
+          <Text style={[
+            styles.messageText,
+            { color: '#ffffff' }
+          ]}>
+            {message.text}
+          </Text>
+        ) : (
+          <View>
+            <Markdown style={mdStyles}>
+              {message.text}
+            </Markdown>
+
+            {/* AI Action Row */}
+            {message.text ? (
+              <View style={[styles.actionRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                <TouchableOpacity 
+                  style={[styles.actionBtn, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', borderColor: isDark ? '#2a2a2a' : '#ebebeb' }]} 
+                  onPress={() => Clipboard.setStringAsync(message.text)}
+                  activeOpacity={0.7}
+                >
+                  <Copy size={12} color={isDark ? '#888' : '#666'} />
+                  <Text style={[styles.actionText, { color: isDark ? '#888' : '#666' }]}>Copy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionBtn, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', borderColor: isDark ? '#2a2a2a' : '#ebebeb' }]} 
+                  onPress={() => Share.share({ message: message.text })}
+                  activeOpacity={0.7}
+                >
+                  <ShareIcon size={12} color={isDark ? '#888' : '#666'} />
+                  <Text style={[styles.actionText, { color: isDark ? '#888' : '#666' }]}>Share</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        )}
       </View>
 
       {isUser && (
@@ -156,6 +215,17 @@ export default function AIScreen() {
 
   const username = user?.login || 'guest'
   const selectedProject = projects.find(p => p.id === selectedProjectId)
+
+  const mdStyles = {
+    body: { color: isDark ? '#f4f4f5' : '#27272a', fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24 },
+    heading1: { fontSize: 22, fontFamily: 'Inter_700Bold', marginTop: 16, marginBottom: 8, color: isDark ? '#fff' : '#000' },
+    heading2: { fontSize: 18, fontFamily: 'Inter_600SemiBold', marginTop: 12, marginBottom: 6, color: isDark ? '#fff' : '#000' },
+    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#222' : '#f5f5f5', color: isDark ? '#fff' : '#000', fontSize: 13, padding: 4, borderRadius: 4 },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#222' : '#f5f5f5', color: isDark ? '#eee' : '#111', fontSize: 13, padding: 12, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 8, borderWidth: 1, borderColor: isDark ? '#333' : '#eaeaea' },
+    paragraph: { marginTop: 4, marginBottom: 4 },
+    list_item: { marginTop: 2, marginBottom: 2 },
+    link: { color: isDark ? '#60a5fa' : '#3b82f6', textDecorationLine: 'underline' } as const,
+  }
 
   return (
     <KeyboardAvoidingView
@@ -271,10 +341,15 @@ export default function AIScreen() {
                 <ToolCallCard key={i} tool={tc} isDark={isDark} colors={colors} />
               ))}
               {currentStreamText ? (
-                <Text style={[styles.messageText, { color: isDark ? '#f4f4f5' : '#27272a' }]}>
-                  {currentStreamText}
-                  <Text style={{ color: isDark ? '#fff' : '#000' }}>▊</Text>
-                </Text>
+                <Markdown style={mdStyles}>
+                  {(() => {
+                    const str = currentStreamText
+                    const match = str.match(/```/g)
+                    // If odd backticks exist, forcibly inject a closer so streaming fences visually build out perfectly over markdown-it constraints
+                    if (match && match.length % 2 !== 0) return str + '\n```\n ▊'
+                    return str + ' ▊'
+                  })()}
+                </Markdown>
               ) : currentToolCalls.length === 0 ? (
                 <View style={styles.typingIndicator}>
                   <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }]} />
@@ -417,6 +492,18 @@ const styles = StyleSheet.create({
     width: 8, height: 8, borderRadius: 4,
   },
   typingText: { fontSize: 14, fontFamily: 'Inter_500Medium', fontStyle: 'italic' },
+  actionRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12,
+    borderTopWidth: 1, paddingTop: 10,
+  },
+  actionBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 6, borderWidth: 1,
+  },
+  actionText: {
+    fontSize: 11, fontFamily: 'Inter_500Medium', textTransform: 'uppercase', letterSpacing: 0.5,
+  },
   inputContainer: {
     paddingHorizontal: 16, paddingVertical: 12,
     borderTopWidth: 1,
