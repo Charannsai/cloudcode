@@ -81,13 +81,15 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       isVisible.value = withSpring(0, SPRING_CONFIG)
     })
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      isVisible.value = withSpring(1, SPRING_CONFIG)
+      if (tabBarVisible) {
+        isVisible.value = withSpring(1, SPRING_CONFIG)
+      }
     })
     return () => {
       showSub.remove()
       hideSub.remove()
     }
-  }, [])
+  }, [tabBarVisible])
 
   useEffect(() => {
     isVisible.value = withSpring(tabBarVisible ? 1 : 0, SPRING_CONFIG)
