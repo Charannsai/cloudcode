@@ -87,7 +87,6 @@ export default function RootLayout() {
         <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
       </Stack>
       
-      {/* Global Floating Mic — visible everywhere */}
       <FloatingMic />
     </View>
   )
