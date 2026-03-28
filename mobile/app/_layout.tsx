@@ -86,9 +86,7 @@ export default function RootLayout() {
         <Stack.Screen name="project/[id]/index" />
         <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
       </Stack>
-      {/*
-      Floating Voice Assistant
-      */}
+    
       <FloatingMic />
     </View>
   )
