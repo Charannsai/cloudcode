@@ -1,5 +1,7 @@
 # CloudCode - Phase 0 Development
 
+## Still on working phase!!!
+
 This repository contains the foundational implementation for **CloudCode**, a modern cloud development environment platform. Phase 0 focused on establishing the core architecture, backend services, and a mobile application for managing cloud workspaces.
 
 The project is structured as a monorepo containing two main packages: `backend` and `mobile`.
