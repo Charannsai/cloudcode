@@ -138,6 +138,11 @@ export const api = {
           body: JSON.stringify({ name, email }),
         }),
     },
+    log: (projectId: string, count?: number) => {
+      const params = new URLSearchParams()
+      if (count) params.set('count', count.toString())
+      return apiFetch<{ log: string }>(`/api/projects/${projectId}/git/log?${params}`)
+    },
   },
 
   ai: {

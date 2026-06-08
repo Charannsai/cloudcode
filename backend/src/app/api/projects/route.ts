@@ -55,11 +55,16 @@ export async function POST(req: NextRequest) {
 
   const workspacePath = path.join(process.cwd(), 'projects', projectId)
   await fs.mkdir(workspacePath, { recursive: true })
-  
-  // Grant full permissions so the non-root "coder" user in Docker can write to it
-  await fs.chmod(workspacePath, 0o777).catch(e => console.error('Failed to chmod:', e))
 
   await seedTemplate(workspacePath, type)
+  
+  // Grant full permissions recursively so the non-root "coder" user in Docker can write to it
+  try {
+    const { execSync } = require('child_process')
+    execSync(`chmod -R 777 "${workspacePath}"`, { stdio: 'ignore' })
+  } catch (e) {
+    console.error('Failed to chmod recursively:', e)
+  }
 
   provisionContainer(projectId).catch(console.error)
 

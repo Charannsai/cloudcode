@@ -12,6 +12,7 @@ import {
   Settings
 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface Props {
   projectId: string
@@ -46,6 +47,7 @@ export default function GitTab({ projectId, isActive }: Props) {
   const [commitMessage, setCommitMessage] = useState('')
   const [committing, setCommitting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [syncAction, setSyncAction] = useState<'push' | 'pull' | null>(null)
   const [expandedSections, setExpandedSections] = useState({
     staged: true,
     changes: true,
@@ -60,11 +62,60 @@ export default function GitTab({ projectId, isActive }: Props) {
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(false)
 
+  // Git commit history logs
+  const [commitHistory, setCommitHistory] = useState<{ hash: string, message: string }[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  
+  // Track which files are currently being staged/unstaged to show inline indicators
+  const [stagingFiles, setStagingFiles] = useState<Record<string, boolean>>({})
+
+  const fetchHistory = useCallback(async (silent = false) => {
+    if (!silent) setLoadingHistory(true)
+    try {
+      const res = await api.git.log(projectId, 12)
+      if (res.log) {
+        const parsed = res.log
+          .split('\n')
+          .filter(Boolean)
+          .map(line => {
+            const spaceIndex = line.indexOf(' ')
+            if (spaceIndex === -1) return { hash: line, message: '' }
+            return {
+              hash: line.substring(0, spaceIndex),
+              message: line.substring(spaceIndex + 1).trim()
+            }
+          })
+        setCommitHistory(parsed)
+      } else {
+        setCommitHistory([])
+      }
+    } catch (err) {
+      console.warn('Failed to load git history:', err)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }, [projectId])
+
   const loadGitConfig = useCallback(async () => {
     try {
       const config = await api.git.config.get(projectId)
-      setGitName(config.name || '')
-      setGitEmail(config.email || '')
+      let name = config.name || ''
+      let email = config.email || ''
+
+      // Auto-configure from cached credentials if not set inside container
+      if (!name || !email) {
+        const cachedName = await AsyncStorage.getItem('git_author_name')
+        const cachedEmail = await AsyncStorage.getItem('git_author_email')
+        if (cachedName && cachedEmail) {
+          name = cachedName
+          email = cachedEmail
+          // Set in container in background
+          await api.git.config.set(projectId, cachedName, cachedEmail)
+        }
+      }
+
+      setGitName(name)
+      setGitEmail(email)
       
       const ssh = await api.git.ssh.get(projectId)
       setHasSshKey(ssh.hasKey)
@@ -86,7 +137,11 @@ export default function GitTab({ projectId, isActive }: Props) {
     setLoadingConfig(true)
     try {
       await api.git.config.set(projectId, gitName.trim(), gitEmail.trim())
-      Alert.alert('Success', 'Git credentials saved successfully.')
+      // Store in device persistent storage
+      await AsyncStorage.setItem('git_author_name', gitName.trim())
+      await AsyncStorage.setItem('git_author_email', gitEmail.trim())
+      Alert.alert('Success', 'Git credentials saved and cached.')
+      setShowConfigModal(false)
     } catch (err) {
       Alert.alert('Error', (err as Error).message)
     } finally {
@@ -107,6 +162,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       setLoadingConfig(false)
     }
   }
+
   const [branches, setBranches] = useState<string[]>([])
   const [showBranches, setShowBranches] = useState(false)
   const [diffText, setDiffText] = useState<string | null>(null)
@@ -119,13 +175,15 @@ export default function GitTab({ projectId, isActive }: Props) {
     try {
       const data = await api.git.status(projectId)
       setStatus(data)
+      // Fetch history alongside status
+      fetchHistory(true)
     } catch (err) {
       setError((err as Error).message)
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [projectId])
+  }, [projectId, fetchHistory])
 
   useEffect(() => {
     fetchStatus()
@@ -138,20 +196,40 @@ export default function GitTab({ projectId, isActive }: Props) {
   }, [isActive, fetchStatus])
 
   const handleStage = async (files: string[]) => {
+    const nextStaging = { ...stagingFiles }
+    files.forEach(f => { nextStaging[f] = true })
+    setStagingFiles(nextStaging)
+
     try {
       await api.git.stage(projectId, files)
       fetchStatus(true)
     } catch (err) {
       Alert.alert('Error', (err as Error).message)
+    } finally {
+      setStagingFiles(prev => {
+        const updated = { ...prev }
+        files.forEach(f => { delete updated[f] })
+        return updated
+      })
     }
   }
 
   const handleUnstage = async (files: string[]) => {
+    const nextStaging = { ...stagingFiles }
+    files.forEach(f => { nextStaging[f] = true })
+    setStagingFiles(nextStaging)
+
     try {
       await api.git.unstage(projectId, files)
       fetchStatus(true)
     } catch (err) {
       Alert.alert('Error', (err as Error).message)
+    } finally {
+      setStagingFiles(prev => {
+        const updated = { ...prev }
+        files.forEach(f => { delete updated[f] })
+        return updated
+      })
     }
   }
 
@@ -171,6 +249,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
   const handleSync = async (action: 'push' | 'pull') => {
     setSyncing(true)
+    setSyncAction(action)
     try {
       const result = await api.git.sync(projectId, action)
       Alert.alert(action === 'push' ? 'Pushed' : 'Pulled', result.output || 'Success')
@@ -179,6 +258,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       Alert.alert('Sync Failed', (err as Error).message)
     } finally {
       setSyncing(false)
+      setSyncAction(null)
     }
   }
 
@@ -272,10 +352,10 @@ export default function GitTab({ projectId, isActive }: Props) {
             </View>
           )}
           <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => handleSync('pull')} disabled={syncing}>
-            <Download size={14} color={colors.textSecondary} />
+            {syncAction === 'pull' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Download size={14} color={colors.textSecondary} />}
           </TouchableOpacity>
           <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => handleSync('push')} disabled={syncing}>
-            <Upload size={14} color={colors.textSecondary} />
+            {syncAction === 'push' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Upload size={14} color={colors.textSecondary} />}
           </TouchableOpacity>
           <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => fetchStatus(true)}>
             <RefreshCw size={14} color={colors.textSecondary} />
@@ -332,9 +412,13 @@ export default function GitTab({ projectId, isActive }: Props) {
                     <TouchableOpacity key={f.path} style={[styles.fileRow, { borderBottomColor: colors.border }]} onPress={() => handleViewDiff(f.path)}>
                       <Icon size={14} color={info.color} />
                       <Text style={[styles.filePath, { color: colors.text }]} numberOfLines={1}>{f.path}</Text>
-                      <TouchableOpacity onPress={() => handleUnstage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Minus size={14} color={colors.textSecondary} />
-                      </TouchableOpacity>
+                      {stagingFiles[f.path] ? (
+                        <ActivityIndicator size="small" color={colors.textSecondary} />
+                      ) : (
+                        <TouchableOpacity onPress={() => handleUnstage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                          <Minus size={14} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
                   )
                 })}
@@ -361,9 +445,13 @@ export default function GitTab({ projectId, isActive }: Props) {
                     <TouchableOpacity key={f.path} style={[styles.fileRow, { borderBottomColor: colors.border }]} onPress={() => handleViewDiff(f.path)}>
                       <Icon size={14} color={info.color} />
                       <Text style={[styles.filePath, { color: colors.text }]} numberOfLines={1}>{f.path}</Text>
-                      <TouchableOpacity onPress={() => handleStage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Plus size={14} color={colors.textSecondary} />
-                      </TouchableOpacity>
+                      {stagingFiles[f.path] ? (
+                        <ActivityIndicator size="small" color={colors.textSecondary} />
+                      ) : (
+                        <TouchableOpacity onPress={() => handleStage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                          <Plus size={14} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
                   )
                 })}
@@ -387,7 +475,11 @@ export default function GitTab({ projectId, isActive }: Props) {
                   <TouchableOpacity key={f} style={[styles.fileRow, { borderBottomColor: colors.border }]} onPress={() => handleStage([f])}>
                     <CircleIcon size={14} color="#6366f1" />
                     <Text style={[styles.filePath, { color: colors.text }]} numberOfLines={1}>{f}</Text>
-                    <Plus size={14} color={colors.textSecondary} />
+                    {stagingFiles[f] ? (
+                      <ActivityIndicator size="small" color={colors.textSecondary} />
+                    ) : (
+                      <Plus size={14} color={colors.textSecondary} />
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -451,6 +543,41 @@ export default function GitTab({ projectId, isActive }: Props) {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Commit History Section */}
+        <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
+        <View style={styles.historySection}>
+          <Text style={[styles.sectionTitleHeader, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+            Commit History
+          </Text>
+          
+          {loadingHistory ? (
+            <ActivityIndicator style={{ marginVertical: 16 }} color={colors.primary} size="small" />
+          ) : commitHistory.length === 0 ? (
+            <Text style={[styles.historyEmpty, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+              No commits recorded yet.
+            </Text>
+          ) : (
+            <View style={styles.historyTimeline}>
+              {commitHistory.map((commit, idx) => (
+                <View key={commit.hash} style={styles.timelineItem}>
+                  <View style={styles.timelineLeft}>
+                    <View style={[styles.timelineDot, { backgroundColor: colors.primary }]} />
+                    {idx !== commitHistory.length - 1 && <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />}
+                  </View>
+                  <View style={styles.timelineRight}>
+                    <Text style={[styles.commitHash, { color: colors.primary, fontFamily: 'JetBrainsMono_400Regular' }]}>
+                      {commit.hash.substring(0, 7)}
+                    </Text>
+                    <Text style={[styles.commitMsg, { color: colors.text, fontFamily: 'Inter_500Medium' }]} numberOfLines={2}>
+                      {commit.message}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -718,5 +845,67 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: 12,
+  },
+  // styles for Commit History Timeline
+  sectionDivider: {
+    height: 1,
+    marginVertical: 24,
+    opacity: 0.2,
+  },
+  historySection: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  sectionTitleHeader: {
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 16,
+  },
+  historyEmpty: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    marginTop: 12,
+    opacity: 0.6,
+  },
+  historyTimeline: {
+    gap: 0,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    minHeight: 52,
+  },
+  timelineLeft: {
+    alignItems: 'center',
+    width: 24,
+  },
+  timelineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+  },
+  timelineLine: {
+    width: 1.5,
+    flex: 1,
+    marginVertical: 4,
+    opacity: 0.2,
+  },
+  timelineRight: {
+    flex: 1,
+    paddingLeft: 12,
+    paddingBottom: 12,
+    gap: 2,
+  },
+  commitHash: {
+    fontSize: 10,
+    letterSpacing: 0.2,
+    opacity: 0.8,
+  },
+  commitMsg: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 })
