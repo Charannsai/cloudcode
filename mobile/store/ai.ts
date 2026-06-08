@@ -22,8 +22,10 @@ interface AIState {
   currentStreamText: string
   currentToolCalls: ToolCallInfo[]
   activeProjectId: string | null
+  pendingPrompt: string | null
 
   setActiveProject: (projectId: string) => void
+  setPendingPrompt: (prompt: string | null) => void
   sendMessage: (
     text: string,
     projectId: string,
@@ -38,8 +40,10 @@ export const useAIStore = create<AIState>((set, get) => ({
   currentStreamText: '',
   currentToolCalls: [],
   activeProjectId: null,
+  pendingPrompt: null,
 
   setActiveProject: (projectId) => set({ activeProjectId: projectId }),
+  setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
 
   sendMessage: async (text, projectId, openFile) => {
     const userMsg: ChatMessage = {

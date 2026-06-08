@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, ActivityIndicator, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, ActivityIndicator, Dimensions, ScrollView } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { Shield, RefreshCw, AlertCircle, Globe, Terminal, Play, Smartphone, Tablet, Monitor, Maximize } from 'lucide-react-native'
@@ -10,8 +10,14 @@ interface Props {
   port: number
 }
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
+interface ConsoleLog {
+  id: string
+  method: 'log' | 'error' | 'warn'
+  data: string
+  time: string
+}
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 const SCREEN_WIDTH = Dimensions.get('window').width
 
 const DEVICES = [
@@ -32,6 +38,11 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
   const [key, setKey] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedDevice, setSelectedDevice] = useState<DeviceId>('responsive')
+  
+  // Console logging state
+  const [consoleLogs, setConsoleLogs] = useState<ConsoleLog[]>([])
+  const [showConsole, setShowConsole] = useState(false)
+  
   const webViewRef = useRef<WebView>(null)
 
   useEffect(() => {
@@ -45,27 +56,41 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
     setActivePort(port)
     setHasConnected(true)
     setKey(k => k + 1)
+    setConsoleLogs([]) // Reset console logs on reconnect
     Keyboard.dismiss()
   }
 
   const handleRefresh = () => {
     setActivePort(port)
     setKey(k => k + 1)
+    setConsoleLogs([]) // Reset logs on refresh
     Keyboard.dismiss()
   }
 
   const handleDisconnect = () => {
     setHasConnected(false)
+    setShowConsole(false)
+  }
+
+  const handleMessage = (event: any) => {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data)
+      if (msg.type === 'console') {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        setConsoleLogs(prev => [
+          ...prev, 
+          { id: Math.random().toString(), method: msg.method, data: msg.data, time }
+        ].slice(-100))
+      }
+    } catch {}
   }
 
   if (!token) return null
 
-  // Calculate viewport width and scale for device simulation
   const deviceConfig = DEVICES.find(d => d.id === selectedDevice)!
   const targetWidth = deviceConfig.width || SCREEN_WIDTH
-  const containerWidth = SCREEN_WIDTH - 32 // 16px padding on each side
+  const containerWidth = SCREEN_WIDTH - 32
   const scale = targetWidth > containerWidth ? containerWidth / targetWidth : 1
-  const scaledHeight = targetWidth > containerWidth ? `${100 / scale}%` : '100%'
 
   const viewportJS = `
     (function() {
@@ -89,9 +114,48 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
       if (!meta) { meta = document.createElement('meta'); meta.name = 'viewport'; document.head.appendChild(meta); }
       meta.content = 'width=${deviceConfig.width}';
       ` : ''}
+
+      // Intercept and redirect console logs to react native webview channel
+      try {
+        var _log = console.log;
+        var _error = console.error;
+        var _warn = console.warn;
+
+        function sendToRN(method, args) {
+          try {
+            var cleanArgs = Array.prototype.slice.call(args).map(function(arg) {
+              if (arg instanceof Error) return arg.message + '\\n' + arg.stack;
+              if (typeof arg === 'object') {
+                try { return JSON.stringify(arg); } catch(e) { return String(arg); }
+              }
+              return String(arg);
+            });
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'console',
+              method: method,
+              data: cleanArgs.join(' ')
+            }));
+          } catch(e) {}
+        }
+
+        console.log = function() { sendToRN('log', arguments); _log.apply(console, arguments); };
+        console.error = function() { sendToRN('error', arguments); _error.apply(console, arguments); };
+        console.warn = function() { sendToRN('warn', arguments); _warn.apply(console, arguments); };
+
+        window.addEventListener('error', function(e) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'console',
+            method: 'error',
+            data: e.message + ' (' + e.filename + ':' + e.lineno + ')'
+          }));
+        });
+      } catch(e) {}
+
       true;
     })();
   `
+
+  const errorLogsCount = consoleLogs.filter(l => l.method === 'error').length
 
   if (!hasConnected) {
     return (
@@ -173,6 +237,21 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
             selectionColor={colors.accent}
           />
         </View>
+        
+        {/* Toggle Web Console Button */}
+        <TouchableOpacity 
+          style={[styles.refreshBtn, { backgroundColor: showConsole ? colors.primary : colors.background }]} 
+          onPress={() => setShowConsole(c => !c)}
+          activeOpacity={0.7}
+        >
+          <Terminal size={18} color={showConsole ? colors.background : colors.textSecondary} strokeWidth={2} />
+          {errorLogsCount > 0 && (
+            <View style={styles.errorBadge}>
+              <Text style={styles.errorBadgeText}>{errorLogsCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
         <TouchableOpacity 
           style={[styles.refreshBtn, { backgroundColor: colors.background }]} 
           onPress={handleRefresh}
@@ -239,9 +318,8 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
         })}
       </View>
 
-      {/* Preview */}
+      {/* Preview Container */}
       <View style={styles.webContainer}>
-        {/* Device frame indicator */}
         {selectedDevice !== 'responsive' && (
           <View style={[styles.deviceFrame, { borderColor: isDark ? '#222' : '#ddd' }]}>
             <Text style={[styles.deviceFrameText, { color: colors.textSecondary }]}>
@@ -268,6 +346,7 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
               }
             }}
             injectedJavaScriptBeforeContentLoaded={viewportJS}
+            onMessage={handleMessage}
             originWhitelist={['*']}
             style={[styles.webView, { opacity: loading ? 0 : 1 }]}
             onLoadStart={() => setLoading(true)}
@@ -300,6 +379,45 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
           </View>
         )}
       </View>
+
+      {/* Slide-Up Web Console Overlay */}
+      {showConsole && (
+        <View style={[styles.consolePanel, { backgroundColor: isDark ? '#0d1117' : '#f8f9fa', borderTopColor: colors.border }]}>
+          <View style={[styles.consoleHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.consoleTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+              Web Developer Console
+            </Text>
+            <View style={styles.consoleHeaderButtons}>
+              <TouchableOpacity onPress={() => setConsoleLogs([])} style={styles.consoleHeaderBtn}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>Clear</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowConsole(false)} style={styles.consoleHeaderBtn}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <ScrollView style={styles.consoleLogsScroll} contentContainerStyle={{ paddingBottom: 24 }}>
+            {consoleLogs.length === 0 ? (
+              <Text style={[styles.consoleLogPlaceholder, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
+                No console logs recorded.
+              </Text>
+            ) : (
+              consoleLogs.map((log) => {
+                let logColor = isDark ? '#c9d1d9' : '#24292f'
+                if (log.method === 'error') logColor = '#ef4444'
+                else if (log.method === 'warn') logColor = '#f59e0b'
+
+                return (
+                  <View key={log.id} style={[styles.consoleLogRow, { borderBottomColor: colors.border + '30' }]}>
+                    <Text style={[styles.logTime, { color: colors.textSecondary + '70' }]}>{log.time}</Text>
+                    <Text style={[styles.logText, { color: logColor }]}>[{log.method.toUpperCase()}] {log.data}</Text>
+                  </View>
+                )
+              })
+            )}
+          </ScrollView>
+        </View>
+      )}
     </View>
   )
 }
@@ -433,6 +551,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   closeBtn: {
     width: 36,
@@ -502,4 +621,79 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   retryText: { fontSize: 14 },
+  
+  // Console Overlay Panel Styles
+  consolePanel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '40%',
+    borderTopWidth: 1.5,
+    zIndex: 999,
+  },
+  consoleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  consoleTitle: {
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  consoleHeaderButtons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  consoleHeaderBtn: {
+    paddingVertical: 2,
+  },
+  consoleLogsScroll: {
+    flex: 1,
+    padding: 12,
+  },
+  consoleLogRow: {
+    flexDirection: 'row',
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  logTime: {
+    fontSize: 10,
+    fontFamily: 'JetBrainsMono_400Regular',
+    width: 68,
+  },
+  logText: {
+    flex: 1,
+    fontSize: 11,
+    fontFamily: 'JetBrainsMono_400Regular',
+    lineHeight: 16,
+  },
+  consoleLogPlaceholder: {
+    fontSize: 11,
+    opacity: 0.5,
+    textAlign: 'center',
+    marginTop: 24,
+  },
+  errorBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#ef4444',
+    borderRadius: 7,
+    width: 14,
+    height: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorBadgeText: {
+    color: '#fff',
+    fontSize: 8,
+    fontFamily: 'Inter_700Bold',
+  },
 })

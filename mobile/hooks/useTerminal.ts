@@ -6,6 +6,7 @@ const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
 
 interface UseTerminalOptions {
   projectId: string
+  terminalId?: string
   onReady?: () => void
 }
 
@@ -29,7 +30,7 @@ function stripAnsi(text: string): string {
   return text.replace(ansiRegex, '');
 }
 
-export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerminalReturn {
+export function useTerminal({ projectId, terminalId, onReady }: UseTerminalOptions): UseTerminalReturn {
   const [output, setOutput] = useState('')
   const [connected, setConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +46,8 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
         return
       }
 
-      const url = `${WS_URL}/api/terminal/${projectId}?token=${encodeURIComponent(token)}`
+      const terminalParam = terminalId ? `&terminalId=${encodeURIComponent(terminalId)}` : ''
+      const url = `${WS_URL}/api/terminal/${projectId}?token=${encodeURIComponent(token)}${terminalParam}`
       ws = new WebSocket(url)
       wsRef.current = ws
 
@@ -94,7 +96,7 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
     return () => {
       ws?.close(1000, 'Component unmounted')
     }
-  }, [projectId, onReady])
+  }, [projectId, terminalId, onReady])
 
   const sendInput = useCallback((text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

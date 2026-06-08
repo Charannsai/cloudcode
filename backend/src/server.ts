@@ -69,6 +69,9 @@ const startServer = async () => {
       return
     }
 
+    const terminalId = url.searchParams.get('terminalId') || 'main'
+    const cleanTerminalId = terminalId.replace(/[^a-zA-Z0-9_\-]/g, '')
+
     // Get container mapping from DB
     const { data: project } = await supabaseAdmin
       .from('projects')
@@ -88,8 +91,12 @@ const startServer = async () => {
 
       const container = docker.getContainer(project.container_id)
       const exec = await container.exec({
-        // Use sh with custom prompt and Env
-        Cmd: ['/bin/sh', '-c', `export PS1="${projectName} # "; exec /bin/sh`],
+        // Try to attach to/create a tmux session. If tmux isn't installed, fall back to sh.
+        Cmd: [
+          '/bin/sh',
+          '-c',
+          `if command -v tmux >/dev/null 2>&1; then exec tmux new-session -A -s "cloudcode-${cleanTerminalId}"; else export PS1="${projectName} # "; exec /bin/sh; fi`
+        ],
         AttachStdin: true,
         AttachStdout: true,
         AttachStderr: true,

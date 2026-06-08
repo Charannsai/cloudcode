@@ -1,18 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share
+  KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share, Alert
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
-  CheckCircle2, Loader2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon
+  CheckCircle2, Loader2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
+  Mic, Volume2, VolumeX
 } from 'lucide-react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { useAIStore, ChatMessage, ToolCallInfo } from '@/store/ai'
 import { useProjectsStore } from '@/store/projects'
+import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice'
+import * as Speech from 'expo-speech'
 import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated'
 import Markdown from 'react-native-markdown-display'
 import * as Clipboard from 'expo-clipboard'
@@ -85,8 +88,8 @@ function ToolCallCard({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: bo
   )
 }
 
-function MessageBubble({ message, isDark, colors }: {
-  message: ChatMessage; isDark: boolean; colors: any
+function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageId }: {
+  message: ChatMessage; isDark: boolean; colors: any; onSpeakPress: (id: string, text: string) => void; speakingMessageId: string | null
 }) {
   const isUser = message.role === 'user'
 
@@ -155,6 +158,20 @@ function MessageBubble({ message, isDark, colors }: {
                   <ShareIcon size={12} color={isDark ? '#888' : '#666'} />
                   <Text style={[styles.actionText, { color: isDark ? '#888' : '#666' }]}>Share</Text>
                 </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionBtn, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', borderColor: isDark ? '#2a2a2a' : '#ebebeb' }]} 
+                  onPress={() => onSpeakPress(message.id, message.text)}
+                  activeOpacity={0.7}
+                >
+                  {speakingMessageId === message.id ? (
+                    <VolumeX size={12} color={colors.primary} />
+                  ) : (
+                    <Volume2 size={12} color={isDark ? '#888' : '#666'} />
+                  )}
+                  <Text style={[styles.actionText, { color: speakingMessageId === message.id ? colors.primary : (isDark ? '#888' : '#666') }]}>
+                    {speakingMessageId === message.id ? 'Stop' : 'Speak'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             ) : null}
           </View>
@@ -176,7 +193,7 @@ export default function AIScreen() {
   const { projects, fetchProjects } = useProjectsStore()
   const {
     messages, isStreaming, currentStreamText, currentToolCalls,
-    sendMessage, clearChat
+    sendMessage, clearChat, pendingPrompt, setPendingPrompt
   } = useAIStore()
 
   const [inputText, setInputText] = useState('')
@@ -185,6 +202,85 @@ export default function AIScreen() {
 
   const router = useRouter()
   const { setTabBarVisible } = useUIStore()
+
+  const [isListening, setIsListening] = useState(false)
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
+
+  // Speech and Voice listeners initialization
+  useEffect(() => {
+    Voice.onSpeechStart = () => setIsListening(true)
+    Voice.onSpeechEnd = () => setIsListening(false)
+    Voice.onSpeechResults = (e: SpeechResultsEvent) => {
+      if (e.value && e.value[0]) {
+        setInputText(e.value[0])
+      }
+    }
+    Voice.onSpeechError = (e: SpeechErrorEvent) => {
+      console.error('Speech recognition error:', e)
+      setIsListening(false)
+    }
+
+    return () => {
+      Voice.destroy().then(() => Voice.removeAllListeners()).catch(() => {})
+      Speech.stop().catch(() => {})
+    }
+  }, [])
+
+  const toggleListening = async () => {
+    if (isListening) {
+      try {
+        await Voice.stop()
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      try {
+        setInputText('')
+        await Voice.start('en-US')
+      } catch (err) {
+        Alert.alert('Speech Error', 'Failed to start voice recognition.')
+        console.error(err)
+      }
+    }
+  }
+
+  const handleSpeak = async (messageId: string, text: string) => {
+    if (speakingMessageId === messageId) {
+      try {
+        await Speech.stop()
+      } catch (err) {}
+      setSpeakingMessageId(null)
+    } else {
+      try {
+        await Speech.stop()
+      } catch (err) {}
+      
+      setSpeakingMessageId(messageId)
+      
+      // Strip markdown for a cleaner read-aloud voice output
+      const plainText = text
+        .replace(/```[\s\S]*?```/g, '[code block]')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/[*_#\-+]/g, '')
+        .trim()
+
+      Speech.speak(plainText, {
+        language: 'en',
+        onDone: () => setSpeakingMessageId(null),
+        onError: () => setSpeakingMessageId(null),
+        onStopped: () => setSpeakingMessageId(null),
+      })
+    }
+  }
+
+  // Auto-run pending prompt (e.g., from terminal diagnostics)
+  useEffect(() => {
+    if (pendingPrompt && selectedProjectId && !isStreaming) {
+      const prompt = pendingPrompt
+      setPendingPrompt(null)
+      sendMessage(prompt, selectedProjectId)
+    }
+  }, [pendingPrompt, selectedProjectId, isStreaming])
 
   // Hide the global tab bar completely when on this screen
   useFocusEffect(
@@ -358,7 +454,14 @@ export default function AIScreen() {
         )}
 
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} isDark={isDark} colors={colors} />
+          <MessageBubble 
+            key={msg.id} 
+            message={msg} 
+            isDark={isDark} 
+            colors={colors} 
+            onSpeakPress={handleSpeak}
+            speakingMessageId={speakingMessageId}
+          />
         ))}
 
         {/* Streaming indicator */}
@@ -415,6 +518,28 @@ export default function AIScreen() {
             onSubmitEditing={handleSend}
             blurOnSubmit={false}
           />
+          {/* Voice Input Button */}
+          <TouchableOpacity
+            style={[
+              styles.sendBtn,
+              {
+                marginRight: 4,
+                backgroundColor: isListening 
+                  ? '#ef4444' 
+                  : (isDark ? '#1a1a1a' : '#f5f5f5')
+              }
+            ]}
+            onPress={toggleListening}
+            disabled={isStreaming}
+            activeOpacity={0.7}
+          >
+            {isListening ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Mic size={16} color={isDark ? '#aaa' : '#666'} />
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.sendBtn,

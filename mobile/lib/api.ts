@@ -54,6 +54,21 @@ export const api = {
         `/api/projects/${projectId}/files/content`,
         { method: 'PUT', body: JSON.stringify({ path: filePath, content }) }
       ),
+    create: (projectId: string, filePath: string, type: 'file' | 'directory') =>
+      apiFetch<{ created: boolean; path: string; type: 'file' | 'directory' }>(
+        `/api/projects/${projectId}/files`,
+        { method: 'POST', body: JSON.stringify({ path: filePath, type }) }
+      ),
+    delete: (projectId: string, filePath: string) =>
+      apiFetch<{ deleted: boolean; path: string }>(
+        `/api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`,
+        { method: 'DELETE' }
+      ),
+    rename: (projectId: string, oldPath: string, newPath: string) =>
+      apiFetch<{ renamed: boolean; oldPath: string; newPath: string }>(
+        `/api/projects/${projectId}/files`,
+        { method: 'PATCH', body: JSON.stringify({ oldPath, newPath }) }
+      ),
   },
 
   git: {
@@ -106,6 +121,23 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ branch, create }),
       }),
+
+    ssh: {
+      get: (projectId: string) =>
+        apiFetch<{ hasKey: boolean; publicKey: string | null }>(`/api/projects/${projectId}/git/ssh`),
+      generate: (projectId: string) =>
+        apiFetch<{ hasKey: boolean; publicKey: string }>(`/api/projects/${projectId}/git/ssh`, { method: 'POST' }),
+    },
+
+    config: {
+      get: (projectId: string) =>
+        apiFetch<{ name: string | null; email: string | null }>(`/api/projects/${projectId}/git/config`),
+      set: (projectId: string, name: string, email: string) =>
+        apiFetch<{ saved: boolean }>(`/api/projects/${projectId}/git/config`, {
+          method: 'POST',
+          body: JSON.stringify({ name, email }),
+        }),
+    },
   },
 
   ai: {

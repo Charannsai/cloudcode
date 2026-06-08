@@ -5,7 +5,9 @@ import {
 } from 'react-native'
 import { useTerminal } from '@/hooks/useTerminal'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Terminal as TerminalIcon, StopCircle, Trash2, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
+import { useAIStore } from '@/store/ai'
+import { Terminal as TerminalIcon, StopCircle, Trash2, ChevronRight, ArrowUp, ArrowDown, Sparkles } from 'lucide-react-native'
 
 interface Props {
   projectId: string
@@ -22,7 +24,19 @@ const QUICK_COMMANDS = [
 ]
 
 export default function TerminalTab({ projectId }: Props) {
-  const { output, connected, error, sendInput, clear, appendOutput } = useTerminal({ projectId })
+  const router = useRouter()
+  const { setPendingPrompt, setActiveProject } = useAIStore()
+  const [terminals, setTerminals] = useState<string[]>(['main'])
+  const [activeTerminalId, setActiveTerminalId] = useState('main')
+  const [terminalOutputs, setTerminalOutputs] = useState<Record<string, string>>({
+    main: ''
+  })
+
+  const { output, connected, error, sendInput, clear } = useTerminal({
+    projectId,
+    terminalId: activeTerminalId
+  })
+
   const { colors, isDark } = useAppTheme()
   const [inputText, setInputText] = useState('')
   const [history, setHistory] = useState<string[]>([])
@@ -30,11 +44,22 @@ export default function TerminalTab({ projectId }: Props) {
   const [isRunning, setIsRunning] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
-  const lines = useMemo(() => output.split('\n'), [output])
+  // Sync hook output to cached active terminal's log mapping
+  useEffect(() => {
+    if (output) {
+      setTerminalOutputs(prev => ({
+        ...prev,
+        [activeTerminalId]: output
+      }))
+    }
+  }, [output, activeTerminalId])
+
+  const activeOutput = terminalOutputs[activeTerminalId] || ''
+  const lines = useMemo(() => activeOutput.split('\n'), [activeOutput])
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: false })
-  }, [output])
+  }, [activeOutput])
 
   const submit = useCallback(() => {
     if (!inputText.trim() && inputText !== '') return
@@ -54,8 +79,36 @@ export default function TerminalTab({ projectId }: Props) {
   const handleClear = useCallback(() => {
     runQuick('clear')
     clear()
+    setTerminalOutputs(prev => ({
+      ...prev,
+      [activeTerminalId]: ''
+    }))
     setIsRunning(false)
-  }, [runQuick, clear])
+  }, [runQuick, clear, activeTerminalId])
+
+  const addNewTerminal = () => {
+    const newId = `term-${Date.now()}`
+    setTerminals(prev => [...prev, newId])
+    setActiveTerminalId(newId)
+  }
+
+  const closeTerminal = (termId: string) => {
+    if (terminals.length <= 1) return
+    const index = terminals.indexOf(termId)
+    const newTerminals = terminals.filter(t => t !== termId)
+    setTerminals(newTerminals)
+    
+    if (activeTerminalId === termId) {
+      const newActiveIndex = Math.max(0, index - 1)
+      setActiveTerminalId(newTerminals[newActiveIndex])
+    }
+
+    setTerminalOutputs(prev => {
+      const copy = { ...prev }
+      delete copy[termId]
+      return copy
+    })
+  }
 
   const goHistoryUp = () => {
     if (history.length > 0) {
@@ -78,21 +131,89 @@ export default function TerminalTab({ projectId }: Props) {
     }
   }
 
+  const handleDiagnose = useCallback(() => {
+    const recentOutput = lines.slice(-25).join('\n').trim()
+    if (!recentOutput) return
+
+    const prompt = `I am encountering an issue in my terminal command. Here is the recent output:\n\n\`\`\`\n${recentOutput}\n\`\`\`\n\nPlease analyze the logs, diagnose the error, and explain how to resolve it. If necessary, read and edit the code files using your tools.`
+
+    setActiveProject(projectId)
+    setPendingPrompt(prompt)
+    router.push('/(tabs)/ai')
+  }, [lines, projectId, setPendingPrompt, setActiveProject, router])
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: isDark ? '#000' : '#f9fafb' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 160}
     >
+      {/* Tabs Scrollbar */}
+      <View style={[styles.tabsScrollContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
+          {terminals.map((termId, idx) => {
+            const isActive = termId === activeTerminalId
+            return (
+              <TouchableOpacity
+                key={termId}
+                onPress={() => setActiveTerminalId(termId)}
+                style={[
+                  styles.tabItem,
+                  isActive
+                    ? { backgroundColor: isDark ? '#1e293b' : '#e2e8f0', borderColor: colors.border }
+                    : { borderColor: 'transparent' }
+                ]}
+                activeOpacity={0.7}
+              >
+                <TerminalIcon size={11} color={isActive ? colors.primary : colors.textSecondary} />
+                <Text style={[
+                  styles.tabText,
+                  {
+                    color: isActive ? colors.text : colors.textSecondary,
+                    fontFamily: isActive ? 'Inter_700Bold' : 'Inter_500Medium'
+                  }
+                ]}>
+                  {termId === 'main' ? 'Shell 1' : `Shell ${idx + 1}`}
+                </Text>
+                {terminals.length > 1 && (
+                  <TouchableOpacity
+                    onPress={() => closeTerminal(termId)}
+                    style={styles.closeTabBtn}
+                  >
+                    <Text style={{ color: colors.textSecondary, fontSize: 9, fontFamily: 'Inter_700Bold' }}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            )
+          })}
+          <TouchableOpacity
+            onPress={addNewTerminal}
+            style={[styles.addTabBtn, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}
+            activeOpacity={0.7}
+          >
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>+</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       {/* Status bar */}
       <View style={[styles.statusBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={styles.statusLeft}>
           <TerminalIcon size={14} color={connected ? '#10b981' : colors.textSecondary} strokeWidth={2.5} />
           <Text style={[styles.statusText, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-            {connected ? 'MAIN_SHELL' : 'CONNECTING...'}
+            {connected 
+              ? `${activeTerminalId === 'main' ? 'SHELL 1' : `SHELL ${terminals.indexOf(activeTerminalId) + 1}`} - CONNECTED` 
+              : 'TUNNELING...'}
           </Text>
         </View>
         <View style={styles.statusActions}>
+          <TouchableOpacity
+            onPress={handleDiagnose}
+            style={[styles.actionBtn, { backgroundColor: colors.background }]}
+            activeOpacity={0.7}
+          >
+            <Sparkles size={14} color={isDark ? '#c084fc' : '#8b5cf6'} strokeWidth={2.5} />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => sendInput('\x03')}
             style={[styles.actionBtn, { backgroundColor: colors.background }]}
@@ -119,13 +240,13 @@ export default function TerminalTab({ projectId }: Props) {
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
       >
-        {!connected && !error && (
+        {!connected && !activeOutput && (
           <View style={styles.centerLoading}>
             <ActivityIndicator color={colors.textSecondary} size="small" />
             <Text style={[styles.connectingText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>Initializing secure tunnel...</Text>
           </View>
         )}
-        {output ? (
+        {activeOutput ? (
           <View style={{ paddingBottom: 16 }}>
             {lines.map((line, i) => (
               <Text key={i} style={[styles.output, { color: isDark ? '#e5e7eb' : '#111827', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
@@ -136,7 +257,7 @@ export default function TerminalTab({ projectId }: Props) {
           </View>
         ) : connected ? (
           <Text style={[styles.placeholderText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
-            Node environment ready.
+            Shell environment active.
           </Text>
         ) : null}
       </ScrollView>
@@ -206,6 +327,39 @@ export default function TerminalTab({ projectId }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  tabsScrollContainer: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  tabsContainer: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tabItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
+  },
+  tabText: {
+    fontSize: 11,
+  },
+  closeTabBtn: {
+    paddingHorizontal: 3,
+    marginLeft: 3,
+  },
+  addTabBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -283,10 +437,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  promptSymbol: {
-    fontSize: 12,
-    marginRight: 8,
   },
 })
 

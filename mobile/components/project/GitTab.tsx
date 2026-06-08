@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, RefreshControl,
+  ActivityIndicator, Alert, RefreshControl, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { api } from '@/lib/api'
@@ -9,10 +9,13 @@ import {
   GitBranch, GitCommit, GitPullRequest, Plus, Minus, Check,
   ChevronDown, ChevronRight, RefreshCw, Upload, Download,
   FileCode, FilePlus, Trash, AlertCircle, Circle as CircleIcon,
+  Settings
 } from 'lucide-react-native'
+import * as Clipboard from 'expo-clipboard'
 
 interface Props {
   projectId: string
+  isActive?: boolean
 }
 
 interface GitFileChange {
@@ -35,7 +38,7 @@ const STATUS_ICONS: Record<string, { icon: any; color: string }> = {
   deleted: { icon: Trash, color: '#ef4444' },
 }
 
-export default function GitTab({ projectId }: Props) {
+export default function GitTab({ projectId, isActive }: Props) {
   const { colors, isDark } = useAppTheme()
   const [status, setStatus] = useState<GitStatusData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -48,6 +51,62 @@ export default function GitTab({ projectId }: Props) {
     changes: true,
     untracked: true,
   })
+
+  // Git configurations and SSH state keys
+  const [gitName, setGitName] = useState('')
+  const [gitEmail, setGitEmail] = useState('')
+  const [hasSshKey, setHasSshKey] = useState(false)
+  const [sshPublicKey, setSshPublicKey] = useState<string | null>(null)
+  const [showConfigModal, setShowConfigModal] = useState(false)
+  const [loadingConfig, setLoadingConfig] = useState(false)
+
+  const loadGitConfig = useCallback(async () => {
+    try {
+      const config = await api.git.config.get(projectId)
+      setGitName(config.name || '')
+      setGitEmail(config.email || '')
+      
+      const ssh = await api.git.ssh.get(projectId)
+      setHasSshKey(ssh.hasKey)
+      setSshPublicKey(ssh.publicKey)
+    } catch (err) {
+      console.warn('Failed to load git configs:', err)
+    }
+  }, [projectId])
+
+  useEffect(() => {
+    loadGitConfig()
+  }, [loadGitConfig])
+
+  const handleSaveConfig = async () => {
+    if (!gitName.trim() || !gitEmail.trim()) {
+      Alert.alert('Error', 'Author Name and Email are required.')
+      return
+    }
+    setLoadingConfig(true)
+    try {
+      await api.git.config.set(projectId, gitName.trim(), gitEmail.trim())
+      Alert.alert('Success', 'Git credentials saved successfully.')
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message)
+    } finally {
+      setLoadingConfig(false)
+    }
+  }
+
+  const handleGenerateSsh = async () => {
+    setLoadingConfig(true)
+    try {
+      const res = await api.git.ssh.generate(projectId)
+      setHasSshKey(res.hasKey)
+      setSshPublicKey(res.publicKey)
+      Alert.alert('Success', 'SSH Key Pair generated successfully.')
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message)
+    } finally {
+      setLoadingConfig(false)
+    }
+  }
   const [branches, setBranches] = useState<string[]>([])
   const [showBranches, setShowBranches] = useState(false)
   const [diffText, setDiffText] = useState<string | null>(null)
@@ -68,7 +127,15 @@ export default function GitTab({ projectId }: Props) {
     }
   }, [projectId])
 
-  useEffect(() => { fetchStatus() }, [fetchStatus])
+  useEffect(() => {
+    fetchStatus()
+  }, [fetchStatus])
+
+  useEffect(() => {
+    if (isActive) {
+      fetchStatus(true)
+    }
+  }, [isActive, fetchStatus])
 
   const handleStage = async (files: string[]) => {
     try {
@@ -212,6 +279,9 @@ export default function GitTab({ projectId }: Props) {
           </TouchableOpacity>
           <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => fetchStatus(true)}>
             <RefreshCw size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => setShowConfigModal(true)}>
+            <Settings size={14} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -384,6 +454,111 @@ export default function GitTab({ projectId }: Props) {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Git Credentials & SSH Modal */}
+      <Modal
+        visible={showConfigModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowConfigModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalContainer}
+          >
+            <ScrollView style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                  Git Configuration & SSH
+                </Text>
+                <TouchableOpacity onPress={() => setShowConfigModal(false)} style={styles.modalCloseBtn}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 16 }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Git Author Section */}
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                  Git Author Info
+                </Text>
+                <TextInput
+                  style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                  placeholder="Author Name"
+                  placeholderTextColor={colors.textSecondary + '60'}
+                  value={gitName}
+                  onChangeText={setGitName}
+                  autoCapitalize="words"
+                />
+                <TextInput
+                  style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                  placeholder="Author Email"
+                  placeholderTextColor={colors.textSecondary + '60'}
+                  value={gitEmail}
+                  onChangeText={setGitEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity 
+                  onPress={handleSaveConfig} 
+                  style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+                  disabled={loadingConfig}
+                >
+                  <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
+                    Save Config
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+              {/* SSH Authentication Section */}
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                  SSH Deploy Keys
+                </Text>
+                {hasSshKey && sshPublicKey ? (
+                  <View style={styles.sshInfoBox}>
+                    <Text style={[styles.sshInfoText, { color: colors.textSecondary }]} numberOfLines={3}>
+                      {sshPublicKey}
+                    </Text>
+                    <View style={styles.sshActionRow}>
+                      <TouchableOpacity 
+                        onPress={() => {
+                          Clipboard.setStringAsync(sshPublicKey)
+                          Alert.alert('Copied', 'Public key copied to clipboard.')
+                        }}
+                        style={[styles.actionBtn, { backgroundColor: isDark ? '#1a1a1a' : '#f3f4f6' }]}
+                      >
+                        <Text style={[styles.actionBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Copy Public Key</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={[styles.sshHelpText, { color: colors.textSecondary }]}>
+                      Add this public key to your GitHub developer settings (Deploy keys) to push/pull securely over SSH.
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.sshEmptyBox}>
+                    <Text style={[styles.sshHelpText, { color: colors.textSecondary, marginBottom: 8 }]}>
+                      Generate an SSH key pair inside your isolated workspace to push commits without typing credentials.
+                    </Text>
+                    <TouchableOpacity 
+                      onPress={handleGenerateSsh} 
+                      style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+                      disabled={loadingConfig}
+                    >
+                      <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
+                        Generate SSH Key
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -456,4 +631,92 @@ const styles = StyleSheet.create({
     gap: 8, paddingVertical: 12, borderRadius: 10,
   },
   commitBtnText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
+  // Modal Configurations Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    maxHeight: '80%',
+    maxWidth: 380,
+  },
+  modalContent: {
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    letterSpacing: -0.4,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  section: {
+    gap: 12,
+    marginBottom: 12,
+  },
+  inputField: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+  },
+  primaryBtn: {
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  primaryBtnText: {
+    fontSize: 14,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 16,
+    opacity: 0.8,
+  },
+  sshInfoBox: {
+    gap: 10,
+  },
+  sshInfoText: {
+    fontSize: 11,
+    fontFamily: 'JetBrainsMono_400Regular',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    padding: 10,
+    borderRadius: 8,
+  },
+  sshActionRow: {
+    flexDirection: 'row',
+  },
+  sshHelpText: {
+    fontSize: 11,
+    lineHeight: 16,
+    opacity: 0.8,
+  },
+  sshEmptyBox: {
+    gap: 10,
+  },
+  actionBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnText: {
+    fontSize: 12,
+  },
 })
