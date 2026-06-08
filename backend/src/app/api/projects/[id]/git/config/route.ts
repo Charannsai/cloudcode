@@ -23,8 +23,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   let email = ''
 
   try {
-    await execInContainer(project.container_id, ['git', 'config', 'user.name'], (data) => { name += data })
-    await execInContainer(project.container_id, ['git', 'config', 'user.email'], (data) => { email += data })
+    await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.name'], (data) => { name += data })
+    await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.email'], (data) => { email += data })
   } catch {}
 
   return successResponse({ 
@@ -53,8 +53,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   try {
-    await execInContainer(project.container_id, ['git', '--git-dir=/workspace/.git', 'config', 'user.name', body.name], () => {})
-    await execInContainer(project.container_id, ['git', '--git-dir=/workspace/.git', 'config', 'user.email', body.email], () => {})
+    await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', '--git-dir=/workspace/.git', 'config', 'user.name', body.name], () => {})
+    await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', '--git-dir=/workspace/.git', 'config', 'user.email', body.email], () => {})
     return successResponse({ saved: true })
   } catch (err) {
     return errorResponse(`Failed to save git config: ${(err as Error).message}`, 500)

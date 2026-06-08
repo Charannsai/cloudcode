@@ -58,6 +58,21 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
   await container.start()
   const info = await container.inspect()
 
+  // Configure git directory access & automatic init
+  try {
+    // 1. Bypass dubious ownership checks inside the container
+    await execInContainer(info.Id, ['git', 'config', '--global', '--add', 'safe.directory', '/workspace'], () => {})
+
+    // 2. Automatically git init if the repository doesn't have a .git folder (preserves cloned history if imported)
+    await execInContainer(
+      info.Id,
+      ['sh', '-c', 'if [ ! -d "/workspace/.git" ]; then git init && git config user.name "CloudCode" && git config user.email "coder@cloudcode.dev" && git add . && git commit -m "Initial commit"; fi'],
+      () => {}
+    )
+  } catch (err) {
+    console.error('Failed to auto-configure git in container:', err)
+  }
+
   const port = info.NetworkSettings.Ports['3000/tcp']?.[0]?.HostPort
 
   return {

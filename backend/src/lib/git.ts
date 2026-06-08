@@ -30,7 +30,7 @@ function parseStatusCode(code: string): 'modified' | 'added' | 'deleted' | 'rena
 export async function getGitStatus(containerId: string): Promise<GitStatus> {
   let statusOutput = ''
 
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git status --porcelain -b 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace status --porcelain -b 2>&1`], (data) => {
     statusOutput += data
   })
 
@@ -81,7 +81,7 @@ export async function getGitStatus(containerId: string): Promise<GitStatus> {
 
 export async function getGitDiff(containerId: string, filePath?: string, staged?: boolean): Promise<string> {
   let output = ''
-  const args = staged ? ['git', 'diff', '--cached'] : ['git', 'diff']
+  const args = staged ? ['git', '-c', 'safe.directory=/workspace', 'diff', '--cached'] : ['git', '-c', 'safe.directory=/workspace', 'diff']
   if (filePath) args.push(`"${filePath.replace(/"/g, '\\"')}"`)
 
   const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && ${args.join(' ')} 2>&1`], (data) => {
@@ -98,7 +98,7 @@ export async function getGitDiff(containerId: string, filePath?: string, staged?
 export async function gitStage(containerId: string, files: string[]): Promise<string> {
   let output = ''
   const fileList = files.map(f => `"${f.replace(/"/g, '\\"')}"`).join(' ')
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git add ${fileList} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace add ${fileList} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -110,7 +110,7 @@ export async function gitStage(containerId: string, files: string[]): Promise<st
 export async function gitUnstage(containerId: string, files: string[]): Promise<string> {
   let output = ''
   const fileList = files.map(f => `"${f.replace(/"/g, '\\"')}"`).join(' ')
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git reset HEAD ${fileList} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace reset HEAD ${fileList} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -122,7 +122,7 @@ export async function gitUnstage(containerId: string, files: string[]): Promise<
 export async function gitCommit(containerId: string, message: string): Promise<string> {
   let output = ''
   const escaped = message.replace(/"/g, '\\"')
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git commit -m "${escaped}" 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace commit -m "${escaped}" 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -134,7 +134,7 @@ export async function gitCommit(containerId: string, message: string): Promise<s
 export async function gitPush(containerId: string, remote = 'origin', branch?: string): Promise<string> {
   let output = ''
   const branchArg = branch || ''
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git push ${remote} ${branchArg} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace push ${remote} ${branchArg} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -146,7 +146,7 @@ export async function gitPush(containerId: string, remote = 'origin', branch?: s
 export async function gitPull(containerId: string, remote = 'origin', branch?: string): Promise<string> {
   let output = ''
   const branchArg = branch || ''
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git pull ${remote} ${branchArg} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace pull ${remote} ${branchArg} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -157,7 +157,7 @@ export async function gitPull(containerId: string, remote = 'origin', branch?: s
 
 export async function gitBranches(containerId: string): Promise<{ branches: string[]; current: string }> {
   let output = ''
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git branch 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace branch 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -179,7 +179,7 @@ export async function gitBranches(containerId: string): Promise<{ branches: stri
 export async function gitCheckout(containerId: string, branch: string, create = false): Promise<string> {
   let output = ''
   const flag = create ? '-b' : ''
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git checkout ${flag} ${branch} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace checkout ${flag} ${branch} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -190,7 +190,7 @@ export async function gitCheckout(containerId: string, branch: string, create = 
 
 export async function gitLog(containerId: string, count = 20): Promise<string> {
   let output = ''
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git log --oneline -n ${count} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace log --oneline -n ${count} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
