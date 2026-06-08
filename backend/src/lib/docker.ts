@@ -63,7 +63,10 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     // 1. Bypass dubious ownership checks inside the container
     await execInContainer(info.Id, ['git', 'config', '--global', '--add', 'safe.directory', '/workspace'], () => {})
 
-    // 2. Automatically git init if the repository doesn't have a .git folder (preserves cloned history if imported)
+    // 2. Disable global core.fileMode validation inside container
+    await execInContainer(info.Id, ['git', 'config', '--global', 'core.fileMode', 'false'], () => {})
+
+    // 3. Automatically git init if the repository doesn't have a .git folder (preserves cloned history if imported)
     await execInContainer(
       info.Id,
       ['sh', '-c', 'if [ ! -d "/workspace/.git" ]; then git init && git config user.name "CloudCode" && git config user.email "coder@cloudcode.dev" && git add . && git commit -m "Initial commit"; fi'],
