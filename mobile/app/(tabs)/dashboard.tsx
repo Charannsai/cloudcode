@@ -17,10 +17,10 @@ export default function DashboardScreen() {
   const { handleScroll } = useScrollVisibility()
 
   const stats = [
-    { label: 'Workspaces', value: '12', icon: LayoutDashboard, color: '#6366f1' },
-    { label: 'Uptime', value: '99.9%', icon: TrendingUp, color: '#10b981' },
-    { label: 'CPU Usage', value: '24%', icon: Cpu, color: '#f59e0b' },
-    { label: 'Active Sessions', value: '3', icon: Zap, color: '#ec4899' },
+    { label: 'Workspaces', value: '12', icon: LayoutDashboard },
+    { label: 'Uptime', value: '99.9%', icon: TrendingUp },
+    { label: 'CPU Usage', value: '24%', icon: Cpu },
+    { label: 'Active Sessions', value: '3', icon: Zap },
   ]
 
   return (
@@ -38,8 +38,8 @@ export default function DashboardScreen() {
       <View style={styles.statsGrid}>
         {stats.map((stat, i) => (
           <View key={i} style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}>
-              <stat.icon size={20} color={stat.color} />
+            <View style={[styles.statIcon, { backgroundColor: 'rgba(255, 255, 255, 0.03)' }]}>
+              <stat.icon size={20} color={colors.textSecondary} />
             </View>
             <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.label}</Text>

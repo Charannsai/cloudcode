@@ -144,7 +144,7 @@ export default function TerminalTab({ projectId }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: isDark ? '#000' : '#f9fafb' }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 160}
     >
@@ -160,7 +160,7 @@ export default function TerminalTab({ projectId }: Props) {
                 style={[
                   styles.tabItem,
                   isActive
-                    ? { backgroundColor: isDark ? '#1e293b' : '#e2e8f0', borderColor: colors.border }
+                    ? { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderColor: colors.border }
                     : { borderColor: 'transparent' }
                 ]}
                 activeOpacity={0.7}
@@ -188,7 +188,7 @@ export default function TerminalTab({ projectId }: Props) {
           })}
           <TouchableOpacity
             onPress={addNewTerminal}
-            style={[styles.addTabBtn, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}
+            style={[styles.addTabBtn, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}
             activeOpacity={0.7}
           >
             <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>+</Text>
@@ -212,7 +212,7 @@ export default function TerminalTab({ projectId }: Props) {
             style={[styles.actionBtn, { backgroundColor: colors.background }]}
             activeOpacity={0.7}
           >
-            <Sparkles size={14} color={isDark ? '#c084fc' : '#8b5cf6'} strokeWidth={2.5} />
+            <Sparkles size={14} color="#ffffff" strokeWidth={2.5} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => sendInput('\x03')}
@@ -249,7 +249,7 @@ export default function TerminalTab({ projectId }: Props) {
         {activeOutput ? (
           <View style={{ paddingBottom: 16 }}>
             {lines.map((line, i) => (
-              <Text key={i} style={[styles.output, { color: isDark ? '#e5e7eb' : '#111827', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
+              <Text key={i} style={[styles.output, { color: '#fafafa', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
                 {line}
                 {connected && i === lines.length - 1 && <Text style={{ color: colors.primary }}>█</Text>}
               </Text>
