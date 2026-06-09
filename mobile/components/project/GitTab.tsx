@@ -489,7 +489,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
         {/* Diff viewer */}
         {diffFile && diffText && (
-          <View style={[styles.diffContainer, { backgroundColor: 'rgba(255, 255, 255, 0.03)', borderColor: colors.border }]}>
+          <View style={[styles.diffContainer, { backgroundColor: isDark ? '#0d1117' : '#f6f8fa', borderColor: colors.border }]}>
             <View style={[styles.diffHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.diffTitle, { color: colors.text }]}>{diffFile}</Text>
               <TouchableOpacity onPress={() => { setDiffFile(null); setDiffText(null) }}>
@@ -497,9 +497,9 @@ export default function GitTab({ projectId, isActive }: Props) {
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <Text style={[styles.diffContent, { color: '#eaeaea' }]}>
+              <Text style={[styles.diffContent, { color: isDark ? '#c9d1d9' : '#1f2328' }]}>
                 {diffText.split('\n').map((line, i) => {
-                  let lineColor = '#eaeaea'
+                  let lineColor = isDark ? '#c9d1d9' : '#1f2328'
                   if (line.startsWith('+') && !line.startsWith('+++')) lineColor = '#3fb950'
                   else if (line.startsWith('-') && !line.startsWith('---')) lineColor = '#f85149'
                   else if (line.startsWith('@@')) lineColor = '#79c0ff'
@@ -525,7 +525,7 @@ export default function GitTab({ projectId, isActive }: Props) {
             />
             <TouchableOpacity
               style={[styles.commitBtn, {
-                backgroundColor: commitMessage.trim() ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                backgroundColor: commitMessage.trim() ? (isDark ? '#238636' : '#1a7f37') : (isDark ? '#1a1a1a' : '#e5e7eb'),
               }]}
               onPress={handleCommit}
               disabled={!commitMessage.trim() || committing}
@@ -534,9 +534,9 @@ export default function GitTab({ projectId, isActive }: Props) {
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <>
-                  <GitCommit size={16} color={commitMessage.trim() ? '#1d1d1d' : colors.textSecondary} />
+                  <GitCommit size={16} color={commitMessage.trim() ? '#fff' : colors.textSecondary} />
                   <Text style={[styles.commitBtnText, {
-                    color: commitMessage.trim() ? '#1d1d1d' : colors.textSecondary
+                    color: commitMessage.trim() ? '#fff' : colors.textSecondary
                   }]}>Commit</Text>
                 </>
               )}
@@ -797,7 +797,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    fontSize: 14,
+    backgroundColor: 'rgba(0,0,0,0.02)',
   },
   primaryBtn: {
     height: 48,
@@ -820,7 +821,7 @@ const styles = StyleSheet.create({
   sshInfoText: {
     fontSize: 11,
     fontFamily: 'JetBrainsMono_400Regular',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: 'rgba(0,0,0,0.05)',
     padding: 10,
     borderRadius: 8,
   },

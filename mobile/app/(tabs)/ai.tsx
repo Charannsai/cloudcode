@@ -3,7 +3,6 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share, Alert
 } from 'react-native'
-import { BlurView } from 'expo-blur'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
@@ -95,14 +94,14 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
   const isUser = message.role === 'user'
 
   const mdStyles = {
-    body: { color: '#f4f4f5', fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24 },
-    heading1: { fontSize: 22, fontFamily: 'Inter_700Bold', marginTop: 16, marginBottom: 8, color: '#fff' },
-    heading2: { fontSize: 18, fontFamily: 'Inter_600SemiBold', marginTop: 12, marginBottom: 6, color: '#fff' },
-    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: 'rgba(255, 255, 255, 0.08)', color: '#fff', fontSize: 13, padding: 4, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#eee', fontSize: 13, padding: 12, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 8, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' },
+    body: { color: isDark ? '#f4f4f5' : '#27272a', fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24 },
+    heading1: { fontSize: 22, fontFamily: 'Inter_700Bold', marginTop: 16, marginBottom: 8, color: isDark ? '#fff' : '#000' },
+    heading2: { fontSize: 18, fontFamily: 'Inter_600SemiBold', marginTop: 12, marginBottom: 6, color: isDark ? '#fff' : '#000' },
+    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#222' : '#f5f5f5', color: isDark ? '#fff' : '#000', fontSize: 13, padding: 4, borderRadius: 4 },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#222' : '#f5f5f5', color: isDark ? '#eee' : '#111', fontSize: 13, padding: 12, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 8, borderWidth: 1, borderColor: isDark ? '#333' : '#eaeaea' },
     paragraph: { marginTop: 4, marginBottom: 4 },
     list_item: { marginTop: 2, marginBottom: 2 },
-    link: { color: '#60a5fa', textDecorationLine: 'underline' } as const,
+    link: { color: isDark ? '#60a5fa' : '#3b82f6', textDecorationLine: 'underline' } as const,
   }
 
   return (
@@ -119,8 +118,8 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
       <View style={[
         styles.bubble,
         isUser
-          ? [styles.userBubble, { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1, shadowColor: '#000' }]
-          : [styles.modelBubble, { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: 'rgba(255, 255, 255, 0.06)', borderWidth: 1 }]
+          ? [styles.userBubble, { backgroundColor: isDark ? '#222' : '#000', shadowColor: '#000' }]
+          : [styles.modelBubble, { backgroundColor: isDark ? '#111' : '#fff', borderColor: isDark ? '#222' : '#eaeaea' }]
       ]}>
         {/* Tool calls */}
         {message.toolCalls?.map((tc, i) => (
@@ -361,18 +360,14 @@ export default function AIScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
-      {/* Glassmorphic Header */}
-      <BlurView
-        intensity={Platform.OS === 'ios' ? 20 : 40}
-        tint="dark"
-        style={[styles.header, { borderBottomColor: colors.border, borderBottomWidth: 1, backgroundColor: 'rgba(29, 29, 29, 0.7)' }]}
-      >
+      {/* Header */}
+      <View style={[styles.header, { borderBottomColor: isDark ? '#111' : '#eaeaea' }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/projects')}
-            style={[styles.backBtn, { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, borderColor: colors.border }]}
+            style={[styles.backBtn, { backgroundColor: isDark ? '#111' : '#f5f5f5', borderWidth: 1, borderColor: isDark ? '#222' : '#eaeaea' }]}
           >
-            <ArrowLeft size={18} color="#fff" />
+            <ArrowLeft size={18} color={isDark ? '#fff' : '#000'} />
           </TouchableOpacity>
           <View>
             <Text style={[styles.headerTitle, { color: colors.text }]}>CloudCode AI</Text>
@@ -381,10 +376,10 @@ export default function AIScreen() {
             </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={clearChat} style={[styles.clearBtn, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
+        <TouchableOpacity onPress={clearChat} style={[styles.clearBtn, { backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5' }]}>
           <Trash2 size={16} color={colors.textSecondary} />
         </TouchableOpacity>
-      </BlurView>
+      </View>
 
       {/* Project selector */}
       {projects.length > 0 && (
@@ -396,11 +391,11 @@ export default function AIScreen() {
                 styles.projectChip,
                 {
                   backgroundColor: selectedProjectId === p.id
-                    ? '#ffffff'
-                    : 'rgba(255, 255, 255, 0.04)',
+                    ? (isDark ? '#fff' : '#000')
+                    : (isDark ? '#111' : '#fff'),
                   borderColor: selectedProjectId === p.id
-                    ? '#ffffff'
-                    : colors.border,
+                    ? (isDark ? '#fff' : '#000')
+                    : (isDark ? '#222' : '#eaeaea'),
                 }
               ]}
               onPress={() => setSelectedProjectId(p.id)}
@@ -408,7 +403,7 @@ export default function AIScreen() {
               <Text style={[
                 styles.projectChipText,
                 {
-                  color: selectedProjectId === p.id ? '#1d1d1d' : '#a3a3a3',
+                  color: selectedProjectId === p.id ? (isDark ? '#000' : '#fff') : (isDark ? '#aaa' : '#555'),
                 }
               ]}>
                 {p.name}
@@ -427,8 +422,8 @@ export default function AIScreen() {
       >
         {messages.length === 0 && !isStreaming && (
           <Animated.View entering={FadeIn.delay(200)} style={styles.emptyState}>
-            <View style={[styles.emptyIcon, { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: colors.border }]}>
-              <Sparkles size={32} color="#ccc" />
+            <View style={[styles.emptyIcon, { backgroundColor: isDark ? '#111' : '#fafafa', borderColor: isDark ? '#222' : '#eaeaea' }]}>
+              <Sparkles size={32} color={isDark ? '#ccc' : '#444'} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               Hi {username}
@@ -447,11 +442,11 @@ export default function AIScreen() {
               ].map((prompt, i) => (
                 <TouchableOpacity
                   key={i}
-                  style={[styles.quickPrompt, { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: colors.border }]}
+                  style={[styles.quickPrompt, { backgroundColor: isDark ? '#111' : '#fff', borderColor: isDark ? '#222' : '#eaeaea' }]}
                   onPress={() => setInputText(prompt.label)}
                 >
-                  <prompt.icon size={16} color="#ccc" />
-                  <Text style={[styles.quickPromptText, { color: '#ccc' }]}>{prompt.label}</Text>
+                  <prompt.icon size={16} color={isDark ? '#ccc' : '#444'} />
+                  <Text style={[styles.quickPromptText, { color: isDark ? '#ccc' : '#333' }]}>{prompt.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -472,10 +467,10 @@ export default function AIScreen() {
         {/* Streaming indicator */}
         {isStreaming && (
           <Animated.View entering={FadeInDown.duration(200)} style={[styles.messageBubbleWrapper, styles.modelWrapper]}>
-            <View style={[styles.avatarCircle, { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: colors.border, borderWidth: 1 }]}>
-              <Bot size={16} color="#ccc" />
+            <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#111' : '#f5f5f5', borderColor: isDark ? '#222' : '#eaeaea', borderWidth: 1 }]}>
+              <Bot size={16} color={isDark ? '#ccc' : '#444'} />
             </View>
-            <View style={[styles.bubble, styles.modelBubble, { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: colors.border }]}>
+            <View style={[styles.bubble, styles.modelBubble, { backgroundColor: isDark ? '#111' : '#fff', borderColor: isDark ? '#222' : '#eaeaea' }]}>
               {currentToolCalls.map((tc, i) => (
                 <ToolCallCard key={i} tool={tc} isDark={isDark} colors={colors} />
               ))}
@@ -484,16 +479,17 @@ export default function AIScreen() {
                   {(() => {
                     const str = currentStreamText
                     const match = str.match(/```/g)
+                    // If odd backticks exist, forcibly inject a closer so streaming fences visually build out perfectly over markdown-it constraints
                     if (match && match.length % 2 !== 0) return str + '\n```\n ▊'
                     return str + ' ▊'
                   })()}
                 </Markdown>
               ) : currentToolCalls.length === 0 ? (
                 <View style={styles.typingIndicator}>
-                  <Animated.View style={[styles.typingDot, { backgroundColor: '#fff' }, dotStyle1]} />
-                  <Animated.View style={[styles.typingDot, { backgroundColor: '#fff' }, dotStyle2]} />
-                  <Animated.View style={[styles.typingDot, { backgroundColor: '#fff' }, dotStyle3]} />
-                  <Text style={[styles.typingText, { color: '#a1a1aa', marginLeft: 6 }]}>Thinking...</Text>
+                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }, dotStyle1]} />
+                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }, dotStyle2]} />
+                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#fff' : '#000' }, dotStyle3]} />
+                  <Text style={[styles.typingText, { color: isDark ? '#a1a1aa' : '#71717a', marginLeft: 6 }]}>Thinking...</Text>
                 </View>
               ) : null}
             </View>
@@ -503,23 +499,19 @@ export default function AIScreen() {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Glassmorphic Input Container */}
-      <BlurView
-        intensity={Platform.OS === 'ios' ? 20 : 40}
-        tint="dark"
-        style={[styles.inputContainer, { 
-          backgroundColor: 'rgba(29, 29, 29, 0.7)', 
-          borderTopColor: colors.border,
-          bottom: 0,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 16
-        }]}
-      >
-        <View style={[styles.inputBox, { backgroundColor: 'rgba(255, 255, 255, 0.03)', borderColor: colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }]}>
+      {/* Input */}
+      <View style={[styles.inputContainer, { 
+        backgroundColor: colors.background, 
+        borderTopColor: isDark ? '#1a1a1a' : '#eaeaea',
+        bottom: 0,
+        paddingBottom: Platform.OS === 'ios' ? 24 : 16
+      }]}>
+        <View style={[styles.inputBox, { backgroundColor: isDark ? '#111' : '#fff', borderColor: isDark ? '#222' : '#eaeaea', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 }]}>
           <TextInput
             value={inputText}
             onChangeText={setInputText}
             placeholder={isStreaming ? 'AI is working...' : 'Ask AI to code anything...'}
-            placeholderTextColor="#666"
+            placeholderTextColor={isDark ? '#555' : '#999'}
             multiline
             style={[styles.input, { color: colors.text }]}
             editable={!isStreaming}
@@ -534,7 +526,7 @@ export default function AIScreen() {
                 marginRight: 4,
                 backgroundColor: isListening 
                   ? '#ef4444' 
-                  : 'rgba(255, 255, 255, 0.05)'
+                  : (isDark ? '#1a1a1a' : '#f5f5f5')
               }
             ]}
             onPress={toggleListening}
@@ -544,7 +536,7 @@ export default function AIScreen() {
             {isListening ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Mic size={16} color="#aaa" />
+              <Mic size={16} color={isDark ? '#aaa' : '#666'} />
             )}
           </TouchableOpacity>
 
@@ -553,8 +545,8 @@ export default function AIScreen() {
               styles.sendBtn,
               {
                 backgroundColor: inputText.trim() && !isStreaming
-                  ? '#ffffff'
-                  : 'rgba(255, 255, 255, 0.05)'
+                  ? (isDark ? '#fff' : '#000')
+                  : (isDark ? '#111' : '#f5f5f5')
               }
             ]}
             onPress={handleSend}
@@ -562,12 +554,12 @@ export default function AIScreen() {
           >
             <ArrowUp
               size={18}
-              color={inputText.trim() && !isStreaming ? '#1d1d1d' : '#555'}
+              color={inputText.trim() && !isStreaming ? (isDark ? '#000' : '#fff') : (isDark ? '#555' : '#ccc')}
               strokeWidth={3}
             />
           </TouchableOpacity>
         </View>
-      </BlurView>
+      </View>
     </KeyboardAvoidingView>
   )
 }

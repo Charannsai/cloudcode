@@ -121,7 +121,7 @@ export default function WelcomeScreen() {
           <Animated.View entering={FadeInDown.delay(600).duration(800)} style={styles.heroText}>
             <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
               The Future of{'\n'}
-              <Text style={{ color: colors.primary }}>Cloud Native</Text>
+              <Text style={{ color: colors.accent || '#8a6eff' }}>Cloud Native</Text>
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Instant provision high-performance virtual nodes for modern engineering teams. Zero configuration required.
@@ -131,13 +131,13 @@ export default function WelcomeScreen() {
 
         <Animated.View entering={FadeInDown.delay(800).duration(800)} style={styles.features}>
           {[
-            { icon: Terminal, label: 'Instant Shell', sub: 'Low-latency TTY protocol' },
-            { icon: Cpu, label: 'Virtual Nodes', sub: 'Isolated container stacks' },
-            { icon: Globe, label: 'Edge Ready', sub: 'Military-grade encryption' },
+            { icon: Terminal, label: 'Instant Shell', sub: 'Low-latency TTY protocol', color: '#3b82f6' },
+            { icon: Cpu, label: 'Virtual Nodes', sub: 'Isolated container stacks', color: '#10b981' },
+            { icon: Globe, label: 'Edge Ready', sub: 'Military-grade encryption', color: '#f59e0b' },
           ].map((item, idx) => (
-            <View key={idx} style={[styles.featureCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.03)' }]}>
-                <item.icon size={20} color={colors.textSecondary} strokeWidth={2} />
+            <View key={idx} style={[styles.featureCard, { backgroundColor: isDark ? '#12121e' : '#f8f9fa' }]}>
+              <View style={[styles.iconBox, { backgroundColor: item.color + '15' }]}>
+                <item.icon size={20} color={item.color} strokeWidth={2} />
               </View>
               <View>
                 <Text style={[styles.featureLabel, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>{item.label}</Text>

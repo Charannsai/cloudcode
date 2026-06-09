@@ -115,7 +115,7 @@ export default function ProjectScreen() {
                 key={tab.id}
                 style={[
                   styles.tab, 
-                  isActive && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }
+                  isActive && { backgroundColor: isDark ? colors.background : '#f3f4f6' }
                 ]}
                 onPress={() => setActiveTab(tab.id)}
                 activeOpacity={0.8}

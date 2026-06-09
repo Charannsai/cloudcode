@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { Tabs } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent, Keyboard } from 'react-native'
-import { BlurView } from 'expo-blur'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { LayoutDashboard, Database, Sparkles, Settings } from 'lucide-react-native'
 import Animated, { 
@@ -22,7 +21,7 @@ const SPRING_CONFIG = {
   mass: 1,
 }
 
-const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, colors, isDark }: any) => {
+const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isDark }: any) => {
   const Icon = options.tabBarIcon
   const scale = useSharedValue(1)
 
@@ -36,9 +35,6 @@ const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, col
     }
   })
 
-  const activeColor = isDark ? '#1d1d1d' : '#ffffff'
-  const inactiveColor = colors.tabBarInactive
-
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -48,7 +44,10 @@ const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, col
     >
       <Animated.View style={iconStyle}>
         <Icon 
-          color={isFocused ? activeColor : inactiveColor} 
+          color={isFocused 
+            ? (isDark ? '#000000' : '#ffffff') 
+            : (isDark ? '#999999' : '#666666')
+          } 
           size={20} 
           strokeWidth={isFocused ? 2.5 : 2}
         />
@@ -59,7 +58,7 @@ const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, col
           exiting={FadeOut.duration(100)}
           style={[
             styles.tabLabel, 
-            { color: activeColor }
+            { color: isDark ? '#000000' : '#ffffff' }
           ]}
         >
           {options.title || route.name}
@@ -70,7 +69,7 @@ const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, col
 })
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
-  const { colors, isDark } = useAppTheme()
+  const { isDark } = useAppTheme()
   const [tabWidths, setTabWidths] = useState<number[]>(new Array(state.routes.length).fill(0))
   const [tabPositions, setTabPositions] = useState<number[]>(new Array(state.routes.length).fill(0))
   
@@ -136,14 +135,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
-      <BlurView
-        intensity={Platform.OS === 'ios' ? 30 : 60}
-        tint={isDark ? 'dark' : 'light'}
+      <View
         style={[
           styles.tabBarContainer,
           { 
-            backgroundColor: colors.tabBar,
-            borderColor: colors.border,
+            backgroundColor: isDark ? '#050505' : '#ffffff',
+            borderColor: isDark ? '#1a1a1a' : '#eeeeee',
+            shadowOpacity: isDark ? 0.6 : 0.08,
             borderWidth: 1,
           }
         ]}
@@ -152,7 +150,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           style={[
             styles.indicator, 
             { 
-              backgroundColor: colors.tabBarActive,
+              backgroundColor: isDark ? '#ffffffff' : '#1b1b1bff',
             },
             indicatorStyle
           ]} 
@@ -183,12 +181,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               index={index}
               onPress={onPress}
               onLayout={handleLayout}
-              colors={colors}
               isDark={isDark}
             />
           )
         })}
-      </BlurView>
+      </View>
     </Animated.View>
   )
 }
