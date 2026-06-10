@@ -92,7 +92,7 @@ async function seedTemplate(dir: string, type: string) {
       JSON.stringify({
         name: 'cloudcode-react',
         version: '1.0.0',
-        scripts: { dev: 'vite', build: 'vite build', start: 'vite preview' },
+        scripts: { dev: 'vite --port 3000 --host 0.0.0.0', build: 'vite build', start: 'vite preview --port 3000 --host 0.0.0.0' },
         dependencies: { react: '^18.0.0', 'react-dom': '^18.0.0' },
         devDependencies: { vite: '^5.0.0', '@vitejs/plugin-react': '^4.0.0' },
       }, null, 2)
@@ -113,10 +113,14 @@ async function seedTemplate(dir: string, type: string) {
 
 async function provisionContainer(projectId: string) {
   try {
-    const { containerId } = await createContainer(projectId)
+    const { containerId, port } = await createContainer(projectId)
     await supabaseAdmin
       .from('projects')
-      .update({ status: 'ready', container_id: containerId })
+      .update({ 
+        status: 'ready', 
+        container_id: containerId,
+        port: port ? parseInt(port, 10) : null
+      })
       .eq('id', projectId)
   } catch (err) {
     console.error('Container provisioning failed:', err)

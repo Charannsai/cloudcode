@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { destroyContainer, getContainerStatus } from '@/lib/docker'
+import { destroyContainer, getContainerDetails } from '@/lib/docker'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -23,8 +23,13 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (error || !data) return errorResponse('Project not found', 404)
 
   if (data.container_id) {
-    const containerStatus = await getContainerStatus(data.container_id)
-    return successResponse({ ...data, container_status: containerStatus })
+    const details = await getContainerDetails(data.container_id)
+    return successResponse({ 
+      ...data, 
+      container_status: details.status,
+      ports: details.ports,
+      port: data.port || details.ports['3000'] || null
+    })
   }
 
   return successResponse(data)

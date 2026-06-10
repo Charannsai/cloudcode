@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
-  Platform,
+  Platform, Linking,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -16,30 +16,88 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 interface Props {
   projectId: string
   port: number
+  ports?: Record<string, number>
 }
 
-export default function PreviewTab({ projectId, port }: Props) {
+function getHostFromApiUrl(apiUrl: string): string {
+  try {
+    if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) {
+      const withoutProto = apiUrl.split('://')[1]
+      return withoutProto.split(':')[0]
+    }
+  } catch (e) {}
+  return 'localhost'
+}
+
+export default function PreviewTab({ projectId, port, ports }: Props) {
   const { colors, isDark } = useAppTheme()
   const webViewRef = useRef<WebView>(null)
+  const [selectedPort, setSelectedPort] = useState(port)
   const [url, setUrl] = useState('')
   const [canGoBack, setCanGoBack] = useState(false)
   const [canGoForward, setCanGoForward] = useState(false)
   const [loading, setLoading] = useState(true)
   const [currentUrl, setCurrentUrl] = useState('')
 
+  // Determine available ports dynamically
+  const availablePorts = Object.keys(ports || {}).map(p => parseInt(p, 10)).sort((a, b) => a - b)
+  if (availablePorts.length === 0) {
+    availablePorts.push(port || 3000)
+  }
+
+  // Ensure selectedPort updates if parent updates it
+  useEffect(() => {
+    if (port) {
+      setSelectedPort(port)
+    }
+  }, [port])
+
   useEffect(() => {
     async function initUrl() {
       try {
         const token = await getToken()
-        const initialUrl = `${API_URL}/api/preview/${projectId}?port=${port}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+        const host = getHostFromApiUrl(API_URL)
+        const mappedPort = ports?.[selectedPort.toString()]
+
+        let initialUrl = ''
+        if (mappedPort) {
+          initialUrl = `http://${host}:${mappedPort}/`
+        } else {
+          initialUrl = `${API_URL}/api/preview/${projectId}?port=${selectedPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+        }
+
         setUrl(initialUrl)
-        setCurrentUrl(initialUrl)
+        
+        // Show virtual localhost URL in the address bar
+        const virtualUrl = `http://localhost:${selectedPort}/`
+        setCurrentUrl(virtualUrl)
       } catch (err) {
         console.error('Failed to initialize preview URL:', err)
       }
     }
     initUrl()
-  }, [projectId, port])
+  }, [projectId, selectedPort, ports])
+
+  const handleGo = () => {
+    const host = getHostFromApiUrl(API_URL)
+    const mappedPort = ports?.[selectedPort.toString()]
+    const targetHostPort = mappedPort ? `${host}:${mappedPort}` : `${host}:${selectedPort}`
+
+    let realUrl = currentUrl
+    if (currentUrl.includes(`localhost:${selectedPort}`)) {
+      realUrl = currentUrl.replace(`localhost:${selectedPort}`, targetHostPort)
+    }
+    setUrl(realUrl)
+  }
+
+  const handleCopy = () => {
+    // Copy the real URL to clipboard so they can open it externally
+    Clipboard.setStringAsync(url)
+  }
+
+  const handleOpenExternal = () => {
+    Linking.openURL(url).catch(err => console.error('Failed to open url:', err))
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -69,6 +127,26 @@ export default function PreviewTab({ projectId, port }: Props) {
           >
             <RefreshCw size={12} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
+
+          {/* Dynamic Port Selector badge (cycles through available ports on tap) */}
+          <TouchableOpacity
+            onPress={() => {
+              if (availablePorts.length > 1) {
+                const currentIndex = availablePorts.indexOf(selectedPort)
+                const nextIndex = (currentIndex + 1) % availablePorts.length
+                setSelectedPort(availablePorts[nextIndex])
+              }
+            }}
+            style={[styles.portBadge, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.portBadgeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular', fontWeight: 'bold' }]}>
+              {selectedPort}
+            </Text>
+            {availablePorts.length > 1 && (
+              <Text style={{ fontSize: 9, color: colors.textSecondary, marginLeft: 3 }}>▾</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={[styles.urlBar, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
@@ -77,17 +155,24 @@ export default function PreviewTab({ projectId, port }: Props) {
             style={[styles.urlInput, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
             value={currentUrl}
             onChangeText={setCurrentUrl}
-            onSubmitEditing={() => setUrl(currentUrl)}
+            onSubmitEditing={handleGo}
             returnKeyType="go"
             autoCapitalize="none"
             autoCorrect={false}
             selectTextOnFocus
           />
           <TouchableOpacity
-            onPress={() => Clipboard.setStringAsync(currentUrl)}
+            onPress={handleCopy}
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           >
             <Copy size={11} color={colors.textSecondary} strokeWidth={1.5} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleOpenExternal}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            style={{ marginLeft: 6 }}
+          >
+            <ArrowUpRight size={12} color={colors.textSecondary} strokeWidth={1.5} />
           </TouchableOpacity>
         </View>
       </View>
@@ -112,7 +197,16 @@ export default function PreviewTab({ projectId, port }: Props) {
             onNavigationStateChange={(state) => {
               setCanGoBack(state.canGoBack)
               setCanGoForward(state.canGoForward)
-              setCurrentUrl(state.url)
+              
+              const host = getHostFromApiUrl(API_URL)
+              const mappedPort = ports?.[selectedPort.toString()]
+              const targetHostPort = mappedPort ? `${host}:${mappedPort}` : `${host}:${selectedPort}`
+
+              let virtualUrl = state.url
+              if (state.url.includes(targetHostPort)) {
+                virtualUrl = state.url.replace(targetHostPort, `localhost:${selectedPort}`)
+              }
+              setCurrentUrl(virtualUrl)
             }}
             javaScriptEnabled
             domStorageEnabled
@@ -143,6 +237,7 @@ const styles = StyleSheet.create({
   },
   navButtons: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
   navBtn: {
@@ -151,6 +246,17 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  portBadge: {
+    height: 28,
+    paddingHorizontal: 8,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  portBadgeText: {
+    fontSize: 10,
   },
   urlBar: {
     flex: 1,

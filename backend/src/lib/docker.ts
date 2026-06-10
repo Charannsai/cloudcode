@@ -43,13 +43,21 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     AttachStderr: true,
     ExposedPorts: {
       '3000/tcp': {},
+      '5000/tcp': {},
+      '5173/tcp': {},
+      '8000/tcp': {},
+      '8080/tcp': {},
     },
     HostConfig: {
       Binds: [`${hostPath}:${WORKSPACE_ROOT}`],
       Memory: 1024 * 1024 * 1024, // 1GB memory cap (prevents starving the VPS host RAM)
       CpuShares: 512,
       PortBindings: {
-        '3000/tcp': [{ HostPort: '' }], // Map to a random host port
+        '3000/tcp': [{ HostPort: '' }],
+        '5000/tcp': [{ HostPort: '' }],
+        '5173/tcp': [{ HostPort: '' }],
+        '8000/tcp': [{ HostPort: '' }],
+        '8080/tcp': [{ HostPort: '' }],
       },
       NetworkMode: 'bridge',
       RestartPolicy: { Name: 'unless-stopped' },
@@ -142,6 +150,43 @@ export async function getContainerStatus(containerId: string): Promise<string> {
     return info.State.Status
   } catch {
     return 'not_found'
+  }
+}
+
+export interface ContainerDetails {
+  status: string
+  ports: Record<string, number>
+}
+
+/**
+ * Get container details including active port mappings.
+ */
+export async function getContainerDetails(containerId: string): Promise<ContainerDetails> {
+  try {
+    const container = docker.getContainer(containerId)
+    const info = await container.inspect()
+    
+    const ports: Record<string, number> = {}
+    const portSettings = info.NetworkSettings?.Ports
+    if (portSettings) {
+      for (const [containerPort, bindings] of Object.entries(portSettings)) {
+        const hostPort = (bindings as any)?.[0]?.HostPort
+        if (hostPort) {
+          const cleanKey = containerPort.split('/')[0]
+          ports[cleanKey] = parseInt(hostPort, 10)
+        }
+      }
+    }
+
+    return {
+      status: info.State.Status,
+      ports,
+    }
+  } catch {
+    return {
+      status: 'not_found',
+      ports: {},
+    }
   }
 }
 

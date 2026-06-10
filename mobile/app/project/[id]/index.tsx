@@ -180,7 +180,7 @@ export default function ProjectScreen() {
           <GitTab projectId={project.id} isActive={activeTab === 'Git'} />
         </View>
         <View style={{ flex: 1, display: activeTab === 'Preview' ? 'flex' : 'none' }}>
-          <PreviewTab projectId={project.id} port={project.port || 3000} />
+          <PreviewTab projectId={project.id} port={project.port || 3000} ports={project.ports} />
         </View>
       </View>
     </View>

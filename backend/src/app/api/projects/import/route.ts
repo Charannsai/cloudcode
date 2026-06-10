@@ -57,10 +57,14 @@ async function cloneAndProvision(projectId: string, githubUrl: string) {
     // Grant full permissions recursively so the Docker "coder" user can read/write the cloned code!
     execSync(`chmod -R 777 "${workspacePath}"`, { stdio: 'ignore' })
 
-    const { containerId } = await createContainer(projectId)
+    const { containerId, port } = await createContainer(projectId)
     await supabaseAdmin
       .from('projects')
-      .update({ status: 'ready', container_id: containerId })
+      .update({ 
+        status: 'ready', 
+        container_id: containerId,
+        port: port ? parseInt(port, 10) : null
+      })
       .eq('id', projectId)
   } catch (err) {
     console.error('Import failed:', err)
