@@ -107,7 +107,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         'Accept-Encoding': 'identity', // Strongly request uncompressed
       },
       redirect: 'manual',
-      signal: AbortSignal.timeout(60000), // Increased from 10s to 60s for slow first-compilations (Next/Vite)
+      signal: AbortSignal.timeout(120_000), // 120s for heavy first-compilations (Framer Motion, GSAP, etc.)
     })
 
     // Handle 304 Not Modified & other bodyless responses
@@ -145,7 +145,10 @@ export async function GET(req: NextRequest, { params }: Params) {
       resHeaders.set('Location', `/api/preview/${projectId}${location}`)
     }
 
-    // HTML Content Rewriting: Fix absolute paths for assets (/logo.png -> /api/preview/id/logo.png)
+    // HTML Content Rewriting: Inject <base> tag so the browser resolves ALL
+    // relative URLs (CSS url(), JS import(), img src, fetch, etc.) through the
+    // proxy path automatically. This replaces the old naïve replaceAll approach
+    // which corrupted inline JS in heavy bundles (Framer Motion, GSAP, etc.).
     const body = await response.arrayBuffer()
     const contentType = response.headers.get('content-type') || ''
     let finalBody: BodyInit = body
@@ -154,17 +157,33 @@ export async function GET(req: NextRequest, { params }: Params) {
         try {
             const decoder = new TextDecoder()
             let htmlText = decoder.decode(body)
-            // Naive but effective replacement for common attributes
-            const replacement = `/api/preview/${projectId}/`
-            htmlText = htmlText.replaceAll('src="/', `src="${replacement}`)
-            htmlText = htmlText.replaceAll('srcset="/', `srcset="${replacement}`)
-            htmlText = htmlText.replaceAll('href="/', `href="${replacement}`)
-            htmlText = htmlText.replaceAll('action="/', `action="${replacement}`)
-            htmlText = htmlText.replaceAll('poster="/', `poster="${replacement}`)
-            htmlText = htmlText.replaceAll('data-src="/', `data-src="${replacement}`)
+
+            // Inject <base> tag if not already present
+            if (!htmlText.includes('<base')) {
+                htmlText = htmlText.replace(
+                    /<head([^>]*)>/i,
+                    `<head$1><base href="/api/preview/${projectId}/">`
+                )
+            }
+
             finalBody = new TextEncoder().encode(htmlText)
         } catch (e) {
             console.error('HTML Proxy rewrite failed:', e)
+        }
+    }
+
+    // Also rewrite CSS url() references for stylesheets served separately
+    if (contentType.includes('text/css')) {
+        try {
+            const decoder = new TextDecoder()
+            let cssText = decoder.decode(body)
+            const cssReplacement = `/api/preview/${projectId}/`
+            cssText = cssText.replaceAll('url(/', `url(${cssReplacement}`)
+            cssText = cssText.replaceAll("url('/", `url('${cssReplacement}`)
+            cssText = cssText.replaceAll('url("/', `url("${cssReplacement}`)
+            finalBody = new TextEncoder().encode(cssText)
+        } catch (e) {
+            console.error('CSS Proxy rewrite failed:', e)
         }
     }
 

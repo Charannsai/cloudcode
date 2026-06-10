@@ -78,6 +78,9 @@ const startServer = async () => {
     } else if (
       pathname?.startsWith('/_next/webpack-hmr') || 
       pathname?.startsWith('/api/preview/') || 
+      pathname?.startsWith('/__vite') ||      // Vite HMR WebSocket
+      pathname?.startsWith('/__webpack') ||   // Webpack alternate HMR
+      pathname === '/ws' ||                    // Common WS endpoint
       pathname === '/'
     ) {
       handleWebSocketProxy(request, socket, head)

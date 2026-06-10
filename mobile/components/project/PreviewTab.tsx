@@ -230,6 +230,16 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             sharedCookiesEnabled={true}
             thirdPartyCookiesEnabled={true}
             userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+            // Performance: Hardware-accelerated rendering for smooth animations
+            androidLayerType="hardware"
+            // Enable caching so subsequent loads don't re-download heavy bundles
+            cacheEnabled={true}
+            // Handle WebView crashes (usually OOM from heavy JS like Framer/GSAP)
+            // Auto-reload instead of showing a blank white screen
+            onContentProcessDidTerminate={() => {
+              console.warn('[Preview] WebView process terminated (likely OOM), reloading...')
+              webViewRef.current?.reload()
+            }}
           />
         ) : null}
       </View>
