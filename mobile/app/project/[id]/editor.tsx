@@ -32,7 +32,7 @@ const MONACO_HTML = `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #0E1116; }
     #container { width: 100%; height: 100%; }
     * { -webkit-tap-highlight-color: transparent; }
     /* Hide Monaco's own textarea since we use native RN TextInput for keyboard */
@@ -65,7 +65,7 @@ const MONACO_HTML = `
       window.editor = monaco.editor.create(document.getElementById('container'), {
         value: '',
         language: 'plaintext',
-        theme: 'vs',
+        theme: 'vs-dark',
         automaticLayout: true,
         minimap: { enabled: false },
         fontSize: 14,
@@ -135,23 +135,23 @@ const MONACO_HTML = `
 function FileRow({ node, depth, currentPath, onFilePress }: {
   node: FileNode; depth: number; currentPath: string; onFilePress: (path: string) => void;
 }) {
-  const { colors } = useAppTheme()
+  const { colors, isDark } = useAppTheme()
   const isAncestorOfActive = currentPath.startsWith(node.path + '/')
   const [expanded, setExpanded] = useState(depth < 1 || isAncestorOfActive)
   const isDir = node.type === 'directory'
   const isActive = !isDir && currentPath === node.path
 
   const iconInfo = useMemo(() => {
-    if (isDir) return { icon: Folder, color: '#60a5fa' };
+    if (isDir) return { icon: Folder, color: isDark ? '#E6EDF3' : '#656D76' };
     const ext = node.name.split('.').pop()?.toLowerCase()
     switch(ext) {
-      case 'js': case 'jsx': return { icon: FileCode, color: '#eab308' };
-      case 'ts': case 'tsx': return { icon: FileCode, color: '#3b82f6' };
-      case 'html': return { icon: Code, color: '#f97316' };
-      case 'css': return { icon: Hash, color: '#3b82f6' };
-      case 'json': return { icon: FileJson, color: '#a855f7' };
-      case 'md': return { icon: FileText, color: '#94a3b8' };
-      case 'env': return { icon: Settings, color: '#facc15' };
+      case 'js': case 'jsx': return { icon: FileCode, color: '#F0DB4F' };
+      case 'ts': case 'tsx': return { icon: FileCode, color: '#3178C6' };
+      case 'html': return { icon: Code, color: '#E34F26' };
+      case 'css': return { icon: Hash, color: '#563D7C' };
+      case 'json': return { icon: FileJson, color: '#8BC34A' };
+      case 'md': return { icon: FileText, color: '#58A6FF' };
+      case 'env': return { icon: Settings, color: '#ECD53F' };
       default: return { icon: File, color: colors.textSecondary };
     }
   }, [node.name, isDir, colors.textSecondary])
@@ -183,7 +183,7 @@ function FileRow({ node, depth, currentPath, onFilePress }: {
 export default function EditorScreen() {
   const { id, path } = useLocalSearchParams<{ id: string; path: string }>()
   const router = useRouter()
-  const { colors } = useAppTheme()
+  const { colors, isDark } = useAppTheme()
   const webViewRef = useRef<WebView>(null)
   const nativeInputRef = useRef<TextInput>(null)
 
@@ -332,8 +332,8 @@ export default function EditorScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.card }]} activeOpacity={0.7}>
-          <ArrowLeft size={18} color={colors.textSecondary} />
+        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} activeOpacity={0.7}>
+          <ArrowLeft size={18} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.titleContainer} onPress={() => setShowFilePicker(true)} activeOpacity={0.7}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -342,12 +342,12 @@ export default function EditorScreen() {
           </View>
           <Text style={[styles.pathText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>{currentPath}</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: hasChanges ? colors.primary : colors.card }]}
+          <TouchableOpacity
+          style={[styles.saveBtn, { backgroundColor: hasChanges ? colors.text : (isDark ? '#1C2128' : '#F6F8FA') }]}
           onPress={handleSave} disabled={!hasChanges || saving} activeOpacity={0.8}
         >
           {saving ? (
-            <ActivityIndicator color={hasChanges ? colors.background : colors.textSecondary} size="small" />
+            <ActivityIndicator color={colors.background} size="small" />
           ) : hasChanges ? (
             <Save size={18} color={colors.background} />
           ) : (
@@ -446,11 +446,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
     paddingTop: 54, paddingBottom: 14, borderBottomWidth: 1, gap: 12,
   },
-  backBtn: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  backBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   titleContainer: { flex: 1, gap: 2, paddingVertical: 4 },
   fileName: { fontSize: 15 },
   pathText: { fontSize: 10, opacity: 0.6 },
-  saveBtn: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  saveBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   loadingOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 10 },
   loadingText: { fontSize: 13 },
   webViewContainer: { flex: 1, position: 'relative' },

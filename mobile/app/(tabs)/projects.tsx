@@ -1,7 +1,7 @@
-import { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, ActivityIndicator, Alert,
+  RefreshControl, Alert,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
@@ -14,13 +14,17 @@ import {
   Terminal,
   Activity,
   Cpu,
-  Globe
+  Globe,
+  GitBranch,
+  ChevronRight,
 } from 'lucide-react-native'
+import { useScrollVisibility } from '@/hooks/useScrollVisibility'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 
 const STATUS_COLOR: Record<string, string> = {
-  ready: '#10b981',
-  provisioning: '#6366f1',
-  error: '#ef4444',
+  ready: '#3FB950',
+  provisioning: '#D2A8FF',
+  error: '#F85149',
 }
 
 const TYPE_ICON: Record<string, any> = {
@@ -29,11 +33,9 @@ const TYPE_ICON: Record<string, any> = {
   empty: Cpu,
 }
 
-import { useScrollVisibility } from '@/hooks/useScrollVisibility'
-
 export default function ProjectsScreen() {
   const router = useRouter()
-  const { colors } = useAppTheme()
+  const { colors, isDark } = useAppTheme()
   const { handleScroll } = useScrollVisibility()
   const { projects, loading, fetchProjects, removeProject } = useProjectsStore()
 
@@ -42,10 +44,10 @@ export default function ProjectsScreen() {
   }, [fetchProjects])
 
   const handleDelete = useCallback((id: string, name: string) => {
-    Alert.alert('De-provision', `Confirm termination of workspace: ${name}?`, [
+    Alert.alert('Delete Workspace', `Are you sure you want to delete "${name}"?`, [
       { text: 'Cancel', style: 'cancel' },
       { 
-        text: 'Terminate', 
+        text: 'Delete', 
         style: 'destructive', 
         onPress: async () => {
           try {
@@ -59,49 +61,66 @@ export default function ProjectsScreen() {
     ])
   }, [removeProject])
 
-  const renderProject = ({ item: p }: { item: Project }) => {
+  const renderProject = ({ item: p, index }: { item: Project; index: number }) => {
     const Icon = TYPE_ICON[p.type] || Terminal
     const statusColor = STATUS_COLOR[p.status] || colors.textSecondary
 
     return (
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => router.push(`/project/${p.id}`)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.cardInfo}>
+      <Animated.View entering={FadeInDown.delay(index * 60).duration(400)}>
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+          onPress={() => router.push(`/project/${p.id}`)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.cardMain}>
             <View style={[styles.iconBox, { backgroundColor: colors.background }]}>
-              <Icon size={18} color={colors.text} strokeWidth={2} />
+              <Icon size={16} color={colors.text} strokeWidth={1.8} />
             </View>
-            <View>
-              <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>{p.name}</Text>
-              <Text style={[styles.cardId, { color: colors.textSecondary }]}>{p.id.slice(0, 8)}</Text>
+            <View style={styles.cardInfo}>
+              <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>{p.name}</Text>
+              <View style={styles.cardMeta}>
+                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                <Text style={[styles.cardStatus, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
+                  {p.status}
+                </Text>
+                <Text style={[styles.cardType, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                  · {p.type === 'node' ? 'Node.js' : p.type === 'react' ? 'React' : 'Blank'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.cardActions}>
+              <TouchableOpacity 
+                onPress={() => handleDelete(p.id, p.name)} 
+                style={styles.deleteBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Trash2 size={14} color={colors.textSecondary} strokeWidth={1.5} />
+              </TouchableOpacity>
+              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
             </View>
           </View>
-          <TouchableOpacity onPress={() => handleDelete(p.id, p.name)} style={styles.deleteBtn}>
-            <Trash2 size={16} color={colors.error} strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
-          <View style={styles.stat}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>{p.status.toUpperCase()}</Text>
-          </View>
-          <Text style={[styles.statText, { color: colors.textSecondary }]}>
-            {p.type === 'node' ? 'Engine Instance' : p.type === 'react' ? 'Application Project' : 'Blank Workspace'}
-          </Text>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     )
   }
 
   const emptyState = (
     <View style={styles.empty}>
-      <Activity size={40} color={colors.textSecondary} strokeWidth={1} />
-      <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>No Active Projects</Text>
-      <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Initialize a workspace to begin development.</Text>
+      <View style={[styles.emptyIcon, { backgroundColor: isDark ? '#1C2128' : '#F3F4F6', borderColor: colors.border }]}>
+        <Activity size={28} color={colors.textSecondary} strokeWidth={1.2} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>No Workspaces</Text>
+      <Text style={[styles.emptySub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+        Create your first workspace to start building.
+      </Text>
+      <TouchableOpacity 
+        style={[styles.emptyBtn, { backgroundColor: colors.text }]}
+        onPress={() => router.push('/new-project')}
+        activeOpacity={0.8}
+      >
+        <Plus size={16} color={colors.background} strokeWidth={2.5} />
+        <Text style={[styles.emptyBtnText, { color: colors.background, fontFamily: 'Inter_600SemiBold' }]}>New Workspace</Text>
+      </TouchableOpacity>
     </View>
   )
 
@@ -109,14 +128,17 @@ export default function ProjectsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Projects</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{projects.length} active workspaces</Text>
+          <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Workspaces</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+            {projects.length} active {projects.length === 1 ? 'workspace' : 'workspaces'}
+          </Text>
         </View>
         <TouchableOpacity 
           style={[styles.addBtn, { backgroundColor: colors.text }]}
           onPress={() => router.push('/new-project')}
+          activeOpacity={0.8}
         >
-          <Plus size={20} color={colors.background} strokeWidth={2.5} />
+          <Plus size={18} color={colors.background} strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
@@ -128,6 +150,7 @@ export default function ProjectsScreen() {
         ListEmptyComponent={loading ? null : emptyState}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={fetchProjects} tintColor={colors.text} />
         }
@@ -141,76 +164,79 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingTop: 64,
-    paddingBottom: 24,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  title: { fontSize: 24, letterSpacing: -0.5 },
-  subtitle: { fontSize: 13, opacity: 0.6 },
+  title: { fontSize: 28, letterSpacing: -0.8 },
+  subtitle: { fontSize: 13, marginTop: 2, opacity: 0.6 },
   addBtn: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: { paddingHorizontal: 24, paddingBottom: 160 },
-  listActions: { 
-    flexDirection: 'row', 
-    gap: 12, 
-    marginBottom: 24,
-    marginTop: 12,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 10,
-  },
-  actionBtnText: { fontSize: 13 },
+  list: { paddingHorizontal: 24, paddingBottom: 140 },
   card: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 10,
   },
-  cardHeader: {
+  cardMain: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    gap: 14,
   },
-  cardInfo: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   iconBox: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardTitle: { fontSize: 16 },
-  cardId: { fontSize: 11, fontFamily: 'JetBrainsMono_400Regular', opacity: 0.5, marginTop: 1 },
-  deleteBtn: { padding: 4 },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
+  cardInfo: { flex: 1 },
+  cardTitle: { fontSize: 15, letterSpacing: -0.2 },
+  cardMeta: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 5, 
+    marginTop: 3 
   },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statText: { fontSize: 10, letterSpacing: 0.5, fontFamily: 'JetBrainsMono_500Medium' },
+  statusDot: { width: 5, height: 5, borderRadius: 2.5 },
+  cardStatus: { fontSize: 11, textTransform: 'capitalize' },
+  cardType: { fontSize: 11 },
+  cardActions: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12 
+  },
+  deleteBtn: { padding: 4 },
   empty: {
-    paddingTop: 100,
+    paddingTop: 80,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyTitle: { fontSize: 18, marginTop: 16 },
-  emptySub: { fontSize: 13, marginTop: 6, opacity: 0.6, width: 200, textAlign: 'center' },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: { fontSize: 18, marginBottom: 6 },
+  emptySub: { fontSize: 14, opacity: 0.6, textAlign: 'center', maxWidth: 240, marginBottom: 24 },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  emptyBtnText: { fontSize: 14 },
 })

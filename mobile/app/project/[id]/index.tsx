@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, LayoutChangeEvent,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch } from 'lucide-react-native'
+import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated'
 
 // Lazy-load tab screens
 import FilesTab from '@/components/project/FilesTab'
@@ -23,6 +24,8 @@ const TABS = [
 
 type Tab = typeof TABS[number]['id']
 
+const SPRING = { damping: 24, stiffness: 200, mass: 0.8 }
+
 export default function ProjectScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
@@ -30,6 +33,32 @@ export default function ProjectScreen() {
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('Terminal')
+
+  // Animated indicator
+  const indicatorX = useSharedValue(0)
+  const indicatorW = useSharedValue(0)
+  const [tabLayouts, setTabLayouts] = useState<Record<string, { x: number; width: number }>>({})
+
+  useEffect(() => {
+    const layout = tabLayouts[activeTab]
+    if (layout) {
+      indicatorX.value = withSpring(layout.x, SPRING)
+      indicatorW.value = withSpring(layout.width, SPRING)
+    }
+  }, [activeTab, tabLayouts])
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+    width: indicatorW.value,
+  }))
+
+  const handleTabLayout = (tabId: string, event: LayoutChangeEvent) => {
+    const { x, width } = event.nativeEvent.layout
+    setTabLayouts(prev => {
+      if (prev[tabId]?.x === x && prev[tabId]?.width === width) return prev
+      return { ...prev, [tabId]: { x, width } }
+    })
+  }
 
   useEffect(() => {
     if (id) fetchProject()
@@ -49,8 +78,8 @@ export default function ProjectScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.text} size="small" />
-        <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Resuming environment...</Text>
+        <ActivityIndicator color={colors.textSecondary} size="small" />
+        <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Loading workspace...</Text>
       </View>
     )
   }
@@ -58,9 +87,9 @@ export default function ProjectScreen() {
   if (!project) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error, fontFamily: 'Inter_700Bold' }]}>Project not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Text style={[styles.backBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Go Back</Text>
+        <Text style={[styles.errorText, { color: colors.error, fontFamily: 'Inter_600SemiBold' }]}>Project not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtnFallback, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+          <Text style={[styles.backBtnFallbackText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Go Back</Text>
         </TouchableOpacity>
       </View>
     )
@@ -72,24 +101,24 @@ export default function ProjectScreen() {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => router.back()} 
-          style={[styles.headerBtn, { backgroundColor: colors.card }]}
+          style={[styles.headerBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
           activeOpacity={0.7}
         >
-          <ChevronLeft size={20} color={colors.textSecondary} />
+          <ChevronLeft size={18} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         
         <View style={styles.headerInfo}>
-          <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]} numberOfLines={1}>
+          <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_700Bold' }]} numberOfLines={1}>
             {project.name}
           </Text>
           <View style={styles.statusRow}>
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: project.status === 'ready' ? '#10b981' : '#f59e0b' },
+                { backgroundColor: project.status === 'ready' ? '#3FB950' : '#D2A8FF' },
               ]}
             />
-            <Text style={[styles.statusText, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+            <Text style={[styles.statusText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
               {project.container_status || project.status}
             </Text>
           </View>
@@ -97,37 +126,39 @@ export default function ProjectScreen() {
 
         <TouchableOpacity 
           onPress={fetchProject} 
-          style={[styles.headerBtn, { backgroundColor: colors.card }]}
+          style={[styles.headerBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
           activeOpacity={0.7}
         >
-          <RefreshCw size={18} color={project.status === 'ready' ? colors.success : colors.textSecondary} />
+          <RefreshCw size={16} color={project.status === 'ready' ? '#3FB950' : colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
       </View>
 
       {/* Segmented Tab Bar */}
       <View style={styles.tabBarContainer}>
-        <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.tabBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}>
+          <Animated.View style={[styles.tabIndicator, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }, indicatorStyle]} />
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id
             const Icon = tab.icon
             return (
               <TouchableOpacity
                 key={tab.id}
-                style={[
-                  styles.tab, 
-                  isActive && { backgroundColor: isDark ? colors.background : '#f3f4f6' }
-                ]}
+                style={styles.tab}
                 onPress={() => setActiveTab(tab.id)}
-                activeOpacity={0.8}
+                onLayout={(e) => handleTabLayout(tab.id, e)}
+                activeOpacity={0.7}
               >
                 <Icon 
-                  size={16} 
+                  size={14} 
                   color={isActive ? colors.text : colors.textSecondary} 
-                  strokeWidth={2.5}
+                  strokeWidth={isActive ? 2 : 1.5}
                 />
                 <Text style={[
                   styles.tabText, 
-                  { color: isActive ? colors.text : colors.textSecondary, fontFamily: isActive ? 'Inter_700Bold' : 'Inter_600SemiBold' }
+                  { 
+                    color: isActive ? colors.text : colors.textSecondary, 
+                    fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_400Regular' 
+                  }
                 ]}>
                   {tab.id}
                 </Text>
@@ -158,67 +189,80 @@ export default function ProjectScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { fontSize: 13 },
   errorText: { fontSize: 16 },
-  backBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 16,
-    marginTop: 16,
+  backBtnFallback: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 12,
   },
-  backBtnText: { fontSize: 14 },
+  backBtnFallbackText: { fontSize: 14 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 56,
-    paddingBottom: 16,
-    gap: 14,
+    paddingBottom: 14,
+    gap: 12,
   },
   headerBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerInfo: { flex: 1 },
   projectName: { 
-    fontSize: 20, 
-    letterSpacing: -0.8,
+    fontSize: 18, 
+    letterSpacing: -0.5,
   },
   statusRow: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    gap: 6, 
+    gap: 5, 
     marginTop: 2,
-    opacity: 0.8,
   },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { 
     fontSize: 10, 
-    textTransform: 'uppercase', 
-    letterSpacing: 0.5,
+    textTransform: 'lowercase',
+    letterSpacing: 0.3,
   },
   tabBarContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   tabBar: {
     flexDirection: 'row',
-    padding: 4,
-    borderRadius: 16,
+    padding: 3,
+    borderRadius: 12,
     borderWidth: 1,
+    position: 'relative',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    top: 3,
+    height: '100%',
+    borderRadius: 9,
+    zIndex: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 9,
+    borderRadius: 9,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
+    zIndex: 1,
   },
   tabText: { fontSize: 11 },
   content: { flex: 1 },

@@ -145,6 +145,14 @@ export const api = {
     },
   },
 
+  terminal: {
+    kill: (projectId: string, terminalId: string) =>
+      apiFetch<{ killed: boolean }>(`/api/projects/${projectId}/terminal/kill`, {
+        method: 'POST',
+        body: JSON.stringify({ terminalId }),
+      }),
+  },
+
   ai: {
     chat: async (
       projectId: string,

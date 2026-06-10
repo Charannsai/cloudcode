@@ -28,7 +28,25 @@ const startServer = async () => {
 
   const httpServer = createServer(async (req, res) => {
     try {
-      const parsedUrl = parse(req.url!, true)
+      let parsedUrl = parse(req.url!, true)
+      const pathname = parsedUrl.pathname || ''
+
+      // Custom proxy rewrite: if request has the preview_project_id cookie set, and it is an absolute asset
+      // load (not Next.js files, not API calls, not standard routes), rewrite it to the preview proxy!
+      const cookies = req.headers.cookie || ''
+      const projectIdCookie = cookies.match(/preview_project_id=([^;]+)/)?.[1]
+
+      if (
+        projectIdCookie &&
+        !pathname.startsWith('/_next') &&
+        !pathname.startsWith('/api') &&
+        !pathname.startsWith('/static') &&
+        pathname !== '/favicon.ico'
+      ) {
+        req.url = `/api/preview/${projectIdCookie}${req.url}`
+        parsedUrl = parse(req.url, true)
+      }
+
       await handle(req, res, parsedUrl)
     } catch (err) {
       console.error('Error occurred handling', req.url, err)
@@ -39,6 +57,7 @@ const startServer = async () => {
 
   // ── WebSocket Terminal Server ──
   const wss = new WebSocketServer({ noServer: true })
+  const disconnectTimeouts = new Map<string, NodeJS.Timeout>()
 
   httpServer.on('upgrade', (request, socket, head) => {
     const { pathname } = parse(request.url || '', true)
@@ -71,6 +90,13 @@ const startServer = async () => {
 
     const terminalId = url.searchParams.get('terminalId') || 'main'
     const cleanTerminalId = terminalId.replace(/[^a-zA-Z0-9_\-]/g, '')
+    const sessionKey = `${projectId}-${cleanTerminalId}`
+
+    // Clear any pending disconnect timeout for this session
+    if (disconnectTimeouts.has(sessionKey)) {
+      clearTimeout(disconnectTimeouts.get(sessionKey)!)
+      disconnectTimeouts.delete(sessionKey)
+    }
 
     // Get container mapping from DB
     const { data: project } = await supabaseAdmin
@@ -120,7 +146,28 @@ const startServer = async () => {
         } catch {}
       })
 
-      ws.on('close', () => stream.destroy())
+      ws.on('close', () => {
+        stream.destroy()
+
+        // Start a 5-minute idle timer to kill the tmux session inside container
+        const timeout = setTimeout(async () => {
+          try {
+            const container = docker.getContainer(project.container_id)
+            const exec = await container.exec({
+              Cmd: ['tmux', 'kill-session', '-t', `cloudcode-${cleanTerminalId}`],
+            })
+            await exec.start({ hijack: true, stdin: false })
+            console.log(`[Idle Timeout] Killed terminal session cloudcode-${cleanTerminalId} for project ${projectId}`)
+          } catch (err) {
+            // Ignore error if already killed
+          } finally {
+            disconnectTimeouts.delete(sessionKey)
+          }
+        }, 5 * 60 * 1000) // 5 minutes
+
+        disconnectTimeouts.set(sessionKey, timeout)
+      })
+
       stream.on('end', () => ws.close(1000, 'Process ended'))
 
       ws.send(JSON.stringify({ type: 'ready', message: `Connected to container for ${projectId}` }))

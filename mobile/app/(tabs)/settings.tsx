@@ -1,99 +1,124 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Switch, ScrollView } from 'react-native'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Moon, Sun, Shield, Info, LogOut, ChevronRight, Github, Monitor, Database } from 'lucide-react-native'
+import { Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight } from 'lucide-react-native'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuthStore()
   const { colors, toggleTheme, isDark } = useAppTheme()
 
   function handleSignOut() {
-    Alert.alert('Session', 'Terminate this active session?', [
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Terminate', style: 'destructive', onPress: signOut },
+      { text: 'Sign Out', style: 'destructive', onPress: signOut },
     ])
   }
 
   const ThemeIcon = isDark ? Moon : Sun
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: colors.background }]} 
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
+    >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>System</Text>
+        <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Settings</Text>
       </View>
 
-      {/* Profile Section */}
-      <View style={[styles.profileSection, { borderBottomColor: colors.border }]}>
-        <View style={styles.avatarWrapper}>
+      {/* Profile */}
+      <View style={[styles.profileCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+        <View style={styles.profileRow}>
           {user?.avatar_url ? (
             <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.card }]}>
-              <Text style={[styles.avatarText, { color: colors.text }]}>{user?.login?.[0]?.toUpperCase()}</Text>
+            <View style={[styles.avatarFallback, { backgroundColor: colors.background }]}>
+              <Text style={[styles.avatarText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                {user?.login?.[0]?.toUpperCase()}
+              </Text>
             </View>
           )}
-          <View style={[styles.badge, { backgroundColor: colors.text }]}>
-            <Github size={10} color={colors.background} strokeWidth={3} />
-          </View>
-        </View>
-        <View style={styles.profileMeta}>
-          <Text style={[styles.profileName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-            {user?.name || user?.login}
-          </Text>
-          <Text style={[styles.profileSub, { color: colors.textSecondary }]}>GitHub Authenticated</Text>
-        </View>
-      </View>
-
-      <View style={styles.list}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>PREFERENCES</Text>
-        
-        <View style={[styles.row, { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-          <View style={styles.rowLeft}>
-            <ThemeIcon size={20} color={colors.text} strokeWidth={2} />
-            <Text style={[styles.rowLabel, { color: colors.text }]}>Dark Interface</Text>
-          </View>
-          <Switch
-            value={isDark}
-            onValueChange={toggleTheme}
-            trackColor={{ false: colors.border, true: colors.text }}
-            thumbColor={colors.background}
-          />
-        </View>
-
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginTop: 24 }]}>NODE STATUS</Text>
-
-        {[
-          { label: 'Control Plane', value: 'v2.4.10', icon: Monitor },
-          { label: 'Cloud Gateway', value: 'Active', icon: Database },
-          { label: 'Security Layer', value: 'Encrypted', icon: Shield },
-        ].map((item, idx) => (
-          <View 
-            key={item.label} 
-            style={[
-              styles.row, 
-              { borderBottomWidth: 1, borderBottomColor: colors.border }
-            ]}
-          >
-            <View style={styles.rowLeft}>
-              <item.icon size={20} color={colors.text} strokeWidth={2} />
-              <Text style={[styles.rowLabel, { color: colors.text }]}>{item.label}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+              {user?.name || user?.login}
+            </Text>
+            <View style={styles.profileBadgeRow}>
+              <Github size={11} color={colors.textSecondary} strokeWidth={1.5} />
+              <Text style={[styles.profileSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                GitHub · Authenticated
+              </Text>
             </View>
-            <Text style={[styles.rowValue, { color: colors.textSecondary }]}>{item.value}</Text>
           </View>
-        ))}
+          <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+        </View>
       </View>
 
+      {/* Preferences */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>PREFERENCES</Text>
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+          <View style={[styles.row, { borderBottomColor: colors.border }]}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
+                <ThemeIcon size={16} color={colors.text} strokeWidth={1.5} />
+              </View>
+              <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Dark Mode</Text>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.border, true: colors.text }}
+              thumbColor={colors.background}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* System Status */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>SYSTEM STATUS</Text>
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+          {[
+            { label: 'Runtime Engine', value: 'v2.4.10', icon: Server },
+            { label: 'Cloud Gateway', value: 'Active', icon: Cpu, valueColor: '#3FB950' },
+            { label: 'Encryption', value: 'AES-256', icon: Lock },
+          ].map((item, idx, arr) => (
+            <View 
+              key={item.label} 
+              style={[
+                styles.row,
+                idx < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
+              ]}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
+                  <item.icon size={16} color={colors.text} strokeWidth={1.5} />
+                </View>
+                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>{item.label}</Text>
+              </View>
+              <Text style={[styles.rowValue, { 
+                color: item.valueColor || colors.textSecondary, 
+                fontFamily: 'JetBrainsMono_400Regular' 
+              }]}>
+                {item.value}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Sign Out */}
       <TouchableOpacity 
-        style={styles.signOutBtn}
+        style={[styles.signOutBtn, { borderColor: colors.border }]}
         onPress={handleSignOut}
         activeOpacity={0.6}
       >
-        <LogOut size={18} color={colors.error} strokeWidth={2} />
-        <Text style={[styles.signOutText, { color: colors.error, fontFamily: 'Inter_500Medium' }]}>Terminate Session</Text>
+        <LogOut size={16} color={'#F85149'} strokeWidth={1.5} />
+        <Text style={[styles.signOutText, { color: '#F85149', fontFamily: 'Inter_500Medium' }]}>Sign Out</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.footer, { color: colors.textSecondary }]}>
-        CloudCode Engine • Production Environment
+      <Text style={[styles.footer, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+        CloudCode · Production
       </Text>
     </ScrollView>
   )
@@ -101,75 +126,80 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollContent: { paddingBottom: 140 },
   header: {
     paddingHorizontal: 24,
     paddingTop: 64,
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
-  title: { fontSize: 24, letterSpacing: -0.5 },
-  profileSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+  title: { fontSize: 28, letterSpacing: -0.8 },
+  profileCard: {
+    marginHorizontal: 24,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 28,
+  },
+  profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    borderBottomWidth: 1,
+    gap: 14,
   },
-  avatarWrapper: { position: 'relative' },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
-  avatarPlaceholder: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 24, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  avatar: { width: 44, height: 44, borderRadius: 22 },
+  avatarFallback: { 
+    width: 44, height: 44, borderRadius: 22, 
+    alignItems: 'center', justifyContent: 'center' 
   },
-  avatarText: { fontSize: 18, fontFamily: 'Inter_600SemiBold' },
-  badge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileMeta: { flex: 1 },
-  profileName: { fontSize: 16 },
-  profileSub: { fontSize: 12, opacity: 0.6, marginTop: 2 },
-  list: { marginTop: 20 },
+  avatarText: { fontSize: 18 },
+  profileInfo: { flex: 1 },
+  profileName: { fontSize: 16, letterSpacing: -0.2 },
+  profileBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  profileSub: { fontSize: 12, opacity: 0.7 },
+  section: { marginBottom: 24 },
   sectionLabel: {
-    fontSize: 10,
-    letterSpacing: 1.5,
+    fontSize: 11,
+    letterSpacing: 1,
     marginHorizontal: 24,
     marginBottom: 8,
+  },
+  sectionCard: {
+    marginHorizontal: 24,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    marginHorizontal: 24,
+    padding: 14,
   },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  rowLabel: { fontSize: 15 },
-  rowValue: { fontSize: 13, opacity: 0.7 },
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowLabel: { fontSize: 14 },
+  rowValue: { fontSize: 12 },
   signOutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginTop: 40,
+    justifyContent: 'center',
+    gap: 8,
     marginHorizontal: 24,
-    paddingVertical: 12,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
   },
-  signOutText: { fontSize: 15 },
+  signOutText: { fontSize: 14 },
   footer: {
     textAlign: 'center',
     fontSize: 11,
-    marginTop: 40,
-    marginBottom: 160,
-    opacity: 0.4,
+    marginTop: 32,
+    opacity: 0.3,
   },
 })
-

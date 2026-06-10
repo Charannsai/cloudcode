@@ -34,9 +34,9 @@ interface GitStatusData {
 }
 
 const STATUS_ICONS: Record<string, { icon: any; color: string }> = {
-  modified: { icon: FileCode, color: '#f59e0b' },
-  added: { icon: FilePlus, color: '#10b981' },
-  deleted: { icon: Trash, color: '#ef4444' },
+  modified: { icon: FileCode, color: '#F0883E' },
+  added: { icon: FilePlus, color: '#3FB950' },
+  deleted: { icon: Trash, color: '#F85149' },
 }
 
 export default function GitTab({ projectId, isActive }: Props) {
@@ -306,7 +306,7 @@ export default function GitTab({ projectId, isActive }: Props) {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.text} size="small" />
+        <ActivityIndicator color={colors.textSecondary} size="small" />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading git status...</Text>
       </View>
     )
@@ -331,10 +331,10 @@ export default function GitTab({ projectId, isActive }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Branch bar */}
-      <View style={[styles.branchBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <View style={[styles.branchBar, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.branchSelector} onPress={handleLoadBranches}>
-          <GitBranch size={14} color={isDark ? '#58a6ff' : '#0969da'} />
-          <Text style={[styles.branchName, { color: isDark ? '#58a6ff' : '#0969da' }]}>
+          <GitBranch size={14} color={isDark ? '#58A6FF' : '#0969da'} />
+          <Text style={[styles.branchName, { color: isDark ? '#58A6FF' : '#0969da' }]}>
             {status?.branch || 'main'}
           </Text>
           <ChevronDown size={12} color={colors.textSecondary} />
@@ -342,36 +342,36 @@ export default function GitTab({ projectId, isActive }: Props) {
 
         <View style={styles.syncButtons}>
           {(status?.ahead || 0) > 0 && (
-            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#1e3a5f' : '#dbeafe' }]}>
-              <Text style={[styles.syncBadgeText, { color: isDark ? '#60a5fa' : '#2563eb' }]}>↑{status?.ahead}</Text>
+            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#1C2128' : '#dbeafe' }]}>
+              <Text style={[styles.syncBadgeText, { color: isDark ? '#58A6FF' : '#2563eb' }]}>↑{status?.ahead}</Text>
             </View>
           )}
           {(status?.behind || 0) > 0 && (
-            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#3b1818' : '#fee2e2' }]}>
-              <Text style={[styles.syncBadgeText, { color: isDark ? '#f87171' : '#dc2626' }]}>↓{status?.behind}</Text>
+            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#3D1117' : '#fee2e2' }]}>
+              <Text style={[styles.syncBadgeText, { color: isDark ? '#F85149' : '#dc2626' }]}>↓{status?.behind}</Text>
             </View>
           )}
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => handleSync('pull')} disabled={syncing}>
-            {syncAction === 'pull' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Download size={14} color={colors.textSecondary} />}
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => handleSync('pull')} disabled={syncing}>
+            {syncAction === 'pull' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Download size={14} color={colors.textSecondary} strokeWidth={1.8} />}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => handleSync('push')} disabled={syncing}>
-            {syncAction === 'push' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Upload size={14} color={colors.textSecondary} />}
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => handleSync('push')} disabled={syncing}>
+            {syncAction === 'push' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Upload size={14} color={colors.textSecondary} strokeWidth={1.8} />}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => fetchStatus(true)}>
-            <RefreshCw size={14} color={colors.textSecondary} />
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => fetchStatus(true)}>
+            <RefreshCw size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => setShowConfigModal(true)}>
-            <Settings size={14} color={colors.textSecondary} />
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => setShowConfigModal(true)}>
+            <Settings size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Branch dropdown */}
       {showBranches && (
-        <View style={[styles.branchDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.branchDropdown, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
           {branches.map(b => (
             <TouchableOpacity key={b} style={styles.branchItem} onPress={() => handleCheckout(b)}>
-              {b === status?.branch ? <Check size={14} color="#10b981" /> : <View style={{ width: 14 }} />}
+              {b === status?.branch ? <Check size={14} color="#3FB950" /> : <View style={{ width: 14 }} />}
               <Text style={[styles.branchItemText, { color: colors.text }]}>{b}</Text>
             </TouchableOpacity>
           ))}
@@ -386,7 +386,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       >
         {totalChanges === 0 ? (
           <View style={styles.noChanges}>
-            <Check size={40} color={isDark ? '#10b981' : '#059669'} />
+            <Check size={40} color={'#3FB950'} strokeWidth={1.5} />
             <Text style={[styles.noChangesTitle, { color: colors.text }]}>Working tree clean</Text>
             <Text style={[styles.noChangesSubtitle, { color: colors.textSecondary }]}>No pending changes</Text>
           </View>
@@ -398,7 +398,7 @@ export default function GitTab({ projectId, isActive }: Props) {
                 <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('staged')}>
                   {expandedSections.staged ? <ChevronDown size={14} color={colors.textSecondary} /> : <ChevronRight size={14} color={colors.textSecondary} />}
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Staged Changes</Text>
-                  <View style={[styles.countBadge, { backgroundColor: '#10b981' }]}>
+                  <View style={[styles.countBadge, { backgroundColor: '#3FB950' }]}>
                     <Text style={styles.countText}>{status!.staged.length}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleUnstage(status!.staged.map(f => f.path))} style={styles.sectionAction}>
@@ -431,7 +431,7 @@ export default function GitTab({ projectId, isActive }: Props) {
                 <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('changes')}>
                   {expandedSections.changes ? <ChevronDown size={14} color={colors.textSecondary} /> : <ChevronRight size={14} color={colors.textSecondary} />}
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Changes</Text>
-                  <View style={[styles.countBadge, { backgroundColor: '#f59e0b' }]}>
+                  <View style={[styles.countBadge, { backgroundColor: '#F0883E' }]}>
                     <Text style={styles.countText}>{status!.unstaged.length}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleStage(status!.unstaged.map(f => f.path))} style={styles.sectionAction}>
@@ -464,7 +464,7 @@ export default function GitTab({ projectId, isActive }: Props) {
                 <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('untracked')}>
                   {expandedSections.untracked ? <ChevronDown size={14} color={colors.textSecondary} /> : <ChevronRight size={14} color={colors.textSecondary} />}
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Untracked</Text>
-                  <View style={[styles.countBadge, { backgroundColor: '#6366f1' }]}>
+                  <View style={[styles.countBadge, { backgroundColor: '#8B949E' }]}>
                     <Text style={styles.countText}>{status!.untracked.length}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleStage(status!.untracked)} style={styles.sectionAction}>
@@ -473,7 +473,7 @@ export default function GitTab({ projectId, isActive }: Props) {
                 </TouchableOpacity>
                 {expandedSections.untracked && status!.untracked.map(f => (
                   <TouchableOpacity key={f} style={[styles.fileRow, { borderBottomColor: colors.border }]} onPress={() => handleStage([f])}>
-                    <CircleIcon size={14} color="#6366f1" />
+                    <CircleIcon size={14} color="#8B949E" />
                     <Text style={[styles.filePath, { color: colors.text }]} numberOfLines={1}>{f}</Text>
                     {stagingFiles[f] ? (
                       <ActivityIndicator size="small" color={colors.textSecondary} />
@@ -489,7 +489,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
         {/* Diff viewer */}
         {diffFile && diffText && (
-          <View style={[styles.diffContainer, { backgroundColor: isDark ? '#0d1117' : '#f6f8fa', borderColor: colors.border }]}>
+          <View style={[styles.diffContainer, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: colors.border }]}>
             <View style={[styles.diffHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.diffTitle, { color: colors.text }]}>{diffFile}</Text>
               <TouchableOpacity onPress={() => { setDiffFile(null); setDiffText(null) }}>
@@ -514,7 +514,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
         {/* Commit box */}
         {(status?.staged.length || 0) > 0 && (
-          <View style={[styles.commitBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.commitBox, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
             <TextInput
               value={commitMessage}
               onChangeText={setCommitMessage}
@@ -525,7 +525,7 @@ export default function GitTab({ projectId, isActive }: Props) {
             />
             <TouchableOpacity
               style={[styles.commitBtn, {
-                backgroundColor: commitMessage.trim() ? (isDark ? '#238636' : '#1a7f37') : (isDark ? '#1a1a1a' : '#e5e7eb'),
+                backgroundColor: commitMessage.trim() ? '#3FB950' : (isDark ? '#1C2128' : '#EAEEF2'),
               }]}
               onPress={handleCommit}
               disabled={!commitMessage.trim() || committing}
@@ -594,7 +594,7 @@ export default function GitTab({ projectId, isActive }: Props) {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.modalContainer}
           >
-            <ScrollView style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <ScrollView style={[styles.modalContent, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
                   Git Configuration & SSH
@@ -655,7 +655,7 @@ export default function GitTab({ projectId, isActive }: Props) {
                           Clipboard.setStringAsync(sshPublicKey)
                           Alert.alert('Copied', 'Public key copied to clipboard.')
                         }}
-                        style={[styles.actionBtn, { backgroundColor: isDark ? '#1a1a1a' : '#f3f4f6' }]}
+                        style={[styles.actionBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
                       >
                         <Text style={[styles.actionBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Copy Public Key</Text>
                       </TouchableOpacity>
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
   syncButtons: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   syncBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   syncBadgeText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
-  syncBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  syncBtn: { width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   branchDropdown: {
     marginHorizontal: 16, borderRadius: 12, borderWidth: 1,
     overflow: 'hidden', marginTop: 4,

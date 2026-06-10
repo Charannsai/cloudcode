@@ -1,42 +1,80 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, ScrollView, Image, Dimensions,
+  ActivityIndicator, Dimensions, ScrollView,
 } from 'react-native'
 import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Github, Terminal, Box, Shield, Zap, Cpu, Globe } from 'lucide-react-native'
+import { Github, Terminal, Cpu, Globe, Zap, Code2, Sparkles, ChevronRight, Shield } from 'lucide-react-native'
 import { StatusBar } from 'expo-status-bar'
 import Animated, { 
   FadeInUp, 
   FadeInDown, 
+  FadeIn,
   useAnimatedStyle, 
   withRepeat, 
   withTiming, 
   withSequence,
+  withSpring,
   interpolate,
-  useSharedValue
+  useSharedValue,
+  Easing,
 } from 'react-native-reanimated'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
-const { width } = Dimensions.get('window')
+const { width, height } = Dimensions.get('window')
+
+const SLIDES = [
+  {
+    icon: Cpu,
+    accent: '#3FB950',
+    title: 'Instant\nCloud Nodes',
+    subtitle: 'Provision isolated development environments in seconds. Zero configuration, full-stack ready.',
+    features: ['Container Isolation', 'Low-Latency TTY', 'Edge Encryption'],
+  },
+  {
+    icon: Code2,
+    accent: '#58A6FF',
+    title: 'Professional\nDev Tools',
+    subtitle: 'Monaco editor, terminal sessions, git management, and live preview — all from your phone.',
+    features: ['Monaco IDE', 'Multi-Shell', 'Live Preview'],
+  },
+  {
+    icon: Sparkles,
+    accent: '#D2A8FF',
+    title: 'CloudCode\nAI Copilot',
+    subtitle: 'An intelligent coding assistant deeply integrated into your development workflow.',
+    features: ['Code Generation', 'Bug Diagnosis', 'File Operations'],
+  },
+]
 
 export default function WelcomeScreen() {
   const { user, loading, setToken } = useAuthStore()
   const { colors, isDark } = useAppTheme()
   const router = useRouter()
   const [signingIn, setSigningIn] = useState(false)
+  const [activeSlide, setActiveSlide] = useState(0)
+  const scrollRef = useRef<ScrollView>(null)
   
   const floatAnim = useSharedValue(0)
+  const glowAnim = useSharedValue(0)
 
   useEffect(() => {
     floatAnim.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 2500 }),
-        withTiming(0, { duration: 2500 })
+        withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    )
+    glowAnim.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.4, { duration: 2000, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       true
@@ -44,7 +82,11 @@ export default function WelcomeScreen() {
   }, [])
 
   const floatStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: interpolate(floatAnim.value, [0, 1], [0, -15]) }]
+    transform: [{ translateY: interpolate(floatAnim.value, [0, 1], [0, -12]) }]
+  }))
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(glowAnim.value, [0, 1], [0.08, 0.2])
   }))
 
   useEffect(() => {
@@ -52,6 +94,18 @@ export default function WelcomeScreen() {
       router.replace('/(tabs)/dashboard')
     }
   }, [user, loading, router])
+
+  // Auto-advance slides
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide(prev => {
+        const next = (prev + 1) % SLIDES.length
+        scrollRef.current?.scrollTo({ x: next * width, animated: true })
+        return next
+      })
+    }, 4500)
+    return () => clearInterval(timer)
+  }, [])
 
   async function signInWithGitHub() {
     setSigningIn(true)
@@ -82,200 +136,268 @@ export default function WelcomeScreen() {
   if (loading) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.text} size="large" />
+        <ActivityIndicator color={colors.text} size="small" />
       </View>
     )
   }
+
+  const currentSlide = SLIDES[activeSlide]
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       
-      {/* Background Decorative Element */}
-      <View style={[styles.bgGlow, { backgroundColor: colors.accent + '10' }]} />
-      
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeInDown.delay(200).duration(800)} style={styles.header}>
-          <View style={styles.logoRow}>
-            <View style={[styles.logoIcon, { backgroundColor: colors.text }]}>
-              <Zap size={14} color={colors.background} fill={colors.background} />
-            </View>
-            <Text style={[styles.logo, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>CloudCode</Text>
-          </View>
-          <View style={[styles.statusBadge, { borderColor: colors.border }]}>
-            <View style={styles.statusDot} />
-            <Text style={[styles.statusText, { color: colors.textSecondary }]}>v.2.4 Node Stable</Text>
-          </View>
-        </Animated.View>
+      {/* Ambient glow */}
+      <Animated.View style={[styles.ambientGlow, { backgroundColor: currentSlide.accent }, glowStyle]} />
 
-        <View style={styles.heroSection}>
-          <Animated.View style={[styles.illustrationContainer, floatStyle]} entering={FadeInUp.delay(400).duration(1000)}>
-            <Image 
-              source={require('../assets/hero.png')} 
-              style={styles.heroImage}
-              resizeMode="contain"
-            />
-            <View style={[styles.imageOverlay, { backgroundColor: colors.background + '20' }]} />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(600).duration(800)} style={styles.heroText}>
-            <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-              The Future of{'\n'}
-              <Text style={{ color: colors.accent || '#8a6eff' }}>Cloud Native</Text>
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Instant provision high-performance virtual nodes for modern engineering teams. Zero configuration required.
-            </Text>
-          </Animated.View>
+      {/* Header */}
+      <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.header}>
+        <View style={styles.logoRow}>
+          <View style={[styles.logoIcon, { backgroundColor: colors.text }]}>
+            <Zap size={12} color={colors.background} fill={colors.background} />
+          </View>
+          <Text style={[styles.logo, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>CloudCode</Text>
         </View>
+        <View style={[styles.versionBadge, { borderColor: colors.border }]}>
+          <View style={[styles.statusDot, { backgroundColor: '#3FB950' }]} />
+          <Text style={[styles.versionText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>v2.4</Text>
+        </View>
+      </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(800).duration(800)} style={styles.features}>
-          {[
-            { icon: Terminal, label: 'Instant Shell', sub: 'Low-latency TTY protocol', color: '#3b82f6' },
-            { icon: Cpu, label: 'Virtual Nodes', sub: 'Isolated container stacks', color: '#10b981' },
-            { icon: Globe, label: 'Edge Ready', sub: 'Military-grade encryption', color: '#f59e0b' },
-          ].map((item, idx) => (
-            <View key={idx} style={[styles.featureCard, { backgroundColor: isDark ? '#12121e' : '#f8f9fa' }]}>
-              <View style={[styles.iconBox, { backgroundColor: item.color + '15' }]}>
-                <item.icon size={20} color={item.color} strokeWidth={2} />
+      {/* Slides */}
+      <View style={styles.slideSection}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onMomentumScrollEnd={(e) => {
+            const index = Math.round(e.nativeEvent.contentOffset.x / width)
+            setActiveSlide(index)
+          }}
+        >
+          {SLIDES.map((slide, idx) => {
+            const SlideIcon = slide.icon
+            return (
+              <View key={idx} style={[styles.slide, { width }]}>
+                <View style={styles.slideContent}>
+                  {/* Icon Container */}
+                  <Animated.View style={[styles.iconContainer, floatStyle]}>
+                    <View style={[styles.iconRing, { borderColor: slide.accent + '20' }]}>
+                      <View style={[styles.iconInner, { backgroundColor: slide.accent + '10' }]}>
+                        <SlideIcon size={32} color={slide.accent} strokeWidth={1.5} />
+                      </View>
+                    </View>
+                  </Animated.View>
+
+                  {/* Text */}
+                  <Text style={[styles.slideTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                    {slide.title}
+                  </Text>
+                  <Text style={[styles.slideSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                    {slide.subtitle}
+                  </Text>
+
+                  {/* Feature chips */}
+                  <View style={styles.chipRow}>
+                    {slide.features.map((feat, fi) => (
+                      <View key={fi} style={[styles.chip, { backgroundColor: isDark ? '#1C2128' : '#F3F4F6', borderColor: colors.border }]}>
+                        <Text style={[styles.chipText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>{feat}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
               </View>
-              <View>
-                <Text style={[styles.featureLabel, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>{item.label}</Text>
-                <Text style={[styles.featureSub, { color: colors.textSecondary }]}>{item.sub}</Text>
-              </View>
-            </View>
+            )
+          })}
+        </ScrollView>
+
+        {/* Dots */}
+        <View style={styles.dotsRow}>
+          {SLIDES.map((slide, idx) => (
+            <TouchableOpacity
+              key={idx}
+              onPress={() => {
+                setActiveSlide(idx)
+                scrollRef.current?.scrollTo({ x: idx * width, animated: true })
+              }}
+            >
+              <View
+                style={[
+                  styles.dot,
+                  {
+                    backgroundColor: idx === activeSlide ? SLIDES[idx].accent : colors.border,
+                    width: idx === activeSlide ? 24 : 6,
+                  },
+                ]}
+              />
+            </TouchableOpacity>
           ))}
-        </Animated.View>
+        </View>
+      </View>
 
-        <Animated.View entering={FadeInDown.delay(1000).duration(800)} style={styles.footer}>
-          <TouchableOpacity 
-            activeOpacity={0.8}
-            style={[styles.btn, { backgroundColor: colors.text }]} 
-            onPress={signInWithGitHub}
-            disabled={signingIn}
-          >
-            {signingIn ? (
-              <ActivityIndicator color={colors.background} />
-            ) : (
-              <>
-                <Github size={20} color={colors.background} strokeWidth={2} />
-                <Text style={[styles.btnText, { color: colors.background, fontFamily: 'Inter_600SemiBold' }]}>
-                  Establish Identity
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-          <View style={styles.legalRow}>
-            <Shield size={12} color={colors.textSecondary} />
-            <Text style={[styles.legal, { color: colors.textSecondary }]}>
-              Secured with End-to-End Encryption
-            </Text>
-          </View>
-        </Animated.View>
-      </ScrollView>
+      {/* Footer */}
+      <Animated.View entering={FadeInUp.delay(800).duration(600)} style={styles.footer}>
+        <TouchableOpacity 
+          activeOpacity={0.8}
+          style={[styles.btn, { backgroundColor: colors.text }]} 
+          onPress={signInWithGitHub}
+          disabled={signingIn}
+        >
+          {signingIn ? (
+            <ActivityIndicator color={colors.background} />
+          ) : (
+            <>
+              <Github size={18} color={colors.background} strokeWidth={2} />
+              <Text style={[styles.btnText, { color: colors.background, fontFamily: 'Inter_600SemiBold' }]}>
+                Continue with GitHub
+              </Text>
+              <ChevronRight size={16} color={colors.background} strokeWidth={2} />
+            </>
+          )}
+        </TouchableOpacity>
+        <View style={styles.legalRow}>
+          <Shield size={11} color={colors.textSecondary} strokeWidth={1.5} />
+          <Text style={[styles.legal, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+            End-to-end encrypted  ·  SOC 2 compliant
+          </Text>
+        </View>
+      </Animated.View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  bgGlow: {
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  ambientGlow: {
     position: 'absolute',
-    top: -100,
-    right: -100,
+    top: -80,
+    left: '50%',
+    marginLeft: -150,
     width: 300,
     height: 300,
     borderRadius: 150,
-    opacity: 0.2, // increased opacity slightly since blur is gone
   },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 60 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center',
-    marginBottom: 40 
+    paddingHorizontal: 24,
+    paddingTop: 60,
   },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoIcon: { 
-    width: 28, 
-    height: 28, 
-    borderRadius: 8, 
+    width: 26, 
+    height: 26, 
+    borderRadius: 7, 
     alignItems: 'center', 
     justifyContent: 'center' 
   },
-  logo: { fontSize: 20, letterSpacing: -0.5 },
-  statusBadge: {
+  logo: { fontSize: 18, letterSpacing: -0.5 },
+  versionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 100,
     borderWidth: 1,
   },
   statusDot: {
-    width: 6,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  versionText: { fontSize: 11 },
+  slideSection: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  slide: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  slideContent: {
+    paddingHorizontal: 32,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    marginBottom: 32,
+  },
+  iconRing: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconInner: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slideTitle: {
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: -1.2,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  slideSubtitle: {
+    fontSize: 15,
+    lineHeight: 24,
+    textAlign: 'center',
+    opacity: 0.7,
+    marginBottom: 24,
+    maxWidth: 300,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: 12,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 32,
+  },
+  dot: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#22c55e',
   },
-  statusText: { fontSize: 11, fontWeight: '500' },
-  heroSection: { marginBottom: 40 },
-  illustrationContainer: {
-    width: '100%',
-    height: 240,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+  footer: { 
+    paddingHorizontal: 24, 
+    paddingBottom: 48,
+    gap: 16, 
+    alignItems: 'center' 
   },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 24,
-  },
-  heroText: { paddingHorizontal: 4 },
-  title: { fontSize: 36, lineHeight: 44, letterSpacing: -1.5 },
-  subtitle: { fontSize: 16, marginTop: 16, lineHeight: 26, opacity: 0.7 },
-  features: { gap: 12, marginBottom: 48 },
-  featureCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featureLabel: { fontSize: 16 },
-  featureSub: { fontSize: 13, opacity: 0.5, marginTop: 2 },
-  footer: { gap: 16, alignItems: 'center' },
   btn: {
-    height: 64,
+    height: 56,
     width: '100%',
-    borderRadius: 20,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
+    gap: 10,
   },
-  btnText: { fontSize: 18, letterSpacing: -0.2 },
-  legalRow: { flexDirection: 'row', alignItems: 'center', gap: 6, opacity: 0.5 },
-  legal: { fontSize: 12 },
+  btnText: { fontSize: 16, letterSpacing: -0.2 },
+  legalRow: { flexDirection: 'row', alignItems: 'center', gap: 5, opacity: 0.5 },
+  legal: { fontSize: 11 },
 })
-
