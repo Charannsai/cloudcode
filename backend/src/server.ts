@@ -36,14 +36,23 @@ const startServer = async () => {
       const cookies = req.headers.cookie || ''
       const projectIdCookie = cookies.match(/preview_project_id=([^;]+)/)?.[1]
 
+      let refererProjectId = ''
+      const referer = req.headers.referer || ''
+      const match = referer.match(/\/api\/preview\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i)
+      if (match) {
+        refererProjectId = match[1]
+      }
+
+      const activeProjectId = projectIdCookie || refererProjectId
+
       if (
-        projectIdCookie &&
+        activeProjectId &&
         !pathname.startsWith('/_next') &&
         !pathname.startsWith('/api') &&
         !pathname.startsWith('/static') &&
         pathname !== '/favicon.ico'
       ) {
-        req.url = `/api/preview/${projectIdCookie}${req.url}`
+        req.url = `/api/preview/${activeProjectId}${req.url}`
         parsedUrl = parse(req.url, true)
       }
 
