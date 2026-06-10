@@ -19,84 +19,82 @@ interface Props {
   ports?: Record<string, number>
 }
 
-function getHostFromApiUrl(apiUrl: string): string {
-  try {
-    if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) {
-      const withoutProto = apiUrl.split('://')[1]
-      return withoutProto.split(':')[0]
-    }
-  } catch (e) {}
-  return 'localhost'
-}
-
 export default function PreviewTab({ projectId, port, ports }: Props) {
   const { colors, isDark } = useAppTheme()
   const webViewRef = useRef<WebView>(null)
-  const [selectedPort, setSelectedPort] = useState(port)
   const [url, setUrl] = useState('')
   const [canGoBack, setCanGoBack] = useState(false)
   const [canGoForward, setCanGoForward] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [currentUrl, setCurrentUrl] = useState('')
-
-  // Determine available ports dynamically
-  const availablePorts = Object.keys(ports || {}).map(p => parseInt(p, 10)).sort((a, b) => a - b)
-  if (availablePorts.length === 0) {
-    availablePorts.push(port || 3000)
-  }
-
-  // Ensure selectedPort updates if parent updates it
-  useEffect(() => {
-    if (port) {
-      setSelectedPort(port)
-    }
-  }, [port])
 
   useEffect(() => {
     async function initUrl() {
       try {
         const token = await getToken()
-        const host = getHostFromApiUrl(API_URL)
-        const mappedPort = ports?.[selectedPort.toString()]
-
-        let initialUrl = ''
-        if (mappedPort) {
-          initialUrl = `http://${host}:${mappedPort}/`
-        } else {
-          initialUrl = `${API_URL}/api/preview/${projectId}?port=${selectedPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
-        }
+        // Always load via the proxy to guarantee WebSocket HMR proxying and Host header rewriting
+        const initialUrl = `${API_URL}/api/preview/${projectId}?port=3000${token ? `&token=${encodeURIComponent(token)}` : ''}`
 
         setUrl(initialUrl)
         
         // Show virtual localhost URL in the address bar
-        const virtualUrl = `http://localhost:${selectedPort}/`
+        const virtualUrl = `http://localhost:3000/`
         setCurrentUrl(virtualUrl)
       } catch (err) {
         console.error('Failed to initialize preview URL:', err)
       }
     }
     initUrl()
-  }, [projectId, selectedPort, ports])
+  }, [projectId])
 
-  const handleGo = () => {
-    const host = getHostFromApiUrl(API_URL)
-    const mappedPort = ports?.[selectedPort.toString()]
-    const targetHostPort = mappedPort ? `${host}:${mappedPort}` : `${host}:${selectedPort}`
-
+  const handleGo = async () => {
+    const token = await getToken()
     let realUrl = currentUrl
-    if (currentUrl.includes(`localhost:${selectedPort}`)) {
-      realUrl = currentUrl.replace(`localhost:${selectedPort}`, targetHostPort)
+    if (currentUrl.includes('localhost:3000')) {
+      const subpath = currentUrl.split('localhost:3000')[1] || ''
+      realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=3000${token ? `&token=${encodeURIComponent(token)}` : ''}`
     }
     setUrl(realUrl)
   }
 
   const handleCopy = () => {
-    // Copy the real URL to clipboard so they can open it externally
     Clipboard.setStringAsync(url)
   }
 
   const handleOpenExternal = () => {
     Linking.openURL(url).catch(err => console.error('Failed to open url:', err))
+  }
+
+  const renderLoadingPage = () => {
+    return (
+      <View style={[styles.loadingOverlay, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.textSecondary} size="small" />
+        <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+          Loading preview...
+        </Text>
+      </View>
+    )
+  }
+
+  const renderErrorPage = () => {
+    return (
+      <View style={[styles.errorOverlay, { backgroundColor: colors.background }]}>
+        <View style={[styles.errorCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}>
+          <Text style={styles.errorIcon}>🔌</Text>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Server Not Connected</Text>
+          <Text style={[styles.errorDesc, { color: colors.textSecondary }]}>
+            We couldn't reach your project server. Make sure your development server (e.g. <Text style={{ fontFamily: 'JetBrainsMono_400Regular', color: '#3FB950', fontWeight: '600' }}>npm run dev</Text>) is running in the Terminal tab.
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryBtn, { backgroundColor: colors.text }]}
+            onPress={() => {
+              webViewRef.current?.reload()
+            }}
+          >
+            <Text style={[styles.retryBtnText, { color: colors.background }]}>Retry Connection</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
   }
 
   return (
@@ -121,31 +119,13 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             <ChevronRight size={14} color={canGoForward ? colors.text : colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => webViewRef.current?.reload()}
+            onPress={() => {
+              webViewRef.current?.reload()
+            }}
             style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
             activeOpacity={0.7}
           >
             <RefreshCw size={12} color={colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
-
-          {/* Dynamic Port Selector badge (cycles through available ports on tap) */}
-          <TouchableOpacity
-            onPress={() => {
-              if (availablePorts.length > 1) {
-                const currentIndex = availablePorts.indexOf(selectedPort)
-                const nextIndex = (currentIndex + 1) % availablePorts.length
-                setSelectedPort(availablePorts[nextIndex])
-              }
-            }}
-            style={[styles.portBadge, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.portBadgeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular', fontWeight: 'bold' }]}>
-              {selectedPort}
-            </Text>
-            {availablePorts.length > 1 && (
-              <Text style={{ fontSize: 9, color: colors.textSecondary, marginLeft: 3 }}>▾</Text>
-            )}
           </TouchableOpacity>
         </View>
 
@@ -179,38 +159,70 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
 
       {/* WebView */}
       <View style={styles.webViewContainer}>
-        {(loading || !url) && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color={colors.textSecondary} size="small" />
-            <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-              Loading preview...
-            </Text>
-          </View>
-        )}
         {url ? (
           <WebView
             ref={webViewRef}
             source={{ uri: url }}
             style={styles.webView}
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
+            startInLoadingState={true}
+            renderLoading={renderLoadingPage}
+            renderError={renderErrorPage}
             onNavigationStateChange={(state) => {
               setCanGoBack(state.canGoBack)
               setCanGoForward(state.canGoForward)
               
-              const host = getHostFromApiUrl(API_URL)
-              const mappedPort = ports?.[selectedPort.toString()]
-              const targetHostPort = mappedPort ? `${host}:${mappedPort}` : `${host}:${selectedPort}`
-
               let virtualUrl = state.url
-              if (state.url.includes(targetHostPort)) {
-                virtualUrl = state.url.replace(targetHostPort, `localhost:${selectedPort}`)
+              const previewPath = `/api/preview/${projectId}`
+              if (state.url.includes(previewPath)) {
+                const parts = state.url.split(previewPath)
+                const subpathAndSearch = parts[1] || ''
+                const cleanSubpath = subpathAndSearch
+                  .replace(/[\?&]port=\d+/, '')
+                  .replace(/[\?&]token=[^&]+/, '')
+                  .replace(/\?&/, '?')
+                
+                virtualUrl = `http://localhost:3000${cleanSubpath}`
               }
               setCurrentUrl(virtualUrl)
             }}
+            injectedJavaScript={`
+              (function() {
+                var originalLog = console.log;
+                var originalWarn = console.warn;
+                var originalError = console.error;
+                
+                console.log = function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'log', data: Array.from(arguments).join(' ') }));
+                  originalLog.apply(console, arguments);
+                };
+                console.warn = function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'warn', data: Array.from(arguments).join(' ') }));
+                  originalWarn.apply(console, arguments);
+                };
+                console.error = function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', data: Array.from(arguments).join(' ') }));
+                  originalError.apply(console, arguments);
+                };
+                window.onerror = function(message, source, lineno, colno, error) {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ 
+                    type: 'error', 
+                    data: message + ' at ' + source + ':' + lineno + ':' + colno 
+                  }));
+                  return false;
+                };
+              })();
+              true;
+            `}
+            onMessage={(event) => {
+              try {
+                const msg = JSON.parse(event.nativeEvent.data)
+                console.log(`[WebView Console ${msg.type.toUpperCase()}]`, msg.data)
+              } catch (e) {
+                // Ignore parsing errors for other messages
+              }
+            }}
             javaScriptEnabled
             domStorageEnabled
-            startInLoadingState={false}
             originWhitelist={['*']}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
@@ -247,17 +259,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  portBadge: {
-    height: 28,
-    paddingHorizontal: 8,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  portBadgeText: {
-    fontSize: 10,
-  },
   urlBar: {
     flex: 1,
     flexDirection: 'row',
@@ -283,4 +284,50 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   loadingText: { fontSize: 12, opacity: 0.5 },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 20,
+  },
+  errorCard: {
+    width: '100%',
+    maxWidth: 340,
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 12,
+  },
+  errorIcon: {
+    fontSize: 40,
+    marginBottom: 4,
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  errorDesc: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    fontFamily: 'Inter_400Regular',
+    opacity: 0.8,
+  },
+  retryBtn: {
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  retryBtnText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'Inter_600SemiBold',
+  },
 })

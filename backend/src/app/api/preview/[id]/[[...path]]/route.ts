@@ -101,6 +101,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const response = await fetch(targetUrl, {
       headers: {
+        'Host': `localhost:${port}`,
         'Accept': req.headers.get('accept') || '*/*',
         'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
         'Accept-Encoding': 'identity', // Strongly request uncompressed

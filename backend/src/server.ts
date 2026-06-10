@@ -75,10 +75,94 @@ const startServer = async () => {
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request)
       })
+    } else if (
+      pathname?.startsWith('/_next/webpack-hmr') || 
+      pathname?.startsWith('/api/preview/') || 
+      pathname === '/'
+    ) {
+      handleWebSocketProxy(request, socket, head)
     } else {
       socket.destroy()
     }
   })
+
+  async function handleWebSocketProxy(request: any, socket: any, head: any) {
+    try {
+      const { pathname, search } = parse(request.url || '', true)
+      const cookies = request.headers.cookie || ''
+      let projectId = cookies.match(/preview_project_id=([^;]+)/)?.[1]
+      let port = cookies.match(/preview_port=([^;]+)/)?.[1] || '3000'
+
+      if (!projectId) {
+        const referer = request.headers.referer || ''
+        const match = referer.match(/\/api\/preview\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i)
+        if (match) {
+          projectId = match[1]
+        }
+      }
+
+      if (!projectId) {
+        socket.destroy()
+        return
+      }
+
+      const { supabaseAdmin } = await import('./lib/supabase')
+      const { data: project } = await supabaseAdmin
+        .from('projects')
+        .select('container_id')
+        .eq('id', projectId)
+        .single()
+
+      if (!project?.container_id) {
+        socket.destroy()
+        return
+      }
+
+      const info = await docker.getContainer(project.container_id).inspect()
+      const networks = (info.NetworkSettings as any).Networks
+      const firstNetwork = networks ? Object.values(networks)[0] as any : null
+      const containerIp = firstNetwork?.IPAddress
+
+      if (!containerIp) {
+        socket.destroy()
+        return
+      }
+
+      const { default: WebSocket } = await import('ws')
+      const targetUrl = `ws://${containerIp}:${port}${pathname}${search || ''}`
+      
+      const targetWs = new WebSocket(targetUrl, {
+        headers: {
+          Host: `localhost:${port}`,
+          Cookie: request.headers.cookie || '',
+        }
+      })
+
+      targetWs.on('open', () => {
+        const wssBridge = new WebSocket.Server({ noServer: true })
+        wssBridge.handleUpgrade(request, socket, head, (clientWs) => {
+          clientWs.on('message', (data) => {
+            if (targetWs.readyState === WebSocket.OPEN) targetWs.send(data)
+          })
+          targetWs.on('message', (data) => {
+            if (clientWs.readyState === WebSocket.OPEN) clientWs.send(data)
+          })
+          clientWs.on('close', () => targetWs.close())
+          targetWs.on('close', () => clientWs.close())
+          clientWs.on('error', () => targetWs.close())
+          targetWs.on('error', () => clientWs.close())
+        })
+      })
+
+      targetWs.on('error', () => {
+        socket.destroy()
+      })
+
+    } catch (err) {
+      console.error('WebSocket proxy error:', err)
+      socket.destroy()
+    }
+  }
 
   wss.on('connection', async (ws, req: any) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`)
