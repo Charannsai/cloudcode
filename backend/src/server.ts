@@ -128,7 +128,7 @@ const startServer = async () => {
         return
       }
 
-      const { default: WebSocket } = await import('ws')
+      const { default: WebSocket, WebSocketServer } = await import('ws')
       const targetUrl = `ws://${containerIp}:${port}${pathname}${search || ''}`
       
       const targetWs = new WebSocket(targetUrl, {
@@ -139,7 +139,7 @@ const startServer = async () => {
       })
 
       targetWs.on('open', () => {
-        const wssBridge = new WebSocket.Server({ noServer: true })
+        const wssBridge = new WebSocketServer({ noServer: true })
         wssBridge.handleUpgrade(request, socket, head, (clientWs) => {
           clientWs.on('message', (data) => {
             if (targetWs.readyState === WebSocket.OPEN) targetWs.send(data)
