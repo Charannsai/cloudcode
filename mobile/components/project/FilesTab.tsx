@@ -10,6 +10,7 @@ import {
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Plus,
   File, Search, MoreVertical, RefreshCw, FilePlus, FolderPlus, Trash2,
 } from 'lucide-react-native'
+import { ConfirmModal } from '@/components/ConfirmModal'
 
 interface FileItem {
   name: string
@@ -47,10 +48,10 @@ function getFileColor(name: string): string {
 }
 
 const FileTreeItem = memo(function FileTreeItem({
-  item, depth, projectId, onRefresh, colors, isDark, router
+  item, depth, projectId, onRefresh, colors, isDark, router, onDeleteRequest
 }: {
   item: FileItem; depth: number; projectId: string;
-  onRefresh: () => void; colors: any; isDark: boolean; router: any
+  onRefresh: () => void; colors: any; isDark: boolean; router: any; onDeleteRequest: (item: FileItem) => void;
 }) {
   const [expanded, setExpanded] = useState(depth === 0)
   const isDir = item.type === 'directory'
@@ -68,21 +69,7 @@ const FileTreeItem = memo(function FileTreeItem({
   }
 
   const handleDelete = () => {
-    Alert.alert('Delete', `Delete "${item.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Delete', 
-        style: 'destructive', 
-        onPress: async () => {
-          try {
-            await api.files.delete(projectId, item.path)
-            onRefresh()
-          } catch (err) {
-            Alert.alert('Error', (err as Error).message)
-          }
-        }
-      }
-    ])
+    onDeleteRequest(item)
   }
 
   return (
@@ -130,6 +117,7 @@ const FileTreeItem = memo(function FileTreeItem({
           colors={colors}
           isDark={isDark}
           router={router}
+          onDeleteRequest={onDeleteRequest}
         />
       ))}
     </View>
@@ -143,6 +131,8 @@ export default function FilesTab({ projectId, isActive }: Props) {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
+  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchFiles = useCallback(async () => {
     setLoading(true)
@@ -155,6 +145,20 @@ export default function FilesTab({ projectId, isActive }: Props) {
       setLoading(false)
     }
   }, [projectId])
+
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete) return
+    setIsDeleting(true)
+    try {
+      await api.files.delete(projectId, fileToDelete.path)
+      fetchFiles()
+      setFileToDelete(null)
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   useEffect(() => {
     if (isActive) fetchFiles()
@@ -260,11 +264,24 @@ export default function FilesTab({ projectId, isActive }: Props) {
                 colors={colors}
                 isDark={isDark}
                 router={router}
+                onDeleteRequest={setFileToDelete}
               />
             ))
           )}
         </ScrollView>
       )}
+
+      <ConfirmModal
+        visible={!!fileToDelete}
+        title="Delete File"
+        message={`Are you sure you want to delete "${fileToDelete?.name}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+        onConfirm={confirmDeleteFile}
+        onCancel={() => setFileToDelete(null)}
+      />
     </View>
   )
 }

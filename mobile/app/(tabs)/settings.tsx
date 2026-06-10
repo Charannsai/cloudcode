@@ -1,17 +1,22 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Switch, ScrollView } from 'react-native'
+import { useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView } from 'react-native'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight } from 'lucide-react-native'
+import { ConfirmModal } from '@/components/ConfirmModal'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuthStore()
   const { colors, toggleTheme, isDark } = useAppTheme()
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
 
   function handleSignOut() {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: signOut },
-    ])
+    setShowSignOutModal(true)
+  }
+
+  const confirmSignOut = () => {
+    setShowSignOutModal(false)
+    signOut()
   }
 
   const ThemeIcon = isDark ? Moon : Sun
@@ -120,6 +125,17 @@ export default function SettingsScreen() {
       <Text style={[styles.footer, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
         CloudCode · Production
       </Text>
+
+      <ConfirmModal
+        visible={showSignOutModal}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        type="logout"
+        onConfirm={confirmSignOut}
+        onCancel={() => setShowSignOutModal(false)}
+      />
     </ScrollView>
   )
 }

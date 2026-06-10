@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import { View } from 'react-native'
-import { Stack } from 'expo-router'
+import { useSegments, useRouter, Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
-import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import * as SplashScreen from 'expo-splash-screen'
@@ -26,8 +25,9 @@ SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   const { colors, isDark } = useAppTheme()
-  const { loadStoredToken, setToken } = useAuthStore()
+  const { loadStoredToken, setToken, user, loading } = useAuthStore()
   const router = useRouter()
+  const segments = useSegments()
 
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
@@ -67,6 +67,17 @@ export default function RootLayout() {
 
     return () => sub.remove()
   }, [setToken, router])
+
+  // Auth Guard
+  useEffect(() => {
+    if (loading || !fontsLoaded) return
+
+    const inAuthGroup = segments[0] === '(tabs)' || segments[0] === 'project' || segments[0] === 'new-project'
+
+    if (!user && inAuthGroup) {
+      router.replace('/')
+    }
+  }, [user, loading, fontsLoaded, segments, router])
 
   if (!fontsLoaded && !fontError) {
     return null

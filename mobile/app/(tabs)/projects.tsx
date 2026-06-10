@@ -1,10 +1,11 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, Alert,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
+import { ConfirmModal } from '@/components/ConfirmModal'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
@@ -39,27 +40,30 @@ export default function ProjectsScreen() {
   const { handleScroll } = useScrollVisibility()
   const { projects, loading, fetchProjects, removeProject } = useProjectsStore()
 
+  const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   useEffect(() => {
     fetchProjects()
   }, [fetchProjects])
 
   const handleDelete = useCallback((id: string, name: string) => {
-    Alert.alert('Delete Workspace', `Are you sure you want to delete "${name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Delete', 
-        style: 'destructive', 
-        onPress: async () => {
-          try {
-            await api.projects.delete(id)
-            removeProject(id)
-          } catch (err) {
-            Alert.alert('Failed', (err as Error).message)
-          }
-        }
-      },
-    ])
-  }, [removeProject])
+    setProjectToDelete({ id, name })
+  }, [])
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return
+    setIsDeleting(true)
+    try {
+      await api.projects.delete(projectToDelete.id)
+      removeProject(projectToDelete.id)
+      setProjectToDelete(null)
+    } catch (err) {
+      Alert.alert('Failed', (err as Error).message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const renderProject = ({ item: p, index }: { item: Project; index: number }) => {
     const Icon = TYPE_ICON[p.type] || Terminal
@@ -154,6 +158,18 @@ export default function ProjectsScreen() {
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={fetchProjects} tintColor={colors.text} />
         }
+      />
+
+      <ConfirmModal
+        visible={!!projectToDelete}
+        title="Delete Workspace"
+        message={`Are you sure you want to delete "${projectToDelete?.name}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setProjectToDelete(null)}
       />
     </View>
   )
