@@ -54,11 +54,21 @@ export default function GitTab({ projectId, isActive }: Props) {
     changes: true,
     untracked: true,
   })
+  // Custom Alert State
+  const [alertConfig, setAlertConfig] = useState<{ visible: boolean, title: string, message: string, type: 'success' | 'error' | 'info' | 'warning', onConfirm?: () => void }>({ visible: false, title: '', message: '', type: 'info' })
+  const showAlert = useCallback((title: string, message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', onConfirm?: () => void) => {
+    setAlertConfig({ visible: true, title, message, type, onConfirm })
+  }, [])
+  const hideAlert = useCallback(() => {
+    setAlertConfig(prev => ({ ...prev, visible: false }))
+  }, [])
+
   // Git configurations and SSH state keys
   const [gitName, setGitName] = useState('')
   const [gitEmail, setGitEmail] = useState('')
   const [hasSshKey, setHasSshKey] = useState(false)
   const [sshPublicKey, setSshPublicKey] = useState<string | null>(null)
+  const [sshHistory, setSshHistory] = useState<{ timestamp: string, publicKey: string }[]>([])
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(false)
   const [copied, setCopied] = useState(false)
