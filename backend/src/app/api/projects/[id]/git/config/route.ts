@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { execInContainer } from '@/lib/docker'
+import { execInContainer, ensureContainerRunning } from '@/lib/docker'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   let email = ''
 
   try {
+    await ensureContainerRunning(id)
     await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.name'], (data) => { name += data })
     await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.email'], (data) => { email += data })
   } catch {}
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   try {
+    await ensureContainerRunning(id)
     await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', '--git-dir=/workspace/.git', 'config', 'user.name', body.name], () => {})
     await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', '--git-dir=/workspace/.git', 'config', 'user.email', body.email], () => {})
     return successResponse({ saved: true })

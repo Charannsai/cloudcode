@@ -207,6 +207,7 @@ export default function EditorScreen() {
   const SENTINEL = '|'
   const [nativeBuffer, setNativeBuffer] = useState(SENTINEL)
 
+  const lastLoadedPathRef = useRef<string>('')
   const hasChanges = content !== originalContent
 
   // Scroll Monaco to cursor when keyboard opens & blur input when keyboard hides
@@ -237,13 +238,16 @@ export default function EditorScreen() {
 
   useEffect(() => {
     if (editorReady && webViewRef.current && content !== undefined && !loading) {
-      webViewRef.current.injectJavaScript(`
-        if (window.editor) {
-          window.editor.setValue(${JSON.stringify(content)});
-          monaco.editor.setModelLanguage(window.editor.getModel(), '${getLanguage(currentPath)}');
-          window.editor.updateOptions({ readOnly: false });
-        } true;
-      `);
+      if (lastLoadedPathRef.current !== currentPath) {
+        lastLoadedPathRef.current = currentPath;
+        webViewRef.current.injectJavaScript(`
+          if (window.editor) {
+            window.editor.setValue(${JSON.stringify(content)});
+            monaco.editor.setModelLanguage(window.editor.getModel(), '${getLanguage(currentPath)}');
+            window.editor.updateOptions({ readOnly: false });
+          } true;
+        `);
+      }
     }
   }, [editorReady, content, loading, currentPath])
 
