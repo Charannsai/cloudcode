@@ -69,11 +69,11 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
 
   // Configure git directory access & automatic init
   try {
-    // 1. Bypass dubious ownership checks inside the container
-    await execInContainer(info.Id, ['git', 'config', '--global', '--add', 'safe.directory', '/workspace'], () => {})
+    // 1. Bypass dubious ownership checks inside the container system-wide
+    await execInContainer(info.Id, ['git', 'config', '--system', '--add', 'safe.directory', '*'], () => {}, 'root')
 
-    // 2. Disable global core.fileMode validation inside container
-    await execInContainer(info.Id, ['git', 'config', '--global', 'core.fileMode', 'false'], () => {})
+    // 2. Disable system-wide core.fileMode validation inside container
+    await execInContainer(info.Id, ['git', 'config', '--system', 'core.fileMode', 'false'], () => {}, 'root')
 
     // 3. Automatically git init if the repository doesn't have a .git folder (preserves cloned history if imported)
     await execInContainer(
@@ -100,7 +100,8 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
 export async function execInContainer(
   containerId: string,
   command: string[],
-  onData: (data: string) => void
+  onData: (data: string) => void,
+  user?: string
 ): Promise<number> {
   const container = docker.getContainer(containerId)
   const exec = await container.exec({
@@ -108,6 +109,7 @@ export async function execInContainer(
     AttachStdout: true,
     AttachStderr: true,
     Tty: false,
+    ...(user ? { User: user } : {})
   })
 
   return new Promise((resolve, reject) => {
@@ -161,6 +163,15 @@ export async function startContainer(containerId: string): Promise<string> {
   const container = docker.getContainer(containerId)
   try {
     await container.start()
+
+    // Configure system git configuration system-wide on startup
+    try {
+      await execInContainer(containerId, ['git', 'config', '--system', '--add', 'safe.directory', '*'], () => {}, 'root')
+      await execInContainer(containerId, ['git', 'config', '--system', 'core.fileMode', 'false'], () => {}, 'root')
+    } catch (gitErr) {
+      console.error('Failed to configure system git on start:', gitErr)
+    }
+
     // Wait briefly for the container to be fully ready
     const info = await container.inspect()
     return info.State.Status

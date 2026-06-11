@@ -54,12 +54,30 @@ async function ensureSshRemote(containerId: string): Promise<void> {
 export async function getGitStatus(containerId: string): Promise<GitStatus> {
   let statusOutput = ''
 
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false status --porcelain -b 2>&1`], (data) => {
+  let exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false status --porcelain -b 2>&1`], (data) => {
     statusOutput += data
   })
 
   if (exitCode !== 0) {
-    throw new Error(statusOutput.trim() || `git status failed with exit code ${exitCode}`)
+    // Check if it is a dubious ownership error or safe directory trust issue
+    if (statusOutput.includes('dubious ownership') || statusOutput.includes('safe.directory')) {
+      console.log(`[Self-Healing] Detected dubious ownership in container ${containerId}. Auto-bypassing system-wide...`)
+      try {
+        await execInContainer(containerId, ['git', 'config', '--system', '--add', 'safe.directory', '*'], () => {}, 'root')
+        await execInContainer(containerId, ['git', 'config', '--system', 'core.fileMode', 'false'], () => {}, 'root')
+        // Retry git status
+        statusOutput = ''
+        exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git status --porcelain -b 2>&1`], (data) => {
+          statusOutput += data
+        })
+      } catch (gitErr) {
+        console.error('Self-healing git config failed:', gitErr)
+      }
+    }
+    
+    if (exitCode !== 0) {
+      throw new Error(statusOutput.trim() || `git status failed with exit code ${exitCode}`)
+    }
   }
 
   const lines = statusOutput.trim().split('\n').filter(Boolean)

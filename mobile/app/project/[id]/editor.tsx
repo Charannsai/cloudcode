@@ -245,7 +245,7 @@ export default function EditorScreen() {
         } true;
       `);
     }
-  }, [editorReady])
+  }, [editorReady, content, loading, currentPath])
 
   async function fetchFile(filePath: string) {
     setLoading(true)
@@ -253,15 +253,6 @@ export default function EditorScreen() {
       const data = await api.files.read(id as string, filePath)
       setContent(data.content)
       setOriginalContent(data.content)
-      if (editorReady && webViewRef.current) {
-        webViewRef.current.injectJavaScript(`
-          if (window.editor) {
-            window.editor.setValue(${JSON.stringify(data.content)});
-            monaco.editor.setModelLanguage(window.editor.getModel(), '${getLanguage(filePath)}');
-            window.editor.updateOptions({ readOnly: false });
-          } true;
-        `);
-      }
     } catch (err) {
       Alert.alert('Error', (err as Error).message)
       router.back()

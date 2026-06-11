@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Alert, ActivityIndicator,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { api } from '@/lib/api'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
@@ -163,6 +163,12 @@ export default function FilesTab({ projectId, isActive }: Props) {
   useEffect(() => {
     if (isActive) fetchFiles()
   }, [isActive, fetchFiles])
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isActive) fetchFiles()
+    }, [isActive, fetchFiles])
+  )
 
   const filterTree = useCallback((items: FileItem[], query: string): FileItem[] => {
     if (!query.trim()) return items

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useFocusEffect } from 'expo-router'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   ActivityIndicator, Alert, RefreshControl, Modal, KeyboardAvoidingView, Platform,
@@ -186,14 +187,18 @@ export default function GitTab({ projectId, isActive }: Props) {
   }, [projectId, fetchHistory])
 
   useEffect(() => {
-    fetchStatus()
-  }, [fetchStatus])
-
-  useEffect(() => {
     if (isActive) {
       fetchStatus(true)
     }
   }, [isActive, fetchStatus])
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isActive) {
+        fetchStatus(true)
+      }
+    }, [isActive, fetchStatus])
+  )
 
   const handleStage = async (files: string[]) => {
     const nextStaging = { ...stagingFiles }
