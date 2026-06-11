@@ -54,16 +54,6 @@ export default function GitTab({ projectId, isActive }: Props) {
     changes: true,
     untracked: true,
   })
-
-  // Custom Alert State
-  const [alertConfig, setAlertConfig] = useState<{ visible: boolean, title: string, message: string, type: 'success' | 'error' | 'info' }>({ visible: false, title: '', message: '', type: 'info' })
-  const showAlert = useCallback((title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setAlertConfig({ visible: true, title, message, type })
-  }, [])
-  const hideAlert = useCallback(() => {
-    setAlertConfig(prev => ({ ...prev, visible: false }))
-  }, [])
-
   // Git configurations and SSH state keys
   const [gitName, setGitName] = useState('')
   const [gitEmail, setGitEmail] = useState('')
@@ -131,6 +121,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       const ssh = await api.git.ssh.get(projectId)
       setHasSshKey(ssh.hasKey)
       setSshPublicKey(ssh.publicKey)
+      setSshHistory(ssh.history || [])
     } catch (err) {
       console.warn('Failed to load git configs:', err)
     }
@@ -166,6 +157,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       const res = await api.git.ssh.generate(projectId)
       setHasSshKey(res.hasKey)
       setSshPublicKey(res.publicKey)
+      setSshHistory(res.history || [])
       showAlert('Success', 'SSH Key Pair generated successfully.', 'success')
     } catch (err) {
       showAlert('Error', (err as Error).message, 'error')
@@ -716,6 +708,33 @@ export default function GitTab({ projectId, isActive }: Props) {
                          </View>
                        </View>
                     </View>
+
+                    <View style={{ marginTop: 32 }}>
+                      <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13, marginBottom: 12 }]}>SSH Key History</Text>
+                      {sshHistory.map((h, i) => (
+                        <View key={i} style={{ padding: 12, borderRadius: 8, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderWidth: 1, borderColor: colors.border, marginBottom: 8 }}>
+                          <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'Inter_600SemiBold', marginBottom: 4 }}>{new Date(h.timestamp).toLocaleString()}</Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }} numberOfLines={1}>{h.publicKey}</Text>
+                        </View>
+                      ))}
+                      
+                      <TouchableOpacity 
+                        onPress={() => {
+                          showAlert(
+                            'Generate New Key?',
+                            'Generating a new SSH key will instantly overwrite your existing key. You will need to add the new key to GitHub, and the old one will stop working immediately. Are you sure?',
+                            'warning',
+                            () => {
+                              hideAlert()
+                              handleGenerateSsh()
+                            }
+                          )
+                        }}
+                        style={[styles.primaryBtn, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, marginTop: 12 }]}
+                      >
+                        <Text style={[styles.primaryBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Generate New Key</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ) : (
                   <View style={styles.sshEmptyBox}>
@@ -752,12 +771,25 @@ export default function GitTab({ projectId, isActive }: Props) {
               {alertConfig.type === 'success' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(63, 185, 80, 0.15)' }]}><Check size={24} color="#3FB950" strokeWidth={2.5} /></View>}
               {alertConfig.type === 'error' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(248, 81, 73, 0.15)' }]}><AlertCircle size={24} color="#F85149" strokeWidth={2.5} /></View>}
               {alertConfig.type === 'info' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(88, 166, 255, 0.15)' }]}><AlertCircle size={24} color="#58A6FF" strokeWidth={2.5} /></View>}
+              {alertConfig.type === 'warning' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(210, 153, 34, 0.15)' }]}><AlertCircle size={24} color="#D29922" strokeWidth={2.5} /></View>}
             </View>
             <Text style={[styles.alertTitle, { color: colors.text }]}>{alertConfig.title}</Text>
             <Text style={[styles.alertMessage, { color: colors.textSecondary }]}>{alertConfig.message}</Text>
-            <TouchableOpacity onPress={hideAlert} style={[styles.alertBtn, { backgroundColor: colors.text }]} activeOpacity={0.8}>
-              <Text style={[styles.alertBtnText, { color: colors.background }]}>OK</Text>
-            </TouchableOpacity>
+            
+            {alertConfig.onConfirm ? (
+              <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                <TouchableOpacity onPress={hideAlert} style={[styles.alertBtn, { flex: 1, backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderWidth: 1, borderColor: colors.border }]} activeOpacity={0.8}>
+                  <Text style={[styles.alertBtnText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={alertConfig.onConfirm} style={[styles.alertBtn, { flex: 1, backgroundColor: '#D29922' }]} activeOpacity={0.8}>
+                  <Text style={[styles.alertBtnText, { color: '#fff' }]}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={hideAlert} style={[styles.alertBtn, { backgroundColor: colors.text }]} activeOpacity={0.8}>
+                <Text style={[styles.alertBtnText, { color: colors.background }]}>OK</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
