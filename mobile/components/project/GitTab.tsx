@@ -55,6 +55,15 @@ export default function GitTab({ projectId, isActive }: Props) {
     untracked: true,
   })
 
+  // Custom Alert State
+  const [alertConfig, setAlertConfig] = useState<{ visible: boolean, title: string, message: string, type: 'success' | 'error' | 'info' }>({ visible: false, title: '', message: '', type: 'info' })
+  const showAlert = useCallback((title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setAlertConfig({ visible: true, title, message, type })
+  }, [])
+  const hideAlert = useCallback(() => {
+    setAlertConfig(prev => ({ ...prev, visible: false }))
+  }, [])
+
   // Git configurations and SSH state keys
   const [gitName, setGitName] = useState('')
   const [gitEmail, setGitEmail] = useState('')
@@ -133,7 +142,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
   const handleSaveConfig = async () => {
     if (!gitName.trim() || !gitEmail.trim()) {
-      Alert.alert('Error', 'Author Name and Email are required.')
+      showAlert('Error', 'Author Name and Email are required.', 'error')
       return
     }
     setLoadingConfig(true)
@@ -142,10 +151,10 @@ export default function GitTab({ projectId, isActive }: Props) {
       // Store in device persistent storage
       await AsyncStorage.setItem('git_author_name', gitName.trim())
       await AsyncStorage.setItem('git_author_email', gitEmail.trim())
-      Alert.alert('Success', 'Git credentials saved and cached.')
+      showAlert('Success', 'Git credentials saved and cached.', 'success')
       setShowConfigModal(false)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setLoadingConfig(false)
     }
@@ -157,9 +166,9 @@ export default function GitTab({ projectId, isActive }: Props) {
       const res = await api.git.ssh.generate(projectId)
       setHasSshKey(res.hasKey)
       setSshPublicKey(res.publicKey)
-      Alert.alert('Success', 'SSH Key Pair generated successfully.')
+      showAlert('Success', 'SSH Key Pair generated successfully.', 'success')
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setLoadingConfig(false)
     }
@@ -210,7 +219,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       await api.git.stage(projectId, files)
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setStagingFiles(prev => {
         const updated = { ...prev }
@@ -229,7 +238,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       await api.git.unstage(projectId, files)
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setStagingFiles(prev => {
         const updated = { ...prev }
@@ -247,7 +256,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       setCommitMessage('')
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Commit Failed', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setCommitting(false)
     }
@@ -255,7 +264,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
   const handleSync = async (action: 'push' | 'pull') => {
     if (!hasSshKey) {
-      Alert.alert('SSH Key Required', 'Please generate an SSH key and add it to your GitHub account to sync changes securely.')
+      showAlert('SSH Key Required', 'Please generate an SSH key and add it to your GitHub account to sync changes securely.', 'info')
       setShowConfigModal(true)
       return
     }
@@ -263,10 +272,10 @@ export default function GitTab({ projectId, isActive }: Props) {
     setSyncAction(action)
     try {
       const result = await api.git.sync(projectId, action)
-      Alert.alert(action === 'push' ? 'Pushed' : 'Pulled', result.output || 'Success')
+      showAlert(action === 'push' ? 'Pushed' : 'Pulled', result.output || 'Success', 'success')
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Sync Failed', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setSyncing(false)
       setSyncAction(null)
@@ -284,7 +293,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       setDiffText(result.diff || '(no diff)')
       setDiffFile(file)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     }
   }
 
@@ -294,7 +303,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       setBranches(result.branches)
       setShowBranches(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     }
   }
 
@@ -304,7 +313,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       setShowBranches(false)
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     }
   }
 
@@ -726,6 +735,24 @@ export default function GitTab({ projectId, isActive }: Props) {
           </KeyboardAvoidingView>
         </View>
       </Modal>
+
+      {/* Custom Alert Modal */}
+      <Modal visible={alertConfig.visible} transparent animationType="fade" onRequestClose={hideAlert}>
+        <View style={styles.alertOverlay}>
+          <View style={[styles.alertContent, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
+            <View style={styles.alertIconContainer}>
+              {alertConfig.type === 'success' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(63, 185, 80, 0.15)' }]}><Check size={24} color="#3FB950" strokeWidth={2.5} /></View>}
+              {alertConfig.type === 'error' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(248, 81, 73, 0.15)' }]}><AlertCircle size={24} color="#F85149" strokeWidth={2.5} /></View>}
+              {alertConfig.type === 'info' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(88, 166, 255, 0.15)' }]}><AlertCircle size={24} color="#58A6FF" strokeWidth={2.5} /></View>}
+            </View>
+            <Text style={[styles.alertTitle, { color: colors.text }]}>{alertConfig.title}</Text>
+            <Text style={[styles.alertMessage, { color: colors.textSecondary }]}>{alertConfig.message}</Text>
+            <TouchableOpacity onPress={hideAlert} style={[styles.alertBtn, { backgroundColor: colors.text }]} activeOpacity={0.8}>
+              <Text style={[styles.alertBtnText, { color: colors.background }]}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -947,5 +974,56 @@ const styles = StyleSheet.create({
   commitMsg: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  // Custom Alert Styles
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  alertContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+  },
+  alertIconContainer: {
+    marginBottom: 16,
+  },
+  alertIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  alertMessage: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    opacity: 0.9,
+  },
+  alertBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertBtnText: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
   },
 })
