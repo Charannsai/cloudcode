@@ -25,14 +25,18 @@ function getLanguage(fileName: string) {
   }
 }
 
-const MONACO_HTML = `
+function getMonacoHtml(isDark: boolean, colors: any) {
+  const bg = colors.background;
+  const monacoTheme = isDark ? 'vs-dark' : 'vs';
+
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #0E1116; }
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: ${bg}; }
     #container { width: 100%; height: 100%; }
     * { -webkit-tap-highlight-color: transparent; }
     /* Hide Monaco's own textarea since we use native RN TextInput for keyboard */
@@ -65,7 +69,7 @@ const MONACO_HTML = `
       window.editor = monaco.editor.create(document.getElementById('container'), {
         value: '',
         language: 'plaintext',
-        theme: 'vs-dark',
+        theme: '${monacoTheme}',
         automaticLayout: true,
         minimap: { enabled: false },
         fontSize: 14,
@@ -130,7 +134,8 @@ const MONACO_HTML = `
   </script>
 </body>
 </html>
-`;
+  `;
+}
 
 function FileRow({ node, depth, currentPath, onFilePress }: {
   node: FileNode; depth: number; currentPath: string; onFilePress: (path: string) => void;
@@ -364,7 +369,7 @@ export default function EditorScreen() {
         <View style={styles.webViewContainer}>
           <WebView
             ref={webViewRef}
-            source={{ html: MONACO_HTML, baseUrl: 'https://cdnjs.cloudflare.com' }}
+            source={{ html: getMonacoHtml(isDark, colors), baseUrl: 'https://cdnjs.cloudflare.com' }}
             originWhitelist={['*']}
             onMessage={(event) => {
               try {
