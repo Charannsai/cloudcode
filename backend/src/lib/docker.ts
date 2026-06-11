@@ -49,7 +49,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
       '8080/tcp': {},
     },
     HostConfig: {
-      Binds: [`${hostPath}:${WORKSPACE_ROOT}`, 'cloudcode-global-ssh:/root/.ssh'],
+      Binds: [`${hostPath}:${WORKSPACE_ROOT}`, 'cloudcode-global-ssh:/home/coder/.ssh'],
       Memory: 1024 * 1024 * 1024, // 1GB memory cap (prevents starving the VPS host RAM)
       CpuShares: 512,
       PortBindings: {
