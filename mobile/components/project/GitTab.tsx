@@ -651,9 +651,13 @@ export default function GitTab({ projectId, isActive }: Props) {
                   style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
                   disabled={loadingConfig}
                 >
-                  <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
-                    Save Config
-                  </Text>
+                  {loadingConfig ? (
+                    <ActivityIndicator color={isDark ? '#000' : '#fff'} />
+                  ) : (
+                    <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
+                      Save Config
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
 
@@ -723,9 +727,13 @@ export default function GitTab({ projectId, isActive }: Props) {
                       style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
                       disabled={loadingConfig}
                     >
-                      <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
-                        Generate SSH Key
-                      </Text>
+                      {loadingConfig ? (
+                        <ActivityIndicator color={isDark ? '#000' : '#fff'} />
+                      ) : (
+                        <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
+                          Generate SSH Key
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   </View>
                 )}
