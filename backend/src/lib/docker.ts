@@ -49,7 +49,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
       '8080/tcp': {},
     },
     HostConfig: {
-      Binds: [`${hostPath}:${WORKSPACE_ROOT}`],
+      Binds: [`${hostPath}:${WORKSPACE_ROOT}`, 'cloudcode-global-ssh:/root/.ssh'],
       Memory: 1024 * 1024 * 1024, // 1GB memory cap (prevents starving the VPS host RAM)
       CpuShares: 512,
       PortBindings: {
@@ -75,10 +75,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     // 2. Disable system-wide core.fileMode validation inside container
     await execInContainer(info.Id, ['git', 'config', '--system', 'core.fileMode', 'false'], () => {}, 'root')
 
-    // 3. Inject global SSH command so terminal users can run git push natively
-    await execInContainer(info.Id, ['git', 'config', '--system', 'core.sshCommand', 'ssh -i /workspace/.cloudcode/ssh/id_ed25519 -o UserKnownHostsFile=/workspace/.cloudcode/ssh/known_hosts -o StrictHostKeyChecking=no'], () => {}, 'root')
-
-    // 4. Automatically git init if the repository doesn't have a .git folder (preserves cloned history if imported)
+    // 3. Automatically git init if the repository doesn't have a .git folder (preserves cloned history if imported)
     await execInContainer(
       info.Id,
       ['sh', '-c', 'if [ ! -d "/workspace/.git" ]; then git init && git config user.name "CloudCode" && git config user.email "coder@cloudcode.dev" && git add . && git commit -m "Initial commit"; fi'],
@@ -171,7 +168,6 @@ export async function startContainer(containerId: string): Promise<string> {
     try {
       await execInContainer(containerId, ['git', 'config', '--system', '--add', 'safe.directory', '*'], () => {}, 'root')
       await execInContainer(containerId, ['git', 'config', '--system', 'core.fileMode', 'false'], () => {}, 'root')
-      await execInContainer(containerId, ['git', 'config', '--system', 'core.sshCommand', 'ssh -i /workspace/.cloudcode/ssh/id_ed25519 -o UserKnownHostsFile=/workspace/.cloudcode/ssh/known_hosts -o StrictHostKeyChecking=no'], () => {}, 'root')
     } catch (gitErr) {
       console.error('Failed to configure system git on start:', gitErr)
     }

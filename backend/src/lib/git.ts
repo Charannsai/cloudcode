@@ -177,7 +177,7 @@ export async function gitPush(containerId: string, remote = 'origin', branch?: s
   await ensureSshRemote(containerId)
   let output = ''
   const branchArg = branch || ''
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && GIT_SSH_COMMAND="ssh -i /workspace/.cloudcode/ssh/id_ed25519 -o UserKnownHostsFile=/workspace/.cloudcode/ssh/known_hosts -o StrictHostKeyChecking=no" git -c safe.directory=/workspace -c core.fileMode=false push ${remote} ${branchArg} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=no" git -c safe.directory=/workspace -c core.fileMode=false push ${remote} ${branchArg} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
@@ -190,7 +190,7 @@ export async function gitPull(containerId: string, remote = 'origin', branch?: s
   await ensureSshRemote(containerId)
   let output = ''
   const branchArg = branch || ''
-  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && GIT_SSH_COMMAND="ssh -i /workspace/.cloudcode/ssh/id_ed25519 -o UserKnownHostsFile=/workspace/.cloudcode/ssh/known_hosts -o StrictHostKeyChecking=no" git -c safe.directory=/workspace -c core.fileMode=false pull ${remote} ${branchArg} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=no" git -c safe.directory=/workspace -c core.fileMode=false pull ${remote} ${branchArg} 2>&1`], (data) => {
     output += data
   })
   if (exitCode !== 0) {
