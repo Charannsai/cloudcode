@@ -23,10 +23,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   let hasKey = false
 
   try {
-    const exitCode = await execInContainer(project.container_id, ['test', '-f', '/home/coder/.ssh/id_ed25519'], () => {})
+    const exitCode = await execInContainer(project.container_id, ['test', '-f', '/workspace/.cloudcode/ssh/id_ed25519'], () => {})
     if (exitCode === 0) {
       hasKey = true
-      await execInContainer(project.container_id, ['cat', '/home/coder/.ssh/id_ed25519.pub'], (data) => {
+      await execInContainer(project.container_id, ['cat', '/workspace/.cloudcode/ssh/id_ed25519.pub'], (data) => {
         pubKey += data
       })
     }
@@ -52,20 +52,23 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!project || !project.container_id) return errorResponse('Project container not found', 404)
 
   try {
-    await execInContainer(project.container_id, ['mkdir', '-p', '/home/coder/.ssh'], () => {})
+    await execInContainer(project.container_id, ['mkdir', '-p', '/workspace/.cloudcode/ssh'], () => {})
     await execInContainer(
       project.container_id,
-      ['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', '/home/coder/.ssh/id_ed25519', '-q'],
+      ['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', '/workspace/.cloudcode/ssh/id_ed25519', '-q'],
       () => {}
     )
     
+    // Ensure .cloudcode is ignored by git so the keys aren't committed!
+    await execInContainer(project.container_id, ['sh', '-c', 'mkdir -p /workspace/.git/info && grep -qxF ".cloudcode" /workspace/.git/info/exclude || echo ".cloudcode" >> /workspace/.git/info/exclude'], () => {})
+
     let pubKey = ''
-    await execInContainer(project.container_id, ['cat', '/home/coder/.ssh/id_ed25519.pub'], (data) => {
+    await execInContainer(project.container_id, ['cat', '/workspace/.cloudcode/ssh/id_ed25519.pub'], (data) => {
       pubKey += data
     })
 
     // Cache github keys to prevent interactive host verification dialog prompts
-    await execInContainer(project.container_id, ['sh', '-c', 'ssh-keyscan github.com >> /home/coder/.ssh/known_hosts 2>/dev/null'], () => {})
+    await execInContainer(project.container_id, ['sh', '-c', 'ssh-keyscan github.com >> /workspace/.cloudcode/ssh/known_hosts 2>/dev/null'], () => {})
 
     return successResponse({ hasKey: true, publicKey: pubKey.trim() })
   } catch (err) {

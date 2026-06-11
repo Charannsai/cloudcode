@@ -253,6 +253,11 @@ export default function GitTab({ projectId, isActive }: Props) {
   }
 
   const handleSync = async (action: 'push' | 'pull') => {
+    if (!hasSshKey) {
+      Alert.alert('SSH Key Required', 'Please generate an SSH key and add it to your GitHub account to sync changes securely.')
+      setShowConfigModal(true)
+      return
+    }
     setSyncing(true)
     setSyncAction(action)
     try {
