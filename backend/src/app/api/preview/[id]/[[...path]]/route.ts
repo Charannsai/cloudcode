@@ -104,38 +104,11 @@ export async function GET(req: NextRequest, { params }: Params) {
   
   const subPath = '/' + (finalPathSegments.join('/') || '')
 
-  // If the container was just woken up, show a brief "waking up" page
-  // that auto-refreshes so the dev server has time to boot.
-  if (wasAsleep && (subPath === '/' || subPath === '')) {
-    const wakingHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Waking up...</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="refresh" content="5">
-        <style>
-          body { font-family: -apple-system, system-ui, sans-serif; background: #0a0a0f; color: #c8d3e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; padding: 20px; }
-          .card { background: #12121e; border: 1px solid #2a2a3c; padding: 40px; border-radius: 24px; max-width: 400px; width: 100%; }
-          h1 { font-size: 48px; margin: 0 0 16px 0; animation: pulse 1.5s ease-in-out infinite; }
-          h2 { color: #fff; margin: 0 0 12px 0; font-size: 20px; }
-          p { color: #8a8a9a; line-height: 1.5; margin: 0 0 24px 0; font-size: 14px; }
-          .spinner { width: 24px; height: 24px; border: 3px solid #2a2a3c; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
-          @keyframes spin { to { transform: rotate(360deg); } }
-          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h1>☁️</h1>
-          <h2>Waking up your workspace...</h2>
-          <p>Your container was sleeping to save resources. It's starting back up now — this page will refresh automatically.</p>
-          <div class="spinner"></div>
-        </div>
-      </body>
-      </html>
-    `
-    return withCookies(new Response(wakingHtml, { status: 200, headers: { 'Content-Type': 'text/html' } }), projectId, token, port.toString())
+  // If the container was just woken up, return a 503 so the WebView
+  // triggers renderError → the native "Retry Connection" screen handles it.
+  // The user taps Retry after a few seconds once the dev server boots.
+  if (wasAsleep) {
+    return withCookies(new Response('Container is waking up', { status: 503 }), projectId, token, port.toString())
   }
 
   try {
@@ -233,36 +206,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   } catch (err) {
     console.error(`Preview proxy error [${subPath}]:`, err)
-
-    if (subPath === '/' || subPath === '') {
-      const errorHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Preview not available</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body { font-family: -apple-system, system-ui, sans-serif; background: #0a0a0f; color: #c8d3e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; padding: 20px; }
-            .card { background: #12121e; border: 1px solid #2a2a3c; padding: 40px; borderRadius: 24px; maxWidth: 400px; width: 100%; }
-            h1 { font-size: 48px; margin: 0 0 16px 0; }
-            h2 { color: #fff; margin: 0 0 12px 0; font-size: 20px; }
-            p { color: #8a8a9a; line-height: 1.5; margin: 0 0 24px 0; font-size: 14px; }
-            code { background: #1d1d2b; padding: 4px 8px; border-radius: 6px; color: #3b82f6; font-family: monospace; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h1>🔌</h1>
-            <h2>Server Not Found</h2>
-            <p>We couldn't reach 127.0.0.1:<b>${port}</b> inside your project container. Make sure your dev server is running.</p>
-            <p style="font-size:12px;opacity:0.6">${err instanceof Error ? err.message : 'Connection Refused'}</p>
-          </div>
-        </body>
-        </html>
-      `
-      return withCookies(new Response(errorHtml, { status: 502, headers: { 'Content-Type': 'text/html' } }), projectId, token)
-    }
-
+    // Return a plain 502 — the mobile WebView renderError will show the native "Retry Connection" screen
     return withCookies(new Response('', { status: 502 }), projectId, token)
   }
 }
