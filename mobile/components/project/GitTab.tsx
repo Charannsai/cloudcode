@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useFocusEffect } from 'expo-router'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, RefreshControl, Modal, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Alert, RefreshControl, Modal, KeyboardAvoidingView, Platform, Linking
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { api } from '@/lib/api'
@@ -62,6 +62,7 @@ export default function GitTab({ projectId, isActive }: Props) {
   const [sshPublicKey, setSshPublicKey] = useState<string | null>(null)
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // Git commit history logs
   const [commitHistory, setCommitHistory] = useState<{ hash: string, message: string }[]>([])
@@ -656,23 +657,52 @@ export default function GitTab({ projectId, isActive }: Props) {
                 </Text>
                 {hasSshKey && sshPublicKey ? (
                   <View style={styles.sshInfoBox}>
-                    <Text style={[styles.sshInfoText, { color: colors.textSecondary }]} numberOfLines={3}>
-                      {sshPublicKey}
-                    </Text>
-                    <View style={styles.sshActionRow}>
-                      <TouchableOpacity 
-                        onPress={() => {
-                          Clipboard.setStringAsync(sshPublicKey)
-                          Alert.alert('Copied', 'Public key copied to clipboard.')
-                        }}
-                        style={[styles.actionBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
-                      >
-                        <Text style={[styles.actionBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Copy Public Key</Text>
-                      </TouchableOpacity>
+                    <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.08)' : '#e6ffec', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.2)' : '#3FB950' }}>
+                       <Text style={{ color: isDark ? '#3FB950' : '#1a7f37', fontFamily: 'Inter_700Bold', fontSize: 14, marginBottom: 8 }}>SSH Key Generated</Text>
+                       <Text style={{ color: colors.text, fontSize: 13, lineHeight: 18, marginBottom: 20 }}>Follow these 3 quick steps to complete authentication:</Text>
+                       
+                       <View style={{ gap: 16 }}>
+                         <View style={{ flexDirection: 'row', gap: 12 }}>
+                           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontFamily: 'Inter_700Bold' }}>1</Text></View>
+                           <View style={{ flex: 1, gap: 8 }}>
+                             <Text style={{ color: colors.text, fontSize: 13 }}>Copy your generated public key:</Text>
+                             <TouchableOpacity 
+                               onPress={() => { 
+                                 Clipboard.setStringAsync(sshPublicKey); 
+                                 setCopied(true);
+                                 setTimeout(() => setCopied(false), 2000);
+                               }}
+                               style={{ backgroundColor: copied ? (isDark ? 'rgba(63, 185, 80, 0.15)' : '#e6ffec') : 'rgba(0,0,0,0.05)', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: copied ? '#3FB950' : colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                               activeOpacity={0.7}
+                             >
+                               <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, flex: 1 }} numberOfLines={1}>{sshPublicKey.substring(0, 24)}...</Text>
+                               <Text style={{ color: copied ? '#3FB950' : colors.primary, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{copied ? 'COPIED ✓' : 'COPY'}</Text>
+                             </TouchableOpacity>
+                           </View>
+                         </View>
+
+                         <View style={{ flexDirection: 'row', gap: 12 }}>
+                           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontFamily: 'Inter_700Bold' }}>2</Text></View>
+                           <View style={{ flex: 1, gap: 8 }}>
+                             <Text style={{ color: colors.text, fontSize: 13 }}>Open GitHub's SSH Settings in your browser.</Text>
+                             <TouchableOpacity 
+                               onPress={() => Linking.openURL('https://github.com/settings/ssh/new')}
+                               style={{ alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, backgroundColor: colors.primary, borderRadius: 8 }}
+                               activeOpacity={0.8}
+                             >
+                               <Text style={{ color: isDark ? '#000' : '#fff', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>Open GitHub Settings ↗</Text>
+                             </TouchableOpacity>
+                           </View>
+                         </View>
+
+                         <View style={{ flexDirection: 'row', gap: 12 }}>
+                           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontFamily: 'Inter_700Bold' }}>3</Text></View>
+                           <View style={{ flex: 1 }}>
+                             <Text style={{ color: colors.text, fontSize: 13, lineHeight: 20 }}>Paste your key in the "Key" box, give it a title (e.g., "CloudCode"), and click "Add SSH key". You're done!</Text>
+                           </View>
+                         </View>
+                       </View>
                     </View>
-                    <Text style={[styles.sshHelpText, { color: colors.textSecondary }]}>
-                      Add this public key to your GitHub developer settings (Deploy keys) to push/pull securely over SSH.
-                    </Text>
                   </View>
                 ) : (
                   <View style={styles.sshEmptyBox}>
