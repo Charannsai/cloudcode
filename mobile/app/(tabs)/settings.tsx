@@ -84,7 +84,7 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>SYSTEM STATUS</Text>
         <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
           {[
-            { label: 'Runtime Engine', value: 'v2.4.10', icon: Server },
+            { label: 'Runtime Engine', value: 'v1.0.0', icon: Server },
             { label: 'Cloud Gateway', value: 'Active', icon: Cpu, valueColor: '#3FB950' },
             { label: 'Encryption', value: 'AES-256', icon: Lock },
           ].map((item, idx, arr) => (
