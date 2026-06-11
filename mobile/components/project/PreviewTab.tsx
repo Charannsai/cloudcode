@@ -28,6 +28,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const [canGoForward, setCanGoForward] = useState(false)
   const [currentUrl, setCurrentUrl] = useState('')
   const [showBrowserInfo, setShowBrowserInfo] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
   useEffect(() => {
     async function initUrl() {
@@ -49,6 +50,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   }, [projectId])
 
   const handleGo = async () => {
+    setHasError(false)
     const token = await getToken()
     let realUrl = currentUrl
     if (currentUrl.includes('localhost:3000')) {
@@ -89,6 +91,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           <TouchableOpacity
             style={[styles.retryBtn, { backgroundColor: colors.text }]}
             onPress={() => {
+              setHasError(false)
               webViewRef.current?.reload()
             }}
           >
@@ -122,6 +125,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
+              setHasError(false)
               webViewRef.current?.reload()
             }}
             style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
@@ -169,6 +173,13 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             startInLoadingState={true}
             renderLoading={renderLoadingPage}
             renderError={renderErrorPage}
+            onError={() => setHasError(true)}
+            onHttpError={(syntheticEvent) => {
+              const { statusCode } = syntheticEvent.nativeEvent
+              if (statusCode === 502 || statusCode === 503) {
+                setHasError(true)
+              }
+            }}
             onNavigationStateChange={(state) => {
               setCanGoBack(state.canGoBack)
               setCanGoForward(state.canGoForward)
@@ -218,6 +229,10 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             onMessage={(event) => {
               try {
                 const msg = JSON.parse(event.nativeEvent.data)
+                if (msg.type === 'proxy_error') {
+                  setHasError(true)
+                  return
+                }
                 console.log(`[WebView Console ${msg.type.toUpperCase()}]`, msg.data)
               } catch (e) {
                 // Ignore parsing errors for other messages
@@ -244,6 +259,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             }}
           />
         ) : null}
+        {hasError && renderErrorPage()}
       </View>
 
       {/* Open in Browser Banner */}
