@@ -71,6 +71,7 @@ export default function GitTab({ projectId, isActive }: Props) {
   const [sshHistory, setSshHistory] = useState<{ timestamp: string, publicKey: string }[]>([])
   const [showConfigModal, setShowConfigModal] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(false)
+  const [generatingSsh, setGeneratingSsh] = useState(false)
   const [copied, setCopied] = useState(false)
 
   // Git commit history logs
@@ -162,7 +163,7 @@ export default function GitTab({ projectId, isActive }: Props) {
   }
 
   const handleGenerateSsh = async () => {
-    setLoadingConfig(true)
+    setGeneratingSsh(true)
     try {
       const res = await api.git.ssh.generate(projectId)
       setHasSshKey(res.hasKey)
@@ -172,7 +173,7 @@ export default function GitTab({ projectId, isActive }: Props) {
     } catch (err) {
       showAlert('Error', (err as Error).message, 'error')
     } finally {
-      setLoadingConfig(false)
+      setGeneratingSsh(false)
     }
   }
 
@@ -741,8 +742,13 @@ export default function GitTab({ projectId, isActive }: Props) {
                           )
                         }}
                         style={[styles.primaryBtn, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, marginTop: 12 }]}
+                        disabled={generatingSsh}
                       >
-                        <Text style={[styles.primaryBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Generate New Key</Text>
+                        {generatingSsh ? (
+                          <ActivityIndicator color={colors.text} />
+                        ) : (
+                          <Text style={[styles.primaryBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Generate New Key</Text>
+                        )}
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -754,9 +760,9 @@ export default function GitTab({ projectId, isActive }: Props) {
                     <TouchableOpacity 
                       onPress={handleGenerateSsh} 
                       style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-                      disabled={loadingConfig}
+                      disabled={generatingSsh}
                     >
-                      {loadingConfig ? (
+                      {generatingSsh ? (
                         <ActivityIndicator color={isDark ? '#000' : '#fff'} />
                       ) : (
                         <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
