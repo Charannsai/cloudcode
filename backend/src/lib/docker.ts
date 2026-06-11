@@ -60,7 +60,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
         '8080/tcp': [{ HostPort: '' }],
       },
       NetworkMode: 'bridge',
-      RestartPolicy: { Name: 'unless-stopped' },
+      RestartPolicy: { Name: 'no' },  // Managed by idle auto-stop — don't auto-restart
     },
   })
 
@@ -138,6 +138,75 @@ export async function destroyContainer(containerId: string): Promise<void> {
     // Already stopped
   }
   await container.remove({ force: true })
+}
+
+/**
+ * Stop a container without removing it (for idle auto-stop).
+ * The container can be restarted later with startContainer().
+ */
+export async function stopContainer(containerId: string): Promise<void> {
+  const container = docker.getContainer(containerId)
+  try {
+    await container.stop({ t: 5 })
+  } catch {
+    // Already stopped
+  }
+}
+
+/**
+ * Start a previously stopped container.
+ * Returns the container status after starting.
+ */
+export async function startContainer(containerId: string): Promise<string> {
+  const container = docker.getContainer(containerId)
+  try {
+    await container.start()
+    // Wait briefly for the container to be fully ready
+    const info = await container.inspect()
+    return info.State.Status
+  } catch (err: any) {
+    // Container might already be running
+    if (err.statusCode === 304) {
+      return 'running'
+    }
+    throw err
+  }
+}
+
+/**
+ * Ensure a project's container is running. If stopped (sleeping), restart it
+ * and update the DB status back to 'ready'.
+ *
+ * Returns `true` if the container was sleeping and had to be woken up,
+ * `false` if it was already running.
+ */
+export async function ensureContainerRunning(projectId: string): Promise<boolean> {
+  const { supabaseAdmin } = await import('./supabase')
+
+  const { data: project } = await supabaseAdmin
+    .from('projects')
+    .select('container_id, status')
+    .eq('id', projectId)
+    .single()
+
+  if (!project?.container_id) return false
+
+  const status = await getContainerStatus(project.container_id)
+
+  if (status === 'running') return false
+
+  // Container is stopped/exited — restart it
+  console.log(`[Auto-Restart] Waking container for project ${projectId}...`)
+  await startContainer(project.container_id)
+
+  // Update DB status back to ready
+  await supabaseAdmin
+    .from('projects')
+    .update({ status: 'ready' })
+    .eq('id', projectId)
+
+  console.log(`[Auto-Restart] Container for project ${projectId} is now running.`)
+  return true
 }
 
 /**

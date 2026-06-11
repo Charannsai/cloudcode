@@ -16,6 +16,8 @@ const startServer = async () => {
   const { verifyToken } = await import('./lib/auth')
   const { supabaseAdmin } = await import('./lib/supabase')
   const { default: Docker } = await import('dockerode')
+  const { recordActivity, isIdle, getTrackedProjects } = await import('./lib/activityTracker')
+  const { stopContainer } = await import('./lib/docker')
 
   const app = next({ dev, hostname, port })
   const handle = app.getRequestHandler()
@@ -108,6 +110,9 @@ const startServer = async () => {
         socket.destroy()
         return
       }
+
+      // Track WebSocket proxy connections as activity (HMR, live reload, etc.)
+      recordActivity(projectId)
 
       const { supabaseAdmin } = await import('./lib/supabase')
       const { data: project } = await supabaseAdmin
@@ -237,31 +242,18 @@ const startServer = async () => {
       ws.on('message', (msg) => {
         try {
           const parsed = JSON.parse(msg.toString())
-          if (parsed.type === 'input') stream.write(parsed.data)
+          if (parsed.type === 'input') {
+            stream.write(parsed.data)
+            recordActivity(projectId) // Track terminal input as activity
+          }
           if (parsed.type === 'resize') exec.resize({ h: parsed.rows, w: parsed.cols }).catch(() => {})
         } catch {}
       })
 
       ws.on('close', () => {
         stream.destroy()
-
-        // Start a 5-minute idle timer to kill the tmux session inside container
-        const timeout = setTimeout(async () => {
-          try {
-            const container = docker.getContainer(project.container_id)
-            const exec = await container.exec({
-              Cmd: ['tmux', 'kill-session', '-t', `cloudcode-${cleanTerminalId}`],
-            })
-            await exec.start({ hijack: true, stdin: false })
-            console.log(`[Idle Timeout] Killed terminal session cloudcode-${cleanTerminalId} for project ${projectId}`)
-          } catch (err) {
-            // Ignore error if already killed
-          } finally {
-            disconnectTimeouts.delete(sessionKey)
-          }
-        }, 5 * 60 * 1000) // 5 minutes
-
-        disconnectTimeouts.set(sessionKey, timeout)
+        // Container idle management is now handled by the background cron,
+        // not per-terminal-session tmux timeouts.
       })
 
       stream.on('end', () => ws.close(1000, 'Process ended'))
@@ -276,7 +268,46 @@ const startServer = async () => {
   httpServer.listen(port, () => {
     console.log(`> Ready on http://${hostname}:${port}`)
     console.log(`> WebSocket terminal proxy active`)
+    console.log(`> Container idle auto-stop cron active (30 min threshold)`)
   })
+
+  // ── Container Idle Auto-Stop Cron ──
+  // Runs every 5 minutes. Stops containers that have had no activity for 30 minutes.
+  const IDLE_THRESHOLD_MS = 30 * 60 * 1000 // 30 minutes
+  const IDLE_CHECK_INTERVAL_MS = 5 * 60 * 1000 // Check every 5 minutes
+
+  setInterval(async () => {
+    try {
+      // Get all projects with running containers
+      const { data: activeProjects } = await supabaseAdmin
+        .from('projects')
+        .select('id, name, container_id, status')
+        .not('container_id', 'is', null)
+        .in('status', ['ready', 'running'])
+
+      if (!activeProjects || activeProjects.length === 0) return
+
+      for (const project of activeProjects) {
+        if (!project.container_id) continue
+
+        if (isIdle(project.id, IDLE_THRESHOLD_MS)) {
+          try {
+            await stopContainer(project.container_id)
+            await supabaseAdmin
+              .from('projects')
+              .update({ status: 'sleeping' })
+              .eq('id', project.id)
+
+            console.log(`[Idle Auto-Stop] Stopped container for "${project.name}" (${project.id}) after 30 min inactivity`)
+          } catch (err) {
+            console.error(`[Idle Auto-Stop] Failed to stop container for ${project.id}:`, err)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Idle Auto-Stop] Cron error:', err)
+    }
+  }, IDLE_CHECK_INTERVAL_MS)
 }
 
 startServer().catch((err) => {

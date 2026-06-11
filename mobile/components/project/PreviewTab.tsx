@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
-  Platform, Linking,
+  Platform, Linking, LayoutAnimation,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { getToken } from '@/lib/auth'
 import {
   Globe, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, Copy,
+  ExternalLink, ChevronDown, ChevronUp, Info,
 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 
@@ -26,6 +27,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const [canGoBack, setCanGoBack] = useState(false)
   const [canGoForward, setCanGoForward] = useState(false)
   const [currentUrl, setCurrentUrl] = useState('')
+  const [showBrowserInfo, setShowBrowserInfo] = useState(false)
 
   useEffect(() => {
     async function initUrl() {
@@ -243,6 +245,71 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           />
         ) : null}
       </View>
+
+      {/* Open in Browser Banner */}
+      {url ? (
+        <View style={[styles.browserBanner, { 
+          backgroundColor: isDark ? '#151922' : '#F6F8FA', 
+          borderTopColor: colors.border,
+        }]}>
+          <View style={styles.browserBannerRow}>
+            <TouchableOpacity
+              style={[styles.openBrowserBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+              onPress={handleOpenExternal}
+              activeOpacity={0.7}
+            >
+              <ExternalLink size={12} color={colors.text} strokeWidth={1.8} />
+              <Text style={[styles.openBrowserText, { color: colors.text }]}>
+                Open in real browser
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                setShowBrowserInfo(!showBrowserInfo)
+              }}
+              style={styles.readMoreBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Info size={11} color={colors.textSecondary} strokeWidth={1.5} />
+              <Text style={[styles.readMoreText, { color: colors.textSecondary }]}>
+                {showBrowserInfo ? 'Less' : 'Why?'}
+              </Text>
+              {showBrowserInfo 
+                ? <ChevronUp size={11} color={colors.textSecondary} strokeWidth={1.5} />
+                : <ChevronDown size={11} color={colors.textSecondary} strokeWidth={1.5} />
+              }
+            </TouchableOpacity>
+          </View>
+
+          {showBrowserInfo && (
+            <View style={[styles.browserInfoBox, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
+              <Text style={[styles.browserInfoTitle, { color: colors.text }]}>Why use the real browser?</Text>
+              <Text style={[styles.browserInfoDesc, { color: colors.textSecondary }]}>
+                This preview uses an embedded WebView which has limitations compared to a full browser:
+              </Text>
+              <View style={styles.browserInfoList}>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  Heavy animations (Framer Motion, GSAP) may lag or crash due to WebView memory limits
+                </Text>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  OAuth sign-in (Google, GitHub) is blocked inside WebViews
+                </Text>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  Service Workers and PWA features are not supported
+                </Text>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  The real browser gives full GPU acceleration and native performance
+                </Text>
+              </View>
+              <Text style={[styles.browserInfoFooter, { color: colors.textTertiary }]}>
+                For a quick glance, the embedded preview works great. For full testing, use the real browser.
+              </Text>
+            </View>
+          )}
+        </View>
+      ) : null}
     </View>
   )
 }
@@ -339,5 +406,70 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     fontFamily: 'Inter_600SemiBold',
+  },
+  browserBanner: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+  },
+  browserBannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  openBrowserBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  openBrowserText: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    fontWeight: '500',
+  },
+  readMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  readMoreText: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+  },
+  browserInfoBox: {
+    marginTop: 10,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 8,
+  },
+  browserInfoTitle: {
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600',
+  },
+  browserInfoDesc: {
+    fontSize: 11.5,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 17,
+    opacity: 0.85,
+  },
+  browserInfoList: {
+    gap: 5,
+    paddingLeft: 4,
+  },
+  browserInfoItem: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 16,
+  },
+  browserInfoFooter: {
+    fontSize: 10.5,
+    fontFamily: 'Inter_400Regular',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
 })
