@@ -1,6 +1,7 @@
 import Docker from 'dockerode'
 import path from 'path'
 import fs from 'fs'
+import { supabaseAdmin } from './supabase'
 
 function ensureProjectDir(path: string) {
   if (!fs.existsSync(path)) {
@@ -30,6 +31,10 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
   const hostPath = getHostPath(projectId)
   ensureProjectDir(hostPath)
 
+  const { data: project } = await supabaseAdmin.from('projects').select('user_github_id').eq('id', projectId).single()
+  const userId = project?.user_github_id || 'default'
+  const sshVolumeName = `cloudcode-ssh-${userId}`
+
   const container = await docker.createContainer({
     Image: IMAGE,
     name: `cloudcode-${projectId}`,
@@ -49,7 +54,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
       '8080/tcp': {},
     },
     HostConfig: {
-      Binds: [`${hostPath}:${WORKSPACE_ROOT}`, 'cloudcode-global-ssh:/home/coder/.ssh'],
+      Binds: [`${hostPath}:${WORKSPACE_ROOT}`, `${sshVolumeName}:/home/coder/.ssh`],
       Memory: 1024 * 1024 * 1024, // 1GB memory cap (prevents starving the VPS host RAM)
       CpuShares: 512,
       PortBindings: {
