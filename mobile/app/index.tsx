@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Dimensions, ScrollView,
+  ActivityIndicator, Dimensions, ScrollView, Image,
 } from 'react-native'
 import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
@@ -152,15 +152,14 @@ export default function WelcomeScreen() {
 
       {/* Header */}
       <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.header}>
-        <View style={styles.logoRow}>
-          <View style={[styles.logoIcon, { backgroundColor: colors.text }]}>
-            <Zap size={12} color={colors.background} fill={colors.background} />
-          </View>
-          <Text style={[styles.logo, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>CloudCode</Text>
-        </View>
+        <Image
+          source={require('../assets/cloudcodelogo.png')}
+          style={[styles.logoImage, { tintColor: colors.text }]}
+          resizeMode="contain"
+        />
         <View style={[styles.versionBadge, { borderColor: colors.border }]}>
           <View style={[styles.statusDot, { backgroundColor: '#3FB950' }]} />
-          <Text style={[styles.versionText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>v2.4</Text>
+          <Text style={[styles.versionText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>v1.0.0</Text>
         </View>
       </Animated.View>
 
@@ -286,6 +285,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 60,
+  },
+  logoImage: {
+    height: 24,
+    width: 100,
   },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoIcon: { 

@@ -122,9 +122,16 @@ export default function SettingsScreen() {
         <Text style={[styles.signOutText, { color: '#F85149', fontFamily: 'Inter_500Medium' }]}>Sign Out</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.footer, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-        CloudCode · Production
-      </Text>
+      <View style={styles.footerContainer}>
+        <Image
+          source={require('../../assets/cloudcodelogo.png')}
+          style={[styles.footerLogo, { tintColor: colors.text }]}
+          resizeMode="contain"
+        />
+        <Text style={[styles.footerText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+          v1.0.0
+        </Text>
+      </View>
 
       <ConfirmModal
         visible={showSignOutModal}
@@ -212,10 +219,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   signOutText: { fontSize: 14 },
-  footer: {
-    textAlign: 'center',
+  footerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 64,
+    gap: 8,
+    opacity: 0.25,
+  },
+  footerLogo: {
+    height: 40,
+    width: 166,
+  },
+  footerText: {
     fontSize: 11,
-    marginTop: 32,
-    opacity: 0.3,
+    letterSpacing: 1,
   },
 })
