@@ -8,7 +8,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import { getToken } from '@/lib/auth'
 import {
   Globe, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, Copy,
-  ExternalLink, ChevronDown, ChevronUp, Info,
+  ExternalLink, ChevronDown, ChevronUp, Info, Home,
 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 
@@ -52,44 +52,73 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     }
   }
 
+  // Clear preview URL and error state on project change (back to homepage)
   useEffect(() => {
-    async function initUrl() {
-      try {
-        const token = await getToken()
-        const targetPort = port || 3000
-        // Always load via the proxy to guarantee WebSocket HMR proxying and Host header rewriting
-        const initialUrl = `${API_URL}/api/preview/${projectId}?port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    setUrl('')
+    setCurrentUrl('')
+    setHasError(false)
+  }, [projectId])
 
-        setUrl(initialUrl)
-        
-        // Hide virtual URL initially until we confirm the preview loads successfully
-        setCurrentUrl('')
-      } catch (err) {
-        console.error('Failed to initialize preview URL:', err)
-      }
-    }
-    initUrl()
-  }, [projectId, port, ports])
-
-  const handleGo = async () => {
+  const handleNavigateToPort = async (targetPort: number) => {
+    const virtualStr = `localhost:${targetPort}`
+    setCurrentUrl(virtualStr)
     handleSetError(false)
     const token = await getToken()
-    let realUrl = currentUrl
     
-    // Match http://localhost:XXXX/subpath or localhost:XXXX/subpath
-    const match = currentUrl.match(/localhost:(\d+)(.*)/)
+    let publicPort = targetPort
+    if (ports && ports[targetPort.toString()]) {
+      publicPort = ports[targetPort.toString()]
+    }
+    
+    const realUrl = `${API_URL}/api/preview/${projectId}?port=${publicPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    setUrl(realUrl)
+  }
+
+  const handleGo = async () => {
+    let input = currentUrl.trim()
+    if (!input) return
+    
+    handleSetError(false)
+    const token = await getToken()
+
+    // If user just typed a number (e.g. "5000"), format it as "localhost:5000"
+    if (/^\d+$/.test(input)) {
+      input = `localhost:${input}`
+      setCurrentUrl(input)
+    }
+
+    // Ensure it is formatted correctly. If it doesn't contain localhost or 127.0.0.1, we assume localhost
+    if (!input.includes('localhost') && !input.includes('127.0.0.1') && !input.startsWith('http://') && !input.startsWith('https://')) {
+      if (/^\d+/.test(input)) {
+        const portMatch = input.match(/^(\d+)(.*)/)
+        if (portMatch) {
+          input = `localhost:${portMatch[1]}${portMatch[2]}`
+        }
+      } else {
+        input = `localhost:${input}`
+      }
+      setCurrentUrl(input)
+    }
+
+    // Match localhost:XXXX/subpath or 127.0.0.1:XXXX/subpath
+    const match = input.match(/(?:localhost|127\.0\.0\.1):(\d+)(.*)/i)
+    let realUrl = input
+
     if (match) {
       const typedPort = parseInt(match[1], 10)
       const subpath = match[2] || ''
       
-      // Resolve typed internal port back to public mapped port
       let targetPort = typedPort
       if (ports && ports[typedPort.toString()]) {
         targetPort = ports[typedPort.toString()]
       }
       
       realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    } else {
+      const targetPort = port || 3000
+      realUrl = `${API_URL}/api/preview/${projectId}?port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
     }
+
     setUrl(realUrl)
   }
 
@@ -135,11 +164,64 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     )
   }
 
+  const renderHomePage = () => {
+    return (
+      <View style={[styles.homePage, { backgroundColor: colors.background }]}>
+        <View style={[styles.homeIconBg, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}>
+          <Globe size={40} color={colors.primary || '#58A6FF'} strokeWidth={1.5} />
+        </View>
+        <Text style={[styles.homeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode Browser</Text>
+        <Text style={[styles.homeSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+          Enter an address or port above to preview your workspace web server in real-time.
+        </Text>
+
+        <View style={styles.shortcutsContainer}>
+          <Text style={[styles.shortcutsTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+            Quick Connect Ports
+          </Text>
+          <View style={styles.shortcutRow}>
+            {[
+              { label: 'React/Next', port: 3000 },
+              { label: 'Python', port: 5000 },
+              { label: 'Vite Dev', port: 5173 },
+              { label: 'Java/Go', port: 8080 },
+            ].map((shortcut) => (
+              <TouchableOpacity
+                key={shortcut.port}
+                style={[styles.shortcutBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+                onPress={() => handleNavigateToPort(shortcut.port)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.shortcutText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                  :{shortcut.port}
+                </Text>
+                <Text style={[styles.shortcutSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                  {shortcut.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Navigation Bar */}
       <View style={[styles.navBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
         <View style={styles.navButtons}>
+          <TouchableOpacity
+            onPress={() => {
+              setUrl('')
+              setCurrentUrl('')
+              setHasError(false)
+            }}
+            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <Home size={12} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => webViewRef.current?.goBack()}
             disabled={!canGoBack}
@@ -179,7 +261,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             autoCapitalize="none"
             autoCorrect={false}
             selectTextOnFocus
-            placeholder="No active server"
+            placeholder="Search or enter port (e.g. 3000)"
             placeholderTextColor={colors.textSecondary}
           />
           <TouchableOpacity
@@ -299,7 +381,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               webViewRef.current?.reload()
             }}
           />
-        ) : null}
+        ) : renderHomePage()}
         {hasError && renderErrorPage()}
       </View>
 
@@ -528,5 +610,72 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontStyle: 'italic',
     marginTop: 2,
+  },
+  homePage: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  homeIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  homeTitle: {
+    fontSize: 22,
+    marginBottom: 8,
+    letterSpacing: -0.6,
+  },
+  homeSubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    opacity: 0.6,
+    marginBottom: 32,
+    maxWidth: 280,
+  },
+  shortcutsContainer: {
+    width: '100%',
+    maxWidth: 340,
+  },
+  shortcutsTitle: {
+    fontSize: 12,
+    opacity: 0.5,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  shortcutRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  shortcutBtn: {
+    width: '47%',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  shortcutText: {
+    fontSize: 14,
+  },
+  shortcutSub: {
+    fontSize: 10,
+    opacity: 0.5,
   },
 })

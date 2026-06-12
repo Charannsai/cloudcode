@@ -18,7 +18,7 @@ const startServer = async () => {
   const { supabaseAdmin } = await import('./lib/supabase')
   const { default: Docker } = await import('dockerode')
   const { recordActivity, isIdle, getTrackedProjects } = await import('./lib/activityTracker')
-  const { stopContainer } = await import('./lib/docker')
+  const { stopContainer, ensureLocalhostBridge } = await import('./lib/docker')
 
   const app = next({ dev, hostname, port })
   const handle = app.getRequestHandler()
@@ -164,6 +164,9 @@ const startServer = async () => {
           }
         }
       }
+      
+      // Ensure localhost bridge is running for WebSockets/HMR on this port
+      await ensureLocalhostBridge(project.container_id, containerIp, internalPort)
 
       const { default: WebSocket, WebSocketServer } = await import('ws')
       const targetUrl = `ws://${containerIp}:${internalPort}${pathname}${search || ''}`

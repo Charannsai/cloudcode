@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, verifyToken, errorResponse } from '@/lib/auth'
 import { recordActivity } from '@/lib/activityTracker'
-import { ensureContainerRunning } from '@/lib/docker'
+import { ensureContainerRunning, ensureLocalhostBridge } from '@/lib/docker'
 import Docker from 'dockerode'
 
 const docker = new Docker({
@@ -276,6 +276,10 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   try {
     const { containerIp, internalPort } = await resolveTarget(project.container_id, port)
+    
+    // Dynamically bridge local/localhost ports if needed
+    await ensureLocalhostBridge(project.container_id, containerIp, internalPort)
+
     const targetUrl = `http://${containerIp}:${internalPort}${subPath}${search}`
 
     const headersToForward: Record<string, string> = {

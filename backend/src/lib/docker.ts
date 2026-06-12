@@ -1,6 +1,7 @@
 import Docker from 'dockerode'
 import path from 'path'
 import fs from 'fs'
+import net from 'net'
 import { supabaseAdmin } from './supabase'
 
 function ensureProjectDir(path: string) {
@@ -319,6 +320,84 @@ export async function getContainerDetails(containerId: string): Promise<Containe
 function getHostPath(projectId: string): string {
   // On VPS this should be an absolute path like /data/projects/<id>
   return path.join(process.cwd(), 'projects', projectId)
+}
+
+/**
+ * Verifies if a container port is reachable directly on the bridge network.
+ * If refused, checks if there is a loopback listener inside the container,
+ * and if so, spawns a background Node.js TCP forwarder inside the container.
+ */
+export async function ensureLocalhostBridge(
+  containerId: string,
+  containerIp: string,
+  port: number | string
+): Promise<void> {
+  const targetPort = parseInt(port.toString(), 10)
+  
+  // 1. Check if the port is reachable directly from the host
+  const isReachable = await new Promise<boolean>((resolve) => {
+    const socket = new net.Socket()
+    socket.setTimeout(1000)
+    socket.once('connect', () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.once('timeout', () => {
+      socket.destroy()
+      resolve(false)
+    })
+    socket.once('error', () => {
+      socket.destroy()
+      resolve(false)
+    })
+    socket.connect(targetPort, containerIp)
+  })
+
+  if (isReachable) {
+    return // Reachable directly, no bridge needed!
+  }
+
+  // 2. Not reachable. Check if a process is listening on this port inside the container.
+  // We check for any listener on this port (e.g. 127.0.0.1:port or 0.0.0.0:port)
+  let checkListenerOutput = ''
+  // Use netstat or ss. Containers usually have ss or netstat.
+  const checkCmd = `(ss -lnt || netstat -an) | grep -E ':${targetPort}\\b|\\.${targetPort}\\b'`
+  
+  const hasListener = await execInContainer(
+    containerId,
+    ['sh', '-c', checkCmd],
+    (data) => { checkListenerOutput += data }
+  )
+
+  if (hasListener !== 0) {
+    // No listener found on this port at all. The server is likely not running.
+    return
+  }
+
+  // 3. Listener exists internally, but not externally reachable.
+  // Spin up a background Node.js TCP forwarder inside the container.
+  console.log(`[Localhost Bridge] Spawning TCP forwarder for container ${containerId} port ${targetPort} on IP ${containerIp}`)
+  
+  const nodeScript = `
+const net = require("net");
+const server = net.createServer(c => {
+  const s = net.connect(${targetPort}, "127.0.0.1");
+  c.pipe(s).pipe(c);
+  c.on("error", () => s.destroy());
+  s.on("error", () => c.destroy());
+});
+server.listen(${targetPort}, "${containerIp}");
+server.on("error", (err) => {
+  process.exit(0);
+});
+`.trim().replace(/'/g, "'\\''")
+
+  const startProxyCmd = `nohup node -e '${nodeScript}' > /dev/null 2>&1 &`
+  
+  await execInContainer(containerId, ['sh', '-c', startProxyCmd], () => {})
+  
+  // Wait briefly for the socket to bind (150ms)
+  await new Promise((resolve) => setTimeout(resolve, 150))
 }
 
 export { docker }
