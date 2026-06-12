@@ -3,12 +3,13 @@ import { parse } from 'url'
 import next from 'next'
 import { loadEnvConfig } from '@next/env'
 
+// Load env vars from .env files!
+loadEnvConfig(process.cwd())
+
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
 const port = parseInt(process.env.PORT || '3000', 10)
 
-// Load env vars from .env files!
-loadEnvConfig(process.cwd())
 
 // Use dynamic imports to ensure they load AFTER env is populated
 const startServer = async () => {
