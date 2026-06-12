@@ -11,11 +11,7 @@ const docker = new Docker({
 
 type Params = { params: Promise<{ id: string; path?: string[] }> }
 
-/**
- * Resolve the target URL inside the container.
- * Tries container's internal IP via Docker networking.
- */
-async function resolveTarget(containerId: string, port: number | string, subPath: string): Promise<string> {
+async function resolveTarget(containerId: string, clientPort: number | string): Promise<{ containerIp: string; internalPort: string }> {
   const container = docker.getContainer(containerId)
   const info = await container.inspect()
 
@@ -27,8 +23,20 @@ async function resolveTarget(containerId: string, port: number | string, subPath
   if (!containerIp) {
     throw new Error('Container IP not found. Is it running?')
   }
+
+  let internalPort = clientPort.toString()
+  const portSettings = info.NetworkSettings?.Ports
+  if (portSettings) {
+    for (const [containerPortKey, bindings] of Object.entries(portSettings)) {
+      const hostPort = (bindings as any)?.[0]?.HostPort
+      if (hostPort === clientPort.toString()) {
+        internalPort = containerPortKey.split('/')[0]
+        break
+      }
+    }
+  }
   
-  return `http://${containerIp}:${port}${subPath}`
+  return { containerIp, internalPort }
 }
 
 /**
@@ -257,20 +265,21 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   try {
-    const targetUrl = await resolveTarget(project.container_id, port, subPath + search)
+    const { containerIp, internalPort } = await resolveTarget(project.container_id, port)
+    const targetUrl = `http://${containerIp}:${internalPort}${subPath}${search}`
 
     const headersToForward: Record<string, string> = {
-      'Host': `localhost:${port}`,
+      'Host': `localhost:${internalPort}`,
       'Accept': req.headers.get('accept') || '*/*',
       'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
       'Accept-Encoding': 'identity', // Strongly request uncompressed
     }
 
     if (req.headers.get('origin')) {
-      headersToForward['Origin'] = `http://localhost:${port}`
+      headersToForward['Origin'] = `http://localhost:${internalPort}`
     }
     if (req.headers.get('referer')) {
-      headersToForward['Referer'] = `http://localhost:${port}${subPath}`
+      headersToForward['Referer'] = `http://localhost:${internalPort}${subPath}`
     }
 
     const cookieHeader = req.headers.get('cookie')

@@ -151,18 +151,31 @@ const startServer = async () => {
       }
       const finalPort = port || project?.port || '3000'
 
+      // Resolve finalPort (which might be the mapped host port) to the internal container port
+      let internalPort = finalPort.toString()
+      const portSettings = info.NetworkSettings?.Ports
+      if (portSettings) {
+        for (const [containerPortKey, bindings] of Object.entries(portSettings)) {
+          const hostPort = (bindings as any)?.[0]?.HostPort
+          if (hostPort === finalPort.toString()) {
+            internalPort = containerPortKey.split('/')[0]
+            break
+          }
+        }
+      }
+
       const { default: WebSocket, WebSocketServer } = await import('ws')
-      const targetUrl = `ws://${containerIp}:${finalPort}${pathname}${search || ''}`
+      const targetUrl = `ws://${containerIp}:${internalPort}${pathname}${search || ''}`
       
       const targetWs = new WebSocket(targetUrl, {
         headers: {
-          Host: `localhost:${finalPort}`,
+          Host: `localhost:${internalPort}`,
           Cookie: request.headers.cookie || '',
-          Origin: `http://localhost:${finalPort}`,
-          'X-Forwarded-Host': `localhost:${finalPort}`,
+          Origin: `http://localhost:${internalPort}`,
+          'X-Forwarded-Host': `localhost:${internalPort}`,
           'X-Forwarded-Proto': 'http',
         },
-        origin: `http://localhost:${finalPort}`
+        origin: `http://localhost:${internalPort}`
       })
 
       targetWs.on('open', () => {
