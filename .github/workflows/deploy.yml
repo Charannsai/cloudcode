@@ -21,7 +21,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             # Navigate to the backend directory on your VPS
-            cd /root/cloudcode/backend # <-- Update this path to your actual project path on DigitalOcean
+            cd /root/cloudcode/backend 
             
             # Pull latest changes from git
             git pull origin main
