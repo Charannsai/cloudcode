@@ -25,15 +25,25 @@ async function resolveTarget(containerId: string, clientPort: number | string): 
   }
 
   let internalPort = clientPort.toString()
+  let matched = false
   const portSettings = info.NetworkSettings?.Ports
   if (portSettings) {
     for (const [containerPortKey, bindings] of Object.entries(portSettings)) {
       const hostPort = (bindings as any)?.[0]?.HostPort
       if (hostPort === clientPort.toString()) {
         internalPort = containerPortKey.split('/')[0]
+        matched = true
         break
       }
     }
+  }
+
+  // Fallback: If clientPort is not an active host port, and it's not a standard internal port,
+  // it is likely a stale host port. Fallback to '3000' (or the first exposed port).
+  const standardInternalPorts = ['3000', '5000', '5173', '8000', '8080']
+  if (!matched && !standardInternalPorts.includes(internalPort)) {
+    console.warn(`[Proxy Fallback] Port ${clientPort} not found in container host bindings. Falling back to default internal port 3000.`)
+    internalPort = '3000'
   }
   
   return { containerIp, internalPort }

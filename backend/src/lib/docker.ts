@@ -217,7 +217,11 @@ export async function ensureContainerRunning(projectId: string): Promise<boolean
     const newInfo = await createContainer(projectId)
     await supabaseAdmin
       .from('projects')
-      .update({ container_id: newInfo.containerId, status: 'ready' })
+      .update({ 
+        container_id: newInfo.containerId, 
+        status: 'ready',
+        port: newInfo.port ? parseInt(newInfo.port, 10) : null
+      })
       .eq('id', projectId)
     return true
   }
@@ -234,7 +238,11 @@ export async function ensureContainerRunning(projectId: string): Promise<boolean
     const newInfo = await createContainer(projectId)
     await supabaseAdmin
       .from('projects')
-      .update({ container_id: newInfo.containerId, status: 'ready' })
+      .update({ 
+        container_id: newInfo.containerId, 
+        status: 'ready',
+        port: newInfo.port ? parseInt(newInfo.port, 10) : null
+      })
       .eq('id', projectId)
     console.log(`[Self-Healing] Successfully recreated container ${newInfo.containerId} with SSH volume bind.`)
     return true

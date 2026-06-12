@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       ...data, 
       container_status: details.status,
       ports: details.ports,
-      port: data.port || details.ports['3000'] || null
+      port: details.ports['3000'] || data.port || null
     })
   }
 

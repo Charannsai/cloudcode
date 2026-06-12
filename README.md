@@ -243,6 +243,16 @@ jobs:
   - Prepended `"start": "NODE_ENV=production tsx src/server.ts"` to [package.json](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/package.json).
   - Ran PM2 update commands with `--update-env` to clear cached development variables.
 
+### 3. Stale Preview Port & ECONNREFUSED Crash
+* **Issue:** Connecting to a project preview failed with `connect ECONNREFUSED 172.17.0.2:<old_port>`.
+* **Cause 1:** When a container was recreated (due to self-healing or Docker host pruning) by `ensureContainerRunning`, it received a new random host-mapped port, but the `port` column in the Supabase database was not updated.
+* **Cause 2:** The project detail endpoint (`GET /api/projects/[id]`) preferred the database `port` column over the container's active mappings, passing a stale public port to the client.
+* **Cause 3:** The preview proxy target resolver did not handle fallback logic if the requested client port did not match any active host port mappings (e.g., if it was stale).
+* **Fix:**
+  - Modified [docker.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/docker.ts) to update the `port` column in the database whenever a container is recreated.
+  - Modified [route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/route.ts) (project details) to prioritize the container's active host-mapped port over the stored database value when the container is running.
+  - Modified [route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/preview/%5Bid%5D/%5B%5B...path%5D%5D/route.ts) (preview proxy) to fall back to the default internal port `3000` if the requested port does not match any active container host bindings and is not a standard internal port.
+
 ---
 
 ## 📈 Pricing, Concurrency & Cost Model (At 5K Users)
