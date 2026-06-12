@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useFocusEffect } from 'expo-router'
+import { useFocusEffect, router } from 'expo-router'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   ActivityIndicator, Alert, RefreshControl, Modal, KeyboardAvoidingView, Platform, Linking
@@ -55,9 +55,25 @@ export default function GitTab({ projectId, isActive }: Props) {
     untracked: true,
   })
   // Custom Alert State
-  const [alertConfig, setAlertConfig] = useState<{ visible: boolean, title: string, message: string, type: 'success' | 'error' | 'info' | 'warning', onConfirm?: () => void }>({ visible: false, title: '', message: '', type: 'info' })
-  const showAlert = useCallback((title: string, message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', onConfirm?: () => void) => {
-    setAlertConfig({ visible: true, title, message, type, onConfirm })
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean
+    title: string
+    message: string
+    type: 'success' | 'error' | 'info' | 'warning'
+    confirmText?: string
+    cancelText?: string
+    onConfirm?: () => void
+  }>({ visible: false, title: '', message: '', type: 'info' })
+
+  const showAlert = useCallback((
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning' = 'info',
+    onConfirm?: () => void,
+    confirmText?: string,
+    cancelText?: string
+  ) => {
+    setAlertConfig({ visible: true, title, message, type, onConfirm, confirmText, cancelText })
   }, [])
   const hideAlert = useCallback(() => {
     setAlertConfig(prev => ({ ...prev, visible: false }))
@@ -218,8 +234,14 @@ export default function GitTab({ projectId, isActive }: Props) {
     if (!gitName.trim() || !gitEmail.trim()) {
       showAlert(
         'Git Author Required',
-        'Please exit the editor and go to the Settings tab to configure your Git Author Name and Email before committing.',
-        'info'
+        'Please configure your Git Author Name and Email in Settings to attribute your commits correctly.',
+        'warning',
+        () => {
+          hideAlert()
+          router.navigate('/(tabs)/settings')
+        },
+        'Go to Settings',
+        'Cancel'
       )
       return
     }
@@ -238,7 +260,17 @@ export default function GitTab({ projectId, isActive }: Props) {
 
   const handleSync = async (action: 'push' | 'pull') => {
     if (!hasSshKey) {
-      showAlert('SSH Key Required', 'Please exit the editor, go to the Settings tab, generate an SSH key, and add it to your GitHub account to sync changes securely.', 'info')
+      showAlert(
+        'SSH Key Required',
+        'You need to generate an SSH key in Settings and add it to your GitHub account to sync changes securely.',
+        'warning',
+        () => {
+          hideAlert()
+          router.navigate('/(tabs)/settings')
+        },
+        'Go to Settings',
+        'Cancel'
+      )
       return
     }
     setSyncing(true)
@@ -353,18 +385,7 @@ export default function GitTab({ projectId, isActive }: Props) {
           <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => fetchStatus(true)}>
             <RefreshCw size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} 
-            onPress={() => {
-              showAlert(
-                'Git & SSH Settings',
-                'To configure Git credentials and SSH deploy keys, please exit the editor and go to the Settings tab on the dashboard.',
-                'info'
-              )
-            }}
-          >
-            <Settings size={14} color={colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
+          {/* Settings button is removed as configuration is global in Dashboard settings */}
         </View>
       </View>
 
@@ -602,10 +623,10 @@ export default function GitTab({ projectId, isActive }: Props) {
             {alertConfig.onConfirm ? (
               <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
                 <TouchableOpacity onPress={hideAlert} style={[styles.alertBtn, { flex: 1, backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderWidth: 1, borderColor: colors.border }]} activeOpacity={0.8}>
-                  <Text style={[styles.alertBtnText, { color: colors.text }]}>Cancel</Text>
+                  <Text style={[styles.alertBtnText, { color: colors.text }]}>{alertConfig.cancelText || 'Cancel'}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={alertConfig.onConfirm} style={[styles.alertBtn, { flex: 1, backgroundColor: '#D29922' }]} activeOpacity={0.8}>
-                  <Text style={[styles.alertBtnText, { color: '#fff' }]}>Confirm</Text>
+                <TouchableOpacity onPress={alertConfig.onConfirm} style={[styles.alertBtn, { flex: 1, backgroundColor: colors.text }]} activeOpacity={0.8}>
+                  <Text style={[styles.alertBtnText, { color: colors.background }]}>{alertConfig.confirmText || 'Confirm'}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
