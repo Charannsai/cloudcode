@@ -46,25 +46,34 @@ export async function GET(req: NextRequest) {
     return errorResponse(`Failed to start project container: ${(err as Error).message}`, 500)
   }
 
+  // Re-fetch project to get the updated container_id in case it was recreated by self-healing
+  const { data: updatedProject } = await supabaseAdmin
+    .from('projects')
+    .select('container_id')
+    .eq('id', project.id)
+    .single()
+
+  const activeContainerId = updatedProject?.container_id || project.container_id
+
   let pubKey = ''
   let hasKey = false
   let history = []
 
   try {
     // Fix permissions on startup/query just in case
-    await execInContainer(project.container_id, ['mkdir', '-p', '/home/coder/.ssh'], () => {}, 'root')
-    await execInContainer(project.container_id, ['chown', '-R', 'coder', '/home/coder/.ssh'], () => {}, 'root')
-    await execInContainer(project.container_id, ['chmod', '700', '/home/coder/.ssh'], () => {}, 'root')
+    await execInContainer(activeContainerId, ['mkdir', '-p', '/home/coder/.ssh'], () => {}, 'root')
+    await execInContainer(activeContainerId, ['chown', '-R', 'coder', '/home/coder/.ssh'], () => {}, 'root')
+    await execInContainer(activeContainerId, ['chmod', '700', '/home/coder/.ssh'], () => {}, 'root')
 
-    const exitCode = await execInContainer(project.container_id, ['test', '-f', '/home/coder/.ssh/id_ed25519'], () => {})
+    const exitCode = await execInContainer(activeContainerId, ['test', '-f', '/home/coder/.ssh/id_ed25519'], () => {})
     if (exitCode === 0) {
       hasKey = true
-      await execInContainer(project.container_id, ['cat', '/home/coder/.ssh/id_ed25519.pub'], (data) => {
+      await execInContainer(activeContainerId, ['cat', '/home/coder/.ssh/id_ed25519.pub'], (data) => {
         pubKey += data
       })
       // Load history
       let historyData = ''
-      const histExit = await execInContainer(project.container_id, ['cat', '/home/coder/.ssh/key_history.json'], (data) => { historyData += data })
+      const histExit = await execInContainer(activeContainerId, ['cat', '/home/coder/.ssh/key_history.json'], (data) => { historyData += data })
       if (histExit === 0 && historyData) {
         try { history = JSON.parse(historyData) } catch (e) {}
       }
@@ -99,33 +108,42 @@ export async function POST(req: NextRequest) {
     return errorResponse(`Failed to start project container: ${(err as Error).message}`, 500)
   }
 
+  // Re-fetch project to get the updated container_id in case it was recreated by self-healing
+  const { data: updatedProject } = await supabaseAdmin
+    .from('projects')
+    .select('container_id')
+    .eq('id', project.id)
+    .single()
+
+  const activeContainerId = updatedProject?.container_id || project.container_id
+
   try {
     // 1. Create directory as root and ensure correct ownership/permissions on .ssh folder
-    await execOrThrow(project.container_id, ['mkdir', '-p', '/home/coder/.ssh'], 'root')
-    await execOrThrow(project.container_id, ['chown', '-R', 'coder', '/home/coder/.ssh'], 'root')
-    await execOrThrow(project.container_id, ['chmod', '700', '/home/coder/.ssh'], 'root')
+    await execOrThrow(activeContainerId, ['mkdir', '-p', '/home/coder/.ssh'], 'root')
+    await execOrThrow(activeContainerId, ['chown', '-R', 'coder', '/home/coder/.ssh'], 'root')
+    await execOrThrow(activeContainerId, ['chmod', '700', '/home/coder/.ssh'], 'root')
 
     // 2. Force remove existing keys to avoid overwrite prompts
-    await execOrThrow(project.container_id, ['rm', '-f', '/home/coder/.ssh/id_ed25519', '/home/coder/.ssh/id_ed25519.pub'])
+    await execOrThrow(activeContainerId, ['rm', '-f', '/home/coder/.ssh/id_ed25519', '/home/coder/.ssh/id_ed25519.pub'])
 
     // 3. Generate key pair as coder (default container user)
     await execOrThrow(
-      project.container_id,
+      activeContainerId,
       ['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', '/home/coder/.ssh/id_ed25519', '-q']
     )
 
     // 4. Ensure key file permissions are secure
-    await execOrThrow(project.container_id, ['chmod', '600', '/home/coder/.ssh/id_ed25519'], 'root')
-    await execOrThrow(project.container_id, ['chown', 'coder', '/home/coder/.ssh/id_ed25519', '/home/coder/.ssh/id_ed25519.pub'], 'root')
+    await execOrThrow(activeContainerId, ['chmod', '600', '/home/coder/.ssh/id_ed25519'], 'root')
+    await execOrThrow(activeContainerId, ['chown', 'coder', '/home/coder/.ssh/id_ed25519', '/home/coder/.ssh/id_ed25519.pub'], 'root')
 
     // 5. Read public key
-    const pubKey = await execOrThrow(project.container_id, ['cat', '/home/coder/.ssh/id_ed25519.pub'])
+    const pubKey = await execOrThrow(activeContainerId, ['cat', '/home/coder/.ssh/id_ed25519.pub'])
 
     // 6. Update history
     let history: any[] = []
     let historyData = ''
     try {
-      const exitCode = await execInContainer(project.container_id, ['cat', '/home/coder/.ssh/key_history.json'], (data) => { historyData += data })
+      const exitCode = await execInContainer(activeContainerId, ['cat', '/home/coder/.ssh/key_history.json'], (data) => { historyData += data })
       if (exitCode === 0 && historyData) {
         history = JSON.parse(historyData)
       }
@@ -136,10 +154,10 @@ export async function POST(req: NextRequest) {
     
     // Save history using a shell command properly writing JSON string
     const escapedJson = JSON.stringify(history).replace(/'/g, "'\\''")
-    await execOrThrow(project.container_id, ['sh', '-c', `echo '${escapedJson}' > /home/coder/.ssh/key_history.json`])
+    await execOrThrow(activeContainerId, ['sh', '-c', `echo '${escapedJson}' > /home/coder/.ssh/key_history.json`])
 
     // Cache github keys to prevent interactive host verification dialog prompts
-    await execOrThrow(project.container_id, ['sh', '-c', 'ssh-keyscan github.com >> /home/coder/.ssh/known_hosts 2>/dev/null'])
+    await execOrThrow(activeContainerId, ['sh', '-c', 'ssh-keyscan github.com >> /home/coder/.ssh/known_hosts 2>/dev/null'])
 
     return successResponse({ hasKey: true, publicKey: pubKey.trim(), history })
   } catch (err) {
