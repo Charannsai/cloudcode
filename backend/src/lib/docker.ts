@@ -207,9 +207,42 @@ export async function ensureContainerRunning(projectId: string): Promise<boolean
 
   if (!project?.container_id) return false
 
-  const status = await getContainerStatus(project.container_id)
+  const container = docker.getContainer(project.container_id)
+  let info
+  try {
+    info = await container.inspect()
+  } catch (err) {
+    // Container doesn't exist on host anymore (e.g. Docker pruned it)
+    console.log(`[Auto-Restart] Container ${project.container_id} not found on host. Recreating...`)
+    const newInfo = await createContainer(projectId)
+    await supabaseAdmin
+      .from('projects')
+      .update({ container_id: newInfo.containerId, status: 'ready' })
+      .eq('id', projectId)
+    return true
+  }
 
-  if (status === 'running') return false
+  // Check if SSH volume is bound to /home/coder/.ssh
+  const binds = info.HostConfig?.Binds || []
+  const hasSshBind = binds.some((b: string) => b.endsWith(':/home/coder/.ssh'))
+
+  if (!hasSshBind) {
+    console.log(`[Self-Healing] Container ${project.container_id} is missing SSH volume bind. Recreating...`)
+    try {
+      await destroyContainer(project.container_id)
+    } catch (e) {}
+    const newInfo = await createContainer(projectId)
+    await supabaseAdmin
+      .from('projects')
+      .update({ container_id: newInfo.containerId, status: 'ready' })
+      .eq('id', projectId)
+    console.log(`[Self-Healing] Successfully recreated container ${newInfo.containerId} with SSH volume bind.`)
+    return true
+  }
+
+  if (info.State.Status === 'running') {
+    return false
+  }
 
   // Container is stopped/exited — restart it
   console.log(`[Auto-Restart] Waking container for project ${projectId}...`)

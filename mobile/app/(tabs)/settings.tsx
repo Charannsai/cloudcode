@@ -19,6 +19,52 @@ export default function SettingsScreen() {
   const { colors, toggleTheme, isDark } = useAppTheme()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
 
+  // Custom Modal Alert State
+  const [modalConfig, setModalConfig] = useState<{
+    visible: boolean
+    title: string
+    message: string
+    confirmText?: string
+    cancelText?: string
+    type: 'danger' | 'warning' | 'info' | 'logout' | 'success' | 'error'
+    onConfirm: () => void
+    onCancel?: () => void
+    singleButton?: boolean
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: () => {},
+  })
+
+  const showModal = (
+    title: string,
+    message: string,
+    type: 'danger' | 'warning' | 'info' | 'logout' | 'success' | 'error',
+    onConfirm = () => setModalConfig(prev => ({ ...prev, visible: false })),
+    confirmText = 'OK',
+    singleButton = true,
+    onCancel?: () => void,
+    cancelText = 'Cancel'
+  ) => {
+    setModalConfig({
+      visible: true,
+      title,
+      message,
+      type,
+      onConfirm,
+      confirmText,
+      singleButton,
+      onCancel,
+      cancelText,
+    })
+  }
+
+  const hideModal = () => {
+    setModalConfig(prev => ({ ...prev, visible: false }))
+  }
+
   // Git Author Info state
   const [gitName, setGitName] = useState('')
   const [gitEmail, setGitEmail] = useState('')
@@ -57,16 +103,16 @@ export default function SettingsScreen() {
 
   const handleSaveConfig = async () => {
     if (!gitName.trim() || !gitEmail.trim()) {
-      Alert.alert('Error', 'Author Name and Email are required.')
+      showModal('Validation Error', 'Author Name and Email are required.', 'error')
       return
     }
     setLoadingConfig(true)
     try {
       await AsyncStorage.setItem('git_author_name', gitName.trim())
       await AsyncStorage.setItem('git_author_email', gitEmail.trim())
-      Alert.alert('Success', 'Git credentials saved globally.')
+      showModal('Success', 'Git credentials saved globally.', 'success')
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showModal('Error', (err as Error).message, 'error')
     } finally {
       setLoadingConfig(false)
     }
@@ -79,9 +125,9 @@ export default function SettingsScreen() {
       setHasSshKey(res.hasKey)
       setSshPublicKey(res.publicKey)
       setSshHistory(res.history || [])
-      Alert.alert('Success', 'SSH Key Pair generated successfully.')
+      showModal('Success', 'SSH Key Pair generated successfully.', 'success')
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showModal('Error', (err as Error).message, 'error')
     } finally {
       setGeneratingSsh(false)
     }
@@ -89,13 +135,18 @@ export default function SettingsScreen() {
 
   const promptGenerateSsh = () => {
     if (hasSshKey) {
-      Alert.alert(
+      showModal(
         'Generate New Key?',
         'Generating a new SSH key will instantly overwrite your existing key. You will need to add the new key to GitHub, and the old one will stop working immediately. Are you sure?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Generate New Key', style: 'destructive', onPress: handleGenerateSsh }
-        ]
+        'warning',
+        () => {
+          hideModal()
+          handleGenerateSsh()
+        },
+        'Generate New Key',
+        false,
+        () => hideModal(),
+        'Cancel'
       )
     } else {
       handleGenerateSsh()
@@ -354,6 +405,18 @@ export default function SettingsScreen() {
         type="logout"
         onConfirm={confirmSignOut}
         onCancel={() => setShowSignOutModal(false)}
+      />
+
+      <ConfirmModal
+        visible={modalConfig.visible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        type={modalConfig.type}
+        singleButton={modalConfig.singleButton}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={modalConfig.onCancel}
       />
     </ScrollView>
   )

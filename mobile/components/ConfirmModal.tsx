@@ -18,18 +18,19 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { AlertTriangle, Info, Trash2, LogOut } from 'lucide-react-native'
+import { AlertTriangle, Info, Trash2, LogOut, Check, AlertCircle } from 'lucide-react-native'
 
 export interface ConfirmModalProps {
   visible: boolean
   title: string
   message: string
   onConfirm: () => void
-  onCancel: () => void
+  onCancel?: () => void
   confirmText?: string
   cancelText?: string
-  type?: 'danger' | 'warning' | 'info' | 'logout'
+  type?: 'danger' | 'warning' | 'info' | 'logout' | 'success' | 'error'
   isLoading?: boolean
+  singleButton?: boolean
 }
 
 const TYPE_CONFIG = {
@@ -57,6 +58,18 @@ const TYPE_CONFIG = {
     bgLight: '#FFEBE9',
     bgDark: '#4A1C1B',
   },
+  success: {
+    icon: Check,
+    color: '#3FB950',
+    bgLight: 'rgba(63, 185, 80, 0.15)',
+    bgDark: 'rgba(63, 185, 80, 0.08)',
+  },
+  error: {
+    icon: AlertCircle,
+    color: '#F85149',
+    bgLight: 'rgba(248, 81, 73, 0.15)',
+    bgDark: 'rgba(248, 81, 73, 0.08)',
+  },
 }
 
 export function ConfirmModal({
@@ -69,6 +82,7 @@ export function ConfirmModal({
   cancelText = 'Cancel',
   type = 'danger',
   isLoading = false,
+  singleButton = false,
 }: ConfirmModalProps) {
   const { colors, isDark } = useAppTheme()
   const opacity = useSharedValue(0)
@@ -95,6 +109,7 @@ export function ConfirmModal({
 
   const config = TYPE_CONFIG[type]
   const Icon = config.icon
+  const showCancel = !singleButton && !!onCancel
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -110,8 +125,10 @@ export function ConfirmModal({
 
   if (!renderModal) return null
 
+  const handleDismiss = onCancel || onConfirm
+
   return (
-    <Modal transparent visible={renderModal} animationType="none" onRequestClose={onCancel}>
+    <Modal transparent visible={renderModal} animationType="none" onRequestClose={handleDismiss}>
       <Animated.View style={[styles.overlay, backdropStyle]}>
         <BlurView
           intensity={isDark ? 20 : 15}
@@ -121,7 +138,7 @@ export function ConfirmModal({
         <TouchableOpacity 
           style={StyleSheet.absoluteFill} 
           activeOpacity={1} 
-          onPress={onCancel}
+          onPress={handleDismiss}
         />
 
         <Animated.View
@@ -158,23 +175,27 @@ export function ConfirmModal({
           </View>
 
           <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onCancel}
-              activeOpacity={0.7}
-              disabled={isLoading}
-            >
-              <Text
-                style={[
-                  styles.buttonText,
-                  { color: colors.text, fontFamily: 'Inter_500Medium' },
-                ]}
-              >
-                {cancelText}
-              </Text>
-            </TouchableOpacity>
+            {showCancel && (
+              <>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={onCancel}
+                  activeOpacity={0.7}
+                  disabled={isLoading}
+                >
+                  <Text
+                    style={[
+                      styles.buttonText,
+                      { color: colors.text, fontFamily: 'Inter_500Medium' },
+                    ]}
+                  >
+                    {cancelText}
+                  </Text>
+                </TouchableOpacity>
 
-            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                <View style={[styles.separator, { backgroundColor: colors.border }]} />
+              </>
+            )}
 
             <TouchableOpacity
               style={[styles.button, styles.confirmButton]}
@@ -185,7 +206,7 @@ export function ConfirmModal({
               <Text
                 style={[
                   styles.buttonText,
-                  { color: config.color, fontFamily: 'Inter_600SemiBold' },
+                  { color: type === 'success' ? '#3FB950' : config.color, fontFamily: 'Inter_600SemiBold' },
                 ]}
               >
                 {isLoading ? 'Processing...' : confirmText}
