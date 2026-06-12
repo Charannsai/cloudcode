@@ -259,13 +259,27 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const targetUrl = await resolveTarget(project.container_id, port, subPath + search)
 
+    const headersToForward: Record<string, string> = {
+      'Host': `localhost:${port}`,
+      'Accept': req.headers.get('accept') || '*/*',
+      'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
+      'Accept-Encoding': 'identity', // Strongly request uncompressed
+    }
+
+    if (req.headers.get('origin')) {
+      headersToForward['Origin'] = `http://localhost:${port}`
+    }
+    if (req.headers.get('referer')) {
+      headersToForward['Referer'] = `http://localhost:${port}${subPath}`
+    }
+
+    const cookieHeader = req.headers.get('cookie')
+    if (cookieHeader) {
+      headersToForward['Cookie'] = cookieHeader
+    }
+
     const response = await fetch(targetUrl, {
-      headers: {
-        'Host': `localhost:${port}`,
-        'Accept': req.headers.get('accept') || '*/*',
-        'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
-        'Accept-Encoding': 'identity', // Strongly request uncompressed
-      },
+      headers: headersToForward,
       redirect: 'manual',
       signal: AbortSignal.timeout(120_000), // 120s for heavy first-compilations (Framer Motion, GSAP, etc.)
     })

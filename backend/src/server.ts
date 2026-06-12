@@ -102,7 +102,7 @@ const startServer = async () => {
       const { pathname, search } = parse(request.url || '', true)
       const cookies = request.headers.cookie || ''
       let projectId = cookies.match(/preview_project_id=([^;]+)/)?.[1]
-      let port = cookies.match(/preview_port=([^;]+)/)?.[1] || '3000'
+      let port = cookies.match(/preview_port=([^;]+)/)?.[1]
 
       if (!projectId) {
         const referer = request.headers.referer || ''
@@ -123,7 +123,7 @@ const startServer = async () => {
       const { supabaseAdmin } = await import('./lib/supabase')
       const { data: project } = await supabaseAdmin
         .from('projects')
-        .select('container_id')
+        .select('container_id, port')
         .eq('id', projectId)
         .single()
 
@@ -142,14 +142,27 @@ const startServer = async () => {
         return
       }
 
+      if (!port) {
+        const referer = request.headers.referer || ''
+        const portMatch = referer.match(/[\?&]port=(\d+)/)
+        if (portMatch) {
+          port = portMatch[1]
+        }
+      }
+      const finalPort = port || project?.port || '3000'
+
       const { default: WebSocket, WebSocketServer } = await import('ws')
-      const targetUrl = `ws://${containerIp}:${port}${pathname}${search || ''}`
+      const targetUrl = `ws://${containerIp}:${finalPort}${pathname}${search || ''}`
       
       const targetWs = new WebSocket(targetUrl, {
         headers: {
-          Host: `localhost:${port}`,
+          Host: `localhost:${finalPort}`,
           Cookie: request.headers.cookie || '',
-        }
+          Origin: `http://localhost:${finalPort}`,
+          'X-Forwarded-Host': `localhost:${finalPort}`,
+          'X-Forwarded-Proto': 'http',
+        },
+        origin: `http://localhost:${finalPort}`
       })
 
       targetWs.on('open', () => {

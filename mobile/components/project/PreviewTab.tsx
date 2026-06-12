@@ -34,28 +34,30 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     async function initUrl() {
       try {
         const token = await getToken()
+        const targetPort = port || 3000
         // Always load via the proxy to guarantee WebSocket HMR proxying and Host header rewriting
-        const initialUrl = `${API_URL}/api/preview/${projectId}?port=3000${token ? `&token=${encodeURIComponent(token)}` : ''}`
+        const initialUrl = `${API_URL}/api/preview/${projectId}?port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
 
         setUrl(initialUrl)
         
         // Show virtual localhost URL in the address bar
-        const virtualUrl = `http://localhost:3000/`
+        const virtualUrl = `http://localhost:${targetPort}/`
         setCurrentUrl(virtualUrl)
       } catch (err) {
         console.error('Failed to initialize preview URL:', err)
       }
     }
     initUrl()
-  }, [projectId])
+  }, [projectId, port])
 
   const handleGo = async () => {
     setHasError(false)
     const token = await getToken()
     let realUrl = currentUrl
-    if (currentUrl.includes('localhost:3000')) {
-      const subpath = currentUrl.split('localhost:3000')[1] || ''
-      realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=3000${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    const targetPort = port || 3000
+    if (currentUrl.includes(`localhost:${targetPort}`)) {
+      const subpath = currentUrl.split(`localhost:${targetPort}`)[1] || ''
+      realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
     }
     setUrl(realUrl)
   }
@@ -194,7 +196,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                   .replace(/[\?&]token=[^&]+/, '')
                   .replace(/\?&/, '?')
                 
-                virtualUrl = `http://localhost:3000${cleanSubpath}`
+                virtualUrl = `http://localhost:${port || 3000}${cleanSubpath}`
               }
               setCurrentUrl(virtualUrl)
             }}
