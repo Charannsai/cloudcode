@@ -339,6 +339,14 @@ Migrate container provisioning commands from local `dockerode` API to Kubernetes
 
 ---
 
+## 🔮 Upcoming Product Features
+
+A comprehensive, categorized product feature roadmap has been documented to address mobile Git sync, latency/state loaders, universal AI models, integrated DevTools, and billing subscriptions.
+
+See the full roadmap detail in [upcoming_features.md](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/upcoming_features.md).
+
+---
+
 ## 💻 Local Development Setup
 
 ### Backend Setup
