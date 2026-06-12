@@ -69,10 +69,6 @@ export default function GitTab({ projectId, isActive }: Props) {
   const [hasSshKey, setHasSshKey] = useState(false)
   const [sshPublicKey, setSshPublicKey] = useState<string | null>(null)
   const [sshHistory, setSshHistory] = useState<{ timestamp: string, publicKey: string }[]>([])
-  const [showConfigModal, setShowConfigModal] = useState(false)
-  const [loadingConfig, setLoadingConfig] = useState(false)
-  const [generatingSsh, setGeneratingSsh] = useState(false)
-  const [copied, setCopied] = useState(false)
 
   // Git commit history logs
   const [commitHistory, setCommitHistory] = useState<{ hash: string, message: string }[]>([])
@@ -142,40 +138,7 @@ export default function GitTab({ projectId, isActive }: Props) {
     loadGitConfig()
   }, [loadGitConfig])
 
-  const handleSaveConfig = async () => {
-    if (!gitName.trim() || !gitEmail.trim()) {
-      showAlert('Error', 'Author Name and Email are required.', 'error')
-      return
-    }
-    setLoadingConfig(true)
-    try {
-      await api.git.config.set(projectId, gitName.trim(), gitEmail.trim())
-      // Store in device persistent storage
-      await AsyncStorage.setItem('git_author_name', gitName.trim())
-      await AsyncStorage.setItem('git_author_email', gitEmail.trim())
-      showAlert('Success', 'Git credentials saved and cached.', 'success')
-      setShowConfigModal(false)
-    } catch (err) {
-      showAlert('Error', (err as Error).message, 'error')
-    } finally {
-      setLoadingConfig(false)
-    }
-  }
-
-  const handleGenerateSsh = async () => {
-    setGeneratingSsh(true)
-    try {
-      const res = await api.git.ssh.generate(projectId)
-      setHasSshKey(res.hasKey)
-      setSshPublicKey(res.publicKey)
-      setSshHistory(res.history || [])
-      showAlert('Success', 'SSH Key Pair generated successfully.', 'success')
-    } catch (err) {
-      showAlert('Error', (err as Error).message, 'error')
-    } finally {
-      setGeneratingSsh(false)
-    }
-  }
+  // Save credentials and SSH key are now managed globally in Settings screen
 
   const [branches, setBranches] = useState<string[]>([])
   const [showBranches, setShowBranches] = useState(false)
@@ -252,6 +215,14 @@ export default function GitTab({ projectId, isActive }: Props) {
   }
 
   const handleCommit = async () => {
+    if (!gitName.trim() || !gitEmail.trim()) {
+      showAlert(
+        'Git Author Required',
+        'Please exit the editor and go to the Settings tab to configure your Git Author Name and Email before committing.',
+        'info'
+      )
+      return
+    }
     if (!commitMessage.trim()) return
     setCommitting(true)
     try {
@@ -267,8 +238,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
   const handleSync = async (action: 'push' | 'pull') => {
     if (!hasSshKey) {
-      showAlert('SSH Key Required', 'Please generate an SSH key and add it to your GitHub account to sync changes securely.', 'info')
-      setShowConfigModal(true)
+      showAlert('SSH Key Required', 'Please exit the editor, go to the Settings tab, generate an SSH key, and add it to your GitHub account to sync changes securely.', 'info')
       return
     }
     setSyncing(true)
@@ -383,7 +353,16 @@ export default function GitTab({ projectId, isActive }: Props) {
           <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => fetchStatus(true)}>
             <RefreshCw size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => setShowConfigModal(true)}>
+          <TouchableOpacity 
+            style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} 
+            onPress={() => {
+              showAlert(
+                'Git & SSH Settings',
+                'To configure Git credentials and SSH deploy keys, please exit the editor and go to the Settings tab on the dashboard.',
+                'info'
+              )
+            }}
+          >
             <Settings size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
         </View>
@@ -605,179 +584,7 @@ export default function GitTab({ projectId, isActive }: Props) {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Git Credentials & SSH Modal */}
-      <Modal
-        visible={showConfigModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowConfigModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalContainer}
-          >
-            <ScrollView style={[styles.modalContent, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                  Git Configuration & SSH
-                </Text>
-                <TouchableOpacity onPress={() => setShowConfigModal(false)} style={styles.modalCloseBtn}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 16 }}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Git Author Section */}
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                  Git Author Info
-                </Text>
-                <TextInput
-                  style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-                  placeholder="Author Name"
-                  placeholderTextColor={colors.textSecondary + '60'}
-                  value={gitName}
-                  onChangeText={setGitName}
-                  autoCapitalize="words"
-                />
-                <TextInput
-                  style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-                  placeholder="Author Email"
-                  placeholderTextColor={colors.textSecondary + '60'}
-                  value={gitEmail}
-                  onChangeText={setGitEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity 
-                  onPress={handleSaveConfig} 
-                  style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-                  disabled={loadingConfig}
-                >
-                  {loadingConfig ? (
-                    <ActivityIndicator color={isDark ? '#000' : '#fff'} />
-                  ) : (
-                    <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
-                      Save Config
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-              {/* SSH Authentication Section */}
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                  SSH Deploy Keys
-                </Text>
-                {hasSshKey && sshPublicKey ? (
-                  <View style={styles.sshInfoBox}>
-                    <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.08)' : '#e6ffec', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.2)' : '#3FB950' }}>
-                       <Text style={{ color: isDark ? '#3FB950' : '#1a7f37', fontFamily: 'Inter_700Bold', fontSize: 14, marginBottom: 8 }}>SSH Key Generated</Text>
-                       <Text style={{ color: colors.text, fontSize: 13, lineHeight: 18, marginBottom: 20 }}>Follow these 3 quick steps to complete authentication:</Text>
-                       
-                       <View style={{ gap: 16 }}>
-                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontFamily: 'Inter_700Bold' }}>1</Text></View>
-                           <View style={{ flex: 1, gap: 8 }}>
-                             <Text style={{ color: colors.text, fontSize: 13 }}>Copy your generated public key:</Text>
-                             <TouchableOpacity 
-                               onPress={() => { 
-                                 Clipboard.setStringAsync(sshPublicKey); 
-                                 setCopied(true);
-                                 setTimeout(() => setCopied(false), 2000);
-                               }}
-                               style={{ backgroundColor: copied ? (isDark ? 'rgba(63, 185, 80, 0.15)' : '#e6ffec') : 'rgba(0,0,0,0.05)', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: copied ? '#3FB950' : colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-                               activeOpacity={0.7}
-                             >
-                               <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, flex: 1 }} numberOfLines={1}>{sshPublicKey.substring(0, 24)}...</Text>
-                               <Text style={{ color: copied ? '#3FB950' : colors.primary, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{copied ? 'COPIED ✓' : 'COPY'}</Text>
-                             </TouchableOpacity>
-                           </View>
-                         </View>
-
-                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontFamily: 'Inter_700Bold' }}>2</Text></View>
-                           <View style={{ flex: 1, gap: 8 }}>
-                             <Text style={{ color: colors.text, fontSize: 13 }}>Open GitHub's SSH Settings in your browser.</Text>
-                             <TouchableOpacity 
-                               onPress={() => Linking.openURL('https://github.com/settings/ssh/new')}
-                               style={{ alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, backgroundColor: colors.primary, borderRadius: 8 }}
-                               activeOpacity={0.8}
-                             >
-                               <Text style={{ color: isDark ? '#000' : '#fff', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>Open GitHub Settings ↗</Text>
-                             </TouchableOpacity>
-                           </View>
-                         </View>
-
-                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                           <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.background, fontSize: 11, fontFamily: 'Inter_700Bold' }}>3</Text></View>
-                           <View style={{ flex: 1 }}>
-                             <Text style={{ color: colors.text, fontSize: 13, lineHeight: 20 }}>Paste your key in the "Key" box, give it a title (e.g., "CloudCode"), and click "Add SSH key". You're done!</Text>
-                           </View>
-                         </View>
-                       </View>
-                    </View>
-
-                    <View style={{ marginTop: 32 }}>
-                      <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13, marginBottom: 12 }]}>SSH Key History</Text>
-                      {sshHistory.map((h, i) => (
-                        <View key={i} style={{ padding: 12, borderRadius: 8, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderWidth: 1, borderColor: colors.border, marginBottom: 8 }}>
-                          <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'Inter_600SemiBold', marginBottom: 4 }}>{new Date(h.timestamp).toLocaleString()}</Text>
-                          <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }} numberOfLines={1}>{h.publicKey}</Text>
-                        </View>
-                      ))}
-                      
-                      <TouchableOpacity 
-                        onPress={() => {
-                          showAlert(
-                            'Generate New Key?',
-                            'Generating a new SSH key will instantly overwrite your existing key. You will need to add the new key to GitHub, and the old one will stop working immediately. Are you sure?',
-                            'warning',
-                            () => {
-                              hideAlert()
-                              handleGenerateSsh()
-                            }
-                          )
-                        }}
-                        style={[styles.primaryBtn, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, marginTop: 12 }]}
-                        disabled={generatingSsh}
-                      >
-                        {generatingSsh ? (
-                          <ActivityIndicator color={colors.text} />
-                        ) : (
-                          <Text style={[styles.primaryBtnText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Generate New Key</Text>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.sshEmptyBox}>
-                    <Text style={[styles.sshHelpText, { color: colors.textSecondary, marginBottom: 8 }]}>
-                      Generate an SSH key pair inside your isolated workspace to push commits without typing credentials.
-                    </Text>
-                    <TouchableOpacity 
-                      onPress={handleGenerateSsh} 
-                      style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-                      disabled={generatingSsh}
-                    >
-                      {generatingSsh ? (
-                        <ActivityIndicator color={isDark ? '#000' : '#fff'} />
-                      ) : (
-                        <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
-                          Generate SSH Key
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-              <View style={{ height: 40 }} />
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+      {/* Git credentials and SSH key config modal has been moved to global settings page */}
 
       {/* Custom Alert Modal */}
       <Modal visible={alertConfig.visible} transparent animationType="fade" onRequestClose={hideAlert}>

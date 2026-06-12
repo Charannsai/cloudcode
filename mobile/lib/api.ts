@@ -124,9 +124,13 @@ export const api = {
 
     ssh: {
       get: (projectId: string) =>
-        apiFetch<{ hasKey: boolean; publicKey: string | null }>(`/api/projects/${projectId}/git/ssh`),
+        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>(`/api/projects/${projectId}/git/ssh`),
       generate: (projectId: string) =>
-        apiFetch<{ hasKey: boolean; publicKey: string }>(`/api/projects/${projectId}/git/ssh`, { method: 'POST' }),
+        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>(`/api/projects/${projectId}/git/ssh`, { method: 'POST' }),
+      globalGet: () =>
+        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>('/api/user/git/ssh'),
+      globalGenerate: () =>
+        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>('/api/user/git/ssh', { method: 'POST' }),
     },
 
     config: {
