@@ -20,6 +20,21 @@ interface Props {
   ports?: Record<string, number>
 }
 
+function getInternalPort(publicPort: number, portsMap?: Record<string, number>): number {
+  if (portsMap) {
+    for (const [internal, pub] of Object.entries(portsMap)) {
+      if (pub === publicPort) {
+        return parseInt(internal, 10)
+      }
+    }
+  }
+  // Fallback: If it's a high mapped port, default to 3000
+  if (publicPort > 1024) {
+    return 3000
+  }
+  return publicPort
+}
+
 export default function PreviewTab({ projectId, port, ports }: Props) {
   const { colors, isDark } = useAppTheme()
   const webViewRef = useRef<WebView>(null)
@@ -29,6 +44,13 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const [currentUrl, setCurrentUrl] = useState('')
   const [showBrowserInfo, setShowBrowserInfo] = useState(false)
   const [hasError, setHasError] = useState(false)
+
+  const handleSetError = (error: boolean) => {
+    setHasError(error)
+    if (error) {
+      setCurrentUrl('')
+    }
+  }
 
   useEffect(() => {
     async function initUrl() {
@@ -40,23 +62,32 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
 
         setUrl(initialUrl)
         
-        // Show virtual localhost URL in the address bar
-        const virtualUrl = `http://localhost:${targetPort}/`
-        setCurrentUrl(virtualUrl)
+        // Hide virtual URL initially until we confirm the preview loads successfully
+        setCurrentUrl('')
       } catch (err) {
         console.error('Failed to initialize preview URL:', err)
       }
     }
     initUrl()
-  }, [projectId, port])
+  }, [projectId, port, ports])
 
   const handleGo = async () => {
-    setHasError(false)
+    handleSetError(false)
     const token = await getToken()
     let realUrl = currentUrl
-    const targetPort = port || 3000
-    if (currentUrl.includes(`localhost:${targetPort}`)) {
-      const subpath = currentUrl.split(`localhost:${targetPort}`)[1] || ''
+    
+    // Match http://localhost:XXXX/subpath or localhost:XXXX/subpath
+    const match = currentUrl.match(/localhost:(\d+)(.*)/)
+    if (match) {
+      const typedPort = parseInt(match[1], 10)
+      const subpath = match[2] || ''
+      
+      // Resolve typed internal port back to public mapped port
+      let targetPort = typedPort
+      if (ports && ports[typedPort.toString()]) {
+        targetPort = ports[typedPort.toString()]
+      }
+      
       realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
     }
     setUrl(realUrl)
@@ -93,7 +124,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           <TouchableOpacity
             style={[styles.retryBtn, { backgroundColor: colors.text }]}
             onPress={() => {
-              setHasError(false)
+              handleSetError(false)
               webViewRef.current?.reload()
             }}
           >
@@ -127,7 +158,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
-              setHasError(false)
+              handleSetError(false)
               webViewRef.current?.reload()
             }}
             style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
@@ -148,6 +179,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             autoCapitalize="none"
             autoCorrect={false}
             selectTextOnFocus
+            placeholder="No active server"
+            placeholderTextColor={colors.textSecondary}
           />
           <TouchableOpacity
             onPress={handleCopy}
@@ -175,11 +208,11 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             startInLoadingState={true}
             renderLoading={renderLoadingPage}
             renderError={renderErrorPage}
-            onError={() => setHasError(true)}
+            onError={() => handleSetError(true)}
             onHttpError={(syntheticEvent) => {
               const { statusCode } = syntheticEvent.nativeEvent
               if (statusCode === 502 || statusCode === 503) {
-                setHasError(true)
+                handleSetError(true)
               }
             }}
             onNavigationStateChange={(state) => {
@@ -191,12 +224,18 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               if (state.url.includes(previewPath)) {
                 const parts = state.url.split(previewPath)
                 const subpathAndSearch = parts[1] || ''
+                
+                // Retrieve the active port from the query string if available
+                const portMatch = state.url.match(/[\?&]port=(\d+)/)
+                const activePort = portMatch ? parseInt(portMatch[1], 10) : port
+                const displayPort = getInternalPort(activePort, ports)
+
                 const cleanSubpath = subpathAndSearch
                   .replace(/[\?&]port=\d+/, '')
                   .replace(/[\?&]token=[^&]+/, '')
                   .replace(/\?&/, '?')
                 
-                virtualUrl = `http://localhost:${port || 3000}${cleanSubpath}`
+                virtualUrl = `http://localhost:${displayPort || 3000}${cleanSubpath}`
               }
               setCurrentUrl(virtualUrl)
             }}
@@ -232,7 +271,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               try {
                 const msg = JSON.parse(event.nativeEvent.data)
                 if (msg.type === 'proxy_error') {
-                  setHasError(true)
+                  handleSetError(true)
                   return
                 }
                 console.log(`[WebView Console ${msg.type.toUpperCase()}]`, msg.data)
