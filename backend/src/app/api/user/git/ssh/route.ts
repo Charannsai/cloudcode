@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   try {
     // Fix permissions on startup/query just in case
     await execInContainer(project.container_id, ['mkdir', '-p', '/home/coder/.ssh'], () => {}, 'root')
-    await execInContainer(project.container_id, ['chown', '-R', 'coder:coder', '/home/coder/.ssh'], () => {}, 'root')
+    await execInContainer(project.container_id, ['chown', '-R', 'coder', '/home/coder/.ssh'], () => {}, 'root')
     await execInContainer(project.container_id, ['chmod', '700', '/home/coder/.ssh'], () => {}, 'root')
 
     const exitCode = await execInContainer(project.container_id, ['test', '-f', '/home/coder/.ssh/id_ed25519'], () => {})
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Create directory as root and ensure correct ownership/permissions on .ssh folder
     await execOrThrow(project.container_id, ['mkdir', '-p', '/home/coder/.ssh'], 'root')
-    await execOrThrow(project.container_id, ['chown', '-R', 'coder:coder', '/home/coder/.ssh'], 'root')
+    await execOrThrow(project.container_id, ['chown', '-R', 'coder', '/home/coder/.ssh'], 'root')
     await execOrThrow(project.container_id, ['chmod', '700', '/home/coder/.ssh'], 'root')
 
     // 2. Force remove existing keys to avoid overwrite prompts
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Ensure key file permissions are secure
     await execOrThrow(project.container_id, ['chmod', '600', '/home/coder/.ssh/id_ed25519'], 'root')
-    await execOrThrow(project.container_id, ['chown', 'coder:coder', '/home/coder/.ssh/id_ed25519', '/home/coder/.ssh/id_ed25519.pub'], 'root')
+    await execOrThrow(project.container_id, ['chown', 'coder', '/home/coder/.ssh/id_ed25519', '/home/coder/.ssh/id_ed25519.pub'], 'root')
 
     // 5. Read public key
     const pubKey = await execOrThrow(project.container_id, ['cat', '/home/coder/.ssh/id_ed25519.pub'])

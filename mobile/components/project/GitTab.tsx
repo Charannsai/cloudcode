@@ -181,15 +181,17 @@ export default function GitTab({ projectId, isActive }: Props) {
   useEffect(() => {
     if (isActive) {
       fetchStatus(true)
+      loadGitConfig()
     }
-  }, [isActive, fetchStatus])
+  }, [isActive, fetchStatus, loadGitConfig])
 
   useFocusEffect(
     useCallback(() => {
       if (isActive) {
         fetchStatus(true)
+        loadGitConfig()
       }
-    }, [isActive, fetchStatus])
+    }, [isActive, fetchStatus, loadGitConfig])
   )
 
   const handleStage = async (files: string[]) => {
