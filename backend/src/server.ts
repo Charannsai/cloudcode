@@ -47,14 +47,20 @@ const startServer = async () => {
 
       const activeProjectId = projectIdCookie || refererProjectId
 
-      if (
-        activeProjectId &&
+      // If the Referer header indicates this request originated from a preview,
+      // we MUST rewrite it (including /_next, /static, and favicon.ico) so that
+      // Next.js and Vite sub-resources are served from the container.
+      if (refererProjectId && !pathname.startsWith('/api')) {
+        req.url = `/api/preview/${refererProjectId}${req.url}`
+        parsedUrl = parse(req.url, true)
+      } else if (
+        projectIdCookie &&
         !pathname.startsWith('/_next') &&
         !pathname.startsWith('/api') &&
         !pathname.startsWith('/static') &&
         pathname !== '/favicon.ico'
       ) {
-        req.url = `/api/preview/${activeProjectId}${req.url}`
+        req.url = `/api/preview/${projectIdCookie}${req.url}`
         parsedUrl = parse(req.url, true)
       }
 
