@@ -5,7 +5,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { createContainer } from '@/lib/docker'
+import { createContainer, getWorkspacePath } from '@/lib/docker'
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(60).regex(/^[a-zA-Z0-9_\- ]+$/),
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   if (dbError) return errorResponse(dbError.message, 500)
 
-  const workspacePath = path.join(process.cwd(), 'projects', projectId)
+  const workspacePath = getWorkspacePath(projectId)
   await fs.mkdir(workspacePath, { recursive: true })
 
   await seedTemplate(workspacePath, type)

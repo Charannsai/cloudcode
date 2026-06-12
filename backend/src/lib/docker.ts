@@ -29,7 +29,7 @@ export interface ContainerInfo {
  * Mounts a host directory to /workspace inside the container.
  */
 export async function createContainer(projectId: string): Promise<ContainerInfo> {
-  const hostPath = getHostPath(projectId)
+  const hostPath = getWorkspacePath(projectId)
   ensureProjectDir(hostPath)
 
   const { data: project } = await supabaseAdmin.from('projects').select('user_github_id').eq('id', projectId).single()
@@ -317,9 +317,9 @@ export async function getContainerDetails(containerId: string): Promise<Containe
   }
 }
 
-function getHostPath(projectId: string): string {
-  // On VPS this should be an absolute path like /data/projects/<id>
-  return path.join(process.cwd(), 'projects', projectId)
+export function getWorkspacePath(projectId: string): string {
+  // Place 'projects' one level above Next.js backend root so Turbopack does not scan it.
+  return path.join(process.cwd(), '..', 'projects', projectId)
 }
 
 /**

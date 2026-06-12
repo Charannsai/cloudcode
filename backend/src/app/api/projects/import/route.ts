@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { createContainer } from '@/lib/docker'
+import { createContainer, getWorkspacePath } from '@/lib/docker'
 import path from 'path'
 import { execSync } from 'child_process'
 import fs from 'fs'
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function cloneAndProvision(projectId: string, githubUrl: string) {
-  const workspacePath = path.join(process.cwd(), 'projects', projectId)
+  const workspacePath = getWorkspacePath(projectId)
   try {
     fs.mkdirSync(workspacePath, { recursive: true })
     execSync(`git clone --depth=1 "${githubUrl}" "${workspacePath}"`, {

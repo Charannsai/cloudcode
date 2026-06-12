@@ -4,6 +4,7 @@ import path from 'path'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
 import { FileNode } from '@/lib/types'
+import { getWorkspacePath } from '@/lib/docker'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (!project) return errorResponse('Project not found', 404)
 
-  const workspacePath = path.join(process.cwd(), 'projects', id)
+  const workspacePath = getWorkspacePath(id)
 
   try {
     const tree = await buildFileTree(workspacePath, workspacePath)
@@ -61,7 +62,7 @@ async function buildFileTree(basePath: string, currentPath: string): Promise<Fil
 }
 
 function sanitizePath(projectId: string, filePath: string): string | null {
-  const workspacePath = path.join(process.cwd(), 'projects', projectId)
+  const workspacePath = getWorkspacePath(projectId)
   const resolved = path.resolve(workspacePath, filePath)
   if (!resolved.startsWith(workspacePath)) return null
   return resolved

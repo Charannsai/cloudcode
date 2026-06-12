@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { destroyContainer, getContainerDetails, ensureContainerRunning } from '@/lib/docker'
+import { destroyContainer, getContainerDetails, ensureContainerRunning, getWorkspacePath } from '@/lib/docker'
 import { recordActivity, removeProject } from '@/lib/activityTracker'
 import fs from 'fs/promises'
 import path from 'path'
@@ -63,7 +63,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   // Clean up activity tracker
   removeProject(id)
 
-  const workspacePath = path.join(process.cwd(), 'projects', id)
+  const workspacePath = getWorkspacePath(id)
   await fs.rm(workspacePath, { recursive: true, force: true }).catch(console.error)
 
   await supabaseAdmin.from('projects').delete().eq('id', id)
