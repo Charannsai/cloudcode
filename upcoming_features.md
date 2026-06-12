@@ -170,6 +170,7 @@ mindmap
 * **Current Gap:** No paywall or monetization mechanisms.
 * **Feature Description:**
   - Integrate Free, Pro, and Advanced plan tiers mapping container resource allocation directly to active hours and workspace storage limits.
+  - **Aggressive Free Tier Management:** Enforce a strict **5-minute idle container timeout** for free users. This aggressive auto-sleep frees up server RAM instantly and must be visually displayed in the mobile settings page so free users know their limits.
   - *Payment Provider Suggestion:* Implement **Dodo Payments** for payment handling. See evaluation below.
 
 ---
