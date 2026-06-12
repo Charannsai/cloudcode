@@ -1,57 +1,55 @@
 # CloudCode — Universal Cloud Development Environment (CDE)
 
-CloudCode is a next-generation Cloud Development Environment (CDE) platform that enables developers to provision, write, build, and deploy full-stack applications directly from a mobile or web client. CloudCode replicates the native PC developer experience within a sandboxed, multi-tenant container network.
+CloudCode is a next-generation Cloud Development Environment (CDE) platform that allows developers to spin up, edit, build, run, and preview full-stack applications directly from a mobile client. The architecture replicates a native PC development experience by running isolated Docker containers on a Virtual Private Server (VPS) and proxying HTTP/WebSocket traffic dynamically to the client.
 
-This document serves as the **complete single source of truth (A to Z)** for the CloudCode repository. It captures all architectural systems, database structures, client layouts, deployment pipelines, recent production updates, and scaling roadmaps.
+This document serves as the **master architectural handbook (A to Z)** for the entire CloudCode codebase.
 
 ---
 
 ## 📂 Repository Directory Map
 
-CloudCode is structured as a monorepo consisting of the following key directories:
-
 ```text
 cloudcode/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml          # GitHub Actions CI/CD (Backend VPS Deploy)
-├── backend/                    # Next.js 16 Custom Server API & Proxy
+│       └── deploy.yml          # GitHub Actions deploy runner (targets VPS backend)
+├── backend/                    # Next.js 16 Custom Server API & Preview Proxy
 │   ├── src/
-│   │   ├── app/                # App Router Endpoints
+│   │   ├── app/                # Next.js App Router (HTTP Endpoint Handlers)
 │   │   │   ├── api/
-│   │   │   │   ├── ai/         # AI integration handlers
+│   │   │   │   ├── ai/         # AI Prompt handler placeholders
 │   │   │   │   ├── auth/       # GitHub OAuth Callback & Handlers
-│   │   │   │   ├── preview/    # Dynamic reverse-proxy endpoints
-│   │   │   │   ├── projects/   # CRUD Project management & workspace setup
-│   │   │   │   └── user/       # User profile & SSH key management
-│   │   ├── lib/                # Shared utilities & Core logic
-│   │   │   ├── activityTracker.ts  # Workspace inactivity tracker
-│   │   │   ├── auth.ts         # User auth middleware
-│   │   │   ├── docker.ts       # Docker daemon control interface
-│   │   │   ├── git.ts          # Git command executors
-│   │   │   ├── supabase.ts     # DB connector
-│   │   │   ├── terminal.ts     # node-pty terminal stream bridge
+│   │   │   │   ├── preview/    # Dynamic preview reverse-proxy catch-all routes
+│   │   │   │   ├── projects/   # Workspace CRUD & Git Import APIs
+│   │   │   │   └── user/       # User profiles & general SSH Key endpoints
+│   │   ├── lib/                # Core helper scripts & abstractions
+│   │   │   ├── activityTracker.ts  # In-memory user idle state manager
+│   │   │   ├── auth.ts         # Supabase JWT verify & Auth middleware
+│   │   │   ├── docker.ts       # Dockerode socket connector & state controls
+│   │   │   ├── git.ts          # Git commands wrapper executed in containers
+│   │   │   ├── supabase.ts     # Supabase DB admin client config
+│   │   │   ├── terminal.ts     # node-pty shell process streams bridge
 │   │   │   └── types.ts
-│   │   └── server.ts           # HTTP & WebSocket Next.js Custom Server
+│   │   └── server.ts           # Next.js wrapping HTTP & WebSocket Custom Server
 │   ├── package.json
 │   └── tsconfig.json
-├── mobile/                     # React Native / Expo Mobile Application
+├── mobile/                     # React Native / Expo Mobile Client Application
 │   ├── app/
-│   │   ├── (tabs)/
-│   │   │   ├── ai.tsx          # AI Prompt Helper Interface
-│   │   │   ├── dashboard.tsx   # Uptime stats & Shortcuts
-│   │   │   ├── projects.tsx    # Workspace grids & states
-│   │   │   └── settings.tsx    # User settings & configuration
-│   │   ├── project/[id]/
-│   │   │   ├── editor.tsx      # Monaco-based file editor
-│   │   │   └── index.tsx       # Live terminal and file browser
-│   │   ├── auth.tsx            # Login Screen
-│   │   ├── index.tsx           # Entry & Auth router gate
-│   │   └── new-project.tsx     # Workspace creator & GitHub clone wizard
-│   ├── components/             # Reusable UI elements
-│   ├── store/                  # Zustand global application store
+│   │   ├── (tabs)/             # Bottom-tab navigator screens
+│   │   │   ├── ai.tsx          # AI Assistant interactive prompt view
+│   │   │   ├── dashboard.tsx   # Statistics, shortcuts, activity feed
+│   │   │   ├── projects.tsx    # List grid of user projects with controls
+│   │   │   └── settings.tsx    # Custom preferences & settings
+│   │   ├── project/[id]/       # Workspace-specific editor routes
+│   │   │   ├── editor.tsx      # Multi-file code editor screen
+│   │   │   └── index.tsx       # Live terminal and file explorer portal
+│   │   ├── auth.tsx            # Login overlay
+│   │   ├── index.tsx           # Session router gate
+│   │   └── new-project.tsx     # Wizard to create from templates or GitHub
+│   ├── components/             # Reusable UI components
+│   ├── store/                  # Zustand global application state
 │   └── package.json
-└── README.md                   # This file (Master System Documentation)
+└── README.md                   # This Handbook (Master Documentation)
 ```
 
 ---
@@ -59,176 +57,220 @@ cloudcode/
 ## ⚙️ Core Architectural Subsystems
 
 ### 1. Custom HTTP & WebSocket Server
-The backend utilizes a custom server built in [server.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/server.ts) that wraps Next.js. This architecture allows the platform to:
-* Handle standard Next.js Server-Side Rendering (SSR) and HTTP API requests.
-* Intercept `upgrade` headers to hijack and direct WebSocket traffic for interactive shells.
-* Intercept HMR (Hot Module Replacement) and Vite live-reload WebSocket signals from running containers and proxy them back to clients.
+The backend runs on a custom server configured in [server.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/server.ts). Rather than using the default `next start` server, this custom setup runs an HTTP server using Node's native `http` module and boots the Next.js application as middleware.
 
-### 2. Terminal & Docker Stream Interceptor
-Interactive terminal sessions are powered by `node-pty` and custom bridges inside the containers:
-* When a user opens the terminal in [app/project/[id]/index.tsx](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/mobile/app/project/%5Bid%5D/index.tsx), the client connects to `ws://<backend>/api/terminal/<projectId>`.
-* The server attaches a shell session to the project's isolated Docker container via `dockerode` interactive execution (`docker exec`).
-* Standard input/output streams are bridged bidirectionally through the WebSocket connection to the terminal renderer (`xterm.js` or mobile native terminal emulator) in real-time.
+```mermaid
+graph TD
+    Client[Mobile Client] -->|HTTP / WS request| CustomServer[Custom HTTP Server: server.ts]
+    CustomServer -->|Standard HTTP API / Page| NextJS[Next.js App Router]
+    CustomServer -->|Upgrade request: /api/terminal| WSS_Terminal[WebSocket Terminal Server]
+    CustomServer -->|Upgrade request: HMR / Vite| WS_Proxy[WebSocket Proxy Router]
+    WS_Proxy -->|Forward| DockerContainer[Docker Workspace Container]
+    WSS_Terminal -->|Spawn shell| DockerContainer
+```
+
+Key features of this server include:
+* **WebSocket Interception:** Listens for `upgrade` requests on the server port. Requests matching `/api/terminal/*` are routed directly to the terminal WebSocket handler.
+* **WebSocket Reverse Proxying:** Listens for Hot Module Replacement (HMR) and Vite live-reload WebSocket requests (`/_next/webpack-hmr`, `/__vite`, `/ws`, `/ws?*`) and proxies them directly to the corresponding active container on the Docker bridge network.
+* **Statelessness:** Stores no state in memory, allowing it to boot instantly and handle high volumes of concurrent HTTP and WebSocket requests.
+
+---
+
+### 2. Interactive Terminal Shell System
+Real-time console interaction is managed through a bridge between the client terminal view, Node WebSockets, and Docker commands.
+
+* **Client Setup:** [app/project/[id]/index.tsx](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/mobile/app/project/%5Bid%5D/index.tsx) initiates a connection to `ws://<backend-url>/api/terminal/[projectId]?token=<jwt>&terminalId=<id>`.
+* **Verification & Handshake:** The server authorizes the token using Supabase keys, verifies project ownership, and inspects the database to ensure the corresponding container is running.
+* **Container Exec Spawn:** The server calls `dockerode.exec` to launch `/bin/sh` or connect to a `tmux` session inside the container:
+  ```typescript
+  Cmd: ['/bin/sh', '-c', 'if command -v tmux >/dev/null 2>&1; then exec tmux new-session -A -s "cloudcode-..."; else exec /bin/sh; fi']
+  ```
+* **Interactive Stream Bridge:** The input/output streams of the exec process are multiplexed over the WebSocket connection.
+* **Packet Protocol:** Messages exchanged via WebSocket are structured JSON frames:
+  - **Input (Client -> Server):** `{ "type": "input", "data": "ls -la\n" }`
+  - **Resize (Client -> Server):** `{ "type": "resize", "cols": 80, "rows": 24 }` (calls `exec.resize` to redraw terminal output correctly).
+  - **Output (Server -> Client):** `{ "type": "output", "data": "..." }`
+  - **Ready (Server -> Client):** `{ "type": "ready", "message": "..." }`
 
 ```mermaid
 sequenceDiagram
-    participant Client as Mobile/Web Client
+    autonumber
+    participant Client as Mobile Client
     participant Server as Next.js Custom Server
-    participant Docker as Docker Daemon / Container
+    participant Container as Docker Container
     
-    Client->>Server: WebSocket Upgrade Request (/api/terminal/[id])
-    Note over Server: Authorize JWT & verify project ownership
-    Server->>Docker: Exec instance start (/bin/sh or tmux)
-    Server->>Client: Connection established ("ready")
-    loop Input & Output
-        Client->>Server: Send keystrokes
-        Server->>Docker: Write to Stdin
-        Docker->>Server: Stream Stdout/Stderr
-        Server->>Client: Send terminal logs (JSON frame)
+    Client->>Server: Connect WS (ws://.../api/terminal/[id]?token=JWT)
+    Note over Server: Verify JWT & inspect owner in Supabase
+    Server->>Container: Spawn Docker Exec (/bin/sh or tmux session)
+    Server->>Client: Send JSON message: { type: "ready" }
+    
+    rect rgb(30, 30, 40)
+        Note over Client, Container: Interactive Loop
+        Client->>Server: Send JSON keystroke: { type: "input", data: "npm run dev\n" }
+        Server->>Container: Write raw bytes to container Stdin
+        Container->>Server: Stream stdout response
+        Server->>Client: Send JSON output: { type: "output", data: "..." }
     end
+    
+    Client->>Server: Send JSON resize event: { type: "resize", cols: 100, rows: 30 }
+    Server->>Container: Resize virtual TTY rows/cols
 ```
 
-### 3. Dynamic Port Discovery & Preview Proxy
-To solve port collision problems (e.g. multi-tenant containers running standard ports like `3000` or `5173` concurrently):
-* A user's development server starts on a local port (e.g. `3000`) *inside* their isolated container.
-* The Next.js preview endpoint [api/preview](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/preview/%5Bid%5D/%5B%5B...path%5D%5D/route.ts) inspects the container's internal Docker bridge IP address (e.g. `172.17.0.4`) via `dockerode`.
-* The proxy acts as a reverse proxy, rewriting headers (e.g. host header overrides, WebSocket upgrade headers, cookie forwards) and forwarding traffic to `http://172.17.0.4:3000`.
-* **Tenant Isolation:** Multiple developers can preview their projects on port `3000` at the same time without port conflicts.
-
-### 4. In-Memory Activity Tracker & Auto-Sleep Cron
-To minimize server resource consumption on the VPS:
-* **Tracking:** [activityTracker.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/activityTracker.ts) logs any user activity (terminal keypress, preview HTTP request, file save API call, project detail load).
-* **Auto-Sleep:** A background cron job in [server.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/server.ts) runs every 5 minutes. If a container registers no activity for 30 minutes, it stops (`docker stop <id>`) and the project status in the database changes to `'sleeping'`.
-* **Auto-Wake:** The instant the user visits the project or triggers a preview, the server wakes the container up (~2 seconds overhead) and redirects the user, ensuring zero data loss and minimal memory consumption.
-
 ---
 
-## 🔒 Parity & Virtual Private Server (VPS) Tuning
+### 3. Dynamic Preview Proxy Layer
+When a user launches a web app (e.g. Vite, React, Express) inside their container, the application listens on an internal port (e.g. `3000` or `5173`). The preview proxy maps these internal ports to clean, authenticated preview endpoints.
 
-### 1. Hardware Memory Caps & swapfile Configuration
-Running Next.js Turbopack compilers inside thin virtual workspaces can cause memory spikes of up to 1.5GB, leading to host-level Out-Of-Memory (OOM) crashes.
-* **CPU and Memory Limits:** Individual developer containers are restricted to **1GB RAM** (`Memory: 1073741824`) and **512 CPU shares** (`CpuShares: 512`) during creation in [docker.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/docker.ts).
-* **VPS Swap Space:** A **2GB swapfile** is configured directly in the DigitalOcean VPS Linux kernel. This allows compilation memory bursts to overflow safely to disk, preventing the Docker daemon from crashing.
-
-### 2. God-Mode Container Permissions
-To replicate the freedom of a local PC:
-* Sudo privileges are configured inside the base image.
-* The file `/etc/sudoers` contains the line `coder ALL=(ALL) NOPASSWD:ALL`, allowing developers to install packages (`apt-get install`), test custom servers, and configure databases within their isolated container.
-
-### 3. Tenant Networking Isolation
-To prevent cross-tenant network snooping (e.g., users using network scanners like `nmap` to discover other active containers):
-* When a workspace spins up in [docker.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/docker.ts), it is assigned an isolated virtual network (`docker network create workspace-[id]`).
-* Containers are isolated from the default Docker bridge, preventing inter-container communications while maintaining public internet access for cloning and package downloads.
-
----
-
-## 💾 Database (Supabase) Integration & RLS Rules
-
-The database utilizes **Supabase PostgreSQL** for storing projects, users, and session information.
-
-### Core Tables
-1. **`users`**: Stores GitHub user identity, access tokens, email, avatar, and SSH keys.
-2. **`projects`**: Contains project configurations.
-   - `id` (UUID - Primary Key)
-   - `name` (String)
-   - `container_id` (String)
-   - `status` (`'creating' | 'ready' | 'sleeping' | 'error'`)
-   - `port` (Integer, default dev server port)
-   - `user_github_id` (GitHub ID reference)
-   - `git_url` (String, for imported repositories)
-
-### Database Security
-* **Row Level Security (RLS):** Policies are enforced on the `projects` table. Developers can only query, modify, or delete project rows where the `user_github_id` matches their authenticated GitHub user ID:
-  ```sql
-  CREATE POLICY "Users can only modify their own projects"
-  ON projects FOR ALL
-  USING (auth.uid() = user_github_id);
+* **Target Resolution ([resolveTarget](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/preview/%5Bid%5D/%5B%5B...path%5D%5D/route.ts#L14)):** Inspects the container configuration via `dockerode.inspect()` to get its internal IP address on the Docker bridge network (e.g. `172.17.0.2`). It iterates through container port bindings to resolve host-mapped ports back to their internal values.
+* **HTTP Reverse Proxying:** Sends requests to `http://<container-ip>:<internal-port>/<sub-path>` using Node `fetch` with manual redirect handling and a `120s` timeout for compilation tasks.
+* **Header & Cookie Management:**
+  - Injects `Host` header overrides matching the container's virtual target (`localhost:<internal-port>`).
+  - Sets cookies (`preview_project_id`, `preview_token`, `preview_port`) on initial load to ensure subsequent resource loads (which may not contain URL parameters) are authenticated and routed correctly.
+* **HTML Base Tag Injection:** Modifies HTML responses to inject a `<base>` tag in the `<head>` block:
+  ```html
+  <base href="/api/preview/[projectId]/">
   ```
+  This forces the client browser to resolve all relative assets (images, stylesheets, scripts) through the authenticated proxy route automatically, avoiding bundle corruption.
+* **CSS URL Rewriting:** Parses CSS stylesheets and prepends the proxy path to all `url(/...)` references to route background assets correctly.
+* **Smart Proxy Fallback:** If the requested port is not found in the container's active host bindings (e.g. if the database record is stale), the proxy checks if the port is a standard internal port (e.g. `3000`, `5173`). If it's a non-standard port, it falls back to internal port `3000` and logs a warning instead of failing.
 
----
-
-## 🔌 API Route Registry (Backend App Router)
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| **GET** | `/api/auth/github` | Initiates the GitHub OAuth redirect workflow. |
-| **GET** | `/api/auth/callback` | Receives GitHub token, creates/updates Supabase user session. |
-| **GET** | `/api/projects` | List all project workspaces belonging to the authenticated user. |
-| **POST** | `/api/projects` | Creates a new project from a predefined template (`Node`, `React`, `Blank`). |
-| **GET** | `/api/projects/[id]` | Fetch status and workspace information (updates activity). |
-| **DELETE** | `/api/projects/[id]` | Deletes workspace files, stops/removes container, deletes database record. |
-| **POST** | `/api/projects/import` | Bootstraps container and clones a repository from a GitHub URL. |
-| **GET/POST/PUT/DELETE** | `/api/projects/[id]/files` | Read, write, create, or delete files inside the container workspace. |
-| **GET** | `/api/projects/[id]/git/status` | Executes `git status` inside the container. |
-| **POST** | `/api/projects/[id]/git/stage` | Stages changes (`git add`). |
-| **POST** | `/api/projects/[id]/git/commit` | Commits changes (`git commit -m <message>`). |
-| **GET/POST** | `/api/projects/[id]/git/branches` | Fetch, create, or switch git branches. |
-| **GET** | `/api/projects/[id]/git/diff` | Review git diff outputs. |
-| **POST** | `/api/projects/[id]/git/sync` | Executes git `push` / `pull` commands. |
-| **GET** | `/api/preview/[id]/[[...path]]` | Intercepts, rewrites, and reverse-proxies requests to the container IP. |
-
----
-
-## 📱 Mobile Screen Registry (React Native / Expo)
-
-* **Entry/Landing (`app/index.tsx`)**: Decides if a user needs to login or redirects to the dashboard.
-* **Authentication (`app/auth.tsx`)**: Integrates GitHub login via an in-app browser overlay.
-* **Dashboard (`app/(tabs)/dashboard.tsx`)**:
-  - Displays usage metrics (active containers, RAM consumption, uptime).
-  - Showcases recent activities and logs.
-  - Lists quick-action shortcuts for the last active workspaces.
-* **Projects Listing (`app/(tabs)/projects.tsx`)**: Displays all project cards. Shows states (`creating`, `sleeping`, `ready`) with toggle buttons to run/stop them.
-* **Workspace Creation Wizard (`app/new-project.tsx`)**:
-  - **Option 1:** Bootstraps from templates (Blank, Node, React).
-  - **Option 2:** Clone from a remote Git URL.
-* **Terminal & Explorer (`app/project/[id]/index.tsx`)**:
-  - Split view containing an interactive xterm terminal emulator.
-  - File browser sidebar to view folders, modify structure, and open the code editor.
-* **Code Editor (`app/project/[id]/editor.tsx`)**: Text editor optimized for mobile code modification with direct auto-save syncing back to the container filesystem.
-* **AI Copilot (`app/(tabs)/ai.tsx`)**: AI conversational assistant interface designed for code generation, bug fixing, and package management.
-* **Settings (`app/(tabs)/settings.tsx`)**: User account management, theme toggles, database variables, and platform information.
-
----
-
-## 🛠️ GitHub Actions CI/CD Pipeline
-
-The project utilizes automated deployment workflows defined in [.github/workflows/deploy.yml](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/.github/workflows/deploy.yml):
-
-```yaml
-name: Deploy Backend
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'backend/**'
-      - '.github/workflows/**'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /root/cloudcode/backend 
-            git pull origin main
-            npm install
-            npm run build
-            pm2 restart cloudcode-backend
+```mermaid
+sequenceDiagram
+    autonumber
+    participant WebView as Mobile WebView
+    participant Proxy as Next.js Preview Route
+    participant DB as Supabase DB
+    participant Container as Docker container
+    
+    WebView->>Proxy: GET /api/preview/[id]?port=32791&token=JWT
+    Proxy->>DB: Query project row where user_github_id matches JWT user
+    DB->>Proxy: Return project row (port=32791, container_id=...)
+    Proxy->>Container: Inspect container (find IP and mapped ports)
+    Note over Proxy: Resolve IP (172.17.0.2) & translate port 32791 -> 3000
+    Proxy->>Container: HTTP GET http://172.17.0.2:3000/
+    Container->>Proxy: Return raw HTML response
+    Note over Proxy: Inject <base href="/api/preview/[id]/"> in <head><br>Strip hop-by-hop headers
+    Proxy->>WebView: Return modified HTML + Set preview cookies
 ```
 
 ---
 
-## 🩹 Recent Critical Fixes & History
+### 4. Activity Tracker & Auto-Sleep/Auto-Wake Engine
+To keep VPS costs low and conserve resources:
+
+* **In-Memory Store ([activityTracker.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/activityTracker.ts)):** Manages a map tracking project activity timestamps.
+* **Activity Hooks:** Updates the project's timestamp whenever:
+  - An HTTP API call loads project details.
+  - A file is opened, modified, or saved.
+  - A WebSocket connection is opened or terminal input is received.
+  - A request is handled by the preview proxy.
+* **The Auto-Sleep Cron:** A `setInterval` job in `server.ts` runs every 5 minutes:
+  1. Queries all projects marked as `'ready'` in the database.
+  2. Compares the current time with the last active timestamp in the tracker.
+  3. If a project has been idle for more than 30 minutes, it stops the container (`docker stop`) and updates the project status in the database to `'sleeping'`.
+* **The Auto-Wake Middleware:** When a user visits their workspace or accesses the preview, the server calls `ensureContainerRunning()`. If the container is sleeping, it:
+  1. Wakes the container up (`docker start`).
+  2. Updates its status in the database to `'ready'`.
+  3. Updates the `port` column in the database with its new public port.
+  4. Returns a styled `"Waking up..."` loading page to the client, redirecting them once the container is ready.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Creating
+    Creating --> Ready : Container Provisioned
+    Ready --> Sleeping : 30 Mins Inactivity (Cron)
+    Sleeping --> Waking : GET Request / Preview Access
+    Waking --> Ready : Container Started (Auto-Wake)
+    Ready --> [*] : Delete Project Workspace
+```
+
+---
+
+### 5. Workspace Templates & Git Import System
+Workspaces are initialized using one of two methods:
+
+* **From Local Template:**
+  - Creates a workspace folder inside `projects/[id]/`.
+  - Seeds configuration files depending on the selected type:
+    - **`node`:** Sets up a basic HTTP server in `index.js` and a `package.json` with startup scripts.
+    - **`react`:** Seeds a Vite React template, setting up standard dependency configurations and dev scripts.
+    - **`empty`:** Seeds a simple `README.md` file.
+  - Sets file permissions recursively to full read-write (`chmod -R 777`) so they can be modified by the container.
+* **From GitHub Import:**
+  - Clones the target git repository into the project directory:
+    ```bash
+    git clone --depth=1 "<github-url>" "projects/<id>"
+    ```
+  - Applies file permissions (`chmod -R 777`).
+  - Boots the container and runs Git configurations to trust the directory boundaries.
+
+---
+
+### 6. Git HTTP API Integration
+The backend exposes API endpoints under `api/projects/[id]/git/` to manage Git repositories within workspace containers:
+* **SSH Key Management:** Mounts a unique volume (`cloudcode-ssh-<userId>`) to `/home/coder/.ssh` inside the container, keeping users' SSH keys isolated.
+* **Git Operations:** Endpoints run commands inside the container using the container's exec stream:
+  - **`status`**: Runs `git status` and parses tracked/untracked changes.
+  - **`stage`**: Runs `git add <file>`.
+  - **`commit`**: Runs `git commit -m "<message>"`.
+  - **`branches`**: Runs `git branch` (to list) or `git checkout -b <branch>` (to switch).
+  - **`diff`**: Runs `git diff` to view staging changes.
+  - **`sync`**: Runs `git push` or `git pull` using configured credentials.
+
+---
+
+## 💾 Database Entity Model (Supabase PostgreSQL)
+
+The database schema is managed in **Supabase** and utilizes PostgreSQL. Below is the structure of the `projects` table:
+
+```sql
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(60) NOT NULL,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('node', 'react', 'empty')),
+  status VARCHAR(20) NOT NULL CHECK (status IN ('creating', 'ready', 'sleeping', 'error')),
+  container_id VARCHAR(255) NULL,
+  port INTEGER NULL,                  -- Holds the public host-mapped port for internal port 3000
+  github_url TEXT NULL,               -- Stores clone URL if imported
+  user_github_id VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+```
+
+### Security Policies (RLS)
+The database enforces **Row Level Security** on all tables. A user can only access or modify project rows that belong to their validated GitHub ID:
+```sql
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own projects"
+ON projects FOR ALL
+TO authenticated
+USING (auth.uid() = user_github_id);
+```
+
+---
+
+## 📱 Mobile Screen Registry & Navigation Map
+
+The mobile application is built using **React Native** and **Expo**, utilizing `expo-router` for file-based routing and `zustand` for state management:
+
+1. **Authentication Guard (`app/index.tsx`)**: Decides if a user needs to login or redirects to the dashboard.
+2. **Login View (`app/auth.tsx`)**: Handles credentials and OAuth logins.
+3. **App Tabs (`app/(tabs)/_layout.tsx`)**: Bottom navigation bar.
+   * **Dashboard (`(tabs)/dashboard.tsx`):** Displays platform statistics (active containers, memory usage, uptime) and recent workspaces.
+   * **Workspaces Grid (`(tabs)/projects.tsx`):** Grid list of user projects showing container states (`creating`, `sleeping`, `ready`) with controls to start or stop containers.
+   * **AI Assistant (`(tabs)/ai.tsx`):** Interactive prompt screen for code generation, bug fixing, and terminal management.
+   * **Settings (`(tabs)/settings.tsx`):** Profile preferences and connection details.
+4. **Workspace Detail Manager (`app/project/[id]/index.tsx`)**: A tabbed view containing:
+   * **Terminal Console (`TerminalTab`):** A virtual terminal emulator that connects to the container's shell stream.
+   * **File Tree (`FilesTab`):** A sidebar navigation layout to view, add, or delete project files.
+   * **Git Control (`GitTab`):** Staging, committing, and syncing tools.
+   * **Live App Preview (`PreviewTab`):** Web viewport to preview running apps.
+5. **Code Editor (`app/project/[id]/editor.tsx`)**: Fullscreen text editor with auto-save capabilities that sync modifications back to the container.
+
+---
+
+## 🩹 Recent Critical Fixes
 
 ### 1. GitHub Actions Trigger Optimization
 * **Issue:** Pushes to the `mobile` folder were triggering the backend deployment runner, causing unnecessary builds on the VPS.
@@ -243,27 +285,27 @@ jobs:
   - Prepended `"start": "NODE_ENV=production tsx src/server.ts"` to [package.json](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/package.json).
   - Ran PM2 update commands with `--update-env` to clear cached development variables.
 
-### 3. Stale Preview Port & ECONNREFUSED Crash
+### 3. Stale Preview Port Resolution & Address Bar Translation
 * **Issue:** Connecting to a project preview failed with `connect ECONNREFUSED 172.17.0.2:<old_port>`.
-* **Cause 1:** When a container was recreated (due to self-healing or Docker host pruning) by `ensureContainerRunning`, it received a new random host-mapped port, but the `port` column in the Supabase database was not updated.
-* **Cause 2:** The project detail endpoint (`GET /api/projects/[id]`) preferred the database `port` column over the container's active mappings, passing a stale public port to the client.
-* **Cause 3:** The preview proxy target resolver did not handle fallback logic if the requested client port did not match any active host port mappings (e.g., if it was stale).
+* **Cause:** When a container was recreated (due to self-healing or Docker host pruning), it received a new random host-mapped port, but the database port column remained unchanged. The client requested the old stale port, which the proxy target resolver failed to resolve.
 * **Fix:**
   - Modified [docker.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/docker.ts) to update the `port` column in the database whenever a container is recreated.
   - Modified [route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/route.ts) (project details) to prioritize the container's active host-mapped port over the stored database value when the container is running.
   - Modified [route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/preview/%5Bid%5D/%5B%5B...path%5D%5D/route.ts) (preview proxy) to fall back to the default internal port `3000` if the requested port does not match any active container host bindings and is not a standard internal port.
+  - Modified [PreviewTab.tsx](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/mobile/components/project/PreviewTab.tsx) to resolve active ports back to clean, virtual internal port mappings (like `http://localhost:3000/` or `http://localhost:5173/`) for the address bar, keeping the public ports hidden.
+  - Added logic to [PreviewTab.tsx](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/mobile/components/project/PreviewTab.tsx) to hide the URL in the address bar initially and when a loading error occurs, showing a clean "No active server" placeholder until the page loads successfully.
 
 ---
 
-## 📈 Pricing, Concurrency & Cost Model (At 5K Users)
+## 📈 Cost & Concurrency Model (At 5K Users)
 
-### Tier Allocations
+### Resource Limits Per Plan
 * **Free (Ad-Supported):** 512MB RAM container, 256 CPU shares, 1 active workspace, 10 min idle sleep timeout, no custom domain.
 * **Pro ($29/mo):** 2GB RAM container, 1024 CPU shares, 10 workspaces, 2-hour idle sleep timeout, custom domains.
 * **Enterprise ($99/mo):** 4GB RAM container, 2048 CPU shares, unlimited workspaces, 6-hour idle sleep timeout, always-on container (1 project).
 
-### Concurrency Math
-With 5,000 registered users, we assume:
+### Concurrency Projections
+For 5,000 registered users, we project:
 * **Daily Active Users (DAU):** ~500–750 (10–15%).
 * **Peak Concurrent Active Sessions:** ~75–120.
 * **Average active containers running simultaneously:** ~60–75 (thanks to the 30-minute auto-sleep feature).
@@ -279,13 +321,6 @@ With 5,000 registered users, we assume:
 ---
 
 ## 🚀 Scalability Evolution Roadmap
-
-```mermaid
-graph TD
-    Phase1[Phase 1: Single VPS <br> 0-50 Users] --> Phase2[Phase 2: Vertical Resize <br> 50-500 Users]
-    Phase2 --> Phase3[Phase 3: Docker Swarm Cluster <br> 500-5,000 Users]
-    Phase3 --> Phase4[Phase 4: Kubernetes DOKS <br> 5,000+ Users]
-```
 
 ### Phase 1: Current Setup (Single Droplet)
 All backend APIs, preview proxies, and developer containers run on a single DigitalOcean Droplet (4GB). Storage is hosted locally. Cost: ~$24/mo.
@@ -306,7 +341,7 @@ Migrate container provisioning commands from local `dockerode` API to Kubernetes
 
 ## 💻 Local Development Setup
 
-### Backend
+### Backend Setup
 1. Navigate to the backend directory:
    ```bash
    cd backend
@@ -326,7 +361,7 @@ Migrate container provisioning commands from local `dockerode` API to Kubernetes
    npm run dev
    ```
 
-### Mobile App (Expo)
+### Mobile App Setup (Expo)
 1. Navigate to the mobile directory:
    ```bash
    cd mobile
