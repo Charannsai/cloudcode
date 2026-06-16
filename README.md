@@ -54,6 +54,77 @@ cloudcode/
 
 ---
 
+## 🗺️ Master End-to-End Sequence Diagram (Visual Blueprint)
+
+The sequence diagram below provides the master architectural blueprint of CloudCode, mapping how the mobile client, Next.js custom server, Supabase DB, host filesystem, and Docker daemon collaborate across all runtime operations.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Developer as Mobile Client (Expo App)
+    participant Server as Next.js Custom Server (Host VPS)
+    participant DB as Supabase DB
+    participant HostFS as Host Filesystem
+    participant Docker as Docker Daemon
+    participant Container as Isolated Container (non-root coder)
+    
+    %% Section 1: Auth & Bootstrap
+    Note over Developer, DB: 1. Authentication & Boot
+    Developer->>Server: HTTP GET /api/auth/github (or JWT verify)
+    Server->>DB: Query User Profile & RLS validation
+    DB-->>Server: User authenticated (JWT verified)
+    Server-->>Developer: Return JWT Session Token
+    
+    %% Section 2: Workspace Creation
+    Note over Developer, Container: 2. Workspace Provisioning & Git Import
+    Developer->>Server: HTTP POST /api/projects/import (name, githubUrl)
+    Server->>DB: Insert project metadata (status: 'creating')
+    Server->>HostFS: spawnSync('git', ['clone', '--depth=1', githubUrl, workspacePath]) [SSRF / shell-safe]
+    Server->>HostFS: chmod -R 777 (grant read/write to coder user)
+    Server->>Docker: createContainer() (CPU: 512, RAM: 1GB, bind workspace & SSH keys volume)
+    Docker->>Container: Start container process (Running Node/Bash)
+    Docker-->>Server: Return Container ID & Host-mapped port
+    Server->>DB: Update project metadata (status: 'ready', container_id, port)
+    Server-->>Developer: Return Project Info (Ready)
+    
+    %% Section 3: Editing & Persistent Terminal
+    Note over Developer, Container: 3. Editing & Persistent Terminal Loop
+    Developer->>Server: WebSocket /api/terminal/[projectId]?token=JWT
+    Server->>DB: Verify Ownership & container status
+    Server->>Docker: container.exec(['/bin/bash'])
+    Server-->>Developer: WebSocket JSON: { type: "ready", message: "username@cloudcode" }
+    Developer<->Server: Bi-directional Stdin/Stdout packets (persistent via tmux wrapper)
+    Developer->>Server: HTTP GET /api/projects/[id]/files (read files using resolved paths)
+    Server->>HostFS: path.resolve() & read directory [Path Traversal guarded]
+    HostFS-->>Server: Return folder contents
+    Server-->>Developer: Return File Tree data
+    
+    %% Section 4: App Running & Preview Proxy
+    Note over Developer, Container: 4. Build, Run & Preview Proxy
+    Developer->>Server: WS: Injects compile/run command (e.g. gcc/python3) to active terminal
+    Server->>Container: Execute command in bash stdin
+    Container->>Container: App boots & binds to internal port (e.g., 3000)
+    Developer->>Server: WebView HTTP GET /api/preview/[id]?port=3000 (with cookies)
+    Server->>Docker: Inspect container (Get internal IP: 172.17.0.2)
+    Server->>Container: check local listener & bind TCP forwarder if loopback
+    Server->>Container: HTTP Fetch to http://172.17.0.2:3000/
+    Container-->>Server: Return raw HTML response
+    Note over Server: Inject <base href="/api/preview/[id]/"> & rewrite CSS urls
+    Server-->>Developer: Set Cookies (preview_token, preview_port) + Return rewritten HTML
+    
+    %% Section 5: Cron Auto-Sleep & Auto-Wake
+    Note over Developer, Container: 5. Cron Auto-Sleep & Auto-Wake
+    Note over Server: Cron runs every 5 mins. If project activity idle > 30 mins:
+    Server->>Docker: Stop Container (docker stop)
+    Server->>DB: Update status: 'sleeping'
+    Developer->>Server: Subsequent request to Preview or Files API
+    Server->>Docker: Start Container (docker start)
+    Server->>DB: Update status: 'ready' & new port mappings
+    Server-->>Developer: Return Waking Up Loading Page -> Redirect once ready
+```
+
+---
+
 ## ⚙️ Core Architectural Subsystems
 
 ### 1. Custom HTTP & WebSocket Server
