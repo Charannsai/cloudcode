@@ -19,6 +19,7 @@ mindmap
       App-wide State Persistence
       Floating Header Plus Button
       Latency & Connection Recovery
+      Minimalist Glassmorphism (Replit-like)
     Universal AI Systems
       Global Autonomous Agent
       Selection-based Ask AI Context
@@ -96,6 +97,13 @@ mindmap
 * **Feature Description:**
   - Optimistic UI updates on mobile (updating UI state immediately and reverting only if the server API fails).
   - Use Gzip/Brotli compression for file tree schemas and cache unchanged project structures locally.
+
+### 2.4. Sleek, Minimalist UI Redesign (Replit-Inspired Glassmorphism)
+* **Current Gap:** The current UI is over-designed and laggy, relying on heavy modals, complex overlay animations, and non-optimal components that degrade the mobile UX.
+* **Feature Description:**
+  - **Replit-Inspired Sleek Aesthetics:** Re-engineer the design system to focus on clean, high-contrast layouts, flat component hierarchies, and extremely lightweight interfaces.
+  - **High-Performance Glassmorphism:** Implement translucent panels, frosted-glass blur effects, and micro-borders using GPU-accelerated rendering blocks in React Native to avoid UI lag.
+  - **Inline Components over Heavy Modals:** Replace intrusive full-screen modal sheets with inline contextual inputs, collapsible accordion trees, and bottom-sheet drawers that maintain user focus and render fast.
 
 ---
 
