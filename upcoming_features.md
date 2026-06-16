@@ -10,26 +10,29 @@ This document outlines the planned upcoming features, user experience enhancemen
 mindmap
   root((CloudCode Roadmap))
     Git & Workspace Control
-      Smart Pull & Sync Sync
+      Persistent Terminal Sessions
+      Multi-File & Side-by-Side Tabs
       Specific Path File Creation
       More Templates
-      VS Code-style Runs & Actions
+      IDE Menubar & Code Run
     Real-time UX & Responsiveness
-      Persistent State Loaders
-      Top Floating Circle Plus Button
-      Latency & Network Fixes
+      App-wide State Persistence
+      Floating Header Plus Button
+      Latency & Connection Recovery
     Universal AI Systems
-      Universal Autonomous Agent
-      Selection-based Ask AI
-      In-Project AI Panel
+      Global Autonomous Agent
+      Selection-based Ask AI Context
+      Top-Right Sidebar AI Panel Tab
       Error Catching with Ask AI Fix
       Voice-Activated Shake-to-Run
     Preview & DevTools
-      Preview Browser DevTools
-      Network Console & Inspector
+      Chrome-style Mobile DevTools
+      Real-time Log & Console Tracker
+      Network & Elements Inspector
     Platform Settings & Shell
-      Global Module Management
-      Global Terminal Portal
+      Global Onboarding Dependency Wizard
+      Global Dependencies Dashboard
+      Navbar-level Global Terminal
     Billing & AI Customization
       Dodo Payments Integration
       Custom API Keys & Models
@@ -39,19 +42,19 @@ mindmap
 
 ## 📂 1. Git & Workspace Core Operations
 
-### 1.1. Robust Git Pull, Sync, and Merge Conflicts View
-* **Current Gap:** Pushing from the mobile workspace fails silently if remote changes exist. There is no automated workflow to handle remote changes or display a visual diff.
+### 1.1. Robust Git Sync & Persistent Terminal Session
+* **Current Gap:** Pushing from the mobile workspace fails silently if remote changes exist. Additionally, navigating away from the project view to workspaces or the dashboard kills or resets the active terminal tab, forcing users to start a new session and losing their environment state.
 * **Feature Description:**
-  - Prevent Git push operations if the remote branch has commits that do not exist locally.
-  - Automatically suggest/perform a `git pull` or `git fetch`.
-  - Provide a visual diff view (like VS Code/GitKraken desktop) showing incoming changes versus local modifications.
-  - Offer basic conflict resolution options directly in the mobile UI.
+  - **Git Operations:** Prevent Git push operations if the remote branch has commits that do not exist locally, automatically suggesting a `git pull`/`git fetch` with visual conflict resolution tools.
+  - **Persistent Terminal:** Maintain the terminal's socket connection and process state (utilizing backend `tmux` wrapping or in-memory shell process stream preservation). The session remains fully active when switching screens (e.g., going back to Workspaces/Dashboard and returning).
+  - **Auto-Recovery Logs:** If the container or shell process terminates, all running processes halt, but the log history/interactions of that session are persisted and restored upon the terminal re-opening.
 
-### 1.2. Directory-Specific File/Folder Creation
-* **Current Gap:** Creation of files/folders is limited to root or lacks path selection.
+### 1.2. Directory-Specific File/Folder Creation & Multi-File Editor Tabs
+* **Current Gap:** Creation of files/folders is limited to root or lacks path selection. The mobile editor is currently locked to a single file at a time, preventing developers from switching quickly between multiple scripts or seeing files side-by-side.
 * **Feature Description:**
-  - Update the file manager sidebar to allow right-click/long-press contexts at any subfolder path to trigger "New File" or "New Folder" at that precise route.
-  - Add an input path validation step to prevent invalid directory paths.
+  - **Directory Creation:** Update the file manager sidebar to allow context menus (right-click/long-press) at any subfolder path to trigger "New File" or "New Folder" at that precise route with path input validation.
+  - **Multi-File Tab System:** Implement a tab bar at the top of the mobile code editor displaying all currently opened files with close (`x`) buttons. Users can switch between files with a single tap.
+  - **Side-by-Side Mobile Editing:** Introduce a split-screen viewport layout optimized for mobile screens, enabling users to place two code files side-by-side or stacked vertically for quick reference and multitasking.
 
 ### 1.3. Additional Project & Environment Templates
 * **Current Gap:** Limited to a few templates (Node, React, Empty).
@@ -64,22 +67,23 @@ mindmap
     - **Next.js:** Full-stack app router skeleton
     - **Mobile/Web:** Tailwind presets, Expo templates
 
-### 1.4. Advanced Running & Editing Abilities
-* **Current Gap:** Editing is plain text, and running requires manual terminal commands.
+### 1.4. Desktop-Style IDE Menubar & Custom File Runner
+* **Current Gap:** Running code requires manual terminal configuration, and the editor lacks standard desktop IDE options.
 * **Feature Description:**
-  - Add a persistent "Run Project" button at the top header that auto-detects standard dev scripts (`npm run dev`, `python main.py`, etc.) and boots them.
-  - Implement basic editor capabilities: code folding, symbol search, search & replace across files, and formatting with Prettier/ESLint.
+  - **IDE Toolbar/Menubar:** Implement a mobile-optimized top menubar providing options typical of full IDEs (e.g., "File", "Edit", "Selection", "View", "Go").
+  - **Smart Runner Menu:** Implement a contextual "Run" button simulating standard desktop runners (e.g., compile and execute a single `.c` file, execute a `.py` script, or start a `.js` workspace). 
+  - **Debugging Controls:** Provide an execution control overlay with options: "Start Debugging", "Run Without Debugging", "Restart", and "Stop", forwarding signals directly to the container's interactive shell.
 
 ---
 
 ## 📱 2. UI/UX & Real-time State Indicators
 
-### 2.1. Real-time Loading Indicators & State Persistence
-* **Current Gap:** Screens go idle during network latency without visual loaders. Reconnect scripts get stuck on "connecting loader" without auto-reboot or refresh feedback. The Git commit changes count doesn't increment/decrement unless a full page reload occurs.
+### 2.1. App-Wide State Persistence & Loading Overlays
+* **Current Gap:** Delayed responses or network latency result in jarring blank states, frozen components, or lost navigation cache across multiple screens (not just in Git or terminals).
 * **Feature Description:**
-  - Implement full visual skeleton screens and spinner overlays for any operation taking $>150\text{ms}$.
-  - **Git Upstream/Downstream Indicators:** Maintain a local state cache that increments/decrements the changes badge immediately upon staging/committing/syncing.
-  - **Terminal Autorecover:** If the websocket disconnects or gets stuck in `connecting` state for more than `3` seconds, show a fallback "Reconnecting..." status bar and trigger a soft reconnect backoff rather than locking the UI.
+  - **Unified Skeleton Loaders:** Implement custom loading states, progress bars, and visual skeletal placeholders across *all* app screens for any background actions taking $>150\text{ms}$.
+  - **App-Wide State Caching:** Use global Zustand persistence (or SQLite/AsyncStorage backing) to cache the visual state of files, dashboard stats, Git counts, and project trees so that navigating away and back is seamless.
+  - **Connection Recovery Bar:** Introduce a system-wide status bar that shows "Reconnecting..." whenever the WebSocket disconnects, triggering a soft background reconnect backoff without locking the application UI.
 
 ### 2.2. Ergonomic Action Button Placement
 * **Current Gap:** Creating folder/project buttons are placed out of immediate reach.
@@ -91,17 +95,18 @@ mindmap
 * **Current Gap:** Delayed responses on Git states, file saves, and shell interactions.
 * **Feature Description:**
   - Optimistic UI updates on mobile (updating UI state immediately and reverting only if the server API fails).
-  - Use Gzip/Brotli compression for file tree schemas and cache unchanged project structures locally using SQLite/AsyncStorage.
+  - Use Gzip/Brotli compression for file tree schemas and cache unchanged project structures locally.
 
 ---
 
 ## 🤖 3. Universal & Integrated AI Systems
 
-### 3.1. Universal Autonomous AI Agent
-* **Current Gap:** Chat is localized to single workspaces.
+### 3.1. Unified Global Autonomous AI Agent
+* **Current Gap:** Chat is localized to single workspaces, creating fragmented workflows and preventing developers from using AI to manage the overall container or environment.
 * **Feature Description:**
-  - Introduce a Global AI Agent available at the top root of the app.
-  - The agent works autonomously: if a user prompts *"Create a Next.js setup with Tailwind called my-portfolio"*, the agent makes API requests to spin up the workspace, pull the templates, run the installation commands, and open the editor automatically.
+  - Introduce a Global Autonomous AI Agent accessible at the root of the app, replacing localized single-workspace chat components.
+  - **AI Everywhere Integration:** Embed context-aware AI helper hooks directly inside terminal panels (e.g., "Ask AI to fix command error") and within the workspace setup page (e.g., a "Build with AI" button that prompts the agent to autogenerate workspaces).
+  - **Autonomous Setup Execution:** The agent can write configurations, install libraries, create directories, and run setups automatically based on high-level commands (e.g., *"Set up a Next.js landing page with Tailwind"*).
 
 ### 3.2. Selection-based "Ask AI" Context Menu
 * **Current Gap:** Users have to manually copy-paste code snippets into the AI assistant tab.
@@ -109,11 +114,11 @@ mindmap
   - When text is highlighted inside the code editor, trigger a native floating toolbar containing an **"Ask AI"** action button.
   - Tapping this button opens the AI screen instantly, pre-populating the prompt input with the selected code block as context.
 
-### 3.3. In-Project Dockable AI Panel
-* **Current Gap:** Navigating away from the editor to ask questions breaks the workspace flow.
+### 3.3. Right-Docked AI Panel Tab
+* **Current Gap:** Opening the AI panel inside a project covers the editor or opens a disjointed slide-out drawer, breaking the flow of active development.
 * **Feature Description:**
-  - Integrate a slide-out drawer or overlay AI panel inside the project workspace itself.
-  - Allows concurrent code viewing and AI assistance without leaving `editor.tsx`.
+  - Introduce a dedicated AI Assistant tab on the top-right of the workspace dashboard layout, mirroring the file manager tab on the left.
+  - Clicking this tab opens a collapsible sidebar/panel displaying the global AI chat directly next to the editor, leaving the top navigation tabs in place so developers can view code and interact with the AI concurrently.
 
 ### 3.4. Preview Error Overlay with Auto-Fix Agent
 * **Current Gap:** App crashes or runtime console errors inside the web preview are hidden or require desktop browser inspectors.
@@ -131,29 +136,33 @@ mindmap
 
 ## 🔍 4. Web Preview & DevTools
 
-### 4.1. In-App Mobile Developer Tools
-* **Current Gap:** Web previews are blind viewports.
+### 4.1. Desktop-Grade Mobile Developer Tools
+* **Current Gap:** Web previews are blind viewports lacking debug monitors and inspection capabilities.
 * **Feature Description:**
-  - Place a 3-dot browser menu in the preview header.
-  - Expand to show a miniature DevTools panel:
-    - **Console Log Viewer:** Displays javascript logs forwarded from the preview.
-    - **Network Traffic Monitor:** Tracks asset loading times and status codes.
-    - **DOM Inspector:** A simplified outline tree of the rendered DOM.
+  - Clicking the 3-dot preview menu opens a comprehensive in-app DevTools panel, mirroring Chrome DevTools and desktop editor panels.
+  - **DevTools Tabs & Capabilities:**
+    - **Console Log / Error Viewer:** Real-time log stream showing javascript warnings, errors, compile exceptions, and custom print statements.
+    - **Network Traffic Monitor:** Real-time network request list showing assets loading, response/request headers, status codes, and latency payload details.
+    - **DOM / Elements Inspector:** Visual outline tree representation of the rendered HTML DOM for layout inspection.
+    - **Sources Inspector:** Displays files currently loaded by the browser environment for debugger tracing.
 
 ---
 
 ## ⚙️ 5. Global Shell & Module Management
 
-### 5.1. Global Terminal Portal
-* **Current Gap:** Terminals are strictly tied to specific project containers.
+### 5.1. Main Navbar Global Terminal
+* **Current Gap:** Terminals are strictly tied to specific project containers or hidden inside Settings, preventing quick global administrative tasks.
 * **Feature Description:**
-  - Add a dedicated Global Terminal in the settings or dashboard tab for quick utility operations, global environment checks, or system status monitoring.
+  - Add a dedicated **Global Terminal** tab directly inside the main navigation bar/tab layout (positioned alongside Workspaces, Global AI, and Dashboard).
+  - Allows quick global command execution, environment monitoring, and multi-container actions without opening specific project workspaces.
 
-### 5.2. Personal PC Experience & Settings Dashboard
-* **Current Gap:** Users have no clear visibility of what tools/runtimes are installed inside their containers.
+### 5.2. Onboarding Tool Wizard & Installed PC Runtimes Dashboard
+* **Current Gap:** Users have no clear visibility of what compiler tools or runtimes (Node.js, GCC, Python, etc.) are pre-installed inside container systems, nor can they manage global environments interactively.
 * **Feature Description:**
-  - Provide a dashboard showing installed compilers and global dependencies (Node.js version, Python version, Git version, Docker container metrics).
-  - Give users the ability to manually install/upgrade global workspace modules directly from an intuitive settings list, reinforcing the feel of having a complete native PC inside their mobile device.
+  - **Onboarding Dependency Wizard:** Upon first-time user onboarding, present a clear confirmation screen. Prompt the user: *"We are installing essential development runtimes (Node.js, Git, GCC, Python) as a pre-requisite. Would you like to proceed?"*
+    - Options: **"Confirm Auto-Install (Recommended)"** or **"Install Manually"**.
+    - Include an expandable panel at the bottom to search, check recommended tools, and selectively add other components before initialization.
+  - **Global Dependencies Settings:** Add a dashboard in settings that acts like a desktop system application search (e.g., Windows Search). Displays all globally installed runtimes, compilers, and library modules with active version tags, enabling users to check what is installed and search/install updates globally.
 
 ---
 
