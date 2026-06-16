@@ -170,47 +170,46 @@ const GeminiLogo = () => (
   </Svg>
 )
 
+const DeepSeekLogo = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24">
+    <Path
+      d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"
+      fill="#2D60FF"
+    />
+  </Svg>
+)
+
+const LlamaLogo = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24">
+    <Path
+      d="M6.897 4c1.915 0 3.516.932 5.43 3.376l.282-.373c.19-.246.383-.484.58-.71l.313-.35C14.588 4.788 15.792 4 17.225 4c1.273 0 2.469.557 3.491 1.516l.218.213c1.73 1.765 2.917 4.71 3.053 8.026l.011.392.002.25c0 1.501-.28 2.759-.818 3.7l-.14.23-.108.153c-.301.42-.664.758-1.086 1.009l-.265.142-.087.04a3.493 3.493 0 0 1-.302.118 4.117 4.117 0 0 1-1.33.208c-.524 0-.996-.067-1.438-.215-.614-.204-1.163-.56-1.726-1.116l-.227-.235c-.753-.812-1.534-1.976-2.493-3.586l-1.43-2.41-.544-.895-1.766 3.13-.343.592C7.597 19.156 6.227 20 4.356 20c-1.21 0-2.205-.42-2.936-1.182l-.168-.184c-.484-.573-.837-1.311-1.043-2.189l-.067-.32a8.69 8.69 0 0 1-.136-1.288L0 14.468c.002-.745.06-1.49.174-2.23l.1-.573c.298-1.53.828-2.958 1.536-4.157l.209-.34c1.177-1.83 2.789-3.053 4.615-3.16L6.897 4zm-.033 2.615l-.201.01c-.83.083-1.606.673-2.252 1.577l-.138.199-.01.018c-.67 1.017-1.185 2.378-1.456 3.845l-.004.022a12.591 12.591 0 00-.207 2.254l.002.188c.004.18.017.36.04.54l.043.291c.092.503.257.908.486 1.208l.117.137c.303.323.698.492 1.17.492 1.1 0 1.796-.676 3.696-3.641l2.175-3.4.454-.701-.139-.198C9.11 7.3 8.084 6.616 6.864 6.616zm10.196-.552l-.176.007c-.635.048-1.223.359-1.82.933l-.196.198c-.439.462-.887 1.064-1.367 1.807l.266.398c.18.274.362.56.55.858l.293.475 1.396 2.335.695 1.114c.583.926 1.03 1.6 1.408 2.082l.213.262c.282.326.529.54.777.673l.102.05c.227.1.457.138.718.138.176.002.35-.023.518-.073.338-.104.61-.32.813-.637l.095-.163.077-.162c.194-.459.29-1.06.29-1.785l-.006-.449c-.08-2.871-.938-5.372-2.2-6.798l-.176-.189c-.67-.683-1.444-1.074-2.27-1.074z"
+      fill="#0081FB"
+    />
+  </Svg>
+)
+
+const PythonLogo = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24">
+    <Path
+      d="M11.9 1a5.6 5.6 0 00-5.5 5.5v1.2h5.7V9h-5.7V7.8C4.5 7.8 3 9.3 3 11v1.1c0 1.7 1.5 3.1 3.4 3.1h1.2v-1.1c0-1.7 1.5-3.1 3.4-3.1h4.5a3.4 3.4 0 003.4-3.1V8C18.9 4.6 15.3 1 11.9 1zm4.3 10.9v1.2H10.5V15h5.7v-1.1c1.9 0 3.4-1.5 3.4-3.1V9.7c0-1.7-1.5-3.1-3.4-3.1h-1.2v1.1c0 1.7-1.5 3.1-3.4 3.1H7.1a3.4 3.4 0 00-3.4 3.1v1.1c0 3.4 3.6 7 7 7a5.6 5.6 0 005.5-5.5v-1.2h-4.3z"
+      fill="#3776AB"
+    />
+  </Svg>
+)
+
+const FlutterLogo = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24">
+    <Path d="M14.3 2.3L5 11.6l4.7 4.7 9.3-9.3z" fill="#02569B" />
+    <Path d="M14.3 11.6L9.6 16.3l4.7 4.7 9.3-9.3z" fill="#0175C2" />
+    <Path d="M19 11.6l-4.7 4.7 4.7 4.7 4.7-4.7z" fill="#13B9FD" />
+  </Svg>
+)
+
 // -------------------------------------------------------------
 // Onboarding Illustration Component 0: Glowing CC Logo
 // -------------------------------------------------------------
 const Screen0Illustration = () => {
-  const floatAnim = useSharedValue(0)
-  useEffect(() => {
-    floatAnim.value = withRepeat(
-      withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    )
-  }, [])
-
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 800 },
-      { rotateX: '8deg' },
-      { rotateY: '-6deg' },
-      { translateY: floatAnim.value * 12 - 6 }
-    ]
-  }))
-
-  return (
-    <View style={styles.showcaseWrapper}>
-      <Animated.View style={[styles.workspaceCard, cardStyle, styles.glassCard3d]}>
-        <BlurView intensity={35} tint="dark" style={styles.workspaceBlur}>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Svg width={90} height={90} viewBox="0 0 874 552">
-              <Path
-                d={CLOUD_PATH}
-                fill="#00E5FF"
-                fillOpacity={0.15}
-                stroke="#00E5FF"
-                strokeWidth={4}
-              />
-            </Svg>
-          </View>
-        </BlurView>
-      </Animated.View>
-    </View>
-  )
+  return null
 }
 
 // -------------------------------------------------------------
@@ -218,40 +217,140 @@ const Screen0Illustration = () => {
 // -------------------------------------------------------------
 const Screen1Illustration = () => {
   const floatAnim = useSharedValue(0)
+  const pulseAnim = useSharedValue(0)
+
   useEffect(() => {
     floatAnim.value = withRepeat(
-      withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: 3200, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     )
+    pulseAnim.value = withRepeat(
+      withTiming(1, { duration: 2400, easing: Easing.linear }),
+      -1,
+      false
+    )
   }, [])
 
-  const card1Style = useAnimatedStyle(() => ({
+  const centralStyle = useAnimatedStyle(() => ({
     transform: [
       { perspective: 800 },
-      { rotateX: '8deg' },
-      { rotateY: '-6deg' },
-      { translateY: floatAnim.value * 12 - 6 }
-    ],
+      { rotateX: '6deg' },
+      { rotateY: '-4deg' },
+      { translateY: floatAnim.value * 8 - 4 }
+    ]
   }))
-  const badgeReactStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -floatAnim.value * 8 + 4 }, { translateX: -10 }],
+
+  const gitHubCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: floatAnim.value * 6 - 3 },
+      { translateX: -15 }
+    ]
   }))
-  const badgeDockerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatAnim.value * 6 - 3 }, { translateX: 15 }],
+
+  const reactCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: -floatAnim.value * 10 + 5 },
+      { translateX: 15 }
+    ]
   }))
-  const badgeGoStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -floatAnim.value * 10 + 5 }, { translateX: 20 }],
+
+  const flutterCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: floatAnim.value * 8 - 4 },
+      { translateX: 20 }
+    ]
   }))
-  const badgeTsStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatAnim.value * 8 - 4 }, { translateX: -15 }],
+
+  const dockerCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: -floatAnim.value * 6 + 3 },
+      { translateX: -20 }
+    ]
   }))
+
+  const animatedPulseProps = useAnimatedProps(() => {
+    return {
+      strokeDashoffset: -pulseAnim.value * 120
+    }
+  })
 
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Center Desktop Workspace Card (Glassmorphic) */}
-      <Animated.View style={[styles.workspaceCard, card1Style, styles.glassCard3d]}>
-        <BlurView intensity={30} tint="dark" style={styles.workspaceBlur}>
+      <Svg style={StyleSheet.absoluteFill} viewBox="0 0 350 250">
+        <Path 
+          d="M 50 70 Q 110 70 140 120" 
+          fill="none" 
+          stroke="rgba(0, 229, 255, 0.15)" 
+          strokeWidth="2" 
+          strokeDasharray="4, 4" 
+        />
+        <Path 
+          d="M 50 70 Q 110 70 140 120" 
+          fill="none" 
+          stroke="#00E5FF" 
+          strokeWidth="2" 
+          strokeDasharray="15, 105" 
+          animatedProps={animatedPulseProps}
+        />
+        <Path 
+          d="M 210 120 Q 240 60 300 60" 
+          fill="none" 
+          stroke="rgba(0, 229, 255, 0.15)" 
+          strokeWidth="2" 
+          strokeDasharray="4, 4" 
+        />
+        <Path 
+          d="M 210 120 Q 240 60 300 60" 
+          fill="none" 
+          stroke="#61DAFB" 
+          strokeWidth="2" 
+          strokeDasharray="15, 105" 
+          animatedProps={animatedPulseProps}
+        />
+        <Path 
+          d="M 210 120 Q 240 120 290 130" 
+          fill="none" 
+          stroke="rgba(0, 229, 255, 0.15)" 
+          strokeWidth="2" 
+          strokeDasharray="4, 4" 
+        />
+        <Path 
+          d="M 210 120 Q 240 120 290 130" 
+          fill="none" 
+          stroke="#13B9FD" 
+          strokeWidth="2" 
+          strokeDasharray="15, 105" 
+          animatedProps={animatedPulseProps}
+        />
+        <Path 
+          d="M 210 120 Q 240 180 280 200" 
+          fill="none" 
+          stroke="rgba(0, 229, 255, 0.15)" 
+          strokeWidth="2" 
+          strokeDasharray="4, 4" 
+        />
+        <Path 
+          d="M 210 120 Q 240 180 280 200" 
+          fill="none" 
+          stroke="#2496ED" 
+          strokeWidth="2" 
+          strokeDasharray="15, 105" 
+          animatedProps={animatedPulseProps}
+        />
+      </Svg>
+
+      <Animated.View style={[styles.floatingBadge, { left: 15, top: 40 }, gitHubCardStyle]}>
+        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
+          <Svg width={14} height={14} viewBox="0 0 24 24" fill="#FFFFFF">
+            <Path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+          </Svg>
+          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>octocat/app</Text>
+        </BlurView>
+      </Animated.View>
+
+      <Animated.View style={[styles.workspaceCard, { width: width - 150, height: 110, zIndex: 10 }, centralStyle, styles.glassCard3d]}>
+        <BlurView intensity={35} tint="dark" style={styles.workspaceBlur}>
           <View style={styles.workspaceHeader}>
             <View style={[styles.windowDot, { backgroundColor: '#FF5F56' }]} />
             <View style={[styles.windowDot, { backgroundColor: '#FFBD2E' }]} />
@@ -259,44 +358,30 @@ const Screen1Illustration = () => {
             <Text style={styles.windowTitle}>workspace_main</Text>
           </View>
           <View style={styles.workspaceBody}>
-            <Text style={styles.codeText}>$ git clone https://github.com/cloudcode/app.git</Text>
-            <Text style={[styles.codeText, { color: '#4ADE80', marginTop: 4 }]}>✓ Repository cloned successfully.</Text>
-            <Text style={[styles.codeText, { color: '#60A5FA', marginTop: 4 }]}>$ npm install && npm run dev</Text>
-            <Text style={[styles.codeText, { color: '#E2E8F0', marginTop: 4 }]}>✓ Server running on port 3000</Text>
+            <Text style={styles.codeText}>$ git clone https://github.com/octocat/app...</Text>
+            <Text style={[styles.codeText, { color: '#00E5FF', marginTop: 4 }]}>✓ Cloned. Starting Dev Environment.</Text>
           </View>
         </BlurView>
       </Animated.View>
 
-      {/* Floating framework badges */}
-      {/* React Badge */}
-      <Animated.View style={[styles.floatingBadge, { left: 10, top: 20 }, badgeReactStyle]}>
+      <Animated.View style={[styles.floatingBadge, { right: 10, top: 40 }, reactCardStyle]}>
         <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
           <ReactLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6 }]}>React</Text>
+          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>React Dev</Text>
         </BlurView>
       </Animated.View>
 
-      {/* Docker Badge */}
-      <Animated.View style={[styles.floatingBadge, { right: 15, top: 40 }, badgeDockerStyle]}>
+      <Animated.View style={[styles.floatingBadge, { right: 15, top: 110 }, flutterCardStyle]}>
+        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
+          <FlutterLogo />
+          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>Flutter App</Text>
+        </BlurView>
+      </Animated.View>
+
+      <Animated.View style={[styles.floatingBadge, { right: 40, top: 180 }, dockerCardStyle]}>
         <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
           <DockerLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6 }]}>Docker</Text>
-        </BlurView>
-      </Animated.View>
-
-      {/* Go Badge */}
-      <Animated.View style={[styles.floatingBadge, { right: 40, bottom: 30 }, badgeGoStyle]}>
-        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
-          <GoLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6 }]}>Go</Text>
-        </BlurView>
-      </Animated.View>
-
-      {/* TypeScript Badge */}
-      <Animated.View style={[styles.floatingBadge, { left: 20, bottom: 20 }, badgeTsStyle]}>
-        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
-          <TypeScriptLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6 }]}>TypeScript</Text>
+          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>Docker Node</Text>
         </BlurView>
       </Animated.View>
     </View>
@@ -307,131 +392,148 @@ const Screen1Illustration = () => {
 // Onboarding Illustration Component 2: Build with AI
 // -------------------------------------------------------------
 const Screen2Illustration = () => {
+  const angle = useSharedValue(0)
   const floatAnim = useSharedValue(0)
+  const [typedText, setTypedText] = useState("")
+  const [checkPhase, setCheckPhase] = useState(0)
+
   useEffect(() => {
+    angle.value = withRepeat(
+      withTiming(2 * Math.PI, { duration: 10000, easing: Easing.linear }),
+      -1,
+      false
+    )
     floatAnim.value = withRepeat(
-      withTiming(1, { duration: 3400, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     )
   }, [])
 
-  // Typewriter effect
-  const prompts = [
-    "Make an AI app that lets me take a picture of a meal and counts calories",
-    "Add ChatGPT AI to my app.",
-    "Refactor this async function to handle all exceptions",
-    "Generate a beautiful Next.js landing page with a sleek dark theme"
-  ]
-  const [currentPromptIndex, setCurrentPromptIndex] = useState(0)
-  const [typedText, setTypedText] = useState("")
+  const fullPrompt = "Build a SaaS dashboard with auth and billing..."
   
   useEffect(() => {
-    let letterIndex = 0
+    let timer: any
+    let charIndex = 0
     let text = ""
     let isDeleting = false
-    let timer: any
 
-    const type = () => {
-      const fullPrompt = prompts[currentPromptIndex]
+    const run = () => {
       if (!isDeleting) {
-        text = fullPrompt.slice(0, letterIndex + 1)
-        letterIndex++
+        text = fullPrompt.substring(0, charIndex + 1)
         setTypedText(text)
-        if (letterIndex === fullPrompt.length) {
-          isDeleting = true
-          timer = setTimeout(type, 2000) // Hold prompt for 2s
+        charIndex++
+        if (charIndex === fullPrompt.length) {
+          setCheckPhase(1)
+          timer = setTimeout(() => {
+            setCheckPhase(2)
+            timer = setTimeout(() => {
+              setCheckPhase(3)
+              timer = setTimeout(() => {
+                setCheckPhase(4)
+                timer = setTimeout(() => {
+                  isDeleting = true
+                  timer = setTimeout(run, 1500)
+                }, 1500)
+              }, 400)
+            }, 400)
+          }, 400)
         } else {
-          timer = setTimeout(type, 50) // Speed of typing
+          timer = setTimeout(run, 60)
         }
       } else {
-        text = fullPrompt.slice(0, letterIndex - 1)
-        letterIndex--
+        text = fullPrompt.substring(0, charIndex - 1)
         setTypedText(text)
-        if (letterIndex === 0) {
+        charIndex--
+        setCheckPhase(0)
+        if (charIndex === 0) {
           isDeleting = false
-          setCurrentPromptIndex((prev) => (prev + 1) % prompts.length)
-          timer = setTimeout(type, 500)
+          timer = setTimeout(run, 500)
         } else {
-          timer = setTimeout(type, 30) // Speed of deleting
+          timer = setTimeout(run, 30)
         }
       }
     }
 
-    type()
+    run()
     return () => clearTimeout(timer)
-  }, [currentPromptIndex])
+  }, [])
 
-  const centerCardStyle = useAnimatedStyle(() => ({
+  const getOrbitalStyle = (offsetAngle: number) => {
+    return useAnimatedStyle(() => {
+      const radius = 78
+      const a = angle.value + offsetAngle
+      return {
+        transform: [
+          { translateX: radius * Math.cos(a) },
+          { translateY: radius * Math.sin(a) },
+          { scale: 0.95 }
+        ]
+      }
+    })
+  }
+
+  const composerStyle = useAnimatedStyle(() => ({
     transform: [
       { perspective: 800 },
-      { rotateX: '12deg' },
-      { rotateY: '-8deg' },
-      { translateY: floatAnim.value * 8 - 4 }
-    ],
+      { rotateX: '8deg' },
+      { rotateY: '-6deg' },
+      { translateY: floatAnim.value * 6 - 3 }
+    ]
   }))
-  const bgCard1Style = {
-    transform: [{ perspective: 800 }, { translateX: -30 }, { translateY: -30 }, { rotateX: '-10deg' }, { rotateY: '-15deg' }, { scale: 0.9 }],
-  }
-  const bgCard2Style = {
-    transform: [{ perspective: 800 }, { translateX: 30 }, { translateY: -15 }, { rotateX: '-10deg' }, { rotateY: '15deg' }, { scale: 0.9 }],
-  }
 
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Blurred Backround Prompt Card 1 */}
-      <View style={[styles.aiPromptCardBack, bgCard1Style]}>
-        <Text style={styles.aiPromptBackText}>Generate a new project with Node.js and Express...</Text>
-      </View>
+      <Svg style={StyleSheet.absoluteFill} viewBox="0 0 350 250">
+        <Circle cx="175" cy="125" r="78" fill="none" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1.5" strokeDasharray="5, 5" />
+        <Circle cx="175" cy="125" r="50" fill="none" stroke="rgba(0, 229, 255, 0.05)" strokeWidth="1" />
+      </Svg>
 
-      {/* Blurred Backround Prompt Card 2 */}
-      <View style={[styles.aiPromptCardBack, bgCard2Style]}>
-        <Text style={styles.aiPromptBackText}>Build a landing page with glassmorphism components...</Text>
-      </View>
-
-      {/* Center Glassmorphic Typewriter Prompt Field */}
-      <Animated.View style={[styles.aiPromptCardActive, centerCardStyle, styles.glassCard3d]}>
-        <BlurView intensity={35} tint="dark" style={styles.aiPromptBlur}>
-          <Text style={styles.aiPromptText}>{typedText}<Text style={styles.cursor}>|</Text></Text>
-          <View style={styles.aiPromptFooter}>
-            <View style={styles.aiPromptBtn}>
-              <Text style={styles.aiPromptBtnText}>Auto</Text>
-            </View>
-            <View style={styles.aiSendCircle}>
-              <Text style={{ fontSize: 10, color: '#FFFFFF' }}>▲</Text>
-            </View>
-          </View>
-        </BlurView>
-      </Animated.View>
-
-      {/* Floating AI Provider Icons */}
-      {/* OpenAI */}
-      <Animated.View style={[styles.aiIconBadge, { left: 0, bottom: 20 }, useAnimatedStyle(() => ({
-        transform: [{ translateY: floatAnim.value * 6 - 3 }]
-      }))]}>
-        <BlurView intensity={30} tint="dark" style={styles.aiIconBlur}>
+      <Animated.View style={[styles.aiIconBadge, { position: 'absolute', left: 175 - 16, top: 125 - 16 }, getOrbitalStyle(0)]}>
+        <BlurView intensity={25} tint="dark" style={styles.aiIconBlurMini}>
           <OpenAILogo />
-          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10, color: '#10A37F', fontFamily: 'Inter_700Bold' }]}>GPT</Text>
         </BlurView>
       </Animated.View>
 
-      {/* Claude */}
-      <Animated.View style={[styles.aiIconBadge, { right: 10, bottom: 10 }, useAnimatedStyle(() => ({
-        transform: [{ translateY: -floatAnim.value * 8 + 4 }]
-      }))]}>
-        <BlurView intensity={30} tint="dark" style={styles.aiIconBlur}>
+      <Animated.View style={[styles.aiIconBadge, { position: 'absolute', left: 175 - 16, top: 125 - 16 }, getOrbitalStyle((2 * Math.PI) / 5)]}>
+        <BlurView intensity={25} tint="dark" style={styles.aiIconBlurMini}>
           <ClaudeLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10, color: '#D97756', fontFamily: 'Inter_700Bold' }]}>Claude</Text>
         </BlurView>
       </Animated.View>
 
-      {/* Gemini */}
-      <Animated.View style={[styles.aiIconBadge, { right: 30, top: 10 }, useAnimatedStyle(() => ({
-        transform: [{ translateY: floatAnim.value * 10 - 5 }]
-      }))]}>
-        <BlurView intensity={30} tint="dark" style={styles.aiIconBlur}>
+      <Animated.View style={[styles.aiIconBadge, { position: 'absolute', left: 175 - 16, top: 125 - 16 }, getOrbitalStyle((4 * Math.PI) / 5)]}>
+        <BlurView intensity={25} tint="dark" style={styles.aiIconBlurMini}>
           <GeminiLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10, color: '#60A5FA', fontFamily: 'Inter_700Bold' }]}>Gemini</Text>
+        </BlurView>
+      </Animated.View>
+
+      <Animated.View style={[styles.aiIconBadge, { position: 'absolute', left: 175 - 16, top: 125 - 16 }, getOrbitalStyle((6 * Math.PI) / 5)]}>
+        <BlurView intensity={25} tint="dark" style={styles.aiIconBlurMini}>
+          <DeepSeekLogo />
+        </BlurView>
+      </Animated.View>
+
+      <Animated.View style={[styles.aiIconBadge, { position: 'absolute', left: 175 - 16, top: 125 - 16 }, getOrbitalStyle((8 * Math.PI) / 5)]}>
+        <BlurView intensity={25} tint="dark" style={styles.aiIconBlurMini}>
+          <LlamaLogo />
+        </BlurView>
+      </Animated.View>
+
+      <Animated.View style={[styles.aiPromptCardActive, { width: width - 150, height: 130, zIndex: 10 }, composerStyle, styles.glassCard3d]}>
+        <BlurView intensity={35} tint="dark" style={styles.aiPromptBlur}>
+          <View>
+            <Text style={[styles.aiPromptText, { fontSize: 11, color: '#A78BFA', fontFamily: 'Inter_700Bold' }]}>AI Composer</Text>
+            <Text style={[styles.aiPromptText, { fontSize: 11, marginTop: 4, fontFamily: 'Inter_500Medium' }]}>
+              {typedText}<Text style={styles.cursor}>|</Text>
+            </Text>
+          </View>
+          
+          <View style={styles.checkListContainer}>
+            {checkPhase >= 1 && <Text style={styles.checkListItem}>✓ UI Dashboard</Text>}
+            {checkPhase >= 2 && <Text style={styles.checkListItem}>✓ Express API</Text>}
+            {checkPhase >= 3 && <Text style={styles.checkListItem}>✓ PostgreSQL DB</Text>}
+            {checkPhase >= 4 && <Text style={[styles.checkListItem, { color: '#00E5FF' }]}>✓ JWT Auth</Text>}
+          </View>
         </BlurView>
       </Animated.View>
     </View>
@@ -442,78 +544,115 @@ const Screen2Illustration = () => {
 // Onboarding Illustration Component 3: Terminal & Git
 // -------------------------------------------------------------
 const Screen3Illustration = () => {
-  const [activeCommand, setActiveCommand] = useState(0)
-  const pulseAnim = useSharedValue(0)
+  const pulse1 = useSharedValue(0)
+  const pulse2 = useSharedValue(0)
+  const [gitStatus, setGitStatus] = useState("idle")
 
   useEffect(() => {
-    pulseAnim.value = withRepeat(
-      withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+    pulse1.value = withRepeat(
+      withTiming(1, { duration: 3000, easing: Easing.linear }),
       -1,
-      true
+      false
+    )
+    pulse2.value = withDelay(
+      1500,
+      withRepeat(
+        withTiming(1, { duration: 3000, easing: Easing.linear }),
+        -1,
+        false
+      )
     )
 
-    const timer = setInterval(() => {
-      setActiveCommand((prev) => (prev + 1) % 4)
+    const interval = setInterval(() => {
+      setGitStatus((prev) => {
+        if (prev === "idle") return "checkout"
+        if (prev === "checkout") return "commit"
+        if (prev === "commit") return "pr"
+        if (prev === "pr") return "merge"
+        return "idle"
+      })
     }, 2500)
 
-    return () => clearInterval(timer)
+    return () => clearInterval(interval)
   }, [])
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(pulseAnim.value, [0, 1], [0.3, 0.9]),
-    transform: [{ scale: interpolate(pulseAnim.value, [0, 1], [0.8, 1.3]) }]
-  }))
+  const pulseStyle1 = useAnimatedStyle(() => {
+    const t = pulse1.value
+    const x = interpolate(t, [0, 1], [40, 130])
+    const y = 30 - 15 * Math.sin(t * Math.PI)
+    return {
+      transform: [
+        { translateX: x },
+        { translateY: y },
+        { scale: interpolate(t, [0, 0.2, 0.8, 1], [0, 1.2, 1.2, 0]) }
+      ]
+    }
+  })
 
-  const terminalStyle = {
-    transform: [
-      { perspective: 1000 },
-      { rotateX: '6deg' },
-      { rotateY: '8deg' }
-    ]
-  }
+  const pulseStyle2 = useAnimatedStyle(() => {
+    const t = pulse2.value
+    const x = interpolate(t, [0, 1], [70, 160])
+    const y = 30 + 15 * Math.sin(t * Math.PI)
+    return {
+      transform: [
+        { translateX: x },
+        { translateY: y },
+        { scale: interpolate(t, [0, 0.2, 0.8, 1], [0, 1.2, 1.2, 0]) }
+      ]
+    }
+  })
 
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Terminal Glass Container */}
-      <View style={[styles.terminalContainer, terminalStyle, styles.glassCard3d]}>
+      <View style={[styles.terminalContainer, { width: width - 130, height: 90, marginBottom: 12 }, styles.glassCard3d]}>
         <BlurView intensity={25} tint="dark" style={styles.terminalBlur}>
           <View style={styles.terminalHeader}>
             <View style={[styles.windowDot, { backgroundColor: '#FF5F56' }]} />
             <View style={[styles.windowDot, { backgroundColor: '#FFBD2E' }]} />
             <View style={[styles.windowDot, { backgroundColor: '#27C93F' }]} />
-            <Text style={styles.terminalTitle}>bash · cloudcode</Text>
+            <Text style={styles.terminalTitle}>git · checkout</Text>
           </View>
           <View style={styles.terminalBody}>
-            <Text style={styles.terminalLine}>$ git checkout -b feature/auth</Text>
-            {activeCommand >= 1 && (
-              <Text style={[styles.terminalLine, { color: '#94A3B8' }]}>Switched to new branch 'feature/auth'</Text>
-            )}
-            {activeCommand >= 2 && (
-              <Text style={styles.terminalLine}>$ git add . && git commit -m "feat: oauth"</Text>
-            )}
-            {activeCommand >= 3 && (
-              <Text style={[styles.terminalLine, { color: '#4ADE80' }]}>[feature/auth a1b2c3d] feat: oauth ✓</Text>
-            )}
+            {gitStatus === "idle" && <Text style={styles.terminalLine}>$ git status{"\n"}On branch main. Clean.</Text>}
+            {gitStatus === "checkout" && <Text style={styles.terminalLine}>$ git checkout -b feat/auth{"\n"}Switched to branch 'feat/auth'</Text>}
+            {gitStatus === "commit" && <Text style={styles.terminalLine}>$ git commit -m "feat: jwt auth"{"\n"}1 file changed, 48 insertions(+)</Text>}
+            {gitStatus === "pr" && <Text style={styles.terminalLine}>$ gh pr create --title "feat: jwt auth"{"\n"}✓ Pull Request #12 created successfully.</Text>}
+            {gitStatus === "merge" && <Text style={styles.terminalLine}>$ git merge feat/auth{"\n"}Updating 7a3bf92..c1d9b3e (Fast-forward)</Text>}
           </View>
         </BlurView>
       </View>
 
-      {/* Animated Git Workflow Branching Diagram */}
-      <View style={styles.gitDiagram}>
-        <Svg width="180" height="60" viewBox="0 0 180 60">
-          <Line x1="10" y1="30" x2="170" y2="30" stroke="rgba(255,255,255,0.15)" strokeWidth="2" />
-          <Path d="M 50 30 Q 75 10 100 10 L 140 10 Q 155 10 170 30" fill="none" stroke="#A78BFA" strokeWidth="2" strokeDasharray="4,4" />
-          
-          <Circle cx="30" cy="30" r="4" fill="#60A5FA" />
-          <Circle cx="50" cy="30" r="4" fill="#60A5FA" />
-          <Circle cx="170" cy="30" r="4" fill="#60A5FA" />
-          
-          <Circle cx="90" cy="10" r="4" fill="#A78BFA" />
-          <Circle cx="130" cy="10" r="4" fill="#A78BFA" />
-          
-          <Animated.View style={[styles.pulseCircle, { left: 126, top: 4 }, pulseStyle]} />
-          <View style={[styles.gitActiveDot, { left: 128, top: 6 }]} />
-        </Svg>
+      <View style={[styles.gitDiagramCard, styles.glassCard3d]}>
+        <BlurView intensity={25} tint="dark" style={styles.gitDiagramBlur}>
+          <View style={{ height: 42, justifyContent: 'center' }}>
+            <Svg width="100%" height={38} viewBox="0 0 200 38">
+              <Line x1="10" y1="19" x2="190" y2="19" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="2" />
+              <Path d="M 40 19 Q 85 4 130 19" fill="none" stroke="#A78BFA" strokeWidth="2" />
+              <Path d="M 70 19 Q 115 34 160 19" fill="none" stroke="#34D399" strokeWidth="2" />
+              <Circle cx="20" cy="19" r="4" fill="#FFFFFF" />
+              <Circle cx="40" cy="19" r="4" fill="#FFFFFF" />
+              <Circle cx="130" cy="19" r="4" fill="#FFFFFF" />
+              <Circle cx="180" cy="19" r="4" fill="#00E5FF" />
+              <Circle cx="85" cy="8" r="4" fill="#A78BFA" />
+              <Circle cx="115" cy="30" r="4" fill="#34D399" />
+            </Svg>
+            <Animated.View style={[styles.pulseCircle, { backgroundColor: '#A78BFA' }, pulseStyle1]} />
+            <Animated.View style={[styles.pulseCircle, { backgroundColor: '#34D399' }, pulseStyle2]} />
+          </View>
+
+          <View style={styles.gitStatusBox}>
+            <Svg width={10} height={10} viewBox="0 0 24 24" fill="#60A5FA" style={{ marginRight: 4 }}>
+              <Path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.197 22 16.44 22 12.017c0-5.533-4.477-9.817-10-9.817z" />
+            </Svg>
+            <Text style={styles.gitStatusText}>
+              {gitStatus === "idle" && "main branch synced"}
+              {gitStatus === "checkout" && "working on feature/auth"}
+              {gitStatus === "commit" && "feat: jwt auth committed"}
+              {gitStatus === "pr" && "PR #12 Open · gh-actions success"}
+              {gitStatus === "merge" && "merged PR #12 to main"}
+            </Text>
+          </View>
+        </BlurView>
       </View>
     </View>
   )
@@ -524,7 +663,6 @@ const Screen3Illustration = () => {
 // -------------------------------------------------------------
 const Screen4Illustration = () => {
   const floatAnim = useSharedValue(0)
-  const rotateAnim = useSharedValue(0)
 
   useEffect(() => {
     floatAnim.value = withRepeat(
@@ -532,73 +670,85 @@ const Screen4Illustration = () => {
       -1,
       true
     )
-    rotateAnim.value = withRepeat(
-      withTiming(1, { duration: 8000, easing: Easing.linear }),
-      -1,
-      false
-    )
   }, [])
 
   const browserStyle = useAnimatedStyle(() => ({
     transform: [
       { perspective: 800 },
-      { rotateX: '-6deg' },
-      { rotateY: '-8deg' },
-      { translateY: floatAnim.value * 10 - 5 }
-    ],
+      { rotateX: '8deg' },
+      { rotateY: '-6deg' },
+      { translateY: floatAnim.value * 8 - 4 }
+    ]
   }))
-  const shieldStyle = useAnimatedStyle(() => ({
+
+  const infraStyle = useAnimatedStyle(() => ({
     transform: [
-      { perspective: 800 },
-      { rotateX: '15deg' },
-      { rotateY: '10deg' },
-      { translateY: -floatAnim.value * 8 + 4 }
-    ],
+      { translateY: -floatAnim.value * 5 + 2 },
+      { scale: 0.95 }
+    ]
   }))
-  const cloudNodeStyle = useAnimatedStyle(() => ({
+
+  const badgeStyle = useAnimatedStyle(() => ({
     transform: [
       { translateY: floatAnim.value * 6 - 3 },
-      { rotate: rotateAnim.value * 360 + 'deg' }
+      { translateX: 10 }
     ]
   }))
 
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Browser App Preview Window */}
-      <Animated.View style={[styles.previewWindow, browserStyle, styles.glassCard3d]}>
+      <Animated.View style={[styles.infraContainer, infraStyle]}>
+        <Svg width="100%" height="100%" viewBox="0 0 260 180">
+          <Rect x="20" y="30" width="80" height="40" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          <Rect x="160" y="30" width="80" height="40" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          <Line x1="40" y1="40" x2="60" y2="40" stroke="#34D399" strokeWidth="2" />
+          <Line x1="40" y1="50" x2="80" y2="50" stroke="#94A3B8" strokeWidth="2" />
+          <Line x1="180" y1="40" x2="200" y2="40" stroke="#34D399" strokeWidth="2" />
+          <Line x1="180" y1="50" x2="220" y2="50" stroke="#94A3B8" strokeWidth="2" />
+          <Path d="M 60 70 C 60 120 120 120 120 120" fill="none" stroke="rgba(0, 229, 255, 0.1)" strokeWidth="1.5" strokeDasharray="4, 4" />
+          <Path d="M 200 70 C 200 120 140 120 140 120" fill="none" stroke="rgba(0, 229, 255, 0.1)" strokeWidth="1.5" strokeDasharray="4, 4" />
+          <Circle cx="60" cy="70" r="3" fill="#00E5FF" opacity={0.6} />
+          <Circle cx="200" cy="70" r="3" fill="#00E5FF" opacity={0.6} />
+        </Svg>
+      </Animated.View>
+
+      <Animated.View style={[styles.previewWindow, { width: width - 130, height: 120 }, browserStyle, styles.glassCard3d]}>
         <BlurView intensity={30} tint="dark" style={styles.previewBlur}>
           <View style={styles.previewHeader}>
             <View style={styles.previewAddressBar}>
-              <Text style={styles.previewUrl}>localhost:3000</Text>
+              <Text style={styles.previewUrl}>localhost:3000/dashboard</Text>
             </View>
           </View>
-          <View style={styles.previewBody}>
-            <View style={styles.previewBoxSmall} />
-            <View style={styles.previewLineWide} />
-            <View style={styles.previewLineMedium} />
+          <View style={styles.browserAppContainer}>
+            <View style={styles.browserSidebar}>
+              <View style={[styles.sidebarItem, { width: 14 }]} />
+              <View style={[styles.sidebarItem, { width: 10 }]} />
+              <View style={[styles.sidebarItem, { width: 12 }]} />
+            </View>
+            <View style={styles.browserMainContent}>
+              <Text style={{ fontSize: 7, color: '#34D399', fontFamily: 'Inter_700Bold', marginBottom: 2 }}>Analytics Live</Text>
+              <Svg width="100%" height="25" viewBox="0 0 100 25">
+                <Path d="M 0 20 Q 25 5 50 15 T 100 8" fill="none" stroke="#00E5FF" strokeWidth="1.5" />
+                <Path d="M 0 20 Q 25 5 50 15 T 100 8 L 100 25 L 0 25 Z" fill="rgba(0, 229, 255, 0.08)" />
+              </Svg>
+              <View style={styles.metricRow}>
+                <View style={styles.metricCard} />
+                <View style={styles.metricCard} />
+              </View>
+            </View>
           </View>
         </BlurView>
       </Animated.View>
 
-      {/* Cloud Nodes Rotating Visual */}
-      <Animated.View style={[styles.cloudNodesContainer, cloudNodeStyle]}>
-        <Svg width={80} height={80} viewBox="0 0 80 80">
-          <Circle cx="40" cy="40" r="30" fill="none" stroke="rgba(0, 229, 255, 0.15)" strokeWidth="1" strokeDasharray="3,3" />
-          <Circle cx="40" cy="10" r="5" fill="#00E5FF" />
-          <Circle cx="40" cy="70" r="5" fill="#00E5FF" />
-          <Circle cx="10" cy="40" r="5" fill="#00E5FF" />
-          <Circle cx="70" cy="40" r="5" fill="#00E5FF" />
-        </Svg>
-      </Animated.View>
-
-      {/* Security Shield Card */}
-      <Animated.View style={[styles.shieldContainer, shieldStyle]}>
+      <Animated.View style={[styles.shieldContainer, { position: 'absolute', right: 20, bottom: 20, zIndex: 10 }, badgeStyle]}>
         <BlurView intensity={35} tint="dark" style={styles.shieldBlur}>
-          <Svg width={24} height={28} viewBox="0 0 24 28" fill="none">
-            <Path d="M12 2L2 7v8c0 5.52 4.48 10 10 10s10-4.48 10-10V7L12 2z" stroke="#34D399" strokeWidth={2} fill="rgba(52, 211, 153, 0.1)" />
-            <Path d="M9 13.5l2 2 4-4" stroke="#34D399" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-          <Text style={[styles.badgeText, { color: '#34D399', marginTop: 4, fontSize: 10 }]}>SECURE</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Svg width={12} height={14} viewBox="0 0 24 28" fill="none" style={{ marginRight: 4 }}>
+              <Path d="M12 2L2 7v8c0 5.52 4.48 10 10 10s10-4.48 10-10V7L12 2z" stroke="#34D399" strokeWidth={2} fill="rgba(52, 211, 153, 0.1)" />
+            </Svg>
+            <Text style={[styles.badgeText, { color: '#34D399', fontSize: 9 }]}>TLS Tunnel</Text>
+          </View>
+          <Text style={{ fontSize: 8, color: '#94A3B8', marginTop: 2, fontFamily: 'Inter_400Regular' }}>SOC2 Certified</Text>
         </BlurView>
       </Animated.View>
     </View>
@@ -609,8 +759,10 @@ const Screen4Illustration = () => {
 // Onboarding Illustration Component 5: Parallax columns
 // -------------------------------------------------------------
 const Screen5Illustration = () => {
+  const { isDark } = useAppTheme()
   const scrollY1 = useSharedValue(0)
   const scrollY2 = useSharedValue(0)
+  const bgThemeTransition = useSharedValue(0)
 
   useEffect(() => {
     scrollY1.value = withRepeat(
@@ -623,6 +775,7 @@ const Screen5Illustration = () => {
       -1,
       false
     )
+    bgThemeTransition.value = withTiming(1, { duration: 800 })
   }, [])
 
   const col1Style = useAnimatedStyle(() => ({
@@ -644,54 +797,93 @@ const Screen5Illustration = () => {
     ]
   }
 
+  const cardStyle = useAnimatedStyle(() => {
+    const bgColor = interpolateColor(
+      bgThemeTransition.value,
+      [0, 1],
+      ['rgba(255, 255, 255, 0.06)', 'rgba(15, 23, 42, 0.04)']
+    )
+    const borderColor = interpolateColor(
+      bgThemeTransition.value,
+      [0, 1],
+      ['rgba(255, 255, 255, 0.12)', 'rgba(15, 23, 42, 0.08)']
+    )
+    return {
+      backgroundColor: bgColor,
+      borderColor: borderColor,
+    }
+  })
+
+  const textStyle = useAnimatedStyle(() => {
+    const color = interpolateColor(
+      bgThemeTransition.value,
+      [0, 1],
+      ['#FFFFFF', '#0F172A']
+    )
+    return {
+      color: color,
+    }
+  })
+
+  const subTextStyle = useAnimatedStyle(() => {
+    const color = interpolateColor(
+      bgThemeTransition.value,
+      [0, 1],
+      ['#94A3B8', '#64748B']
+    )
+    return {
+      color: color,
+    }
+  })
+
   return (
     <Animated.View style={[styles.gridOuterContainer, gridStyle]}>
       {/* Column 1 - Slides UP */}
       <Animated.View style={[styles.gridColumn, col1Style]}>
-        <View style={styles.gridItemCard}>
-          <Text style={styles.gridItemHeader}>Explorer</Text>
-          <Text style={styles.gridItemBody}>index.js{"\n"}package.json{"\n"}utils.ts</Text>
-        </View>
-        <View style={styles.gridItemCard}>
-          <Text style={styles.gridItemHeader}>Console</Text>
-          <Text style={[styles.gridItemBody, { color: '#059669' }]}>[INFO] build ok</Text>
-        </View>
-        <View style={styles.gridItemCard}>
-          <Text style={styles.gridItemHeader}>Settings</Text>
-          <Text style={styles.gridItemBody}>Port: 80{"\n"}Host: 0.0.0.0</Text>
-        </View>
+        <Animated.View style={[styles.gridItemCard, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>AI Composer</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>✓ UI dashboard{"\n"}✓ Express API</Animated.Text>
+        </Animated.View>
+        <Animated.View style={[styles.gridItemCard, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Terminal</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, { color: '#059669' }]}>✓ build success</Animated.Text>
+        </Animated.View>
+        <Animated.View style={[styles.gridItemCard, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Infrastructure</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>Port: 3000{"\n"}Node: Active</Animated.Text>
+        </Animated.View>
       </Animated.View>
 
       {/* Column 2 - Slides DOWN */}
       <Animated.View style={[styles.gridColumn, col2Style]}>
-        <View style={[styles.gridItemCard, { height: 95 }]}>
-          <Text style={styles.gridItemHeader}>Code</Text>
-          <Text style={[styles.gridItemBody, { color: '#2563EB' }]}>const app = express()</Text>
-        </View>
-        <View style={styles.gridItemCard}>
-          <Text style={styles.gridItemHeader}>Deploy</Text>
-          <Text style={styles.gridItemBody}>AWS: active{"\n"}CPU: 2%</Text>
-        </View>
-        <View style={[styles.gridItemCard, { height: 95 }]}>
-          <Text style={styles.gridItemHeader}>Git Branch</Text>
-          <Text style={styles.gridItemBody}>main · checkout</Text>
-        </View>
+        <Animated.View style={[styles.gridItemCard, { height: 95 }, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Workspace</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>React App{"\n"}TypeScript</Animated.Text>
+        </Animated.View>
+        <Animated.View style={[styles.gridItemCard, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Deployment</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>AWS US-East{"\n"}CPU: 1.4%</Animated.Text>
+        </Animated.View>
+        <Animated.View style={[styles.gridItemCard, { height: 95 }, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Git Status</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>PR #12 Merged{"\n"}main synced</Animated.Text>
+        </Animated.View>
       </Animated.View>
 
       {/* Column 3 - Slides UP */}
       <Animated.View style={[styles.gridColumn, col3Style]}>
-        <View style={styles.gridItemCard}>
-          <Text style={styles.gridItemHeader}>Database</Text>
-          <Text style={styles.gridItemBody}>Users (1.2k){"\n"}Projects (48)</Text>
-        </View>
-        <View style={styles.gridItemCard}>
-          <Text style={styles.gridItemHeader}>Terminal</Text>
-          <Text style={styles.gridItemBody}>$ ping google.com</Text>
-        </View>
-        <View style={styles.gridItemCard}>
-          <Text style={styles.gridItemHeader}>Stats</Text>
-          <Text style={styles.gridItemBody}>Memory: 91MB</Text>
-        </View>
+        <Animated.View style={[styles.gridItemCard, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Security</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>Tunnel: Active{"\n"}SOC2 Ok</Animated.Text>
+        </Animated.View>
+        <Animated.View style={[styles.gridItemCard, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Live Preview</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>localhost:3000{"\n"}Dashboard OK</Animated.Text>
+        </Animated.View>
+        <Animated.View style={[styles.gridItemCard, cardStyle]}>
+          <Animated.Text style={[styles.gridItemHeader, subTextStyle]}>Database</Animated.Text>
+          <Animated.Text style={[styles.gridItemBody, textStyle]}>PostgreSQL{"\n"}Active (54MB)</Animated.Text>
+        </Animated.View>
       </Animated.View>
     </Animated.View>
   )
@@ -1345,10 +1537,10 @@ export default function WelcomeScreen() {
             </View>
             <View style={styles.textWrapper}>
               <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Desktop-Class{"\n"}Workspaces
+                Create Development{"\n"}Environments Instantly
               </Text>
               <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Instantly create projects, clone git repositories, and launch dev environments from your phone. Full desktop performance, anywhere.
+                Instantly spin up isolated cloud containers from your repositories. Run full desktop workspaces right from your phone.
               </Text>
             </View>
           </View>
@@ -1360,10 +1552,10 @@ export default function WelcomeScreen() {
             </View>
             <View style={styles.textWrapper}>
               <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Build Code{"\n"}Powered by AI
+                Describe It.{"\n"}Let AI Build It.
               </Text>
               <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Code with specialized AI developer models working together. Generate complex applications simply by describing them.
+                Collaborative AI developer agents work in sync to turn your descriptions into functional components, APIs, and databases.
               </Text>
             </View>
           </View>
@@ -1375,10 +1567,10 @@ export default function WelcomeScreen() {
             </View>
             <View style={styles.textWrapper}>
               <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Interactive Terminal{"\n"}& Git Workflows
+                Professional Development{"\n"}Workflows Anywhere
               </Text>
               <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Run professional tools and command-line execution remotely. Manage git branching, commits, and synchronization without limits.
+                Access a multi-shell remote terminal alongside a visual branching manager. Commit, merge, and pull requests effortlessly.
               </Text>
             </View>
           </View>
@@ -1390,10 +1582,10 @@ export default function WelcomeScreen() {
             </View>
             <View style={styles.textWrapper}>
               <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Browser Previews{"\n"}& Infrastructure
+                Run, Preview,{"\n"}and Deploy Securely
               </Text>
               <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Preview running applications in real-time. Everything builds securely on isolated, compliant remote cloud servers.
+                Interact with live browser previews connected via encrypted TLS tunnels to compliant, isolated cloud infrastructure.
               </Text>
             </View>
           </View>
@@ -1405,10 +1597,10 @@ export default function WelcomeScreen() {
             </View>
             <View style={styles.textWrapper}>
               <Text style={[styles.showcaseTitle, { color: '#0F172A', fontFamily: 'Inter_700Bold' }]}>
-                Ready to code?
+                Everything You Need.{"\n"}Anywhere.
               </Text>
               <Text style={[styles.showcaseDescription, { color: '#475569', fontFamily: 'Inter_400Regular' }]}>
-                Sign in with your GitHub account to access your repositories and spin up secure, remote workspaces on the go.
+                Log in with your GitHub account to access your repositories and spin up remote dev boxes on the go.
               </Text>
             </View>
           </View>
@@ -1952,5 +2144,87 @@ const styles = StyleSheet.create({
     right: 24,
     bottom: 40,
     zIndex: 3,
+  },
+  checkListContainer: {
+    marginTop: 8,
+    gap: 2,
+  },
+  checkListItem: {
+    fontSize: 9,
+    color: '#34D399',
+    fontFamily: 'Inter_500Medium',
+  },
+  gitDiagramCard: {
+    width: width - 130,
+    height: 98,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  gitDiagramBlur: {
+    flex: 1,
+    padding: 8,
+    justifyContent: 'space-between',
+  },
+  gitStatusBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 99,
+    marginTop: 2,
+  },
+  gitStatusText: {
+    fontSize: 8,
+    color: '#60A5FA',
+    fontFamily: 'Inter_500Medium',
+  },
+  infraContainer: {
+    position: 'absolute',
+    width: 260,
+    height: 180,
+    zIndex: 1,
+  },
+  browserAppContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  browserSidebar: {
+    width: 20,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255, 255, 255, 0.05)',
+    paddingVertical: 4,
+    gap: 6,
+  },
+  sidebarItem: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  browserMainContent: {
+    flex: 1,
+    paddingLeft: 8,
+    paddingVertical: 2,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 4,
+  },
+  metricCard: {
+    flex: 1,
+    height: 12,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  aiIconBlurMini: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })
