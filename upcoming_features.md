@@ -69,11 +69,11 @@ mindmap
     - **Mobile/Web:** Tailwind presets, Expo templates
 
 ### 1.4. Desktop-Style IDE Menubar & Custom File Runner
-* **Current Gap:** Running code requires manual terminal configuration, and the editor lacks standard desktop IDE options.
+* **Current Gap:** Running code requires manual terminal commands, and the editor lacks standard desktop IDE options.
 * **Feature Description:**
   - **IDE Toolbar/Menubar:** Implement a mobile-optimized top menubar providing options typical of full IDEs (e.g., "File", "Edit", "Selection", "View", "Go").
-  - **Smart Runner Menu:** Implement a contextual "Run" button simulating standard desktop runners (e.g., compile and execute a single `.c` file, execute a `.py` script, or start a `.js` workspace). 
-  - **Debugging Controls:** Provide an execution control overlay with options: "Start Debugging", "Run Without Debugging", "Restart", and "Stop", forwarding signals directly to the container's interactive shell.
+  - **Language-Agnostic Terminal-Based Runner:** When the user taps the "Run" button, the system automatically detects the active file type (e.g., C, C++, Python, JavaScript, Go, Rust, shell script) and generates the corresponding build & run CLI commands (e.g., `gcc main.c -o main && ./main` or `python3 main.py`). These commands are injected and executed directly inside the user's active, persistent terminal pane. This allows complete real-time visibility of compile logs, runtime errors, and interactive keyboard input (stdin).
+  - **Debugging & Execution Controls:** Provide standard desktop execution shortcuts ("Run Without Debugging", "Start Debugging", "Stop/Terminate Process (Ctrl+C)", "Restart") that automatically compile, launch, or send interrupt signals directly into the active shell.
 
 ---
 
