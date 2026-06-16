@@ -307,12 +307,13 @@ This section outlines the 7 critical security threats identified in the current 
   }
   ```
 
-#### 7.2.4. Partial Directory Path Traversal (Medium Risk)
-* **Threat Description:** In [files/route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/files/route.ts) and [content/route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/files/content/route.ts), the `sanitizePath` function validates boundaries via:
+#### 7.2.4. Scope B: Host VPS File API Traversal & Partial Prefix Bypass (Medium Risk)
+* **Threat Description:** Because the Next.js API server runs directly on the parent VPS host system where all project files reside side-by-side in `projects/`, any security bypass in the file manager API gives direct read/write access to other users' codes.
+  Currently, in [files/route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/files/route.ts) and [content/route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/files/content/route.ts), the `sanitizePath` function validates boundaries via:
   ```typescript
   if (!resolved.startsWith(workspacePath)) return null
   ```
-  If the host workspace path is `/projects/123-uuid` and the user requests `../123-uuid-other`, the resolved path `/projects/123-uuid-other` is allowed because it starts with `/projects/123-uuid`. This allows traversing into other project folders sharing a prefix.
+  If the host workspace path is `/projects/123-uuid` and the user requests `../123-uuid-other`, the resolved path `/projects/123-uuid-other` is allowed because it starts with `/projects/123-uuid`. This allows a user to write or read files in another folder that shares the project ID prefix.
 * **The Fix:** Enforce directory separator boundaries in prefix validation:
   ```typescript
   if (resolved !== workspacePath && !resolved.startsWith(workspacePath + path.sep)) {
