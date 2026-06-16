@@ -1,0 +1,79 @@
+Onboarding Flow Expansion
+
+The current onboarding starts with the splash transition from a light background into the dark-themed Welcome screen. After the Welcome screen, introduce five additional onboarding sections, resulting in a total onboarding journey of six screens.
+
+The onboarding should automatically advance between sections with smooth transitions and subtle motion. A low-opacity Skip action should remain visible in the top-right corner throughout the onboarding experience. Selecting Skip should immediately navigate the user to the final onboarding screen.
+
+The primary action button displayed at the bottom of each onboarding screen should initially be labeled Continue. On the final screen, this button should transform into Get Started with GitHub, clearly indicating the authentication and entry point into the application.
+
+The visual experience should mirror the existing splash transition behavior. The onboarding begins in a dark environment after the welcome screen, remains dark throughout the feature showcase sections, and then gradually transitions back into a light theme on the final screen. This dark-to-light transformation should feel intentional and premium, similar to how the initial splash screen transitioned from light into dark mode.
+
+Section 1 — Workspaces That Feel Like a Desktop Environment
+
+This screen introduces the concept of cloud workspaces and development environments.
+
+The messaging should communicate that users can instantly create software projects, clone repositories, launch development environments, or start from completely blank workspaces directly from their mobile device. The copy should emphasize the feeling of having a complete desktop development experience available anywhere.
+
+Rather than describing workspaces with generic folder icons, the visual centerpiece should showcase realistic, high-quality 3D elements. Floating workspace cards, repository cloning interfaces, project instances, and development environments should be arranged in a layered composition.
+
+Recognizable technology logos should be used throughout the scene. GitHub should be represented as a repository source, while popular languages and frameworks such as React, Next.js, Flutter, Node.js, Python, TypeScript, Docker, Go, Rust, and similar technologies should appear as floating 3D elements around the workspace ecosystem.
+
+The visual narrative should communicate that any language, framework, runtime, or technology stack can be accessed and executed from a mobile-first development environment. The overall feeling should resemble a cloud-powered desktop workspace condensed into an elegant mobile experience.
+
+Section 2 — Build with AI
+
+This screen showcases the AI-native development experience.
+
+The visual structure should closely follow the provided onboarding reference. The center of the screen should feature a prominent elevated prompt input field with a realistic 3D appearance. Inside this field, an animated typing sequence should continuously demonstrate natural-language software requests.
+
+Behind the primary input field, two additional prompt cards should be positioned at varying depths and angles. These secondary cards should appear slightly blurred and partially out of focus, creating a layered depth effect while displaying example prompts.
+
+Surrounding these prompt interfaces should be floating AI model identities represented by their official logos. Models such as ChatGPT, Claude, Gemini, DeepSeek, Grok, Llama, and other relevant AI providers can be displayed throughout the composition.
+
+The icons should feel dimensional rather than flat. Soft shadows, subtle reflections, depth layering, and motion should create a premium 3D aesthetic. The overall objective is to communicate that users can build software simply by describing what they want, powered by multiple AI models working together.
+
+Section 3 — Enterprise-Grade Terminal and Git Workflows
+
+This screen highlights the development workflow capabilities of the platform.
+
+The primary visual should revolve around a beautifully designed terminal interface that feels powerful yet approachable. Terminal windows should display realistic commands, repository interactions, deployment flows, and development tasks.
+
+Git workflows should be represented visually through branching diagrams, commit histories, pull requests, merge operations, repository synchronization, and deployment pipelines. GitHub integration should feel deeply connected to the workflow.
+
+Rather than showing static terminal screenshots, the interface should feel alive. Commands can appear in progress, commits can animate through branches, and workflow connections can subtly move to suggest continuous development activity.
+
+The design should communicate that users have access to professional-grade terminal capabilities, repository management, source control workflows, and deployment operations directly from their mobile device without compromising power or flexibility.
+
+Section 4 — Browser, Preview, Cloud Infrastructure, and Security
+
+This screen introduces the runtime and infrastructure capabilities of the platform.
+
+The visual composition should focus on four core pillars: internal browser support, live application previews, cloud execution, and enterprise security.
+
+A browser preview window should demonstrate a running application. Additional UI layers can showcase responsive previews, application testing environments, or real-time project execution.
+
+Cloud infrastructure should be represented through connected cloud nodes, distributed systems visuals, deployment environments, and scalable runtime indicators. The design should communicate that all workloads execute remotely on powerful cloud infrastructure rather than relying on local device resources.
+
+Security should be represented through premium visual elements such as encrypted connections, shield motifs, security badges, protected workspaces, and enterprise compliance indicators.
+
+The overall message should be that users can build, run, preview, deploy, and securely manage applications entirely in the cloud while benefiting from enterprise-grade protection and reliability.
+
+Section 5 — Final Transition and GitHub Onboarding
+
+This serves as both the conclusion of the onboarding experience and the entry point into the application.
+
+This screen should begin the visual transition from the dark onboarding theme back into a clean, premium light interface. The transition should feel gradual and elegant, echoing the original splash-to-welcome transformation but in reverse.
+
+Approximately eighty percent of the screen should be dedicated to a dynamic visual showcase inspired by the second reference image. Multiple product interfaces, workspace previews, AI interactions, terminal views, browser previews, and development dashboards should be displayed within a layered grid layout.
+
+These UI elements should move independently, scrolling at different speeds and directions to create a sophisticated parallax effect. The experience should feel alive, demonstrating the breadth of capabilities available within the platform.
+
+The lower section should contain the primary onboarding action. The button should now transform from Continue into Get Started with GitHub and serve as the final call-to-action.
+
+The screen should communicate a sense of readiness, showing users that they now have access to a complete cloud-native development environment powered by AI, workspaces, Git workflows, browser previews, cloud infrastructure, and enterprise-grade security—all accessible from a mobile device.
+
+Overall Design Direction
+
+The entire onboarding experience should maintain a premium, modern, and highly polished aesthetic. Every icon, logo, card, input field, workspace, and UI component should feel dimensional, layered, and realistic rather than flat. Depth, glass effects, soft shadows, motion, blur, and parallax should be used thoughtfully to create a high-end product experience.
+
+The goal is not merely to explain features, but to make users feel as though they are stepping into a complete AI-powered cloud development platform that brings desktop-class software engineering workflows to mobile.
