@@ -92,6 +92,7 @@ sequenceDiagram
     Developer->>Server: WebSocket /api/terminal/[projectId]?token=JWT
     Server->>DB: Verify Ownership & container status
     Server->>Docker: container.exec(['/bin/bash'])
+    Server-->>Developer: WebSocket JSON: { type: "ready", message: "username@cloudcode" }
     Developer->>Server: Send input keystrokes (Stdin packets)
     Server-->>Developer: Stream stdout bytes back to client (Stdout)
     Developer->>Server: HTTP GET /api/projects/[id]/files (read files using resolved paths)
