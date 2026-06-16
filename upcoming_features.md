@@ -37,6 +37,11 @@ mindmap
     Billing & AI Customization
       Dodo Payments Integration
       Custom API Keys & Models
+    Security & Hardening
+      ICC & Network Isolation
+      Disk Space Quotas
+      Spawn & ExecFile Refactoring
+      Traversal & SSRF Sanitization
 ```
 
 ---
@@ -235,3 +240,83 @@ Implementing voice recognition requires a reliable STT (Speech-to-Text) module o
   - Utilize **Expo Speech / Expo Audio** or **whisper.js** for high-quality audio capture.
   - Forward captured text to the backend LLM. Instruct the model to parse the request into a list of structured JSON commands (e.g., `{ "action": "git_commit", "params": { "message": "voice update" } }`).
   - The Next.js server maps these JSON commands directly to backend scripts (Docker execs, file manipulation APIs, Git sync routes) and updates the frontend via WebSockets.
+
+---
+
+## 🔒 7. Security Hardening & Vulnerability Fixes
+
+This section outlines the 7 critical security threats identified in the current terminal environment and API codebase, along with their corresponding architectural and code-level fixes.
+
+### 📱 7.1. Terminal & Sandbox Infrastructure Threats
+
+#### 7.1.1. Inter-Container Network Scanning (High Risk)
+* **Threat Description:** By default, containers on the standard Docker bridge network can communicate with one another. A malicious user could scan the bridge subnet (`172.17.0.0/16`) and connect to private, unauthenticated developer servers hosted in other users' active containers.
+* **The Fix:**
+  - Configure the Docker daemon to block inter-container communication system-wide by setting `"icc": false` in `/etc/docker/daemon.json`.
+  - Alternatively, create a distinct custom Docker bridge network for each provisioned workspace container, isolating its traffic entirely from other containers on the host.
+
+#### 7.1.2. Disk Space Exhaustion Denial of Service (High Risk)
+* **Threat Description:** Containers are currently provisioned without folder quota caps. A user could run an automated script inside their terminal that generates infinite data, filling up the host VPS drive space and crashing Next.js, Supabase connections, and all other containers.
+* **The Fix:**
+  - Set a container disk quota by applying size limits in Docker's host config (e.g., passing `--storage-opt size=10G` in the Docker run command).
+  - Enable filesystem-level quota controls (`xfs` or `ext4` project quotas) on the host path `/projects` where user workspaces are stored.
+
+#### 7.1.3. Shared Kernel Breakout (Medium Risk)
+* **Threat Description:** Because Docker containers share the host kernel, outdated parent VPS systems are vulnerable to kernel privilege escalation attacks (e.g., Dirty COW-style exploits) allowing hackers to breakout of their container and gain control of the host.
+* **The Fix:**
+  - Already partially mitigated by running the container shell under the non-privileged `USER coder` instead of `root` in the Dockerfile.
+  - Establish automated system cron jobs on the host VPS to regularly update, upgrade, and patch kernel modules.
+
+---
+
+### 🖥️ 7.2. Backend API Code Vulnerabilities
+
+#### 7.2.1. Host-Level Command Injection during Git Import (Critical Risk)
+* **Threat Description:** In [import/route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/import/route.ts), the repository URL is executed via `execSync` inside double quotes:
+  ```typescript
+  execSync(`git clone --depth=1 "${githubUrl}" "${workspacePath}"`)
+  ```
+  Zod validates the input as a URL, but URLs can legitimately contain quotes and semicolons. Attackers can supply a URL (e.g., `https://github.com/foo/bar";rm -rf /;`) to escape double quotes and execute arbitrary shell commands on the host VPS.
+* **The Fix:** Replace `execSync` with `spawnSync` or `execFile` where arguments are passed as an array to prevent shell parsing and quote escaping:
+  ```typescript
+  const { spawnSync } = require('child_process');
+  spawnSync('git', ['clone', '--depth=1', githubUrl, workspacePath], { timeout: 60000 });
+  ```
+
+#### 7.2.2. Container-Level Shell Injection during Git Actions (High Risk)
+* **Threat Description:** Inside [git.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/git.ts), commands are run via `execInContainer` utilizing `['sh', '-c', ...]` with double-quoted variables:
+  ```typescript
+  execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git commit -m "${escaped}"`])
+  ```
+  Even though quotes are escaped, bash double quotes evaluate subshells (e.g., `$(...)` or backticks). An attacker can inject commands through commit messages or branch names to execute processes inside the container as the `coder` user.
+* **The Fix:** Rewrite all Git operations in `git.ts` to call the `git` command directly as an array of arguments, bypassing `sh -c` entirely:
+  ```typescript
+  execInContainer(containerId, ['git', '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'commit', '-m', message]);
+  ```
+
+#### 7.2.3. Server-Side Request Forgery / SSRF (High Risk)
+* **Threat Description:** In the catch-all preview proxy route [route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/preview/%5Bid%5D/%5B%5B...path%5D%5D/route.ts), the target URL is constructed via:
+  ```typescript
+  const targetUrl = `http://${containerIp}:${internalPort}${subPath}${search}`
+  ```
+  If `subPath` contains an authority override (e.g. `//@google.com`), fetch will parse the authority as `google.com` instead of the container IP. This allows arbitrary requests from the host server to cloud metadata endpoints (`169.254.169.254`) or internal resources.
+* **The Fix:** Validate the `subPath` in the proxy router to prevent double slashes and authority injections:
+  ```typescript
+  if (subPath.startsWith('//') || subPath.includes('@')) {
+    return errorResponse('Invalid path parameters', 400);
+  }
+  ```
+
+#### 7.2.4. Partial Directory Path Traversal (Medium Risk)
+* **Threat Description:** In [files/route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/files/route.ts) and [content/route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/files/content/route.ts), the `sanitizePath` function validates boundaries via:
+  ```typescript
+  if (!resolved.startsWith(workspacePath)) return null
+  ```
+  If the host workspace path is `/projects/123-uuid` and the user requests `../123-uuid-other`, the resolved path `/projects/123-uuid-other` is allowed because it starts with `/projects/123-uuid`. This allows traversing into other project folders sharing a prefix.
+* **The Fix:** Enforce directory separator boundaries in prefix validation:
+  ```typescript
+  if (resolved !== workspacePath && !resolved.startsWith(workspacePath + path.sep)) {
+    return null;
+  }
+  ```
+
