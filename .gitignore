@@ -1,0 +1,13 @@
+# CloudCode Local Documentation (Hidden from GitHub)
+PHASE_0.1_README.md
+README.md
+analysis_results.md
+implementation_plan.md
+scaling_and_cost_analysis.md
+upcoming_features.md
+zero_cost_scaling_plan.md
+TECHNICAL_HANDBOOK.md
+
+# System files
+.DS_Store
+Thumbs.db
