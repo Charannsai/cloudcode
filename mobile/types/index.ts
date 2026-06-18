@@ -13,6 +13,7 @@ export interface Project {
   created_at: string
   updated_at: string
   container_status?: string
+  ports?: Record<string, number>
 }
 
 export interface FileNode {

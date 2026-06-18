@@ -13,15 +13,23 @@ export function middleware(req: NextRequest) {
   // 2. Identify requests that should be proxied to a container
   // This includes any request that isn't for our main app,
   // typically assets (/logo.png, /_next/static, etc.)
-  const lastProjectId = req.cookies.get('preview_project_id')?.value
+  let projectId = req.cookies.get('preview_project_id')?.value
   
-  if (lastProjectId) {
+  if (!projectId) {
+    const referer = req.headers.get('referer') || ''
+    const match = referer.match(/\/api\/preview\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i)
+    if (match) {
+      projectId = match[1]
+    }
+  }
+  
+  if (projectId) {
     // Check if the referer is telling us this is from a preview page
     const referer = req.headers.get('referer') || ''
     const isFromPreview = referer.includes('/api/preview/') || pathname.startsWith('/_next/') || pathname.includes('.')
     
     if (isFromPreview) {
-      url.pathname = `/api/preview/${lastProjectId}${pathname}`
+      url.pathname = `/api/preview/${projectId}${pathname}`
       return NextResponse.rewrite(url)
     }
   }

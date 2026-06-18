@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { createContainer } from '@/lib/docker'
+import { createContainer, getWorkspacePath } from '@/lib/docker'
 import path from 'path'
 import { execSync } from 'child_process'
 import fs from 'fs'
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function cloneAndProvision(projectId: string, githubUrl: string) {
-  const workspacePath = path.join(process.cwd(), 'projects', projectId)
+  const workspacePath = getWorkspacePath(projectId)
   try {
     fs.mkdirSync(workspacePath, { recursive: true })
     execSync(`git clone --depth=1 "${githubUrl}" "${workspacePath}"`, {
@@ -57,10 +57,14 @@ async function cloneAndProvision(projectId: string, githubUrl: string) {
     // Grant full permissions recursively so the Docker "coder" user can read/write the cloned code!
     execSync(`chmod -R 777 "${workspacePath}"`, { stdio: 'ignore' })
 
-    const { containerId } = await createContainer(projectId)
+    const { containerId, port } = await createContainer(projectId)
     await supabaseAdmin
       .from('projects')
-      .update({ status: 'ready', container_id: containerId })
+      .update({ 
+        status: 'ready', 
+        container_id: containerId,
+        port: port ? parseInt(port, 10) : null
+      })
       .eq('id', projectId)
   } catch (err) {
     console.error('Import failed:', err)

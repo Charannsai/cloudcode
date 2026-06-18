@@ -5,7 +5,10 @@ import {
 } from 'react-native'
 import { useTerminal } from '@/hooks/useTerminal'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Terminal as TerminalIcon, StopCircle, Trash2, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
+import { useAIStore } from '@/store/ai'
+import { api } from '@/lib/api'
+import { Terminal as TerminalIcon, StopCircle, Trash2, ArrowUp, ArrowDown, Sparkles, Plus, X } from 'lucide-react-native'
 
 interface Props {
   projectId: string
@@ -21,41 +24,184 @@ const QUICK_COMMANDS = [
   'clear',
 ]
 
+// Separate TerminalSession component to keep the connection alive!
+interface TerminalSessionProps {
+  projectId: string
+  terminalId: string
+  visible: boolean
+  registerSendInput: (terminalId: string, sendInput: (text: string) => void) => void
+  registerClear: (terminalId: string, clear: () => void) => void
+  registerDiagnose: (terminalId: string, diagnoseFn: () => void) => void
+  onDiagnose: (recentOutput: string) => void
+}
+
+function TerminalSession({
+  projectId,
+  terminalId,
+  visible,
+  registerSendInput,
+  registerClear,
+  registerDiagnose,
+  onDiagnose,
+}: TerminalSessionProps) {
+  const { colors, isDark } = useAppTheme()
+  const [output, setOutput] = useState('')
+  const scrollRef = useRef<ScrollView>(null)
+
+  // Use the useTerminal hook for this specific terminalId
+  const { connected, error, sendInput } = useTerminal({
+    projectId,
+    terminalId,
+    onOutput: useCallback((data: string, shouldClear: boolean) => {
+      setOutput(prev => shouldClear ? data : prev + data)
+    }, [])
+  })
+
+  // Register methods with parent
+  useEffect(() => {
+    registerSendInput(terminalId, sendInput)
+  }, [terminalId, sendInput, registerSendInput])
+
+  useEffect(() => {
+    registerClear(terminalId, () => setOutput(''))
+  }, [terminalId, registerClear])
+
+  // Automatically scroll to end on output change
+  useEffect(() => {
+    if (visible) {
+      scrollRef.current?.scrollToEnd({ animated: false })
+    }
+  }, [output, visible])
+
+  const lines = useMemo(() => output.split('\n'), [output])
+
+  // Register diagnose trigger
+  useEffect(() => {
+    registerDiagnose(terminalId, () => {
+      const recentOutput = lines.slice(-25).join('\n').trim()
+      onDiagnose(recentOutput)
+    })
+  }, [terminalId, lines, onDiagnose, registerDiagnose])
+
+  return (
+    <View style={{ flex: 1, display: visible ? 'flex' : 'none' }}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.outputArea}
+        contentContainerStyle={styles.outputContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+      >
+        {!connected && !output && (
+          <View style={styles.centerLoading}>
+            <ActivityIndicator color={colors.textSecondary} size="small" />
+            <Text style={[styles.connectingText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>Connecting...</Text>
+          </View>
+        )}
+        {output ? (
+          <View style={{ paddingBottom: 16 }}>
+            {lines.map((line, i) => (
+              <Text key={i} style={[styles.output, { color: isDark ? '#E6EDF3' : '#1F2328', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
+                {line}
+                {connected && i === lines.length - 1 && <Text style={{ color: '#3FB950' }}>█</Text>}
+              </Text>
+            ))}
+          </View>
+        ) : connected ? (
+          <Text style={[styles.placeholderText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
+            Ready.
+          </Text>
+        ) : null}
+      </ScrollView>
+    </View>
+  )
+}
+
 export default function TerminalTab({ projectId }: Props) {
-  const { output, connected, error, sendInput, clear, appendOutput } = useTerminal({ projectId })
+  const router = useRouter()
+  const { setPendingPrompt, setActiveProject } = useAIStore()
+  const [terminals, setTerminals] = useState<string[]>(['main'])
+  const [activeTerminalId, setActiveTerminalId] = useState('main')
+
+  const sendInputRefs = useRef<Record<string, (text: string) => void>>({})
+  const clearRefs = useRef<Record<string, () => void>>({})
+  const diagnoseRefs = useRef<Record<string, () => void>>({})
+
+  const registerSendInput = useCallback((terminalId: string, sendInputFn: (text: string) => void) => {
+    sendInputRefs.current[terminalId] = sendInputFn
+  }, [])
+
+  const registerClear = useCallback((terminalId: string, clearFn: () => void) => {
+    clearRefs.current[terminalId] = clearFn
+  }, [])
+
+  const registerDiagnose = useCallback((terminalId: string, diagnoseFn: () => void) => {
+    diagnoseRefs.current[terminalId] = diagnoseFn
+  }, [])
+
   const { colors, isDark } = useAppTheme()
   const [inputText, setInputText] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isRunning, setIsRunning] = useState(false)
-  const scrollRef = useRef<ScrollView>(null)
-
-  const lines = useMemo(() => output.split('\n'), [output])
-
-  useEffect(() => {
-    scrollRef.current?.scrollToEnd({ animated: false })
-  }, [output])
 
   const submit = useCallback(() => {
     if (!inputText.trim() && inputText !== '') return
-    sendInput(inputText + '\n')
+    const sendInput = sendInputRefs.current[activeTerminalId]
+    if (sendInput) {
+      sendInput(inputText + '\n')
+    }
 
     setHistory(prev => [...prev, inputText.trim()])
     setHistoryIndex(-1)
     setIsRunning(true)
     setInputText('')
-  }, [inputText, sendInput])
+  }, [inputText, activeTerminalId])
 
   const runQuick = useCallback((cmd: string) => {
-    sendInput(cmd + '\n')
+    const sendInput = sendInputRefs.current[activeTerminalId]
+    if (sendInput) {
+      sendInput(cmd + '\n')
+    }
     setIsRunning(true)
-  }, [sendInput])
+  }, [activeTerminalId])
 
   const handleClear = useCallback(() => {
     runQuick('clear')
-    clear()
+    const clearFn = clearRefs.current[activeTerminalId]
+    if (clearFn) {
+      clearFn()
+    }
     setIsRunning(false)
-  }, [runQuick, clear])
+  }, [runQuick, activeTerminalId])
+
+  const addNewTerminal = () => {
+    const newId = `term-${Date.now()}`
+    setTerminals(prev => [...prev, newId])
+    setActiveTerminalId(newId)
+  }
+
+  const closeTerminal = (termId: string) => {
+    if (terminals.length <= 1) return
+    const index = terminals.indexOf(termId)
+    const newTerminals = terminals.filter(t => t !== termId)
+    setTerminals(newTerminals)
+    
+    if (activeTerminalId === termId) {
+      const newActiveIndex = Math.max(0, index - 1)
+      setActiveTerminalId(newTerminals[newActiveIndex])
+    }
+
+    delete sendInputRefs.current[termId]
+    delete clearRefs.current[termId]
+    delete diagnoseRefs.current[termId]
+
+    // Kill the container's tmux session asynchronously in the background
+    api.terminal.kill(projectId, termId).catch(err => {
+      console.warn('Failed to kill terminal session inside container:', err)
+    })
+  }
 
   const goHistoryUp = () => {
     if (history.length > 0) {
@@ -78,70 +224,126 @@ export default function TerminalTab({ projectId }: Props) {
     }
   }
 
+  const handleDiagnose = useCallback((recentOutput: string) => {
+    if (!recentOutput) return
+    const prompt = `I am encountering an issue in my terminal command. Here is the recent output:\n\n\`\`\`\n${recentOutput}\n\`\`\`\n\nPlease analyze the logs, diagnose the error, and explain how to resolve it. If necessary, read and edit the code files using your tools.`
+    setActiveProject(projectId)
+    setPendingPrompt(prompt)
+    router.push('/(tabs)/ai')
+  }, [projectId, setPendingPrompt, setActiveProject, router])
+
+  const triggerDiagnose = () => {
+    const diagnoseFn = diagnoseRefs.current[activeTerminalId]
+    if (diagnoseFn) {
+      diagnoseFn()
+    }
+  }
+
+  const triggerStop = () => {
+    const sendInput = sendInputRefs.current[activeTerminalId]
+    if (sendInput) {
+      sendInput('\x03')
+    }
+  }
+
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: isDark ? '#000' : '#f9fafb' }]}
+      style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 160}
     >
-      {/* Status bar */}
-      <View style={[styles.statusBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.statusLeft}>
-          <TerminalIcon size={14} color={connected ? '#10b981' : colors.textSecondary} strokeWidth={2.5} />
-          <Text style={[styles.statusText, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-            {connected ? 'MAIN_SHELL' : 'CONNECTING...'}
-          </Text>
-        </View>
-        <View style={styles.statusActions}>
+      {/* Shell Tabs */}
+      <View style={[styles.shellBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shellTabs}>
+          {terminals.map((termId, idx) => {
+            const isActive = termId === activeTerminalId
+            return (
+              <TouchableOpacity
+                key={termId}
+                onPress={() => setActiveTerminalId(termId)}
+                style={[
+                  styles.shellTab,
+                  {
+                    backgroundColor: isActive ? (isDark ? '#0E1116' : '#FFFFFF') : 'transparent',
+                    borderColor: isActive ? colors.border : 'transparent',
+                  }
+                ]}
+                activeOpacity={0.7}
+              >
+                <TerminalIcon size={10} color={isActive ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+                <Text style={[
+                  styles.shellTabText,
+                  {
+                    color: isActive ? colors.text : colors.textSecondary,
+                    fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_400Regular'
+                  }
+                ]}>
+                  {termId === 'main' ? 'Shell 1' : `Shell ${idx + 1}`}
+                </Text>
+                {terminals.length > 1 && (
+                  <TouchableOpacity
+                    onPress={() => closeTerminal(termId)}
+                    style={styles.closeTabBtn}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  >
+                    <X size={9} color={colors.textSecondary} strokeWidth={2} />
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            )
+          })}
           <TouchableOpacity
-            onPress={() => sendInput('\x03')}
-            style={[styles.actionBtn, { backgroundColor: colors.background }]}
+            onPress={addNewTerminal}
+            style={[styles.addTabBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
             activeOpacity={0.7}
           >
-            <StopCircle size={14} color={colors.error} strokeWidth={2} />
+            <Plus size={12} color={colors.textSecondary} strokeWidth={2} />
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Actions */}
+        <View style={styles.shellActions}>
+          <TouchableOpacity
+            onPress={triggerDiagnose}
+            style={[styles.shellAction, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <Sparkles size={12} color={'#D2A8FF'} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={triggerStop}
+            style={[styles.shellAction, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <StopCircle size={12} color={'#F85149'} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleClear}
-            style={[styles.actionBtn, { backgroundColor: colors.background }]}
+            style={[styles.shellAction, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
             activeOpacity={0.7}
           >
-            <Trash2 size={14} color={colors.textSecondary} strokeWidth={2} />
+            <Trash2 size={12} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Terminal output */}
-      <ScrollView
-        ref={scrollRef}
-        style={styles.outputArea}
-        contentContainerStyle={styles.outputContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-      >
-        {!connected && !error && (
-          <View style={styles.centerLoading}>
-            <ActivityIndicator color={colors.textSecondary} size="small" />
-            <Text style={[styles.connectingText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>Initializing secure tunnel...</Text>
-          </View>
-        )}
-        {output ? (
-          <View style={{ paddingBottom: 16 }}>
-            {lines.map((line, i) => (
-              <Text key={i} style={[styles.output, { color: isDark ? '#e5e7eb' : '#111827', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
-                {line}
-                {connected && i === lines.length - 1 && <Text style={{ color: colors.primary }}>█</Text>}
-              </Text>
-            ))}
-          </View>
-        ) : connected ? (
-          <Text style={[styles.placeholderText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
-            Node environment ready.
-          </Text>
-        ) : null}
-      </ScrollView>
+      {/* Terminal sessions */}
+      <View style={{ flex: 1 }}>
+        {terminals.map(termId => (
+          <TerminalSession
+            key={termId}
+            projectId={projectId}
+            terminalId={termId}
+            visible={termId === activeTerminalId}
+            registerSendInput={registerSendInput}
+            registerClear={registerClear}
+            registerDiagnose={registerDiagnose}
+            onDiagnose={handleDiagnose}
+          />
+        ))}
+      </View>
 
-      <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+      <View style={[styles.inputContainer, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderTopColor: colors.border }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -152,9 +354,9 @@ export default function TerminalTab({ projectId }: Props) {
           {QUICK_COMMANDS.map((cmd) => (
             <TouchableOpacity
               key={cmd}
-              style={[styles.quickCmd, { backgroundColor: colors.background, borderColor: colors.border }]}
+              style={[styles.quickCmd, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}
               onPress={() => runQuick(cmd)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
               <Text style={[styles.quickCmdText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>{cmd}</Text>
             </TouchableOpacity>
@@ -167,35 +369,34 @@ export default function TerminalTab({ projectId }: Props) {
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={submit}
-            placeholder={isRunning ? "Running process..." : "Type a command..."}
-            placeholderTextColor={colors.textSecondary + '60'}
+            placeholder="$"
+            placeholderTextColor={colors.textSecondary + '50'}
             returnKeyType="send"
             autoCapitalize="none"
             autoCorrect={false}
             spellCheck={false}
             blurOnSubmit={false}
-            onFocus={() => scrollRef.current?.scrollToEnd({ animated: true })}
           />
-          <View style={{ flexDirection: 'row', gap: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
             {history.length > 0 && (
-              <View style={{ flexDirection: 'column', gap: 4 }}>
-                <TouchableOpacity onPress={goHistoryUp} style={{ padding: 2, backgroundColor: colors.background, borderRadius: 4 }}>
-                  <ArrowUp size={12} color={colors.textSecondary} />
+              <View style={{ flexDirection: 'column', gap: 2 }}>
+                <TouchableOpacity onPress={goHistoryUp} style={[styles.historyBtn, { backgroundColor: isDark ? '#0E1116' : '#EAEEF2' }]}>
+                  <ArrowUp size={10} color={colors.textSecondary} strokeWidth={2} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={goHistoryDown} style={{ padding: 2, backgroundColor: colors.background, borderRadius: 4 }}>
-                  <ArrowDown size={12} color={colors.textSecondary} />
+                <TouchableOpacity onPress={goHistoryDown} style={[styles.historyBtn, { backgroundColor: isDark ? '#0E1116' : '#EAEEF2' }]}>
+                  <ArrowDown size={10} color={colors.textSecondary} strokeWidth={2} />
                 </TouchableOpacity>
               </View>
             )}
             <TouchableOpacity
               style={[
                 styles.sendBtn,
-                { backgroundColor: inputText.trim() ? colors.primary : colors.background }
+                { backgroundColor: inputText.trim() ? colors.text : (isDark ? '#1C2128' : '#EAEEF2') }
               ]}
               onPress={submit}
               disabled={!inputText.trim()}
             >
-              <ArrowUp size={18} color={inputText.trim() ? colors.background : colors.textSecondary} strokeWidth={2.5} />
+              <ArrowUp size={16} color={inputText.trim() ? colors.background : colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
         </View>
@@ -206,31 +407,48 @@ export default function TerminalTab({ projectId }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  statusBar: {
+  shellBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 6,
+    paddingLeft: 12,
+    paddingRight: 8,
     borderBottomWidth: 1,
   },
-  statusLeft: {
+  shellTabs: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 4,
+    flex: 1,
   },
-  statusText: {
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  statusActions: {
+  shellTab: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 5,
   },
-  actionBtn: {
+  shellTabText: { fontSize: 11 },
+  closeTabBtn: { paddingHorizontal: 2, marginLeft: 2 },
+  addTabBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shellActions: {
+    flexDirection: 'row',
+    gap: 4,
+    marginLeft: 8,
+  },
+  shellAction: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -239,54 +457,53 @@ const styles = StyleSheet.create({
   centerLoading: {
     paddingVertical: 40,
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
-  connectingText: { fontSize: 13, opacity: 0.6 },
+  connectingText: { fontSize: 12, opacity: 0.5 },
   output: {
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 18,
   },
-  placeholderText: { fontSize: 13, opacity: 0.4 },
+  placeholderText: { fontSize: 12, opacity: 0.3 },
   inputContainer: {
     borderTopWidth: 1,
   },
   quickScroll: {
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   quickContent: {
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: 12,
+    gap: 6,
   },
   quickCmd: {
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
-  quickCmdText: { fontSize: 11 },
+  quickCmdText: { fontSize: 10 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 4,
-    gap: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 2,
+    gap: 8,
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    paddingVertical: 8,
+    fontSize: 14,
+    paddingVertical: 6,
+  },
+  historyBtn: {
+    padding: 3,
+    borderRadius: 4,
   },
   sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  promptSymbol: {
-    fontSize: 12,
-    marginRight: 8,
-  },
 })
-

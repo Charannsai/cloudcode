@@ -27,13 +27,58 @@ function parseStatusCode(code: string): 'modified' | 'added' | 'deleted' | 'rena
   }
 }
 
+async function ensureSshRemote(containerId: string): Promise<void> {
+  let remoteUrl = ''
+  try {
+    await execInContainer(containerId, ['git', '-c', 'safe.directory=/workspace', 'config', 'remote.origin.url'], (data) => {
+      remoteUrl += data
+    })
+    remoteUrl = remoteUrl.trim()
+    if (remoteUrl.startsWith('https://github.com/')) {
+      const cleanUrl = remoteUrl.replace(/\/$/, '')
+      const match = cleanUrl.match(/https:\/\/github\.com\/([^\/]+)\/([^\/\?#]+)/)
+      if (match) {
+        const owner = match[1]
+        let repo = match[2]
+        if (!repo.endsWith('.git')) repo = repo + '.git'
+        const sshUrl = `git@github.com:${owner}/${repo}`
+        await execInContainer(containerId, ['git', '-c', 'safe.directory=/workspace', 'remote', 'set-url', 'origin', sshUrl], () => {})
+        console.log(`Rewrote remote URL from ${remoteUrl} to ${sshUrl}`)
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to ensure SSH remote URL:', err)
+  }
+}
+
 export async function getGitStatus(containerId: string): Promise<GitStatus> {
   let statusOutput = ''
-  let branchOutput = ''
 
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git status --porcelain -b 2>&1`], (data) => {
+  let exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false status --porcelain -b 2>&1`], (data) => {
     statusOutput += data
   })
+
+  if (exitCode !== 0) {
+    // Check if it is a dubious ownership error or safe directory trust issue
+    if (statusOutput.includes('dubious ownership') || statusOutput.includes('safe.directory')) {
+      console.log(`[Self-Healing] Detected dubious ownership in container ${containerId}. Auto-bypassing system-wide...`)
+      try {
+        await execInContainer(containerId, ['git', 'config', '--system', '--add', 'safe.directory', '*'], () => {}, 'root')
+        await execInContainer(containerId, ['git', 'config', '--system', 'core.fileMode', 'false'], () => {}, 'root')
+        // Retry git status
+        statusOutput = ''
+        exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git status --porcelain -b 2>&1`], (data) => {
+          statusOutput += data
+        })
+      } catch (gitErr) {
+        console.error('Self-healing git config failed:', gitErr)
+      }
+    }
+    
+    if (exitCode !== 0) {
+      throw new Error(statusOutput.trim() || `git status failed with exit code ${exitCode}`)
+    }
+  }
 
   const lines = statusOutput.trim().split('\n').filter(Boolean)
   const status: GitStatus = {
@@ -78,66 +123,90 @@ export async function getGitStatus(containerId: string): Promise<GitStatus> {
 
 export async function getGitDiff(containerId: string, filePath?: string, staged?: boolean): Promise<string> {
   let output = ''
-  const args = staged ? ['git', 'diff', '--cached'] : ['git', 'diff']
-  if (filePath) args.push(filePath)
+  const args = staged ? ['git', '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'diff', '--cached'] : ['git', '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'diff']
+  if (filePath) args.push(`"${filePath.replace(/"/g, '\\"')}"`)
 
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && ${args.join(' ')}`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && ${args.join(' ')} 2>&1`], (data) => {
     output += data
   })
+
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git diff failed with exit code ${exitCode}`)
+  }
 
   return output
 }
 
 export async function gitStage(containerId: string, files: string[]): Promise<string> {
   let output = ''
-  const fileList = files.join(' ')
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git add ${fileList} 2>&1`], (data) => {
+  const fileList = files.map(f => `"${f.replace(/"/g, '\\"')}"`).join(' ')
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false add ${fileList} 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git add failed with exit code ${exitCode}`)
+  }
   return output
 }
 
 export async function gitUnstage(containerId: string, files: string[]): Promise<string> {
   let output = ''
-  const fileList = files.join(' ')
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git reset HEAD ${fileList} 2>&1`], (data) => {
+  const fileList = files.map(f => `"${f.replace(/"/g, '\\"')}"`).join(' ')
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false reset HEAD ${fileList} 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git reset failed with exit code ${exitCode}`)
+  }
   return output
 }
 
 export async function gitCommit(containerId: string, message: string): Promise<string> {
   let output = ''
   const escaped = message.replace(/"/g, '\\"')
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git commit -m "${escaped}" 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false commit -m "${escaped}" 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git commit failed with exit code ${exitCode}`)
+  }
   return output
 }
 
 export async function gitPush(containerId: string, remote = 'origin', branch?: string): Promise<string> {
+  await ensureSshRemote(containerId)
   let output = ''
   const branchArg = branch || ''
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git push ${remote} ${branchArg} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && GIT_SSH_COMMAND="ssh -i /home/coder/.ssh/id_ed25519 -o UserKnownHostsFile=/home/coder/.ssh/known_hosts -o StrictHostKeyChecking=no" git -c safe.directory=/workspace -c core.fileMode=false push ${remote} ${branchArg} 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git push failed with exit code ${exitCode}`)
+  }
   return output
 }
 
 export async function gitPull(containerId: string, remote = 'origin', branch?: string): Promise<string> {
+  await ensureSshRemote(containerId)
   let output = ''
   const branchArg = branch || ''
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git pull ${remote} ${branchArg} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && GIT_SSH_COMMAND="ssh -i /home/coder/.ssh/id_ed25519 -o UserKnownHostsFile=/home/coder/.ssh/known_hosts -o StrictHostKeyChecking=no" git -c safe.directory=/workspace -c core.fileMode=false pull ${remote} ${branchArg} 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git pull failed with exit code ${exitCode}`)
+  }
   return output
 }
 
 export async function gitBranches(containerId: string): Promise<{ branches: string[]; current: string }> {
   let output = ''
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git branch 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false branch 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git branch failed with exit code ${exitCode}`)
+  }
 
   const branches: string[] = []
   let current = ''
@@ -154,16 +223,22 @@ export async function gitBranches(containerId: string): Promise<{ branches: stri
 export async function gitCheckout(containerId: string, branch: string, create = false): Promise<string> {
   let output = ''
   const flag = create ? '-b' : ''
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git checkout ${flag} ${branch} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false checkout ${flag} ${branch} 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git checkout failed with exit code ${exitCode}`)
+  }
   return output
 }
 
 export async function gitLog(containerId: string, count = 20): Promise<string> {
   let output = ''
-  await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git log --oneline -n ${count} 2>&1`], (data) => {
+  const exitCode = await execInContainer(containerId, ['sh', '-c', `cd ${WORKSPACE} && git -c safe.directory=/workspace -c core.fileMode=false log --oneline -n ${count} 2>&1`], (data) => {
     output += data
   })
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git log failed with exit code ${exitCode}`)
+  }
   return output
 }

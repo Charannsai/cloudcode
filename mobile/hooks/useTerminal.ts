@@ -6,17 +6,16 @@ const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
 
 interface UseTerminalOptions {
   projectId: string
+  terminalId?: string
+  onOutput?: (data: string, shouldClear: boolean) => void
   onReady?: () => void
 }
 
 interface UseTerminalReturn {
-  output: string
   connected: boolean
   error: string | null
   sendInput: (text: string) => void
   resize: (cols: number, rows: number) => void
-  clear: () => void
-  appendOutput: (text: string) => void
 }
 
 /**
@@ -29,11 +28,21 @@ function stripAnsi(text: string): string {
   return text.replace(ansiRegex, '');
 }
 
-export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerminalReturn {
-  const [output, setOutput] = useState('')
+export function useTerminal({ projectId, terminalId, onOutput, onReady }: UseTerminalOptions): UseTerminalReturn {
   const [connected, setConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
+
+  const onOutputRef = useRef(onOutput)
+  const onReadyRef = useRef(onReady)
+
+  useEffect(() => {
+    onOutputRef.current = onOutput
+  }, [onOutput])
+
+  useEffect(() => {
+    onReadyRef.current = onReady
+  }, [onReady])
 
   useEffect(() => {
     let ws: WebSocket | null = null
@@ -45,7 +54,8 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
         return
       }
 
-      const url = `${WS_URL}/api/terminal/${projectId}?token=${encodeURIComponent(token)}`
+      const terminalParam = terminalId ? `&terminalId=${encodeURIComponent(terminalId)}` : ''
+      const url = `${WS_URL}/api/terminal/${projectId}?token=${encodeURIComponent(token)}${terminalParam}`
       ws = new WebSocket(url)
       wsRef.current = ws
 
@@ -61,14 +71,11 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
             // We only want to target the end of the prompt, usually # followed by a space or end of line
             data = data.replace(/([#])(?=\s|$)/g, '>')
 
-            // Check for clear screen code (ESC[2J or \f)
-            if (data.includes('\u001b[2J') || data.includes('\u001b[H')) {
-              setOutput(stripAnsi(data))
-            } else {
-              setOutput((prev) => prev + stripAnsi(data))
-            }
+            const cleanData = stripAnsi(data)
+            const shouldClear = data.includes('\u001b[2J') || data.includes('\u001b[H')
+            onOutputRef.current?.(cleanData, shouldClear)
           } else if (msg.type === 'ready') {
-            onReady?.()
+            onReadyRef.current?.()
           } else if (msg.type === 'error') {
             setError(msg.message || 'Terminal error')
           }
@@ -76,7 +83,9 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
           // Non-JSON message?
           let data = typeof event.data === 'string' ? event.data : ''
           data = data.replace(/([#])(?=\s|$)/g, '>')
-          setOutput((prev) => prev + stripAnsi(data))
+          const cleanData = stripAnsi(data)
+          const shouldClear = data.includes('\u001b[2J') || data.includes('\u001b[H')
+          onOutputRef.current?.(cleanData, shouldClear)
         }
       }
 
@@ -94,7 +103,7 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
     return () => {
       ws?.close(1000, 'Component unmounted')
     }
-  }, [projectId, onReady])
+  }, [projectId, terminalId])
 
   const sendInput = useCallback((text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -108,9 +117,5 @@ export function useTerminal({ projectId, onReady }: UseTerminalOptions): UseTerm
     }
   }, [])
 
-  const clear = useCallback(() => setOutput(''), [])
-  const appendOutput = useCallback((text: string) => setOutput((prev) => prev + text), [])
-
-  return { output, connected, error, sendInput, resize, clear, appendOutput }
+  return { connected, error, sendInput, resize }
 }
-

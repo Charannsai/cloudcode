@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { destroyContainer, getContainerStatus } from '@/lib/docker'
+import { destroyContainer, getContainerDetails, ensureContainerRunning, getWorkspacePath } from '@/lib/docker'
+import { recordActivity, removeProject } from '@/lib/activityTracker'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -22,9 +23,19 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (error || !data) return errorResponse('Project not found', 404)
 
+  // Track activity — viewing a project counts as active usage
+  recordActivity(id)
+
+  // Auto-restart sleeping containers when user views the project
   if (data.container_id) {
-    const containerStatus = await getContainerStatus(data.container_id)
-    return successResponse({ ...data, container_status: containerStatus })
+    await ensureContainerRunning(id)
+    const details = await getContainerDetails(data.container_id)
+    return successResponse({ 
+      ...data, 
+      container_status: details.status,
+      ports: details.ports,
+      port: details.ports['3000'] || data.port || null
+    })
   }
 
   return successResponse(data)
@@ -49,7 +60,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     await destroyContainer(data.container_id).catch(console.error)
   }
 
-  const workspacePath = path.join(process.cwd(), 'projects', id)
+  // Clean up activity tracker
+  removeProject(id)
+
+  const workspacePath = getWorkspacePath(id)
   await fs.rm(workspacePath, { recursive: true, force: true }).catch(console.error)
 
   await supabaseAdmin.from('projects').delete().eq('id', id)

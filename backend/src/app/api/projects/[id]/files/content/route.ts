@@ -3,10 +3,11 @@ import fs from 'fs/promises'
 import path from 'path'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
+import { getWorkspacePath } from '@/lib/docker'
 
 type Params = { params: Promise<{ id: string }> }
 
-// GET /api/projects/[id]/files/content?path=src/index.js
+// ... (GET and PUT routes remain the same)
 export async function GET(req: NextRequest, { params }: Params) {
   const user = getUserFromRequest(req)
   if (!user) return errorResponse('Unauthorized', 401)
@@ -35,7 +36,6 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 }
 
-// PUT /api/projects/[id]/files/content
 export async function PUT(req: NextRequest, { params }: Params) {
   const user = getUserFromRequest(req)
   if (!user) return errorResponse('Unauthorized', 401)
@@ -69,7 +69,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 function sanitizePath(projectId: string, filePath: string): string | null {
-  const workspacePath = path.join(process.cwd(), 'projects', projectId)
+  const workspacePath = getWorkspacePath(projectId)
   const resolved = path.resolve(workspacePath, filePath)
   
   // Prevent path traversal attacks

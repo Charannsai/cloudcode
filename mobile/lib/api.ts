@@ -54,6 +54,21 @@ export const api = {
         `/api/projects/${projectId}/files/content`,
         { method: 'PUT', body: JSON.stringify({ path: filePath, content }) }
       ),
+    create: (projectId: string, filePath: string, type: 'file' | 'directory') =>
+      apiFetch<{ created: boolean; path: string; type: 'file' | 'directory' }>(
+        `/api/projects/${projectId}/files`,
+        { method: 'POST', body: JSON.stringify({ path: filePath, type }) }
+      ),
+    delete: (projectId: string, filePath: string) =>
+      apiFetch<{ deleted: boolean; path: string }>(
+        `/api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`,
+        { method: 'DELETE' }
+      ),
+    rename: (projectId: string, oldPath: string, newPath: string) =>
+      apiFetch<{ renamed: boolean; oldPath: string; newPath: string }>(
+        `/api/projects/${projectId}/files`,
+        { method: 'PATCH', body: JSON.stringify({ oldPath, newPath }) }
+      ),
   },
 
   git: {
@@ -105,6 +120,40 @@ export const api = {
       apiFetch<{ output: string }>(`/api/projects/${projectId}/git/branches`, {
         method: 'POST',
         body: JSON.stringify({ branch, create }),
+      }),
+
+    ssh: {
+      get: (projectId: string) =>
+        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>(`/api/projects/${projectId}/git/ssh`),
+      generate: (projectId: string) =>
+        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>(`/api/projects/${projectId}/git/ssh`, { method: 'POST' }),
+      globalGet: () =>
+        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>('/api/user/git/ssh'),
+      globalGenerate: () =>
+        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>('/api/user/git/ssh', { method: 'POST' }),
+    },
+
+    config: {
+      get: (projectId: string) =>
+        apiFetch<{ name: string | null; email: string | null }>(`/api/projects/${projectId}/git/config`),
+      set: (projectId: string, name: string, email: string) =>
+        apiFetch<{ saved: boolean }>(`/api/projects/${projectId}/git/config`, {
+          method: 'POST',
+          body: JSON.stringify({ name, email }),
+        }),
+    },
+    log: (projectId: string, count?: number) => {
+      const params = new URLSearchParams()
+      if (count) params.set('count', count.toString())
+      return apiFetch<{ log: string }>(`/api/projects/${projectId}/git/log?${params}`)
+    },
+  },
+
+  terminal: {
+    kill: (projectId: string, terminalId: string) =>
+      apiFetch<{ killed: boolean }>(`/api/projects/${projectId}/terminal/kill`, {
+        method: 'POST',
+        body: JSON.stringify({ terminalId }),
       }),
   },
 

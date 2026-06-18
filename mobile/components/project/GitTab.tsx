@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useFocusEffect, router } from 'expo-router'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, RefreshControl,
+  ActivityIndicator, Alert, RefreshControl, Modal, KeyboardAvoidingView, Platform, Linking
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { api } from '@/lib/api'
@@ -9,10 +10,14 @@ import {
   GitBranch, GitCommit, GitPullRequest, Plus, Minus, Check,
   ChevronDown, ChevronRight, RefreshCw, Upload, Download,
   FileCode, FilePlus, Trash, AlertCircle, Circle as CircleIcon,
+  Settings
 } from 'lucide-react-native'
+import * as Clipboard from 'expo-clipboard'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface Props {
   projectId: string
+  isActive?: boolean
 }
 
 interface GitFileChange {
@@ -30,12 +35,12 @@ interface GitStatusData {
 }
 
 const STATUS_ICONS: Record<string, { icon: any; color: string }> = {
-  modified: { icon: FileCode, color: '#f59e0b' },
-  added: { icon: FilePlus, color: '#10b981' },
-  deleted: { icon: Trash, color: '#ef4444' },
+  modified: { icon: FileCode, color: '#F0883E' },
+  added: { icon: FilePlus, color: '#3FB950' },
+  deleted: { icon: Trash, color: '#F85149' },
 }
 
-export default function GitTab({ projectId }: Props) {
+export default function GitTab({ projectId, isActive }: Props) {
   const { colors, isDark } = useAppTheme()
   const [status, setStatus] = useState<GitStatusData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -43,11 +48,114 @@ export default function GitTab({ projectId }: Props) {
   const [commitMessage, setCommitMessage] = useState('')
   const [committing, setCommitting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [syncAction, setSyncAction] = useState<'push' | 'pull' | null>(null)
   const [expandedSections, setExpandedSections] = useState({
     staged: true,
     changes: true,
     untracked: true,
   })
+  // Custom Alert State
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean
+    title: string
+    message: string
+    type: 'success' | 'error' | 'info' | 'warning'
+    confirmText?: string
+    cancelText?: string
+    onConfirm?: () => void
+  }>({ visible: false, title: '', message: '', type: 'info' })
+
+  const showAlert = useCallback((
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning' = 'info',
+    onConfirm?: () => void,
+    confirmText?: string,
+    cancelText?: string
+  ) => {
+    setAlertConfig({ visible: true, title, message, type, onConfirm, confirmText, cancelText })
+  }, [])
+  const hideAlert = useCallback(() => {
+    setAlertConfig(prev => ({ ...prev, visible: false }))
+  }, [])
+
+  // Git configurations and SSH state keys
+  const [gitName, setGitName] = useState('')
+  const [gitEmail, setGitEmail] = useState('')
+  const [hasSshKey, setHasSshKey] = useState(false)
+  const [sshPublicKey, setSshPublicKey] = useState<string | null>(null)
+  const [sshHistory, setSshHistory] = useState<{ timestamp: string, publicKey: string }[]>([])
+
+  // Git commit history logs
+  const [commitHistory, setCommitHistory] = useState<{ hash: string, message: string }[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  
+  // Track which files are currently being staged/unstaged to show inline indicators
+  const [stagingFiles, setStagingFiles] = useState<Record<string, boolean>>({})
+
+  const fetchHistory = useCallback(async (silent = false) => {
+    if (!silent) setLoadingHistory(true)
+    try {
+      const res = await api.git.log(projectId, 12)
+      if (res.log) {
+        const parsed = res.log
+          .split('\n')
+          .filter(Boolean)
+          .map(line => {
+            const spaceIndex = line.indexOf(' ')
+            if (spaceIndex === -1) return { hash: line, message: '' }
+            return {
+              hash: line.substring(0, spaceIndex),
+              message: line.substring(spaceIndex + 1).trim()
+            }
+          })
+        setCommitHistory(parsed)
+      } else {
+        setCommitHistory([])
+      }
+    } catch (err) {
+      console.warn('Failed to load git history:', err)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }, [projectId])
+
+  const loadGitConfig = useCallback(async () => {
+    try {
+      const config = await api.git.config.get(projectId)
+      let name = config.name || ''
+      let email = config.email || ''
+
+      // Auto-configure from cached credentials if not set inside container
+      if (!name || !email) {
+        const cachedName = await AsyncStorage.getItem('git_author_name')
+        const cachedEmail = await AsyncStorage.getItem('git_author_email')
+        if (cachedName && cachedEmail) {
+          name = cachedName
+          email = cachedEmail
+          // Set in container in background
+          await api.git.config.set(projectId, cachedName, cachedEmail)
+        }
+      }
+
+      setGitName(name)
+      setGitEmail(email)
+      
+      const ssh = await api.git.ssh.get(projectId)
+      setHasSshKey(ssh.hasKey)
+      setSshPublicKey(ssh.publicKey)
+      setSshHistory(ssh.history || [])
+    } catch (err) {
+      console.warn('Failed to load git configs:', err)
+    }
+  }, [projectId])
+
+  useEffect(() => {
+    loadGitConfig()
+  }, [loadGitConfig])
+
+  // Save credentials and SSH key are now managed globally in Settings screen
+
   const [branches, setBranches] = useState<string[]>([])
   const [showBranches, setShowBranches] = useState(false)
   const [diffText, setDiffText] = useState<string | null>(null)
@@ -60,35 +168,85 @@ export default function GitTab({ projectId }: Props) {
     try {
       const data = await api.git.status(projectId)
       setStatus(data)
+      // Fetch history alongside status
+      fetchHistory(true)
     } catch (err) {
       setError((err as Error).message)
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [projectId])
+  }, [projectId, fetchHistory])
 
-  useEffect(() => { fetchStatus() }, [fetchStatus])
+  useEffect(() => {
+    if (isActive) {
+      fetchStatus(true)
+      loadGitConfig()
+    }
+  }, [isActive, fetchStatus, loadGitConfig])
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isActive) {
+        fetchStatus(true)
+        loadGitConfig()
+      }
+    }, [isActive, fetchStatus, loadGitConfig])
+  )
 
   const handleStage = async (files: string[]) => {
+    const nextStaging = { ...stagingFiles }
+    files.forEach(f => { nextStaging[f] = true })
+    setStagingFiles(nextStaging)
+
     try {
       await api.git.stage(projectId, files)
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
+    } finally {
+      setStagingFiles(prev => {
+        const updated = { ...prev }
+        files.forEach(f => { delete updated[f] })
+        return updated
+      })
     }
   }
 
   const handleUnstage = async (files: string[]) => {
+    const nextStaging = { ...stagingFiles }
+    files.forEach(f => { nextStaging[f] = true })
+    setStagingFiles(nextStaging)
+
     try {
       await api.git.unstage(projectId, files)
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
+    } finally {
+      setStagingFiles(prev => {
+        const updated = { ...prev }
+        files.forEach(f => { delete updated[f] })
+        return updated
+      })
     }
   }
 
   const handleCommit = async () => {
+    if (!gitName.trim() || !gitEmail.trim()) {
+      showAlert(
+        'Git Author Required',
+        'Please configure your Git Author Name and Email in Settings to attribute your commits correctly.',
+        'warning',
+        () => {
+          hideAlert()
+          router.navigate('/(tabs)/settings')
+        },
+        'Go to Settings',
+        'Cancel'
+      )
+      return
+    }
     if (!commitMessage.trim()) return
     setCommitting(true)
     try {
@@ -96,22 +254,38 @@ export default function GitTab({ projectId }: Props) {
       setCommitMessage('')
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Commit Failed', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setCommitting(false)
     }
   }
 
   const handleSync = async (action: 'push' | 'pull') => {
+    if (!hasSshKey) {
+      showAlert(
+        'SSH Key Required',
+        'You need to generate an SSH key in Settings and add it to your GitHub account to sync changes securely.',
+        'warning',
+        () => {
+          hideAlert()
+          router.navigate('/(tabs)/settings')
+        },
+        'Go to Settings',
+        'Cancel'
+      )
+      return
+    }
     setSyncing(true)
+    setSyncAction(action)
     try {
       const result = await api.git.sync(projectId, action)
-      Alert.alert(action === 'push' ? 'Pushed' : 'Pulled', result.output || 'Success')
+      showAlert(action === 'push' ? 'Pushed' : 'Pulled', result.output || 'Success', 'success')
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Sync Failed', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     } finally {
       setSyncing(false)
+      setSyncAction(null)
     }
   }
 
@@ -126,7 +300,7 @@ export default function GitTab({ projectId }: Props) {
       setDiffText(result.diff || '(no diff)')
       setDiffFile(file)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     }
   }
 
@@ -136,7 +310,7 @@ export default function GitTab({ projectId }: Props) {
       setBranches(result.branches)
       setShowBranches(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     }
   }
 
@@ -146,7 +320,7 @@ export default function GitTab({ projectId }: Props) {
       setShowBranches(false)
       fetchStatus(true)
     } catch (err) {
-      Alert.alert('Error', (err as Error).message)
+      showAlert('Error', (err as Error).message, 'error')
     }
   }
 
@@ -159,7 +333,7 @@ export default function GitTab({ projectId }: Props) {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.text} size="small" />
+        <ActivityIndicator color={colors.textSecondary} size="small" />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading git status...</Text>
       </View>
     )
@@ -184,10 +358,10 @@ export default function GitTab({ projectId }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Branch bar */}
-      <View style={[styles.branchBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <View style={[styles.branchBar, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.branchSelector} onPress={handleLoadBranches}>
-          <GitBranch size={14} color={isDark ? '#58a6ff' : '#0969da'} />
-          <Text style={[styles.branchName, { color: isDark ? '#58a6ff' : '#0969da' }]}>
+          <GitBranch size={14} color={isDark ? '#58A6FF' : '#0969da'} />
+          <Text style={[styles.branchName, { color: isDark ? '#58A6FF' : '#0969da' }]}>
             {status?.branch || 'main'}
           </Text>
           <ChevronDown size={12} color={colors.textSecondary} />
@@ -195,33 +369,34 @@ export default function GitTab({ projectId }: Props) {
 
         <View style={styles.syncButtons}>
           {(status?.ahead || 0) > 0 && (
-            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#1e3a5f' : '#dbeafe' }]}>
-              <Text style={[styles.syncBadgeText, { color: isDark ? '#60a5fa' : '#2563eb' }]}>↑{status?.ahead}</Text>
+            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#1C2128' : '#dbeafe' }]}>
+              <Text style={[styles.syncBadgeText, { color: isDark ? '#58A6FF' : '#2563eb' }]}>↑{status?.ahead}</Text>
             </View>
           )}
           {(status?.behind || 0) > 0 && (
-            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#3b1818' : '#fee2e2' }]}>
-              <Text style={[styles.syncBadgeText, { color: isDark ? '#f87171' : '#dc2626' }]}>↓{status?.behind}</Text>
+            <View style={[styles.syncBadge, { backgroundColor: isDark ? '#3D1117' : '#fee2e2' }]}>
+              <Text style={[styles.syncBadgeText, { color: isDark ? '#F85149' : '#dc2626' }]}>↓{status?.behind}</Text>
             </View>
           )}
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => handleSync('pull')} disabled={syncing}>
-            <Download size={14} color={colors.textSecondary} />
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => handleSync('pull')} disabled={syncing}>
+            {syncAction === 'pull' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Download size={14} color={colors.textSecondary} strokeWidth={1.8} />}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => handleSync('push')} disabled={syncing}>
-            <Upload size={14} color={colors.textSecondary} />
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => handleSync('push')} disabled={syncing}>
+            {syncAction === 'push' ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Upload size={14} color={colors.textSecondary} strokeWidth={1.8} />}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#111' : '#f3f4f6' }]} onPress={() => fetchStatus(true)}>
-            <RefreshCw size={14} color={colors.textSecondary} />
+          <TouchableOpacity style={[styles.syncBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} onPress={() => fetchStatus(true)}>
+            <RefreshCw size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
+          {/* Settings button is removed as configuration is global in Dashboard settings */}
         </View>
       </View>
 
       {/* Branch dropdown */}
       {showBranches && (
-        <View style={[styles.branchDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.branchDropdown, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
           {branches.map(b => (
             <TouchableOpacity key={b} style={styles.branchItem} onPress={() => handleCheckout(b)}>
-              {b === status?.branch ? <Check size={14} color="#10b981" /> : <View style={{ width: 14 }} />}
+              {b === status?.branch ? <Check size={14} color="#3FB950" /> : <View style={{ width: 14 }} />}
               <Text style={[styles.branchItemText, { color: colors.text }]}>{b}</Text>
             </TouchableOpacity>
           ))}
@@ -236,7 +411,7 @@ export default function GitTab({ projectId }: Props) {
       >
         {totalChanges === 0 ? (
           <View style={styles.noChanges}>
-            <Check size={40} color={isDark ? '#10b981' : '#059669'} />
+            <Check size={40} color={'#3FB950'} strokeWidth={1.5} />
             <Text style={[styles.noChangesTitle, { color: colors.text }]}>Working tree clean</Text>
             <Text style={[styles.noChangesSubtitle, { color: colors.textSecondary }]}>No pending changes</Text>
           </View>
@@ -248,7 +423,7 @@ export default function GitTab({ projectId }: Props) {
                 <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('staged')}>
                   {expandedSections.staged ? <ChevronDown size={14} color={colors.textSecondary} /> : <ChevronRight size={14} color={colors.textSecondary} />}
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Staged Changes</Text>
-                  <View style={[styles.countBadge, { backgroundColor: '#10b981' }]}>
+                  <View style={[styles.countBadge, { backgroundColor: '#3FB950' }]}>
                     <Text style={styles.countText}>{status!.staged.length}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleUnstage(status!.staged.map(f => f.path))} style={styles.sectionAction}>
@@ -262,9 +437,13 @@ export default function GitTab({ projectId }: Props) {
                     <TouchableOpacity key={f.path} style={[styles.fileRow, { borderBottomColor: colors.border }]} onPress={() => handleViewDiff(f.path)}>
                       <Icon size={14} color={info.color} />
                       <Text style={[styles.filePath, { color: colors.text }]} numberOfLines={1}>{f.path}</Text>
-                      <TouchableOpacity onPress={() => handleUnstage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Minus size={14} color={colors.textSecondary} />
-                      </TouchableOpacity>
+                      {stagingFiles[f.path] ? (
+                        <ActivityIndicator size="small" color={colors.textSecondary} />
+                      ) : (
+                        <TouchableOpacity onPress={() => handleUnstage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                          <Minus size={14} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
                   )
                 })}
@@ -277,7 +456,7 @@ export default function GitTab({ projectId }: Props) {
                 <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('changes')}>
                   {expandedSections.changes ? <ChevronDown size={14} color={colors.textSecondary} /> : <ChevronRight size={14} color={colors.textSecondary} />}
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Changes</Text>
-                  <View style={[styles.countBadge, { backgroundColor: '#f59e0b' }]}>
+                  <View style={[styles.countBadge, { backgroundColor: '#F0883E' }]}>
                     <Text style={styles.countText}>{status!.unstaged.length}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleStage(status!.unstaged.map(f => f.path))} style={styles.sectionAction}>
@@ -291,9 +470,13 @@ export default function GitTab({ projectId }: Props) {
                     <TouchableOpacity key={f.path} style={[styles.fileRow, { borderBottomColor: colors.border }]} onPress={() => handleViewDiff(f.path)}>
                       <Icon size={14} color={info.color} />
                       <Text style={[styles.filePath, { color: colors.text }]} numberOfLines={1}>{f.path}</Text>
-                      <TouchableOpacity onPress={() => handleStage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Plus size={14} color={colors.textSecondary} />
-                      </TouchableOpacity>
+                      {stagingFiles[f.path] ? (
+                        <ActivityIndicator size="small" color={colors.textSecondary} />
+                      ) : (
+                        <TouchableOpacity onPress={() => handleStage([f.path])} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                          <Plus size={14} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
                   )
                 })}
@@ -306,7 +489,7 @@ export default function GitTab({ projectId }: Props) {
                 <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('untracked')}>
                   {expandedSections.untracked ? <ChevronDown size={14} color={colors.textSecondary} /> : <ChevronRight size={14} color={colors.textSecondary} />}
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Untracked</Text>
-                  <View style={[styles.countBadge, { backgroundColor: '#6366f1' }]}>
+                  <View style={[styles.countBadge, { backgroundColor: '#8B949E' }]}>
                     <Text style={styles.countText}>{status!.untracked.length}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleStage(status!.untracked)} style={styles.sectionAction}>
@@ -315,9 +498,13 @@ export default function GitTab({ projectId }: Props) {
                 </TouchableOpacity>
                 {expandedSections.untracked && status!.untracked.map(f => (
                   <TouchableOpacity key={f} style={[styles.fileRow, { borderBottomColor: colors.border }]} onPress={() => handleStage([f])}>
-                    <CircleIcon size={14} color="#6366f1" />
+                    <CircleIcon size={14} color="#8B949E" />
                     <Text style={[styles.filePath, { color: colors.text }]} numberOfLines={1}>{f}</Text>
-                    <Plus size={14} color={colors.textSecondary} />
+                    {stagingFiles[f] ? (
+                      <ActivityIndicator size="small" color={colors.textSecondary} />
+                    ) : (
+                      <Plus size={14} color={colors.textSecondary} />
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -327,7 +514,7 @@ export default function GitTab({ projectId }: Props) {
 
         {/* Diff viewer */}
         {diffFile && diffText && (
-          <View style={[styles.diffContainer, { backgroundColor: isDark ? '#0d1117' : '#f6f8fa', borderColor: colors.border }]}>
+          <View style={[styles.diffContainer, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: colors.border }]}>
             <View style={[styles.diffHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.diffTitle, { color: colors.text }]}>{diffFile}</Text>
               <TouchableOpacity onPress={() => { setDiffFile(null); setDiffText(null) }}>
@@ -352,7 +539,7 @@ export default function GitTab({ projectId }: Props) {
 
         {/* Commit box */}
         {(status?.staged.length || 0) > 0 && (
-          <View style={[styles.commitBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.commitBox, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
             <TextInput
               value={commitMessage}
               onChangeText={setCommitMessage}
@@ -363,7 +550,7 @@ export default function GitTab({ projectId }: Props) {
             />
             <TouchableOpacity
               style={[styles.commitBtn, {
-                backgroundColor: commitMessage.trim() ? (isDark ? '#238636' : '#1a7f37') : (isDark ? '#1a1a1a' : '#e5e7eb'),
+                backgroundColor: commitMessage.trim() ? '#3FB950' : (isDark ? '#1C2128' : '#EAEEF2'),
               }]}
               onPress={handleCommit}
               disabled={!commitMessage.trim() || committing}
@@ -382,8 +569,76 @@ export default function GitTab({ projectId }: Props) {
           </View>
         )}
 
+        {/* Commit History Section */}
+        <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
+        <View style={styles.historySection}>
+          <Text style={[styles.sectionTitleHeader, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+            Commit History
+          </Text>
+          
+          {loadingHistory ? (
+            <ActivityIndicator style={{ marginVertical: 16 }} color={colors.primary} size="small" />
+          ) : commitHistory.length === 0 ? (
+            <Text style={[styles.historyEmpty, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+              No commits recorded yet.
+            </Text>
+          ) : (
+            <View style={styles.historyTimeline}>
+              {commitHistory.map((commit, idx) => (
+                <View key={commit.hash} style={styles.timelineItem}>
+                  <View style={styles.timelineLeft}>
+                    <View style={[styles.timelineDot, { backgroundColor: colors.primary }]} />
+                    {idx !== commitHistory.length - 1 && <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />}
+                  </View>
+                  <View style={styles.timelineRight}>
+                    <Text style={[styles.commitHash, { color: colors.primary, fontFamily: 'JetBrainsMono_400Regular' }]}>
+                      {commit.hash.substring(0, 7)}
+                    </Text>
+                    <Text style={[styles.commitMsg, { color: colors.text, fontFamily: 'Inter_500Medium' }]} numberOfLines={2}>
+                      {commit.message}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Git credentials and SSH key config modal has been moved to global settings page */}
+
+      {/* Custom Alert Modal */}
+      <Modal visible={alertConfig.visible} transparent animationType="fade" onRequestClose={hideAlert}>
+        <View style={styles.alertOverlay}>
+          <View style={[styles.alertContent, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
+            <View style={styles.alertIconContainer}>
+              {alertConfig.type === 'success' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(63, 185, 80, 0.15)' }]}><Check size={24} color="#3FB950" strokeWidth={2.5} /></View>}
+              {alertConfig.type === 'error' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(248, 81, 73, 0.15)' }]}><AlertCircle size={24} color="#F85149" strokeWidth={2.5} /></View>}
+              {alertConfig.type === 'info' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(88, 166, 255, 0.15)' }]}><AlertCircle size={24} color="#58A6FF" strokeWidth={2.5} /></View>}
+              {alertConfig.type === 'warning' && <View style={[styles.alertIconCircle, { backgroundColor: 'rgba(210, 153, 34, 0.15)' }]}><AlertCircle size={24} color="#D29922" strokeWidth={2.5} /></View>}
+            </View>
+            <Text style={[styles.alertTitle, { color: colors.text }]}>{alertConfig.title}</Text>
+            <Text style={[styles.alertMessage, { color: colors.textSecondary }]}>{alertConfig.message}</Text>
+            
+            {alertConfig.onConfirm ? (
+              <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                <TouchableOpacity onPress={hideAlert} style={[styles.alertBtn, { flex: 1, backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderWidth: 1, borderColor: colors.border }]} activeOpacity={0.8}>
+                  <Text style={[styles.alertBtnText, { color: colors.text }]}>{alertConfig.cancelText || 'Cancel'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={alertConfig.onConfirm} style={[styles.alertBtn, { flex: 1, backgroundColor: colors.text }]} activeOpacity={0.8}>
+                  <Text style={[styles.alertBtnText, { color: colors.background }]}>{alertConfig.confirmText || 'Confirm'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={hideAlert} style={[styles.alertBtn, { backgroundColor: colors.text }]} activeOpacity={0.8}>
+                <Text style={[styles.alertBtnText, { color: colors.background }]}>OK</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -405,7 +660,7 @@ const styles = StyleSheet.create({
   syncButtons: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   syncBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   syncBadgeText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
-  syncBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  syncBtn: { width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   branchDropdown: {
     marginHorizontal: 16, borderRadius: 12, borderWidth: 1,
     overflow: 'hidden', marginTop: 4,
@@ -456,4 +711,205 @@ const styles = StyleSheet.create({
     gap: 8, paddingVertical: 12, borderRadius: 10,
   },
   commitBtnText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
+  // Modal Configurations Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    maxHeight: '80%',
+    maxWidth: 380,
+  },
+  modalContent: {
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    letterSpacing: -0.4,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  section: {
+    gap: 12,
+    marginBottom: 12,
+  },
+  inputField: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+  },
+  primaryBtn: {
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  primaryBtnText: {
+    fontSize: 14,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 16,
+    opacity: 0.8,
+  },
+  sshInfoBox: {
+    gap: 10,
+  },
+  sshInfoText: {
+    fontSize: 11,
+    fontFamily: 'JetBrainsMono_400Regular',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    padding: 10,
+    borderRadius: 8,
+  },
+  sshActionRow: {
+    flexDirection: 'row',
+  },
+  sshHelpText: {
+    fontSize: 11,
+    lineHeight: 16,
+    opacity: 0.8,
+  },
+  sshEmptyBox: {
+    gap: 10,
+  },
+  actionBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnText: {
+    fontSize: 12,
+  },
+  // styles for Commit History Timeline
+  sectionDivider: {
+    height: 1,
+    marginVertical: 24,
+    opacity: 0.2,
+  },
+  historySection: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  sectionTitleHeader: {
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 16,
+  },
+  historyEmpty: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    marginTop: 12,
+    opacity: 0.6,
+  },
+  historyTimeline: {
+    gap: 0,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    minHeight: 52,
+  },
+  timelineLeft: {
+    alignItems: 'center',
+    width: 24,
+  },
+  timelineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+  },
+  timelineLine: {
+    width: 1.5,
+    flex: 1,
+    marginVertical: 4,
+    opacity: 0.2,
+  },
+  timelineRight: {
+    flex: 1,
+    paddingLeft: 12,
+    paddingBottom: 12,
+    gap: 2,
+  },
+  commitHash: {
+    fontSize: 10,
+    letterSpacing: 0.2,
+    opacity: 0.8,
+  },
+  commitMsg: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  // Custom Alert Styles
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  alertContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+  },
+  alertIconContainer: {
+    marginBottom: 16,
+  },
+  alertIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  alertMessage: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    opacity: 0.9,
+  },
+  alertBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertBtnText: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+  },
 })
