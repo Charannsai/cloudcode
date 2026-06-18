@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Tabs } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent, Keyboard } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { LayoutDashboard, Database, Sparkles, Settings } from 'lucide-react-native'
+import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal } from 'lucide-react-native'
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
@@ -14,11 +14,11 @@ import Animated, {
 import { useState, useCallback, memo } from 'react'
 import { useUIStore } from '@/store/ui'
 
-const TAB_BAR_HEIGHT = 64
+const TAB_BAR_HEIGHT = 56
 const SPRING_CONFIG = {
-  damping: 28,
-  stiffness: 180,
-  mass: 1,
+  damping: 24,
+  stiffness: 200,
+  mass: 0.8,
 }
 
 const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isDark }: any) => {
@@ -26,7 +26,7 @@ const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isD
   const scale = useSharedValue(1)
 
   useEffect(() => {
-    scale.value = withSpring(isFocused ? 1.2 : 1, SPRING_CONFIG)
+    scale.value = withSpring(isFocused ? 1.05 : 1, SPRING_CONFIG)
   }, [isFocused])
 
   const iconStyle = useAnimatedStyle(() => {
@@ -45,20 +45,20 @@ const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isD
       <Animated.View style={iconStyle}>
         <Icon 
           color={isFocused 
-            ? (isDark ? '#000000' : '#ffffff') 
-            : (isDark ? '#999999' : '#666666')
+            ? (isDark ? '#0E1116' : '#FFFFFF') 
+            : (isDark ? '#6E7681' : '#656D76')
           } 
-          size={20} 
-          strokeWidth={isFocused ? 2.5 : 2}
+          size={18} 
+          strokeWidth={isFocused ? 2.2 : 1.8}
         />
       </Animated.View>
       {isFocused && (
         <Animated.Text 
           entering={FadeIn.springify()}
-          exiting={FadeOut.duration(100)}
+          exiting={FadeOut.duration(80)}
           style={[
             styles.tabLabel, 
-            { color: isDark ? '#000000' : '#ffffff' }
+            { color: isDark ? '#0E1116' : '#FFFFFF' }
           ]}
         >
           {options.title || route.name}
@@ -119,7 +119,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       width: withSpring(width, SPRING_CONFIG),
       transform: [
         { translateX: withSpring(x, SPRING_CONFIG) },
-        { scaleY: withSpring(1, { ...SPRING_CONFIG, damping: 10 }) },
       ],
     }
   }, [state.index, tabWidths, tabPositions])
@@ -128,7 +127,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     return {
       opacity: isVisible.value,
       transform: [
-        { translateY: interpolate(isVisible.value, [0, 1], [150, 0]) }
+        { translateY: interpolate(isVisible.value, [0, 1], [120, 0]) }
       ],
     }
   })
@@ -139,10 +138,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         style={[
           styles.tabBarContainer,
           { 
-            backgroundColor: isDark ? '#050505' : '#ffffff',
-            borderColor: isDark ? '#1a1a1a' : '#eeeeee',
-            shadowOpacity: isDark ? 0.6 : 0.08,
-            borderWidth: 1,
+            backgroundColor: isDark ? '#151922' : '#FFFFFF',
+            borderColor: isDark ? '#21262D' : '#D8DEE4',
           }
         ]}
       >
@@ -150,7 +147,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           style={[
             styles.indicator, 
             { 
-              backgroundColor: isDark ? '#ffffffff' : '#1b1b1bff',
+              backgroundColor: isDark ? '#F3F4F6' : '#0E1116',
             },
             indicatorStyle
           ]} 
@@ -212,7 +209,7 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }: any) => (
-            <LayoutDashboard size={size || 20} color={color} />
+            <LayoutDashboard size={size || 18} color={color} strokeWidth={1.8} />
           ),
         }}
       />
@@ -221,7 +218,7 @@ export default function TabsLayout() {
         options={{
           title: 'Work',
           tabBarIcon: ({ color, size }: any) => (
-            <Database size={size || 20} color={color} />
+            <FolderGit2 size={size || 18} color={color} strokeWidth={1.8} />
           ),
         }}
       />
@@ -230,7 +227,7 @@ export default function TabsLayout() {
         options={{
           title: 'AI',
           tabBarIcon: ({ color, size }: any) => (
-            <Sparkles size={size || 20} color={color} />
+            <Sparkles size={size || 18} color={color} strokeWidth={1.8} />
           ),
         }}
       />
@@ -239,7 +236,7 @@ export default function TabsLayout() {
         options={{
           title: 'System',
           tabBarIcon: ({ color, size }: any) => (
-            <Settings size={size || 20} color={color} />
+            <SlidersHorizontal size={size || 18} color={color} strokeWidth={1.8} />
           ),
         }}
       />
@@ -250,9 +247,9 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tabBarWrapper: {
     position: 'absolute',
-    bottom: 34,
-    left: 20,
-    right: 20,
+    bottom: 32,
+    left: 24,
+    right: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
@@ -261,20 +258,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_HEIGHT / 2,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
     elevation: 8,
   },
   indicator: {
     position: 'absolute',
-    height: 48,
-    borderRadius: 24,
+    height: 44,
+    borderRadius: 22,
     left: 0,
     zIndex: -1,
   },
@@ -282,14 +280,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
+    height: 44,
     paddingHorizontal: 16,
-    borderRadius: 24,
-    gap: 8,
+    borderRadius: 22,
+    gap: 7,
   },
   tabLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.2,
   },
 })
-

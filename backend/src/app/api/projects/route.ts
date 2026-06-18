@@ -5,7 +5,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { createContainer } from '@/lib/docker'
+import { createContainer, getWorkspacePath } from '@/lib/docker'
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(60).regex(/^[a-zA-Z0-9_\- ]+$/),
@@ -53,13 +53,18 @@ export async function POST(req: NextRequest) {
 
   if (dbError) return errorResponse(dbError.message, 500)
 
-  const workspacePath = path.join(process.cwd(), 'projects', projectId)
+  const workspacePath = getWorkspacePath(projectId)
   await fs.mkdir(workspacePath, { recursive: true })
-  
-  // Grant full permissions so the non-root "coder" user in Docker can write to it
-  await fs.chmod(workspacePath, 0o777).catch(e => console.error('Failed to chmod:', e))
 
   await seedTemplate(workspacePath, type)
+  
+  // Grant full permissions recursively so the non-root "coder" user in Docker can write to it
+  try {
+    const { execSync } = require('child_process')
+    execSync(`chmod -R 777 "${workspacePath}"`, { stdio: 'ignore' })
+  } catch (e) {
+    console.error('Failed to chmod recursively:', e)
+  }
 
   provisionContainer(projectId).catch(console.error)
 
@@ -87,7 +92,7 @@ async function seedTemplate(dir: string, type: string) {
       JSON.stringify({
         name: 'cloudcode-react',
         version: '1.0.0',
-        scripts: { dev: 'vite', build: 'vite build', start: 'vite preview' },
+        scripts: { dev: 'vite --port 3000 --host 0.0.0.0', build: 'vite build', start: 'vite preview --port 3000 --host 0.0.0.0' },
         dependencies: { react: '^18.0.0', 'react-dom': '^18.0.0' },
         devDependencies: { vite: '^5.0.0', '@vitejs/plugin-react': '^4.0.0' },
       }, null, 2)
@@ -108,10 +113,14 @@ async function seedTemplate(dir: string, type: string) {
 
 async function provisionContainer(projectId: string) {
   try {
-    const { containerId } = await createContainer(projectId)
+    const { containerId, port } = await createContainer(projectId)
     await supabaseAdmin
       .from('projects')
-      .update({ status: 'ready', container_id: containerId })
+      .update({ 
+        status: 'ready', 
+        container_id: containerId,
+        port: port ? parseInt(port, 10) : null
+      })
       .eq('id', projectId)
   } catch (err) {
     console.error('Container provisioning failed:', err)

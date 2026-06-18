@@ -1,155 +1,205 @@
-import { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, ActivityIndicator, Dimensions } from 'react-native'
+import { useState, useRef, useEffect } from 'react'
+import {
+  View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
+  Platform, Linking, LayoutAnimation,
+} from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Shield, RefreshCw, AlertCircle, Globe, Terminal, Play, Smartphone, Tablet, Monitor, Maximize } from 'lucide-react-native'
 import { getToken } from '@/lib/auth'
+import {
+  Globe, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, Copy,
+  ExternalLink, ChevronDown, ChevronUp, Info, Home,
+} from 'lucide-react-native'
+import * as Clipboard from 'expo-clipboard'
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
 interface Props {
   projectId: string
   port: number
+  ports?: Record<string, number>
 }
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
-
-const SCREEN_WIDTH = Dimensions.get('window').width
-
-const DEVICES = [
-  { id: 'responsive', label: 'Auto', icon: Maximize, width: 0 },
-  { id: 'mobile', label: 'Mobile', icon: Smartphone, width: 390 },
-  { id: 'tablet', label: 'Tablet', icon: Tablet, width: 768 },
-  { id: 'desktop', label: 'Desktop', icon: Monitor, width: 1440 },
-] as const
-
-type DeviceId = typeof DEVICES[number]['id']
-
-export default function PreviewTab({ projectId, port: initialPort }: Props) {
-  const { colors, isDark } = useAppTheme()
-  const [port, setPort] = useState(initialPort.toString())
-  const [activePort, setActivePort] = useState(initialPort.toString())
-  const [hasConnected, setHasConnected] = useState(false)
-  const [token, setToken] = useState<string | null>(null)
-  const [key, setKey] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [selectedDevice, setSelectedDevice] = useState<DeviceId>('responsive')
-  const webViewRef = useRef<WebView>(null)
-
-  useEffect(() => {
-    getToken().then(setToken)
-  }, [])
-
-  const baseUrl = `${API_URL}/api/preview/${projectId}/`
-  const previewUrl = `${baseUrl}?port=${activePort}&token=${token}`
-
-  const handleConnect = () => {
-    setActivePort(port)
-    setHasConnected(true)
-    setKey(k => k + 1)
-    Keyboard.dismiss()
-  }
-
-  const handleRefresh = () => {
-    setActivePort(port)
-    setKey(k => k + 1)
-    Keyboard.dismiss()
-  }
-
-  const handleDisconnect = () => {
-    setHasConnected(false)
-  }
-
-  if (!token) return null
-
-  // Calculate viewport width and scale for device simulation
-  const deviceConfig = DEVICES.find(d => d.id === selectedDevice)!
-  const targetWidth = deviceConfig.width || SCREEN_WIDTH
-  const containerWidth = SCREEN_WIDTH - 32 // 16px padding on each side
-  const scale = targetWidth > containerWidth ? containerWidth / targetWidth : 1
-  const scaledHeight = targetWidth > containerWidth ? `${100 / scale}%` : '100%'
-
-  const viewportJS = `
-    (function() {
-      // Set cookies for sub-resources
-      var cookieBase = 'Path=/; Max-Age=3600; SameSite=Lax';
-      document.cookie = 'preview_token=${token}; ' + cookieBase;
-      document.cookie = 'preview_project_id=${projectId}; ' + cookieBase;
-      document.cookie = 'preview_port=${activePort}; ' + cookieBase;
-
-      // Set base href for relative URLs
-      var base = document.querySelector('base');
-      if (!base) {
-        base = document.createElement('base');
-        document.head.prepend(base);
+function getInternalPort(publicPort: number, portsMap?: Record<string, number>): number {
+  if (portsMap) {
+    for (const [internal, pub] of Object.entries(portsMap)) {
+      if (pub === publicPort) {
+        return parseInt(internal, 10)
       }
-      base.href = '${baseUrl}?port=${activePort}&token=${token}&_=';
+    }
+  }
+  // Fallback: If it's a high mapped port, default to 3000
+  if (publicPort > 1024) {
+    return 3000
+  }
+  return publicPort
+}
 
-      ${deviceConfig.width > 0 ? `
-      // Set viewport meta for device simulation
-      var meta = document.querySelector('meta[name=viewport]');
-      if (!meta) { meta = document.createElement('meta'); meta.name = 'viewport'; document.head.appendChild(meta); }
-      meta.content = 'width=${deviceConfig.width}';
-      ` : ''}
-      true;
-    })();
-  `
+export default function PreviewTab({ projectId, port, ports }: Props) {
+  const { colors, isDark } = useAppTheme()
+  const webViewRef = useRef<WebView>(null)
+  const [url, setUrl] = useState('')
+  const [canGoBack, setCanGoBack] = useState(false)
+  const [canGoForward, setCanGoForward] = useState(false)
+  const [currentUrl, setCurrentUrl] = useState('')
+  const [showBrowserInfo, setShowBrowserInfo] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
-  if (!hasConnected) {
+  const handleSetError = (error: boolean) => {
+    setHasError(error)
+    if (error) {
+      setCurrentUrl('')
+    }
+  }
+
+  // Clear preview URL and error state on project change (back to homepage)
+  useEffect(() => {
+    setUrl('')
+    setCurrentUrl('')
+    setHasError(false)
+  }, [projectId])
+
+  const handleNavigateToPort = async (targetPort: number) => {
+    const virtualStr = `localhost:${targetPort}`
+    setCurrentUrl(virtualStr)
+    handleSetError(false)
+    const token = await getToken()
+    
+    let publicPort = targetPort
+    if (ports && ports[targetPort.toString()]) {
+      publicPort = ports[targetPort.toString()]
+    }
+    
+    const realUrl = `${API_URL}/api/preview/${projectId}?port=${publicPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    setUrl(realUrl)
+  }
+
+  const handleGo = async () => {
+    let input = currentUrl.trim()
+    if (!input) return
+    
+    handleSetError(false)
+    const token = await getToken()
+
+    // If user just typed a number (e.g. "5000"), format it as "localhost:5000"
+    if (/^\d+$/.test(input)) {
+      input = `localhost:${input}`
+      setCurrentUrl(input)
+    }
+
+    // Ensure it is formatted correctly. If it doesn't contain localhost or 127.0.0.1, we assume localhost
+    if (!input.includes('localhost') && !input.includes('127.0.0.1') && !input.startsWith('http://') && !input.startsWith('https://')) {
+      if (/^\d+/.test(input)) {
+        const portMatch = input.match(/^(\d+)(.*)/)
+        if (portMatch) {
+          input = `localhost:${portMatch[1]}${portMatch[2]}`
+        }
+      } else {
+        input = `localhost:${input}`
+      }
+      setCurrentUrl(input)
+    }
+
+    // Match localhost:XXXX/subpath or 127.0.0.1:XXXX/subpath
+    const match = input.match(/(?:localhost|127\.0\.0\.1):(\d+)(.*)/i)
+    let realUrl = input
+
+    if (match) {
+      const typedPort = parseInt(match[1], 10)
+      const subpath = match[2] || ''
+      
+      let targetPort = typedPort
+      if (ports && ports[typedPort.toString()]) {
+        targetPort = ports[typedPort.toString()]
+      }
+      
+      realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    } else {
+      const targetPort = port || 3000
+      realUrl = `${API_URL}/api/preview/${projectId}?port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    }
+
+    setUrl(realUrl)
+  }
+
+  const handleCopy = () => {
+    Clipboard.setStringAsync(url)
+  }
+
+  const handleOpenExternal = () => {
+    Linking.openURL(url).catch(err => console.error('Failed to open url:', err))
+  }
+
+  const renderLoadingPage = () => {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.emptyContainer}>
-          <View style={[styles.svgContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Globe size={64} color={isDark ? '#3b82f6' : '#2563eb'} opacity={0.6} />
-            <View style={styles.badgeContainer}>
-              <Play size={20} color={colors.background} fill={colors.text} />
-            </View>
-          </View>
-          
-          <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]}>
-            Preview Ready
+      <View style={[styles.loadingOverlay, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.textSecondary} size="small" />
+        <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+          Loading preview...
+        </Text>
+      </View>
+    )
+  }
+
+  const renderErrorPage = () => {
+    return (
+      <View style={[styles.errorOverlay, { backgroundColor: colors.background }]}>
+        <View style={[styles.errorCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}>
+          <Text style={styles.errorIcon}>🔌</Text>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Server Not Connected</Text>
+          <Text style={[styles.errorDesc, { color: colors.textSecondary }]}>
+            We couldn't reach your project server. Make sure your development server (e.g. <Text style={{ fontFamily: 'JetBrainsMono_400Regular', color: '#3FB950', fontWeight: '600' }}>npm run dev</Text>) is running in the Terminal tab.
           </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-            Start your development server in the terminal to see changes live.
+          <TouchableOpacity
+            style={[styles.retryBtn, { backgroundColor: colors.text }]}
+            onPress={() => {
+              handleSetError(false)
+              webViewRef.current?.reload()
+            }}
+          >
+            <Text style={[styles.retryBtnText, { color: colors.background }]}>Retry Connection</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  }
+
+  const renderHomePage = () => {
+    return (
+      <View style={[styles.homePage, { backgroundColor: colors.background }]}>
+        <View style={[styles.homeIconBg, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}>
+          <Globe size={40} color={colors.primary || '#58A6FF'} strokeWidth={1.5} />
+        </View>
+        <Text style={[styles.homeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode Browser</Text>
+        <Text style={[styles.homeSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+          Enter an address or port above to preview your workspace web server in real-time.
+        </Text>
+
+        <View style={styles.shortcutsContainer}>
+          <Text style={[styles.shortcutsTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+            Quick Connect Ports
           </Text>
-
-          <View style={[styles.portCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.portLabelRow}>
-              <Terminal size={14} color={colors.textSecondary} />
-              <Text style={[styles.portLabel, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-                Target Port
-              </Text>
-            </View>
-            
-            <View style={styles.portInputRow}>
-              <Text style={[styles.localhostText, { color: colors.text, opacity: 0.5, fontFamily: 'Inter_600SemiBold' }]}>
-                localhost:
-              </Text>
-              <TextInput
-                style={[styles.portTextInput, { color: colors.text, fontFamily: 'Inter_700Bold' }]}
-                value={port}
-                onChangeText={setPort}
-                keyboardType="number-pad"
-                placeholder="3000"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.connectBtn, { backgroundColor: '#3b82f6' }]} 
-              onPress={handleConnect}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.connectBtnText, { color: '#fff', fontFamily: 'Inter_700Bold' }]}>
-                View Preview
-              </Text>
-              <Play size={16} color="#fff" fill="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.hintContainer}>
-            <Shield size={12} color={colors.textSecondary} opacity={0.5} />
-            <Text style={[styles.hintText, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-              Secure preview via Docker bridge
-            </Text>
+          <View style={styles.shortcutRow}>
+            {[
+              { label: 'React/Next', port: 3000 },
+              { label: 'Python', port: 5000 },
+              { label: 'Vite Dev', port: 5173 },
+              { label: 'Java/Go', port: 8080 },
+            ].map((shortcut) => (
+              <TouchableOpacity
+                key={shortcut.port}
+                style={[styles.shortcutBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+                onPress={() => handleNavigateToPort(shortcut.port)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.shortcutText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                  :{shortcut.port}
+                </Text>
+                <Text style={[styles.shortcutSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                  {shortcut.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </View>
@@ -158,348 +208,474 @@ export default function PreviewTab({ projectId, port: initialPort }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* URL Bar */}
-      <View style={[styles.urlBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={[styles.addressBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-          <Shield size={14} color="#10b981" strokeWidth={2.5} />
-          <Text style={[styles.hostText, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>localhost:</Text>
-          <TextInput
-            style={[styles.portInput, { color: colors.text, fontFamily: 'Inter_700Bold' }]}
-            value={port}
-            onChangeText={setPort}
-            keyboardType="number-pad"
-            maxLength={5}
-            onSubmitEditing={handleRefresh}
-            selectionColor={colors.accent}
-          />
+      {/* Navigation Bar */}
+      <View style={[styles.navBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
+        <View style={styles.navButtons}>
+          <TouchableOpacity
+            onPress={() => {
+              setUrl('')
+              setCurrentUrl('')
+              setHasError(false)
+            }}
+            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <Home size={12} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => webViewRef.current?.goBack()}
+            disabled={!canGoBack}
+            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={14} color={canGoBack ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => webViewRef.current?.goForward()}
+            disabled={!canGoForward}
+            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <ChevronRight size={14} color={canGoForward ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              handleSetError(false)
+              webViewRef.current?.reload()
+            }}
+            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            activeOpacity={0.7}
+          >
+            <RefreshCw size={12} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity 
-          style={[styles.refreshBtn, { backgroundColor: colors.background }]} 
-          onPress={handleRefresh}
-          activeOpacity={0.7}
-        >
-          <RefreshCw size={18} color={colors.textSecondary} strokeWidth={2} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.closeBtn, { backgroundColor: colors.background }]} 
-          onPress={handleDisconnect}
-          activeOpacity={0.7}
-        >
-          <AlertCircle size={18} color={colors.textSecondary} strokeWidth={2} />
-        </TouchableOpacity>
+
+        <View style={[styles.urlBar, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
+          <Globe size={11} color={colors.textSecondary} strokeWidth={1.5} />
+          <TextInput
+            style={[styles.urlInput, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
+            value={currentUrl}
+            onChangeText={setCurrentUrl}
+            onSubmitEditing={handleGo}
+            returnKeyType="go"
+            autoCapitalize="none"
+            autoCorrect={false}
+            selectTextOnFocus
+            placeholder="Search or enter port (e.g. 3000)"
+            placeholderTextColor={colors.textSecondary}
+          />
+          <TouchableOpacity
+            onPress={handleCopy}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Copy size={11} color={colors.textSecondary} strokeWidth={1.5} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleOpenExternal}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            style={{ marginLeft: 6 }}
+          >
+            <ArrowUpRight size={12} color={colors.textSecondary} strokeWidth={1.5} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Device Switcher */}
-      <View style={[styles.deviceBar, { backgroundColor: isDark ? '#0a0a0a' : '#f8f9fa', borderBottomColor: colors.border }]}>
-        {DEVICES.map((device) => {
-          const isActive = selectedDevice === device.id
-          const Icon = device.icon
-          return (
-            <TouchableOpacity
-              key={device.id}
-              style={[
-                styles.deviceBtn,
-                {
-                  backgroundColor: isActive
-                    ? (isDark ? '#1e40af' : '#3b82f6')
-                    : 'transparent',
-                  borderColor: isActive
-                    ? (isDark ? '#2563eb' : '#60a5fa')
-                    : 'transparent',
-                }
-              ]}
-              onPress={() => {
-                setSelectedDevice(device.id)
-                setKey(k => k + 1)
-              }}
-              activeOpacity={0.7}
-            >
-              <Icon
-                size={14}
-                color={isActive ? '#fff' : (isDark ? '#888' : '#666')}
-                strokeWidth={2}
-              />
-              <Text style={[
-                styles.deviceLabel,
-                { color: isActive ? '#fff' : (isDark ? '#888' : '#666') }
-              ]}>
-                {device.label}
-              </Text>
-              {device.width > 0 && (
-                <Text style={[
-                  styles.deviceSize,
-                  { color: isActive ? 'rgba(255,255,255,0.7)' : (isDark ? '#555' : '#999') }
-                ]}>
-                  {device.width}
-                </Text>
-              )}
-            </TouchableOpacity>
-          )
-        })}
-      </View>
-
-      {/* Preview */}
-      <View style={styles.webContainer}>
-        {/* Device frame indicator */}
-        {selectedDevice !== 'responsive' && (
-          <View style={[styles.deviceFrame, { borderColor: isDark ? '#222' : '#ddd' }]}>
-            <Text style={[styles.deviceFrameText, { color: colors.textSecondary }]}>
-              {deviceConfig.width}px × viewport
-            </Text>
-          </View>
-        )}
-
-        <View style={[
-          styles.webViewWrapper,
-          selectedDevice !== 'responsive' && {
-            width: targetWidth,
-            transform: [{ scale }],
-            transformOrigin: 'top left',
-          }
-        ]}>
+      {/* WebView */}
+      <View style={styles.webViewContainer}>
+        {url ? (
           <WebView
             ref={webViewRef}
-            key={key}
-            source={{
-              uri: previewUrl,
-              headers: {
-                'Authorization': `Bearer ${token}`,
+            source={{ uri: url }}
+            style={styles.webView}
+            startInLoadingState={true}
+            renderLoading={renderLoadingPage}
+            renderError={renderErrorPage}
+            onError={() => handleSetError(true)}
+            onHttpError={(syntheticEvent) => {
+              const { statusCode } = syntheticEvent.nativeEvent
+              if (statusCode === 502 || statusCode === 503) {
+                handleSetError(true)
               }
             }}
-            injectedJavaScriptBeforeContentLoaded={viewportJS}
-            originWhitelist={['*']}
-            style={[styles.webView, { opacity: loading ? 0 : 1 }]}
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
-            renderError={() => (
-              <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-                <AlertCircle size={48} color={colors.error} strokeWidth={1.5} />
-                <Text style={[styles.errorTitle, { color: colors.text, fontFamily: 'Inter_800ExtraBold' }]}>Connection Refused</Text>
-                <Text style={[styles.errorHint, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                  Port <Text style={{ color: colors.text }}>{activePort}</Text> is not responding. Make sure your server is running in the terminal.
-                </Text>
-                <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.card }]} onPress={handleRefresh}>
-                   <Text style={[styles.retryText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Retry Connection</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            startInLoadingState
+            onNavigationStateChange={(state) => {
+              setCanGoBack(state.canGoBack)
+              setCanGoForward(state.canGoForward)
+              
+              let virtualUrl = state.url
+              const previewPath = `/api/preview/${projectId}`
+              if (state.url.includes(previewPath)) {
+                const parts = state.url.split(previewPath)
+                const subpathAndSearch = parts[1] || ''
+                
+                // Retrieve the active port from the query string if available
+                const portMatch = state.url.match(/[\?&]port=(\d+)/)
+                const activePort = portMatch ? parseInt(portMatch[1], 10) : port
+                const displayPort = getInternalPort(activePort, ports)
+
+                const cleanSubpath = subpathAndSearch
+                  .replace(/[\?&]port=\d+/, '')
+                  .replace(/[\?&]token=[^&]+/, '')
+                  .replace(/\?&/, '?')
+                
+                virtualUrl = `http://localhost:${displayPort || 3000}${cleanSubpath}`
+              }
+              setCurrentUrl(virtualUrl)
+            }}
+            injectedJavaScript={`
+              (function() {
+                var originalLog = console.log;
+                var originalWarn = console.warn;
+                var originalError = console.error;
+                
+                console.log = function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'log', data: Array.from(arguments).join(' ') }));
+                  originalLog.apply(console, arguments);
+                };
+                console.warn = function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'warn', data: Array.from(arguments).join(' ') }));
+                  originalWarn.apply(console, arguments);
+                };
+                console.error = function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', data: Array.from(arguments).join(' ') }));
+                  originalError.apply(console, arguments);
+                };
+                window.onerror = function(message, source, lineno, colno, error) {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ 
+                    type: 'error', 
+                    data: message + ' at ' + source + ':' + lineno + ':' + colno 
+                  }));
+                  return false;
+                };
+              })();
+              true;
+            `}
+            onMessage={(event) => {
+              try {
+                const msg = JSON.parse(event.nativeEvent.data)
+                if (msg.type === 'proxy_error') {
+                  handleSetError(true)
+                  return
+                }
+                console.log(`[WebView Console ${msg.type.toUpperCase()}]`, msg.data)
+              } catch (e) {
+                // Ignore parsing errors for other messages
+              }
+            }}
             javaScriptEnabled
             domStorageEnabled
-            allowsInlineMediaPlayback
+            originWhitelist={['*']}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            mixedContentMode="always"
+            sharedCookiesEnabled={true}
+            thirdPartyCookiesEnabled={true}
+            userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+            // Performance: Hardware-accelerated rendering for smooth animations
+            androidLayerType="hardware"
+            // Enable caching so subsequent loads don't re-download heavy bundles
+            cacheEnabled={true}
+            // Handle WebView crashes (usually OOM from heavy JS like Framer/GSAP)
+            // Auto-reload instead of showing a blank white screen
+            onContentProcessDidTerminate={() => {
+              console.warn('[Preview] WebView process terminated (likely OOM), reloading...')
+              webViewRef.current?.reload()
+            }}
           />
-        </View>
-
-        {loading && (
-          <View style={[styles.loadingOverlay, { backgroundColor: colors.background }]}>
-            <ActivityIndicator color={colors.text} size="small" />
-            <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-              Connecting to :<Text style={{ color: colors.text }}>{activePort}</Text>
-            </Text>
-          </View>
-        )}
+        ) : renderHomePage()}
+        {hasError && renderErrorPage()}
       </View>
+
+      {/* Open in Browser Banner */}
+      {url ? (
+        <View style={[styles.browserBanner, { 
+          backgroundColor: isDark ? '#151922' : '#F6F8FA', 
+          borderTopColor: colors.border,
+        }]}>
+          <View style={styles.browserBannerRow}>
+            <TouchableOpacity
+              style={[styles.openBrowserBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+              onPress={handleOpenExternal}
+              activeOpacity={0.7}
+            >
+              <ExternalLink size={12} color={colors.text} strokeWidth={1.8} />
+              <Text style={[styles.openBrowserText, { color: colors.text }]}>
+                Open in real browser
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                setShowBrowserInfo(!showBrowserInfo)
+              }}
+              style={styles.readMoreBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Info size={11} color={colors.textSecondary} strokeWidth={1.5} />
+              <Text style={[styles.readMoreText, { color: colors.textSecondary }]}>
+                {showBrowserInfo ? 'Less' : 'Why?'}
+              </Text>
+              {showBrowserInfo 
+                ? <ChevronUp size={11} color={colors.textSecondary} strokeWidth={1.5} />
+                : <ChevronDown size={11} color={colors.textSecondary} strokeWidth={1.5} />
+              }
+            </TouchableOpacity>
+          </View>
+
+          {showBrowserInfo && (
+            <View style={[styles.browserInfoBox, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
+              <Text style={[styles.browserInfoTitle, { color: colors.text }]}>Why use the real browser?</Text>
+              <Text style={[styles.browserInfoDesc, { color: colors.textSecondary }]}>
+                This preview uses an embedded WebView which has limitations compared to a full browser:
+              </Text>
+              <View style={styles.browserInfoList}>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  Heavy animations (Framer Motion, GSAP) may lag or crash due to WebView memory limits
+                </Text>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  OAuth sign-in (Google, GitHub) is blocked inside WebViews
+                </Text>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  Service Workers and PWA features are not supported
+                </Text>
+                <Text style={[styles.browserInfoItem, { color: colors.textSecondary }]}>
+                  <Text style={{ color: '#3FB950' }}>•</Text>  The real browser gives full GPU acceleration and native performance
+                </Text>
+              </View>
+              <Text style={[styles.browserInfoFooter, { color: colors.textTertiary }]}>
+                For a quick glance, the embedded preview works great. For full testing, use the real browser.
+              </Text>
+            </View>
+          )}
+        </View>
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  svgContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    borderStyle: 'dashed',
-  },
-  badgeContainer: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-    backgroundColor: '#fff',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#3b82f6',
-  },
-  emptyTitle: {
-    fontSize: 24,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-    opacity: 0.8,
-    marginBottom: 32,
-  },
-  portCard: {
-    width: '100%',
-    padding: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    gap: 16,
-  },
-  portLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  portLabel: {
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  portInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    paddingHorizontal: 16,
-  },
-  localhostText: {
-    fontSize: 16,
-  },
-  portTextInput: {
-    fontSize: 16,
-    flex: 1,
-    marginLeft: 4,
-  },
-  connectBtn: {
-    height: 54,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    marginTop: 8,
-  },
-  connectBtnText: {
-    fontSize: 16,
-  },
-  hintContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 24,
-    opacity: 0.6,
-  },
-  hintText: {
-    fontSize: 11,
-  },
-  urlBar: {
+  navBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
+    gap: 8,
     borderBottomWidth: 1,
+  },
+  navButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  navBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  urlBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 30,
+    borderRadius: 8,
+    paddingHorizontal: 8,
     gap: 6,
-  },
-  addressBox: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    gap: 4,
-  },
-  hostText: { fontSize: 12 },
-  portInput: {
-    fontSize: 13,
-    flex: 1,
-    paddingVertical: 0,
-    height: '100%',
-  },
-  refreshBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deviceBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 4,
-    borderBottomWidth: 1,
-  },
-  deviceBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 7,
-    borderRadius: 10,
     borderWidth: 1,
   },
-  deviceLabel: {
+  urlInput: {
+    flex: 1,
     fontSize: 11,
-    fontFamily: 'Inter_600SemiBold',
+    paddingVertical: 0,
   },
-  deviceSize: {
-    fontSize: 9,
-    fontFamily: 'JetBrainsMono_400Regular',
-  },
-  deviceFrame: {
-    alignItems: 'center',
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderStyle: 'dashed',
-  },
-  deviceFrameText: {
-    fontSize: 10,
-    fontFamily: 'JetBrainsMono_400Regular',
-  },
-  webContainer: { flex: 1, overflow: 'hidden' },
-  webViewWrapper: { flex: 1 },
+  webViewContainer: { flex: 1 },
   webView: { flex: 1 },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: 10,
   },
-  loadingText: { fontSize: 13, opacity: 0.8 },
-  errorContainer: {
+  loadingText: { fontSize: 12, opacity: 0.5 },
+  errorOverlay: {
     ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 20,
+  },
+  errorCard: {
+    width: '100%',
+    maxWidth: 340,
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 12,
+  },
+  errorIcon: {
+    fontSize: 40,
+    marginBottom: 4,
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  errorDesc: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    fontFamily: 'Inter_400Regular',
+    opacity: 0.8,
+  },
+  retryBtn: {
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 40,
-    gap: 16,
+    width: '100%',
   },
-  errorTitle: { fontSize: 18, textAlign: 'center' },
-  errorHint: { fontSize: 14, textAlign: 'center', lineHeight: 22, opacity: 0.7 },
-  retryBtn: {
+  retryBtnText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  browserBanner: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+  },
+  browserBannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  openBrowserBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  openBrowserText: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    fontWeight: '500',
+  },
+  readMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  readMoreText: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+  },
+  browserInfoBox: {
     marginTop: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 14,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 8,
   },
-  retryText: { fontSize: 14 },
+  browserInfoTitle: {
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600',
+  },
+  browserInfoDesc: {
+    fontSize: 11.5,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 17,
+    opacity: 0.85,
+  },
+  browserInfoList: {
+    gap: 5,
+    paddingLeft: 4,
+  },
+  browserInfoItem: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 16,
+  },
+  browserInfoFooter: {
+    fontSize: 10.5,
+    fontFamily: 'Inter_400Regular',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  homePage: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  homeIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  homeTitle: {
+    fontSize: 22,
+    marginBottom: 8,
+    letterSpacing: -0.6,
+  },
+  homeSubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    opacity: 0.6,
+    marginBottom: 32,
+    maxWidth: 280,
+  },
+  shortcutsContainer: {
+    width: '100%',
+    maxWidth: 340,
+  },
+  shortcutsTitle: {
+    fontSize: 12,
+    opacity: 0.5,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  shortcutRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  shortcutBtn: {
+    width: '47%',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  shortcutText: {
+    fontSize: 14,
+  },
+  shortcutSub: {
+    fontSize: 10,
+    opacity: 0.5,
+  },
 })
