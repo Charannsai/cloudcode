@@ -510,7 +510,7 @@ export default function AIScreen() {
   const [modelModalVisible, setModelModalVisible] = useState(false)
   const [userTier, setUserTier] = useState<string>('free')
 
-  const [menuModalVisible, setMenuModalVisible] = useState(false)
+  const [menuVisible, setMenuVisible] = useState(false)
   const [historyModalVisible, setHistoryModalVisible] = useState(false)
 
   const [isListening, setIsListening] = useState(false)
@@ -740,7 +740,7 @@ export default function AIScreen() {
             <ChevronDown size={10} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setMenuModalVisible(true)} style={[styles.clearBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => setMenuVisible(true)} style={[styles.clearBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} activeOpacity={0.7}>
             <MoreVertical size={16} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
         </View>
@@ -1294,160 +1294,127 @@ export default function AIScreen() {
         </View>
       </Modal>
 
-      {/* Options Context Menu Modal */}
+      {/* Dropdown Menu Modal */}
       <Modal
-        visible={menuModalVisible}
+        visible={menuVisible}
         transparent
-        animationType="fade"
-        statusBarTranslucent={true}
-        onRequestClose={() => setMenuModalVisible(false)}
+        animationType="none"
+        onRequestClose={() => setMenuVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <TouchableOpacity 
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setMenuModalVisible(false)}
-          />
-          <View style={[
-            styles.modalContent, 
-            { 
-              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
-              borderColor: isDark ? '#21262D' : '#E5E7EB' 
-            }
-          ]}>
-            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                AI Options
-              </Text>
-              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                Manage your assistant's settings and history.
-              </Text>
-            </View>
+        <TouchableOpacity
+          style={styles.popoverBackdrop}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View 
+            style={[
+              styles.popoverCard,
+              {
+                backgroundColor: isDark ? '#151922' : '#FFFFFF',
+                borderColor: isDark ? '#21262D' : '#D8DEE4',
+                top: insets.top > 0 ? insets.top + 55 : 68,
+                right: 16,
+              }
+            ]}
+          >
+            {/* New Chat */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.popoverItem}
+              onPress={() => {
+                startNewChat()
+                setMenuVisible(false)
+              }}
+            >
+              <Plus size={14} color={colors.text} />
+              <Text style={[styles.popoverItemText, { color: colors.text }]}>New Chat Thread</Text>
+            </TouchableOpacity>
 
-            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
-              {/* New Chat */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  startNewChat()
-                  setMenuModalVisible(false)
-                }}
-                style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
-              >
-                <View style={styles.menuOptionLeft}>
-                  <Plus size={14} color={colors.text} />
-                  <Text style={[styles.menuOptionText, { color: colors.text }]}>New Chat Thread</Text>
+            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+
+            {/* Past Conversations */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.popoverItem}
+              onPress={() => {
+                setMenuVisible(false)
+                setHistoryModalVisible(true)
+              }}
+            >
+              <History size={14} color={colors.text} />
+              <Text style={[styles.popoverItemText, { color: colors.text }]}>Past Conversations</Text>
+              {savedConversations.length > 0 && (
+                <View style={styles.popoverBadge}>
+                  <Text style={styles.popoverBadgeText}>{savedConversations.length}</Text>
                 </View>
-              </TouchableOpacity>
-
-              {/* Past Conversations */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  setMenuModalVisible(false)
-                  setHistoryModalVisible(true)
-                }}
-                style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
-              >
-                <View style={styles.menuOptionLeft}>
-                  <History size={14} color={colors.text} />
-                  <Text style={[styles.menuOptionText, { color: colors.text }]}>Past Conversations</Text>
-                </View>
-                {savedConversations.length > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{savedConversations.length}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              {/* BYOK Toggle / Configure */}
-              {byokConfigured ? (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    toggleByok(!byokEnabled)
-                  }}
-                  style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
-                >
-                  <View style={styles.menuOptionLeft}>
-                    <Shield size={14} color={byokEnabled ? '#10B981' : colors.text} />
-                    <Text style={[styles.menuOptionText, { color: colors.text }]}>
-                      {byokEnabled ? 'Using Custom Keys (BYOK)' : 'Use Custom Keys (BYOK)'}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={byokEnabled}
-                    onValueChange={toggleByok}
-                    trackColor={{ false: colors.border, true: '#10B981' }}
-                    thumbColor={colors.background}
-                  />
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setMenuModalVisible(false)
-                    useUIStore.getState().setSettingsSubScreen('aiKeys')
-                    router.push('/(tabs)/settings')
-                  }}
-                  style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
-                >
-                  <View style={styles.menuOptionLeft}>
-                    <Lock size={14} color="#F59E0B" />
-                    <Text style={[styles.menuOptionText, { color: colors.text }]}>Configure BYOK Keys</Text>
-                  </View>
-                  <ChevronRight size={14} color={colors.textSecondary} />
-                </TouchableOpacity>
               )}
+            </TouchableOpacity>
 
-              {/* Switch Model Shortcut */}
+            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+
+            {/* BYOK Toggle / Configure */}
+            {byokConfigured ? (
               <TouchableOpacity
                 activeOpacity={0.8}
+                style={styles.popoverItem}
                 onPress={() => {
-                  setMenuModalVisible(false)
-                  setModelModalVisible(true)
+                  toggleByok(!byokEnabled)
                 }}
-                style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
               >
-                <View style={styles.menuOptionLeft}>
-                  <Cpu size={14} color={colors.text} />
-                  <Text style={[styles.menuOptionText, { color: colors.text }]}>Switch Model...</Text>
-                </View>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  {selectedModel === 'gemini' ? 'Gemini' : selectedModel === 'openai' ? 'gpt-4o' : 'Claude'}
+                <Shield size={14} color={byokEnabled ? '#10B981' : colors.text} />
+                <Text style={[styles.popoverItemText, { color: colors.text }]}>
+                  {byokEnabled ? 'Use BYOK (Enabled)' : 'Use BYOK (Disabled)'}
                 </Text>
               </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.popoverItem}
+                onPress={() => {
+                  setMenuVisible(false)
+                  useUIStore.getState().setSettingsSubScreen('aiKeys')
+                  router.push('/(tabs)/settings')
+                }}
+              >
+                <Lock size={14} color="#F59E0B" />
+                <Text style={[styles.popoverItemText, { color: colors.text }]}>Configure BYOK Keys</Text>
+              </TouchableOpacity>
+            )}
 
-              {/* Switch Workspace Shortcut */}
-              {projects.length > 1 && (
+            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+
+            {/* Switch Model Shortcut */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.popoverItem}
+              onPress={() => {
+                setMenuVisible(false)
+                setModelModalVisible(true)
+              }}
+            >
+              <Cpu size={14} color={colors.text} />
+              <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Model...</Text>
+            </TouchableOpacity>
+
+            {/* Switch Workspace Shortcut */}
+            {projects.length > 1 && (
+              <>
+                <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
                 <TouchableOpacity
                   activeOpacity={0.8}
+                  style={styles.popoverItem}
                   onPress={() => {
-                    setMenuModalVisible(false)
+                    setMenuVisible(false)
                     setWorkspaceModalVisible(true)
                   }}
-                  style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
                 >
-                  <View style={styles.menuOptionLeft}>
-                    <FolderGit2 size={14} color={colors.text} />
-                    <Text style={[styles.menuOptionText, { color: colors.text }]}>Switch Workspace...</Text>
-                  </View>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    {projects.find(p => p.id === selectedProjectId)?.name || 'Select'}
-                  </Text>
+                  <FolderGit2 size={14} color={colors.text} />
+                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Workspace...</Text>
                 </TouchableOpacity>
-              )}
-            </ScrollView>
-
-            <TouchableOpacity 
-              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
-              onPress={() => setMenuModalVisible(false)}
-            >
-              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Cancel</Text>
-            </TouchableOpacity>
+              </>
+            )}
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Past Conversations Modal */}
@@ -2127,5 +2094,48 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'JetBrainsMono_400Regular',
     lineHeight: 16,
+  },
+  popoverBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  popoverCard: {
+    position: 'absolute',
+    width: 220,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  popoverItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  popoverItemText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    flex: 1,
+  },
+  popoverBadge: {
+    backgroundColor: '#8B5CF6',
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  popoverBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontFamily: 'Inter_700Bold',
+  },
+  popoverDivider: {
+    height: 1,
+    marginHorizontal: 10,
   },
 })
