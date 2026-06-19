@@ -489,7 +489,7 @@ export default function GitTab({ projectId, isActive }: Props) {
           <>
             {/* Conflicts Section */}
             {conflicts.length > 0 && (
-              <View style={[styles.conflictContainer, { borderColor: '#F85149', borderWidth: 1, borderRadius: 12, margin: 16, backgroundColor: isDark ? 'rgba(248, 81, 73, 0.05)' : 'rgba(248, 81, 73, 0.03)', overflow: 'hidden' }]}>
+              <View style={[styles.conflictContainer, { borderColor: '#F85149', borderWidth: 1, borderRadius: 8, margin: 16, backgroundColor: isDark ? 'rgba(248, 81, 73, 0.05)' : 'rgba(248, 81, 73, 0.03)', overflow: 'hidden' }]}>
                 <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('conflicts')}>
                   {expandedSections.conflicts ? <ChevronDown size={14} color="#F85149" /> : <ChevronRight size={14} color="#F85149" />}
                   <Text style={[styles.sectionTitle, { color: '#F85149' }]}>Conflicts</Text>
@@ -764,7 +764,7 @@ const styles = StyleSheet.create({
   loadingText: { fontSize: 13, fontFamily: 'Inter_500Medium' },
   errorTitle: { fontSize: 18, fontFamily: 'Inter_700Bold', marginTop: 8 },
   errorSubtitle: { fontSize: 13, fontFamily: 'Inter_400Regular', textAlign: 'center', paddingHorizontal: 40 },
-  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, marginTop: 12 },
+  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6, marginTop: 12 },
   retryText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
   branchBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -775,9 +775,9 @@ const styles = StyleSheet.create({
   syncButtons: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   syncBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   syncBadgeText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
-  syncBtn: { width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  syncBtn: { width: 28, height: 28, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   branchDropdown: {
-    marginHorizontal: 16, borderRadius: 12, borderWidth: 1,
+    marginHorizontal: 16, borderRadius: 8, borderWidth: 1,
     overflow: 'hidden', marginTop: 4,
   },
   branchItem: {
