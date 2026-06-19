@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
     "dockerode": "^4.0.9",
+    "dodopayments": "^2.39.1",
     "jsonwebtoken": "^9.0.3",
     "next": "16.2.0",
     "node-pty": "^1.1.0",
