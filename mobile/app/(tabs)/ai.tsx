@@ -672,7 +672,7 @@ export default function AIScreen() {
           <View>
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode AI</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-              {selectedProjectId === 'global' || !selectedProjectId ? 'Universal AI' : selectedProject?.name || 'Workspace'}
+              {selectedProjectId === 'global' || !selectedProjectId ? 'General Assistant' : selectedProject?.name || 'Workspace'}
             </Text>
           </View>
         </View>
@@ -1080,6 +1080,87 @@ export default function AIScreen() {
               }
             ]}
           >
+            {/* Workspace Context Section */}
+            <Text style={[styles.popoverHeader, { color: colors.textSecondary, paddingBottom: 6 }]}>CHAT CONTEXT</Text>
+            
+            <View style={{ paddingHorizontal: 10, paddingBottom: 8 }}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 6, paddingRight: 10 }}
+              >
+                {/* General Assistant Card */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.contextCard,
+                    {
+                      borderColor: (selectedProjectId === 'global' || !selectedProjectId)
+                        ? '#8B5CF6'
+                        : (isDark ? '#21262D' : '#D8DEE4'),
+                      backgroundColor: (selectedProjectId === 'global' || !selectedProjectId)
+                        ? (isDark ? 'rgba(139, 92, 246, 0.12)' : 'rgba(243, 239, 255, 1)')
+                        : 'transparent',
+                    }
+                  ]}
+                  onPress={() => {
+                    setSelectedProjectId('global')
+                    setMenuVisible(false)
+                  }}
+                >
+                  <Sparkles size={11} color={(selectedProjectId === 'global' || !selectedProjectId) ? '#8B5CF6' : colors.textSecondary} />
+                  <Text style={[
+                    styles.contextCardText,
+                    { 
+                      color: (selectedProjectId === 'global' || !selectedProjectId) ? colors.text : colors.textSecondary,
+                      fontFamily: (selectedProjectId === 'global' || !selectedProjectId) ? 'Inter_600SemiBold' : 'Inter_400Regular'
+                    }
+                  ]}>
+                    General Assistant
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Project Context Cards */}
+                {projects.map((proj) => {
+                  const isSelected = selectedProjectId === proj.id
+                  return (
+                    <TouchableOpacity
+                      key={proj.id}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.contextCard,
+                        {
+                          borderColor: isSelected
+                            ? (isDark ? '#58A6FF' : '#0969DA')
+                            : (isDark ? '#21262D' : '#D8DEE4'),
+                          backgroundColor: isSelected
+                            ? (isDark ? 'rgba(88, 166, 255, 0.12)' : 'rgba(235, 244, 255, 1)')
+                            : 'transparent',
+                        }
+                      ]}
+                      onPress={() => {
+                        setSelectedProjectId(proj.id)
+                        setMenuVisible(false)
+                      }}
+                    >
+                      <FolderGit2 size={11} color={isSelected ? (isDark ? '#58A6FF' : '#0969DA') : colors.textSecondary} />
+                      <Text style={[
+                        styles.contextCardText,
+                        { 
+                          color: isSelected ? colors.text : colors.textSecondary,
+                          fontFamily: isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular'
+                        }
+                      ]} numberOfLines={1}>
+                        {proj.name}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </ScrollView>
+            </View>
+
+            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8', marginBottom: 4 }]} />
+
             {/* New Chat */}
             <TouchableOpacity
               activeOpacity={0.8}
@@ -1158,66 +1239,6 @@ export default function AIScreen() {
               <Cpu size={13} color={colors.text} />
               <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Model...</Text>
             </TouchableOpacity>
-
-            {/* Workspace Context Section */}
-            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
-            <Text style={[styles.popoverHeader, { color: colors.textSecondary }]}>CONTEXT</Text>
-            
-            {/* Universal Option */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={[
-                styles.popoverItem,
-                (selectedProjectId === 'global' || !selectedProjectId) && { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }
-              ]}
-              onPress={() => {
-                setSelectedProjectId('global')
-                setMenuVisible(false)
-              }}
-            >
-              <Sparkles size={12} color={(selectedProjectId === 'global' || !selectedProjectId) ? '#8B5CF6' : colors.textSecondary} />
-              <Text style={[
-                styles.popoverItemText, 
-                { color: colors.text, fontSize: 12 },
-                (selectedProjectId === 'global' || !selectedProjectId) && { fontFamily: 'Inter_600SemiBold' }
-              ]}>
-                Universal AI
-              </Text>
-            </TouchableOpacity>
-
-            {/* Project List */}
-            {projects.length > 0 && (
-              <View style={{ maxHeight: 120 }}>
-                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true}>
-                  {projects.map((proj) => {
-                    const isSelected = selectedProjectId === proj.id
-                    return (
-                      <TouchableOpacity
-                        key={proj.id}
-                        activeOpacity={0.8}
-                        style={[
-                          styles.popoverItem,
-                          isSelected && { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }
-                        ]}
-                        onPress={() => {
-                          setSelectedProjectId(proj.id)
-                          setMenuVisible(false)
-                        }}
-                      >
-                        <FolderGit2 size={12} color={isSelected ? '#58A6FF' : colors.textSecondary} />
-                        <Text style={[
-                          styles.popoverItemText, 
-                          { color: colors.text, fontSize: 12 },
-                          isSelected && { fontFamily: 'Inter_600SemiBold' }
-                        ]} numberOfLines={1}>
-                          {proj.name}
-                        </Text>
-                      </TouchableOpacity>
-                    )
-                  })}
-                </ScrollView>
-              </View>
-            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -1268,7 +1289,7 @@ export default function AIScreen() {
               ) : (
                 savedConversations.map((thread) => {
                   const isCurrent = currentThreadId === thread.id
-                  const projName = thread.projectId === 'global' ? 'Universal AI' : (projects.find(p => p.id === thread.projectId)?.name || 'Workspace')
+                  const projName = thread.projectId === 'global' ? 'General Assistant' : (projects.find(p => p.id === thread.projectId)?.name || 'Workspace')
 
                   return (
                     <View
@@ -1868,7 +1889,7 @@ const styles = StyleSheet.create({
   },
   popoverCard: {
     position: 'absolute',
-    width: 200,
+    width: 230,
     borderRadius: 6,
     borderWidth: 1,
     paddingVertical: 4,
@@ -1912,5 +1933,17 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 2,
     letterSpacing: 0.5,
+  },
+  contextCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 4,
+    borderWidth: 1,
+    gap: 4,
+  },
+  contextCardText: {
+    fontSize: 11,
   },
 })
