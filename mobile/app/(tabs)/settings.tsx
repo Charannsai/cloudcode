@@ -1071,7 +1071,7 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>PREFERENCES</Text>
         <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          <View style={[styles.row, { borderBottomColor: colors.border }]}>
+          <View style={[styles.row, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
             <View style={styles.rowLeft}>
               <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
                 <ThemeIcon size={16} color={colors.text} strokeWidth={1.5} />
@@ -1085,6 +1085,21 @@ export default function SettingsScreen() {
               thumbColor={colors.background}
             />
           </View>
+          <TouchableOpacity 
+            activeOpacity={0.7} 
+            onPress={() => setCurrentSubScreen('aiKeys')}
+            style={[styles.row]}
+          >
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
+                <Key size={16} color={colors.text} strokeWidth={1.5} />
+              </View>
+              <View>
+                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>AI API Keys (BYOK)</Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+          </TouchableOpacity>
         </View>
       </View>
 
