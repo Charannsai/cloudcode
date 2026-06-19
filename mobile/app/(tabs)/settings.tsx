@@ -7,7 +7,8 @@ import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { 
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
-  Key, Copy, RefreshCw, AlertCircle, Check
+  Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
+  CreditCard, ArrowUpRight
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
@@ -218,6 +219,105 @@ export default function SettingsScreen() {
               trackColor={{ false: colors.border, true: colors.text }}
               thumbColor={colors.background}
             />
+          </View>
+        </View>
+      </View>
+
+      {/* Billing & Plan */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>BILLING & PLAN</Text>
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 14 }]}>
+          
+          {/* Current Plan Badge */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? 'rgba(63, 185, 80, 0.1)' : '#e6ffec', alignItems: 'center', justifyContent: 'center' }}>
+                <Zap size={18} color="#3FB950" strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Free Plan</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 }}>$0/month</Text>
+              </View>
+            </View>
+            <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.12)' : '#e6ffec', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.25)' : '#3FB95040' }}>
+              <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
+            </View>
+          </View>
+
+          <View style={{ height: 1, backgroundColor: colors.border }} />
+
+          {/* Resource Usage Bars */}
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 0.5 }}>RESOURCE LIMITS</Text>
+          
+          {[
+            { label: 'vCPUs', value: '0.5', max: '0.5', percent: 100, icon: Cpu, color: '#8B5CF6' },
+            { label: 'RAM', value: '512 MB', max: '512 MB', percent: 100, icon: HardDrive, color: '#3B82F6' },
+            { label: 'Storage', value: '5 GB', max: '5 GB', percent: 100, icon: HardDrive, color: '#F59E0B' },
+            { label: 'Idle Timeout', value: '10 min', max: '10 min', percent: 100, icon: Clock, color: '#EF4444' },
+            { label: 'Network', value: '15 Mbps', max: '15 Mbps', percent: 100, icon: Wifi, color: '#06B6D4' },
+          ].map((item) => (
+            <View key={item.label} style={{ gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <item.icon size={12} color={item.color} strokeWidth={2} />
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>{item.label}</Text>
+                </View>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>{item.value}</Text>
+              </View>
+              <View style={{ height: 4, backgroundColor: isDark ? '#1C2128' : '#E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
+                <View style={{ height: '100%', width: `${Math.min(item.percent, 100)}%`, backgroundColor: item.color + '80', borderRadius: 2 }} />
+              </View>
+            </View>
+          ))}
+
+          <View style={{ height: 1, backgroundColor: colors.border, marginTop: 2 }} />
+
+          {/* AI Limits */}
+          <View style={{ gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>AI Tokens (Monthly)</Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>50,000</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Workspaces</Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>3 max</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>API Rate Limit</Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>25 req/min</Text>
+            </View>
+          </View>
+
+          <View style={{ height: 1, backgroundColor: colors.border, marginTop: 2 }} />
+
+          {/* Upgrade CTA */}
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            style={{ 
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              backgroundColor: isDark ? '#F3F4F6' : '#0E1116',
+              paddingVertical: 12, borderRadius: 10, marginTop: 2 
+            }}
+            onPress={() => {
+              showModal(
+                'Upgrade Coming Soon',
+                'Pro ($25/mo) and Advanced ($99/mo) plans are launching soon! You will get more vCPUs, RAM, storage, and premium AI models.',
+                'info'
+              )
+            }}
+          >
+            <ArrowUpRight size={16} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2} />
+            <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }}>
+              Upgrade to Pro
+            </Text>
+          </TouchableOpacity>
+
+          {/* BYOK Notice */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 4 }}>
+            <Key size={12} color={colors.textSecondary} strokeWidth={1.5} style={{ marginTop: 2 }} />
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, flex: 1, lineHeight: 16 }}>
+              Bring Your Own API Key (BYOK) is available on all tiers for unlimited AI usage with your own keys.
+            </Text>
           </View>
         </View>
       </View>
