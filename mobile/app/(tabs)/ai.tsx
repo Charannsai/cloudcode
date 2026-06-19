@@ -21,7 +21,7 @@ import { api } from '@/lib/api'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice'
 import * as Speech from 'expo-speech'
-import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated'
+// Removed react-native-reanimated for performance optimization
 import Markdown from 'react-native-markdown-display'
 import * as Clipboard from 'expo-clipboard'
 
@@ -321,7 +321,7 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
       <Modal
         visible={modalOpen}
         transparent
-        animationType="slide"
+        animationType="none"
         statusBarTranslucent={true}
         onRequestClose={() => setModalOpen(false)}
       >
@@ -498,7 +498,6 @@ export default function AIScreen() {
   const insets = useSafeAreaInsets()
 
   const [inputText, setInputText] = useState('')
-  const [workspaceModalVisible, setWorkspaceModalVisible] = useState(false)
   const [reasoningExpanded, setReasoningExpanded] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
@@ -613,54 +612,7 @@ export default function AIScreen() {
     }, [fetchProjects, setTabBarVisible])
   )
 
-  // Jumping letters animation for Thinking state
-  const letter0 = useSharedValue(0)
-  const letter1 = useSharedValue(0)
-  const letter2 = useSharedValue(0)
-  const letter3 = useSharedValue(0)
-  const letter4 = useSharedValue(0)
-  const letter5 = useSharedValue(0)
-  const letter6 = useSharedValue(0)
-  const letter7 = useSharedValue(0)
-
-  useEffect(() => {
-    const isThinking = isStreaming && !currentStreamText && currentToolCalls.length === 0
-    if (isThinking) {
-      const animateLetter = (anim: any, delay: number) => {
-        setTimeout(() => {
-          anim.value = withRepeat(
-            withSequence(
-              withTiming(-3, { duration: 180, easing: Easing.inOut(Easing.ease) }),
-              withTiming(0, { duration: 180, easing: Easing.inOut(Easing.ease) }),
-              withTiming(0, { duration: 600 })
-            ),
-            -1,
-            false
-          )
-        }, delay)
-      }
-      animateLetter(letter0, 0)
-      animateLetter(letter1, 80)
-      animateLetter(letter2, 160)
-      animateLetter(letter3, 240)
-      animateLetter(letter4, 320)
-      animateLetter(letter5, 400)
-      animateLetter(letter6, 480)
-      animateLetter(letter7, 560)
-    } else {
-      letter0.value = 0; letter1.value = 0; letter2.value = 0; letter3.value = 0;
-      letter4.value = 0; letter5.value = 0; letter6.value = 0; letter7.value = 0;
-    }
-  }, [isStreaming, currentStreamText, currentToolCalls.length])
-
-  const styleL0 = useAnimatedStyle(() => ({ transform: [{ translateY: letter0.value }] }))
-  const styleL1 = useAnimatedStyle(() => ({ transform: [{ translateY: letter1.value }] }))
-  const styleL2 = useAnimatedStyle(() => ({ transform: [{ translateY: letter2.value }] }))
-  const styleL3 = useAnimatedStyle(() => ({ transform: [{ translateY: letter3.value }] }))
-  const styleL4 = useAnimatedStyle(() => ({ transform: [{ translateY: letter4.value }] }))
-  const styleL5 = useAnimatedStyle(() => ({ transform: [{ translateY: letter5.value }] }))
-  const styleL6 = useAnimatedStyle(() => ({ transform: [{ translateY: letter6.value }] }))
-  const styleL7 = useAnimatedStyle(() => ({ transform: [{ translateY: letter7.value }] }))
+  // Thinking animation states removed for performance
 
   // Auto-select global by default if no project is active
   useEffect(() => {
@@ -720,7 +672,7 @@ export default function AIScreen() {
           <View>
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode AI</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-              {selectedProjectId === 'global' || !selectedProjectId ? 'Universal Assistant Mode' : `Workspace Context: ${selectedProject?.name || ''}`}
+              {selectedProjectId === 'global' || !selectedProjectId ? 'Universal AI' : selectedProject?.name || 'Workspace'}
             </Text>
           </View>
         </View>
@@ -762,37 +714,29 @@ export default function AIScreen() {
             <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
               Hi {username}
             </Text>
-            {selectedProjectId === 'global' ? (
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular', marginBottom: 0 }]}>
-                Ask questions, explain code, or brainstorm ideas.{'\n'}Universal AI mode is active.
-              </Text>
-            ) : (
-              <>
-                <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  Ask me to read, edit, or create code{'\n'}in your project. I can also run commands.
-                </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular', marginBottom: 16 }]}>
+              Ask questions, write/edit code, run terminal commands, or brainstorm ideas.
+            </Text>
 
-                {/* Quick prompts */}
-                <View style={styles.quickPrompts}>
-                  {[
-                    { label: 'Show project structure', icon: FolderTree },
-                    { label: 'Find and fix bugs', icon: Bug },
-                    { label: 'Add a new feature', icon: Sparkles },
-                    { label: 'Install dependencies', icon: Package },
-                  ].map((prompt, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={[styles.quickPrompt, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-                      onPress={() => setInputText(prompt.label)}
-                      activeOpacity={0.7}
-                    >
-                      <prompt.icon size={14} color={isDark ? '#8B929A' : '#656D76'} strokeWidth={1.5} />
-                      <Text style={[styles.quickPromptText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>{prompt.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
-            )}
+            {/* Quick prompts */}
+            <View style={styles.quickPrompts}>
+              {[
+                { label: 'Show project structure', icon: FolderTree },
+                { label: 'Find and fix bugs', icon: Bug },
+                { label: 'Add a new feature', icon: Sparkles },
+                { label: 'Install dependencies', icon: Package },
+              ].map((prompt, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.quickPrompt, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
+                  onPress={() => setInputText(prompt.label)}
+                  activeOpacity={0.7}
+                >
+                  <prompt.icon size={14} color={isDark ? '#8B929A' : '#656D76'} strokeWidth={1.5} />
+                  <Text style={[styles.quickPromptText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>{prompt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             {!byokConfigured && (
               <TouchableOpacity
@@ -961,7 +905,7 @@ export default function AIScreen() {
       <Modal
         visible={modelModalVisible}
         transparent
-        animationType="fade"
+        animationType="none"
         statusBarTranslucent={true}
         onRequestClose={() => setModelModalVisible(false)}
       >
@@ -1113,137 +1057,6 @@ export default function AIScreen() {
         </View>
       </Modal>
 
-      {/* Workspace Switcher Modal */}
-      <Modal
-        visible={workspaceModalVisible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent={true}
-        onRequestClose={() => setWorkspaceModalVisible(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <TouchableOpacity 
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setWorkspaceModalVisible(false)}
-          />
-          <View style={[
-            styles.modalContent, 
-            { 
-              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
-              borderColor: isDark ? '#21262D' : '#E5E7EB' 
-            }
-          ]}>
-            {/* Drag/Indicator Handle */}
-            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#2D333B' : '#E5E7EB' }]} />
-            
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                Switch Context
-              </Text>
-              <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                Connect your AI chat to a different workspace or universal mode:
-              </Text>
-            </View>
-
-            <ScrollView 
-              style={styles.modalList} 
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 10 }}
-            >
-              {/* Universal AI Option */}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  setSelectedProjectId('global')
-                  setWorkspaceModalVisible(false)
-                }}
-                style={[
-                  styles.projectOption,
-                  {
-                    backgroundColor: selectedProjectId === 'global' || !selectedProjectId
-                      ? (isDark ? '#1C2128' : '#F0F2F5')
-                      : 'transparent'
-                  }
-                ]}
-              >
-                <View style={styles.projectOptionLeft}>
-                  <Sparkles 
-                    size={14} 
-                    color={selectedProjectId === 'global' || !selectedProjectId ? '#8B5CF6' : colors.textSecondary} 
-                    style={{ marginRight: 10 }} 
-                  />
-                  <Text style={[
-                    styles.projectName,
-                    { 
-                      color: colors.text,
-                      fontFamily: selectedProjectId === 'global' || !selectedProjectId ? 'Inter_600SemiBold' : 'Inter_400Regular'
-                    }
-                  ]}>
-                    Universal AI (No Project)
-                  </Text>
-                </View>
-                {(selectedProjectId === 'global' || !selectedProjectId) && (
-                  <CheckCircle2 size={14} color="#8B5CF6" />
-                )}
-              </TouchableOpacity>
-
-              {projects.map((proj) => {
-                const isSelected = selectedProjectId === proj.id
-                return (
-                  <TouchableOpacity
-                    key={proj.id}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      setSelectedProjectId(proj.id)
-                      setWorkspaceModalVisible(false)
-                    }}
-                    style={[
-                      styles.projectOption,
-                      {
-                        backgroundColor: isSelected 
-                          ? (isDark ? '#1C2128' : '#F0F2F5')
-                          : 'transparent'
-                      }
-                    ]}
-                  >
-                    <View style={styles.projectOptionLeft}>
-                      <FolderGit2 
-                        size={14} 
-                        color={isSelected ? (isDark ? '#58A6FF' : '#0969DA') : colors.textSecondary} 
-                        style={{ marginRight: 10 }} 
-                      />
-                      <Text style={[
-                        styles.projectName,
-                        { 
-                          color: colors.text,
-                          fontFamily: isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular'
-                        }
-                      ]}>
-                        {proj.name}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <CheckCircle2 size={14} color={isDark ? '#58A6FF' : '#0969DA'} />
-                    )}
-                  </TouchableOpacity>
-                )
-              })}
-            </ScrollView>
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setWorkspaceModalVisible(false)}
-              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }]}
-            >
-              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
       {/* Dropdown Menu Modal */}
       <Modal
         visible={menuVisible}
@@ -1262,7 +1075,7 @@ export default function AIScreen() {
               {
                 backgroundColor: isDark ? '#151922' : '#FFFFFF',
                 borderColor: isDark ? '#21262D' : '#D8DEE4',
-                top: insets.top > 0 ? insets.top + 55 : 68,
+                top: insets.top > 0 ? insets.top + 50 : 60,
                 right: 16,
               }
             ]}
@@ -1276,7 +1089,7 @@ export default function AIScreen() {
                 setMenuVisible(false)
               }}
             >
-              <Plus size={14} color={colors.text} />
+              <Plus size={13} color={colors.text} />
               <Text style={[styles.popoverItemText, { color: colors.text }]}>New Chat Thread</Text>
             </TouchableOpacity>
 
@@ -1291,7 +1104,7 @@ export default function AIScreen() {
                 setHistoryModalVisible(true)
               }}
             >
-              <History size={14} color={colors.text} />
+              <History size={13} color={colors.text} />
               <Text style={[styles.popoverItemText, { color: colors.text }]}>Past Conversations</Text>
               {savedConversations.length > 0 && (
                 <View style={styles.popoverBadge}>
@@ -1311,7 +1124,7 @@ export default function AIScreen() {
                   toggleByok(!byokEnabled)
                 }}
               >
-                <Shield size={14} color={byokEnabled ? '#10B981' : colors.text} />
+                <Shield size={13} color={byokEnabled ? '#10B981' : colors.text} />
                 <Text style={[styles.popoverItemText, { color: colors.text }]}>
                   {byokEnabled ? 'Use BYOK (Enabled)' : 'Use BYOK (Disabled)'}
                 </Text>
@@ -1326,7 +1139,7 @@ export default function AIScreen() {
                   router.push('/(tabs)/settings')
                 }}
               >
-                <Lock size={14} color="#F59E0B" />
+                <Lock size={13} color="#F59E0B" />
                 <Text style={[styles.popoverItemText, { color: colors.text }]}>Configure BYOK Keys</Text>
               </TouchableOpacity>
             )}
@@ -1342,26 +1155,68 @@ export default function AIScreen() {
                 setModelModalVisible(true)
               }}
             >
-              <Cpu size={14} color={colors.text} />
+              <Cpu size={13} color={colors.text} />
               <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Model...</Text>
             </TouchableOpacity>
 
-            {/* Switch Workspace Shortcut */}
-            {projects.length > 1 && (
-              <>
-                <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={styles.popoverItem}
-                  onPress={() => {
-                    setMenuVisible(false)
-                    setWorkspaceModalVisible(true)
-                  }}
-                >
-                  <FolderGit2 size={14} color={colors.text} />
-                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Workspace...</Text>
-                </TouchableOpacity>
-              </>
+            {/* Workspace Context Section */}
+            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+            <Text style={[styles.popoverHeader, { color: colors.textSecondary }]}>CONTEXT</Text>
+            
+            {/* Universal Option */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[
+                styles.popoverItem,
+                (selectedProjectId === 'global' || !selectedProjectId) && { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }
+              ]}
+              onPress={() => {
+                setSelectedProjectId('global')
+                setMenuVisible(false)
+              }}
+            >
+              <Sparkles size={12} color={(selectedProjectId === 'global' || !selectedProjectId) ? '#8B5CF6' : colors.textSecondary} />
+              <Text style={[
+                styles.popoverItemText, 
+                { color: colors.text, fontSize: 12 },
+                (selectedProjectId === 'global' || !selectedProjectId) && { fontFamily: 'Inter_600SemiBold' }
+              ]}>
+                Universal AI
+              </Text>
+            </TouchableOpacity>
+
+            {/* Project List */}
+            {projects.length > 0 && (
+              <View style={{ maxHeight: 120 }}>
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true}>
+                  {projects.map((proj) => {
+                    const isSelected = selectedProjectId === proj.id
+                    return (
+                      <TouchableOpacity
+                        key={proj.id}
+                        activeOpacity={0.8}
+                        style={[
+                          styles.popoverItem,
+                          isSelected && { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }
+                        ]}
+                        onPress={() => {
+                          setSelectedProjectId(proj.id)
+                          setMenuVisible(false)
+                        }}
+                      >
+                        <FolderGit2 size={12} color={isSelected ? '#58A6FF' : colors.textSecondary} />
+                        <Text style={[
+                          styles.popoverItemText, 
+                          { color: colors.text, fontSize: 12 },
+                          isSelected && { fontFamily: 'Inter_600SemiBold' }
+                        ]} numberOfLines={1}>
+                          {proj.name}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </ScrollView>
+              </View>
             )}
           </View>
         </TouchableOpacity>
@@ -1371,7 +1226,7 @@ export default function AIScreen() {
       <Modal
         visible={historyModalVisible}
         transparent
-        animationType="fade"
+        animationType="none"
         statusBarTranslucent={true}
         onRequestClose={() => setHistoryModalVisible(false)}
       >
@@ -1492,103 +1347,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 14,
+    paddingHorizontal: 14,
+    paddingTop: Platform.OS === 'ios' ? 50 : 36,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     flexShrink: 0,
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   backBtn: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 30, height: 30, borderRadius: 6,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 12, marginTop: 1, opacity: 0.7 },
+  headerTitle: { fontSize: 16, letterSpacing: -0.4 },
+  headerSubtitle: { fontSize: 11, marginTop: 1, opacity: 0.7 },
   clearBtn: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 30, height: 30, borderRadius: 6,
     alignItems: 'center', justifyContent: 'center',
   },
-  switcherContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    flexShrink: 0,
-  },
-  segmentedControl: {
-    flex: 1,
-    flexDirection: 'row',
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 3,
-  },
-  segmentItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 15,
-  },
-  segmentItemActive: {
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentText: {
-    fontSize: 12,
-    letterSpacing: -0.2,
-  },
-
-  messagesContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 160 },
-  emptyState: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 20 },
+  messagesContent: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 120 },
+  emptyState: { alignItems: 'center', paddingTop: 24, paddingHorizontal: 16 },
   emptyIcon: {
-    width: 64, height: 64, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+    width: 48, height: 48, borderRadius: 6,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
     borderWidth: 1,
   },
-  emptyTitle: { fontSize: 24, marginBottom: 8, letterSpacing: -0.6 },
+  emptyTitle: { fontSize: 20, marginBottom: 4, letterSpacing: -0.5 },
   emptySubtitle: {
-    fontSize: 14, textAlign: 'center',
-    lineHeight: 22, opacity: 0.6, marginBottom: 28,
+    fontSize: 13, textAlign: 'center',
+    lineHeight: 18, opacity: 0.6, marginBottom: 16,
   },
-  quickPrompts: { width: '100%', gap: 8 },
+  quickPrompts: { width: '100%', gap: 6 },
   quickPrompt: {
-    paddingHorizontal: 16, paddingVertical: 13,
-    borderRadius: 12, borderWidth: 1,
-    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 10, paddingVertical: 8,
+    borderRadius: 6, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
   },
-  quickPromptText: { fontSize: 13, letterSpacing: -0.2 },
+  quickPromptText: { fontSize: 12, letterSpacing: -0.2 },
   messageBubbleWrapper: {
     flexDirection: 'row', 
-    marginBottom: 10, 
-    gap: 8,
+    marginBottom: 8, 
+    gap: 6,
     alignItems: 'flex-start',
   },
   userWrapper: { justifyContent: 'flex-end' },
   modelWrapper: { justifyContent: 'flex-start' },
   avatarCircle: {
-    width: 26, 
-    height: 26, 
-    borderRadius: 13,
+    width: 24, 
+    height: 24, 
+    borderRadius: 4,
     alignItems: 'center', 
     justifyContent: 'center',
     marginTop: 2,
   },
   bubble: {
-    maxWidth: SCREEN_WIDTH * 0.78, 
-    borderRadius: 16, 
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    maxWidth: SCREEN_WIDTH * 0.82, 
+    borderRadius: 6, 
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
-  userBubble: { 
-    borderBottomRightRadius: 16,
-  },
+  userBubble: {},
   modelBubble: { 
     backgroundColor: 'transparent',
     borderWidth: 0,
@@ -1596,30 +1413,30 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   messageText: {
-    fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22, letterSpacing: -0.2,
+    fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 18, letterSpacing: -0.1,
   },
   toolCard: {
-    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 6,
+    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 6, marginBottom: 4,
     borderWidth: 1,
   },
   toolHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
   },
-  toolLabel: { fontSize: 10, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  toolTarget: { fontSize: 11, fontFamily: 'JetBrainsMono_400Regular', flex: 1 },
+  toolLabel: { fontSize: 9, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.4 },
+  toolTarget: { fontSize: 10, fontFamily: 'JetBrainsMono_400Regular', flex: 1 },
   typingIndicator: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4,
   },
   typingDot: {
-    width: 6, height: 6, borderRadius: 3,
+    width: 4, height: 4, borderRadius: 2,
   },
-  typingText: { fontSize: 13, fontFamily: 'Inter_400Regular' },
-  thinkingText: { fontSize: 13, fontFamily: 'Inter_400Regular' },
+  typingText: { fontSize: 12, fontFamily: 'Inter_400Regular' },
+  thinkingText: { fontSize: 12, fontFamily: 'Inter_400Regular' },
   actionRow: {
     flexDirection: 'row', 
     alignItems: 'center', 
-    gap: 12, 
-    marginTop: 6,
+    gap: 10, 
+    marginTop: 4,
     paddingTop: 2,
   },
   actionBtn: {
@@ -1628,24 +1445,24 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionText: {
-    fontSize: 10, fontFamily: 'Inter_500Medium', textTransform: 'uppercase', letterSpacing: 0.3,
+    fontSize: 9, fontFamily: 'Inter_500Medium', textTransform: 'uppercase', letterSpacing: 0.2,
   },
   inputContainer: {
-    paddingHorizontal: 16, paddingVertical: 10,
+    paddingHorizontal: 12, paddingVertical: 8,
     borderTopWidth: 1,
     position: 'absolute', bottom: 0, left: 0, right: 0,
   },
   inputBox: {
     flexDirection: 'row', alignItems: 'flex-end',
-    borderRadius: 16, borderWidth: 1, paddingHorizontal: 14,
-    paddingVertical: 8, gap: 8,
+    borderRadius: 6, borderWidth: 1, paddingHorizontal: 10,
+    paddingVertical: 6, gap: 6,
   },
   input: {
-    flex: 1, fontSize: 14,
-    maxHeight: 100, paddingVertical: 6, lineHeight: 20,
+    flex: 1, fontSize: 13,
+    maxHeight: 100, paddingVertical: 4, lineHeight: 18,
   },
   sendBtn: {
-    width: 34, height: 34, borderRadius: 10,
+    width: 30, height: 30, borderRadius: 6,
     alignItems: 'center', justifyContent: 'center',
   },
   modalBackdrop: {
@@ -1654,57 +1471,57 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 0,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     maxHeight: '85%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 20,
   },
   modalDragHandle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
+    width: 32,
+    height: 3,
+    borderRadius: 1.5,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   modalHeader: {
     alignItems: 'center',
-    marginBottom: 18,
-    paddingHorizontal: 10,
+    marginBottom: 12,
+    paddingHorizontal: 8,
   },
   modalTitle: {
-    fontSize: 17,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   modalSubtitle: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
     textAlign: 'center',
     opacity: 0.6,
   },
   modalList: {
-    minHeight: 150,
+    minHeight: 120,
     maxHeight: 260,
   },
   projectOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     marginBottom: 4,
   },
   projectOptionLeft: {
@@ -1713,18 +1530,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   projectName: {
-    fontSize: 14,
+    fontSize: 13,
     flex: 1,
   },
   modalCancelBtn: {
-    height: 46,
-    borderRadius: 10,
+    height: 40,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: 8,
   },
   modalCancelText: {
-    fontSize: 14,
+    fontSize: 13,
   },
   reasoningContainer: {
     paddingLeft: 4,
@@ -1733,8 +1550,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   reasoningStep: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
     opacity: 0.8,
   },
   thinkingTextContainer: {
@@ -1742,50 +1559,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   thinkingChar: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter_500Medium',
   },
   toolRowContainer: {
-    marginBottom: 6,
+    marginBottom: 4,
     width: '100%',
   },
   toolHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
     borderWidth: 1,
   },
   toolHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     flex: 1,
-    marginRight: 8,
+    marginRight: 6,
   },
   toolLabelText: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
   },
   toolTargetText: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'JetBrainsMono_400Regular',
     flex: 1,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 4,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginHorizontal: 3,
   },
   terminalBox: {
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
-    padding: 10,
+    padding: 8,
     marginTop: 4,
-    minHeight: 100,
+    minHeight: 80,
   },
   terminalHeader: {
     flexDirection: 'row',
@@ -1793,20 +1610,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: '#21262D',
-    paddingBottom: 6,
-    marginBottom: 8,
+    paddingBottom: 4,
+    marginBottom: 6,
   },
   terminalDots: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 3,
   },
   terminalDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   terminalTitle: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'JetBrainsMono_400Regular',
     color: '#8B929A',
   },
@@ -1815,58 +1632,58 @@ const styles = StyleSheet.create({
   },
   terminalPromptLine: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   terminalPrompt: {
     color: '#3FB950',
     fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 12,
+    fontSize: 11,
   },
   terminalCommandText: {
     color: '#E6EDF3',
     fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 12,
+    fontSize: 11,
   },
   terminalRunningRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   terminalRunningText: {
     color: '#58A6FF',
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'JetBrainsMono_400Regular',
   },
   terminalOutputText: {
     color: '#C9D1D9',
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 16,
-    marginTop: 4,
+    lineHeight: 14,
+    marginTop: 2,
   },
   permissionCard: {
     backgroundColor: '#161B22',
     borderColor: '#30363D',
     borderWidth: 1,
     borderRadius: 6,
-    padding: 10,
-    marginTop: 8,
-    marginBottom: 4,
+    padding: 8,
+    marginTop: 6,
+    marginBottom: 2,
     alignSelf: 'stretch',
   },
   permissionText: {
     color: '#E6EDF3',
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_500Medium',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   permissionActionRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   permissionBtn: {
     flex: 1,
-    height: 32,
+    height: 28,
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1876,7 +1693,7 @@ const styles = StyleSheet.create({
   },
   approveBtnText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
   },
   rejectBtn: {
@@ -1886,206 +1703,214 @@ const styles = StyleSheet.create({
   },
   rejectBtnText: {
     color: '#F85149',
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
   },
   expandedDetailsCard: {
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
-    padding: 10,
+    padding: 8,
     marginTop: 4,
   },
   detailsParamText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'JetBrainsMono_400Regular',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   detailsResultText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'JetBrainsMono_400Regular',
-    padding: 6,
+    padding: 4,
     borderRadius: 4,
     borderWidth: 1,
-    marginTop: 4,
-    lineHeight: 14,
+    marginTop: 2,
+    lineHeight: 12,
   },
   modelPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    height: 36,
-    borderRadius: 18,
+    paddingHorizontal: 8,
+    height: 30,
+    borderRadius: 6,
     borderWidth: 1,
-    gap: 6,
+    gap: 4,
   },
   modelPillText: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
   },
   byokPromoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 12,
+    padding: 10,
+    borderRadius: 6,
     borderWidth: 1,
-    marginTop: 16,
+    marginTop: 12,
     width: '100%',
   },
   menuOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginBottom: 6,
   },
   menuOptionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
   menuOptionText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter_500Medium',
   },
   badge: {
     backgroundColor: '#8B5CF6',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   badgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Inter_700Bold',
   },
   historyItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    marginBottom: 8,
+    borderRadius: 6,
+    marginBottom: 6,
     overflow: 'hidden',
   },
   historyItemTitle: {
-    fontSize: 14,
+    fontSize: 13,
     paddingRight: 8,
   },
   historyDeleteBtn: {
-    padding: 12,
+    padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
     borderLeftWidth: 1,
     borderLeftColor: 'rgba(0,0,0,0.05)',
   },
   fileCardContainer: {
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    marginVertical: 6,
+    borderRadius: 6,
+    padding: 10,
+    marginVertical: 4,
     width: '100%',
   },
   fileCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   fileCardTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   fileCardLabel: {
-    fontSize: 13,
+    fontSize: 12,
   },
   fileCardPath: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'JetBrainsMono_400Regular',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   fileCardSummary: {
-    fontSize: 12,
-    marginBottom: 6,
+    fontSize: 11,
+    marginBottom: 4,
   },
   fileCardPreviewBox: {
     borderWidth: 1,
-    borderRadius: 6,
-    padding: 8,
-    marginTop: 4,
+    borderRadius: 4,
+    padding: 6,
+    marginTop: 2,
   },
   fileCardPreviewText: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 14,
+    lineHeight: 12,
   },
   previewLinkBtn: {
     borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginTop: 4,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 2,
   },
   previewLinkBtnText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Inter_600SemiBold',
   },
   fullPreviewCodeBox: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 6,
+    padding: 10,
   },
   fullPreviewCodeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 16,
+    lineHeight: 14,
   },
   popoverBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
   popoverCard: {
     position: 'absolute',
-    width: 220,
-    borderRadius: 12,
+    width: 200,
+    borderRadius: 6,
     borderWidth: 1,
-    paddingVertical: 6,
+    paddingVertical: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
     elevation: 8,
   },
   popoverItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 8,
   },
   popoverItemText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter_500Medium',
     flex: 1,
   },
   popoverBadge: {
     backgroundColor: '#8B5CF6',
-    borderRadius: 8,
-    paddingHorizontal: 5,
+    borderRadius: 6,
+    paddingHorizontal: 4,
     paddingVertical: 1,
   },
   popoverBadgeText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: 'Inter_700Bold',
   },
   popoverDivider: {
     height: 1,
-    marginHorizontal: 10,
+    marginHorizontal: 8,
+  },
+  popoverHeader: {
+    fontSize: 8,
+    fontFamily: 'Inter_700Bold',
+    paddingHorizontal: 10,
+    paddingTop: 6,
+    paddingBottom: 2,
+    letterSpacing: 0.5,
   },
 })
