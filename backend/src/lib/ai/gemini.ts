@@ -230,14 +230,15 @@ export async function* chatWithGemini(
     loopCount++
 
     try {
+      const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
       const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : GEMINI_API_KEY
       const response = await fetch(`${GEMINI_API_URL}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents,
-          tools: [{ functionDeclarations: TOOL_DECLARATIONS }],
-          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+          ...(hasContainer ? { tools: [{ functionDeclarations: TOOL_DECLARATIONS }] } : {}),
+          systemInstruction: { parts: [{ text: hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant. Advise the user to select a project if they want you to read, edit, or run commands on files.' }] },
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 8192,

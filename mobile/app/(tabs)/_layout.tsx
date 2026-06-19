@@ -248,15 +248,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="terminal"
-        options={{
-          title: 'Terminal',
-          tabBarIcon: ({ color, size }: any) => (
-            <Terminal size={size || 18} color={color} strokeWidth={1.8} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="ai"
         options={{
           title: 'AI',

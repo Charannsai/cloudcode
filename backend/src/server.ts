@@ -226,67 +226,6 @@ const startServer = async () => {
       return
     }
 
-    if (projectId === 'global') {
-      // Global Host Terminal logic
-      const { data: dbUser } = await supabaseAdmin
-        .from('users')
-        .select('github_id')
-        .eq('github_id', user.id)
-        .single()
-
-      if (!dbUser) {
-        ws.close(4003, 'Unauthorized user')
-        return
-      }
-
-      try {
-        const pty = await import('node-pty')
-        const shell = process.platform === 'win32' ? 'powershell.exe' : 'bash'
-        
-        // Spawn host shell
-        const ptyProcess = pty.spawn(shell, [], {
-          name: 'xterm-color',
-          cols: 80,
-          rows: 24,
-          cwd: process.cwd(),
-          env: process.env as Record<string, string>,
-        })
-
-        // Stream output
-        ptyProcess.onData((data) => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'output', data }))
-          }
-        })
-
-        // Handle input messages from client
-        ws.on('message', (msg) => {
-          try {
-            const parsed = JSON.parse(msg.toString())
-            if (parsed.type === 'input') {
-              ptyProcess.write(parsed.data)
-            } else if (parsed.type === 'resize') {
-              ptyProcess.resize(parsed.cols, parsed.rows)
-            }
-          } catch {
-            // Ignore malformed
-          }
-        })
-
-        ws.on('close', () => {
-          ptyProcess.kill()
-        })
-        ws.on('error', () => {
-          ptyProcess.kill()
-        })
-
-        ws.send(JSON.stringify({ type: 'ready', message: `Global Host Terminal ready — admin@cloudcode-host` }))
-      } catch (err) {
-        ws.close(4005, `Failed to spawn global terminal: ${(err as Error).message}`)
-      }
-      return
-    }
-
     const terminalId = url.searchParams.get('terminalId') || 'main'
     const cleanTerminalId = terminalId.replace(/[^a-zA-Z0-9_\-]/g, '')
     const sessionKey = `${projectId}-${cleanTerminalId}`
