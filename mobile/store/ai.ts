@@ -49,6 +49,7 @@ interface AIState {
     model?: string
   ) => Promise<void>
   clearChat: () => void
+  stopGeneration: () => void
 
   // Conversation History actions
   initConversations: () => Promise<void>
@@ -210,7 +211,11 @@ export const useAIStore = create<AIState>((set, get) => ({
         }
       })
     } catch (err) {
-      fullText += `\n⚠️ ${(err as Error).message}`
+      if ((err as Error).message === 'Generation stopped by user.') {
+        fullText += `\n\n■ Generation stopped by user.`
+      } else {
+        fullText += `\n⚠️ ${(err as Error).message}`
+      }
     }
 
     const modelMsg: ChatMessage = {
@@ -253,6 +258,7 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   clearChat: () => set({ messages: [], currentStreamText: '', currentToolCalls: [], currentThreadId: null }),
+  stopGeneration: () => api.ai.abort(),
 
   initConversations: async () => {
     const stored = await AsyncStorage.getItem('cloudcode_ai_conversations')
