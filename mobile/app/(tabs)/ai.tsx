@@ -7,7 +7,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
-  Mic, Volume2, VolumeX, FolderGit2, ChevronDown
+  Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp
 } from 'lucide-react-native'
 
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -119,7 +119,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
       <View style={[
         styles.bubble,
         isUser
-          ? [styles.userBubble, { backgroundColor: isDark ? '#1C2128' : '#0E1116' }]
+          ? [styles.userBubble, { backgroundColor: isDark ? '#21262D' : '#F0F2F5' }]
           : styles.modelBubble
       ]}>
         {/* Tool calls */}
@@ -128,7 +128,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
         ))}
 
         {isUser ? (
-          <Text style={[styles.messageText, { color: '#FFFFFF' }]}>
+          <Text style={[styles.messageText, { color: isDark ? '#FFFFFF' : '#1F2328' }]}>
             {message.text}
           </Text>
         ) : (
@@ -197,6 +197,7 @@ export default function AIScreen() {
 
   const [inputText, setInputText] = useState('')
   const [workspaceModalVisible, setWorkspaceModalVisible] = useState(false)
+  const [reasoningExpanded, setReasoningExpanded] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
   const router = useRouter()
@@ -295,25 +296,28 @@ export default function AIScreen() {
   const dot2 = useSharedValue(0)
   const dot3 = useSharedValue(0)
 
+  // Pulse animation for Thinking state
+  const thinkingOpacity = useSharedValue(1)
+
   useEffect(() => {
     const isThinking = isStreaming && !currentStreamText && currentToolCalls.length === 0
     if (isThinking) {
-      const animateDot = (dot: any, delay: number) => {
-        setTimeout(() => {
-          dot.value = withRepeat(withSequence(withTiming(-4, { duration: 350, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 350, easing: Easing.inOut(Easing.ease) })), -1, true)
-        }, delay)
-      }
-      animateDot(dot1, 0)
-      animateDot(dot2, 150)
-      animateDot(dot3, 300)
+      thinkingOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.4, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      )
     } else {
-      dot1.value = 0; dot2.value = 0; dot3.value = 0;
+      thinkingOpacity.value = 1
     }
   }, [isStreaming, currentStreamText, currentToolCalls.length])
 
-  const dotStyle1 = useAnimatedStyle(() => ({ transform: [{ translateY: dot1.value }] }))
-  const dotStyle2 = useAnimatedStyle(() => ({ transform: [{ translateY: dot2.value }] }))
-  const dotStyle3 = useAnimatedStyle(() => ({ transform: [{ translateY: dot3.value }] }))
+  const animatedThinkingStyle = useAnimatedStyle(() => ({
+    opacity: thinkingOpacity.value,
+  }))
 
   // Auto-select global by default if no project is active
   useEffect(() => {
@@ -533,11 +537,36 @@ export default function AIScreen() {
                   })()}
                 </Markdown>
               ) : currentToolCalls.length === 0 ? (
-                <View style={styles.typingIndicator}>
-                  <Text style={[styles.thinkingText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>
-                    Thinking
-                  </Text>
-                  <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
+                <View>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setReasoningExpanded(!reasoningExpanded)}
+                  >
+                    <Animated.View style={[styles.typingIndicator, animatedThinkingStyle]}>
+                      <Text style={[styles.thinkingText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>
+                        Thinking
+                      </Text>
+                      {reasoningExpanded ? (
+                        <ChevronUp size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
+                      ) : (
+                        <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
+                      )}
+                    </Animated.View>
+                  </TouchableOpacity>
+
+                  {reasoningExpanded && (
+                    <Animated.View entering={FadeInDown.duration(200)} style={styles.reasoningContainer}>
+                      <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
+                        • Analyzing workspace context...
+                      </Text>
+                      <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
+                        • Locating relevant codebase items...
+                      </Text>
+                      <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
+                        • Formulating response strategy...
+                      </Text>
+                    </Animated.View>
+                  )}
                 </View>
               ) : null}
             </View>
@@ -806,7 +835,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   userBubble: { 
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 16,
   },
   modelBubble: { 
     backgroundColor: 'transparent',
@@ -944,5 +973,16 @@ const styles = StyleSheet.create({
   },
   modalCancelText: {
     fontSize: 14,
+  },
+  reasoningContainer: {
+    paddingLeft: 4,
+    paddingTop: 4,
+    paddingBottom: 6,
+    gap: 4,
+  },
+  reasoningStep: {
+    fontSize: 12,
+    lineHeight: 16,
+    opacity: 0.8,
   },
 })
