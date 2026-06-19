@@ -1035,17 +1035,34 @@ export default function AIScreen() {
         statusBarTranslucent={true}
         onRequestClose={() => setModelModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={[styles.modalBackdrop, { backgroundColor: 'transparent' }]}>
+          <Animated.View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+                opacity: modelAnim 
+              }
+            ]} 
+          />
           <TouchableOpacity 
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
             onPress={() => setModelModalVisible(false)}
           />
-          <View style={[
+          <Animated.View style={[
             styles.modalContent, 
             { 
               backgroundColor: isDark ? '#151922' : '#FFFFFF', 
-              borderColor: isDark ? '#21262D' : '#E5E7EB' 
+              borderColor: isDark ? '#21262D' : '#E5E7EB',
+              transform: [
+                {
+                  translateY: modelAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [150, 0],
+                  })
+                }
+              ]
             }
           ]}>
             <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
