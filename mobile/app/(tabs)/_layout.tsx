@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent, Keyboard } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus, Terminal } from 'lucide-react-native'
+import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
 import { BlurView } from 'expo-blur'
 import Animated, { 
   useAnimatedStyle, 
@@ -10,21 +10,19 @@ import Animated, {
   withTiming,
   Easing,
   useSharedValue,
-  FadeIn,
-  FadeOut,
   interpolate,
 } from 'react-native-reanimated'
 import { useState, useCallback, memo } from 'react'
 import { useUIStore } from '@/store/ui'
 
-const TAB_BAR_HEIGHT = 64
+const TAB_BAR_HEIGHT = 54
 const SPRING_CONFIG = {
   damping: 24,
   stiffness: 200,
   mass: 0.8,
 }
 
-const TabItem = memo(({ col, isFocused, activeColor, inactiveColor, isDark, onPress }: any) => {
+const TabItem = memo(({ col, isFocused, activeColor, inactiveColor, isDark, onPress, onLayout }: any) => {
   const scale = useSharedValue(isFocused ? 1.05 : 1)
 
   useEffect(() => {
@@ -45,6 +43,7 @@ const TabItem = memo(({ col, isFocused, activeColor, inactiveColor, isDark, onPr
       activeOpacity={0.7}
       onPress={onPress}
       style={styles.tabItem}
+      onLayout={onLayout}
     >
       <Animated.View style={[styles.tabItemContent, animStyle]}>
         <Icon 
@@ -61,13 +60,6 @@ const TabItem = memo(({ col, isFocused, activeColor, inactiveColor, isDark, onPr
         ]}>
           {col.name}
         </Text>
-        {isFocused && (
-          <Animated.View
-            entering={FadeIn.duration(120)}
-            exiting={FadeOut.duration(80)}
-            style={[styles.activeDot, { backgroundColor: activeColor }]}
-          />
-        )}
       </Animated.View>
     </TouchableOpacity>
   )
@@ -98,6 +90,43 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     isVisible.value = withSpring(tabBarVisible ? 1 : 0, SPRING_CONFIG)
   }, [tabBarVisible])
 
+  const [tabWidths, setTabWidths] = useState<number[]>(new Array(5).fill(0))
+  const [tabPositions, setTabPositions] = useState<number[]>(new Array(5).fill(0))
+
+  const handleLayout = useCallback((index: number, event: LayoutChangeEvent) => {
+    const { x, width } = event.nativeEvent.layout
+    setTabWidths(prev => {
+      if (prev[index] === width) return prev
+      const next = [...prev]
+      next[index] = width
+      return next
+    })
+    setTabPositions(prev => {
+      if (prev[index] === x) return prev
+      const next = [...prev]
+      next[index] = x
+      return next
+    })
+  }, [])
+
+  const getColIndex = (stateIndex: number) => {
+    if (stateIndex < 2) return stateIndex
+    return stateIndex + 1 // skips index 2 (FAB)
+  }
+
+  const indicatorStyle = useAnimatedStyle(() => {
+    const colIndex = getColIndex(state.index)
+    const width = tabWidths[colIndex] || 0
+    const x = tabPositions[colIndex] || 0
+    
+    return {
+      width: withTiming(width, { duration: 120, easing: Easing.bezier(0.16, 1, 0.3, 1) }),
+      transform: [
+        { translateX: withTiming(x, { duration: 120, easing: Easing.bezier(0.16, 1, 0.3, 1) }) },
+      ],
+    }
+  }, [state.index, tabWidths, tabPositions])
+
   const wrapperStyle = useAnimatedStyle(() => {
     return {
       opacity: isVisible.value,
@@ -116,6 +145,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     { type: 'route', routeIndex: 3, key: 'settings', name: 'System', icon: SlidersHorizontal }
   ]
 
+  const indicatorBg = isDark 
+    ? 'rgba(210, 168, 255, 0.08)' 
+    : 'rgba(130, 80, 223, 0.06)'
+  const indicatorBorder = isDark
+    ? 'rgba(210, 168, 255, 0.15)'
+    : 'rgba(130, 80, 223, 0.1)'
+
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
       <BlurView
@@ -129,11 +165,24 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           }
         ]}
       >
-        {columns.map((col) => {
+        <Animated.View 
+          style={[
+            styles.indicator, 
+            { 
+              backgroundColor: indicatorBg,
+              borderColor: indicatorBorder,
+              borderWidth: 1,
+            },
+            indicatorStyle
+          ]} 
+        />
+
+        {columns.map((col, index) => {
           if (col.type === 'fab') {
             return (
               <TouchableOpacity
                 key="fab"
+                onLayout={(e) => handleLayout(index, e)}
                 style={[
                   styles.fabButton,
                   { backgroundColor: isDark ? '#FFFFFF' : '#0E1116' }
@@ -175,6 +224,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               inactiveColor={inactiveColor}
               isDark={isDark}
               onPress={onPress}
+              onLayout={(e: any) => handleLayout(index, e)}
             />
           )
         })}
@@ -243,7 +293,7 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tabBarWrapper: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 24,
     left: 20,
     right: 20,
     alignItems: 'center',
@@ -253,17 +303,17 @@ const styles = StyleSheet.create({
   tabBarContainer: {
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
-    borderRadius: TAB_BAR_HEIGHT / 2,
+    borderRadius: 8,
     paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
     width: '100%',
   },
   tabItem: {
@@ -284,23 +334,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     letterSpacing: -0.1,
   },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 3,
-    bottom: 1,
+  indicator: {
+    position: 'absolute',
+    height: 42,
+    top: 5,
+    borderRadius: 6,
+    zIndex: -1,
   },
   fabButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
 })
