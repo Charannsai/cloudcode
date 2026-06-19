@@ -7,6 +7,7 @@ import { useTerminal } from '@/hooks/useTerminal'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useRouter } from 'expo-router'
 import { useAIStore } from '@/store/ai'
+import { useTerminalStore } from '@/store/terminal'
 import { api } from '@/lib/api'
 import { Terminal as TerminalIcon, StopCircle, Trash2, ArrowUp, ArrowDown, Sparkles, Plus, X } from 'lucide-react-native'
 
@@ -45,16 +46,23 @@ function TerminalSession({
   onDiagnose,
 }: TerminalSessionProps) {
   const { colors, isDark } = useAppTheme()
-  const [output, setOutput] = useState('')
   const scrollRef = useRef<ScrollView>(null)
+
+  // Read output from the persistent store
+  const output = useTerminalStore((s) => s.projects[projectId]?.outputs[terminalId] || '')
+  const { appendOutput, clearOutput, setOutput: setStoreOutput } = useTerminalStore()
 
   // Use the useTerminal hook for this specific terminalId
   const { connected, error, sendInput } = useTerminal({
     projectId,
     terminalId,
     onOutput: useCallback((data: string, shouldClear: boolean) => {
-      setOutput(prev => shouldClear ? data : prev + data)
-    }, [])
+      if (shouldClear) {
+        setStoreOutput(projectId, terminalId, data)
+      } else {
+        appendOutput(projectId, terminalId, data)
+      }
+    }, [projectId, terminalId, appendOutput, setStoreOutput])
   })
 
   // Register methods with parent
@@ -63,8 +71,8 @@ function TerminalSession({
   }, [terminalId, sendInput, registerSendInput])
 
   useEffect(() => {
-    registerClear(terminalId, () => setOutput(''))
-  }, [terminalId, registerClear])
+    registerClear(terminalId, () => clearOutput(projectId, terminalId))
+  }, [terminalId, projectId, registerClear, clearOutput])
 
   // Automatically scroll to end on output change
   useEffect(() => {
@@ -83,6 +91,9 @@ function TerminalSession({
     })
   }, [terminalId, lines, onDiagnose, registerDiagnose])
 
+  // Show stored output immediately (even before WS connects) when reconnecting
+  const hasStoredOutput = output.length > 0
+
   return (
     <View style={{ flex: 1, display: visible ? 'flex' : 'none' }}>
       <ScrollView
@@ -93,13 +104,13 @@ function TerminalSession({
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
       >
-        {!connected && !output && (
+        {!connected && !hasStoredOutput && (
           <View style={styles.centerLoading}>
             <ActivityIndicator color={colors.textSecondary} size="small" />
             <Text style={[styles.connectingText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>Connecting...</Text>
           </View>
         )}
-        {output ? (
+        {hasStoredOutput ? (
           <View style={{ paddingBottom: 16 }}>
             {lines.map((line, i) => (
               <Text key={i} style={[styles.output, { color: isDark ? '#E6EDF3' : '#1F2328', fontFamily: 'JetBrainsMono_400Regular' }]} selectable>
@@ -107,6 +118,12 @@ function TerminalSession({
                 {connected && i === lines.length - 1 && <Text style={{ color: '#3FB950' }}>█</Text>}
               </Text>
             ))}
+            {!connected && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, opacity: 0.5 }}>
+                <ActivityIndicator color={colors.textSecondary} size="small" />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>Reconnecting...</Text>
+              </View>
+            )}
           </View>
         ) : connected ? (
           <Text style={[styles.placeholderText, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
@@ -121,8 +138,13 @@ function TerminalSession({
 export default function TerminalTab({ projectId }: Props) {
   const router = useRouter()
   const { setPendingPrompt, setActiveProject } = useAIStore()
-  const [terminals, setTerminals] = useState<string[]>(['main'])
-  const [activeTerminalId, setActiveTerminalId] = useState('main')
+
+  // Read terminal state from the persistent store
+  const terminalStore = useTerminalStore()
+  const projectState = terminalStore.getProjectState(projectId)
+  const terminals = projectState.terminals
+  const activeTerminalId = projectState.activeTerminalId
+  const history = projectState.commandHistory
 
   const sendInputRefs = useRef<Record<string, (text: string) => void>>({})
   const clearRefs = useRef<Record<string, () => void>>({})
@@ -142,7 +164,6 @@ export default function TerminalTab({ projectId }: Props) {
 
   const { colors, isDark } = useAppTheme()
   const [inputText, setInputText] = useState('')
-  const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isRunning, setIsRunning] = useState(false)
 
@@ -153,11 +174,11 @@ export default function TerminalTab({ projectId }: Props) {
       sendInput(inputText + '\n')
     }
 
-    setHistory(prev => [...prev, inputText.trim()])
+    terminalStore.addToHistory(projectId, inputText)
     setHistoryIndex(-1)
     setIsRunning(true)
     setInputText('')
-  }, [inputText, activeTerminalId])
+  }, [inputText, activeTerminalId, projectId, terminalStore])
 
   const runQuick = useCallback((cmd: string) => {
     const sendInput = sendInputRefs.current[activeTerminalId]
@@ -178,20 +199,13 @@ export default function TerminalTab({ projectId }: Props) {
 
   const addNewTerminal = () => {
     const newId = `term-${Date.now()}`
-    setTerminals(prev => [...prev, newId])
-    setActiveTerminalId(newId)
+    terminalStore.addTerminal(projectId, newId)
   }
 
   const closeTerminal = (termId: string) => {
     if (terminals.length <= 1) return
-    const index = terminals.indexOf(termId)
-    const newTerminals = terminals.filter(t => t !== termId)
-    setTerminals(newTerminals)
-    
-    if (activeTerminalId === termId) {
-      const newActiveIndex = Math.max(0, index - 1)
-      setActiveTerminalId(newTerminals[newActiveIndex])
-    }
+
+    terminalStore.removeTerminal(projectId, termId)
 
     delete sendInputRefs.current[termId]
     delete clearRefs.current[termId]
@@ -260,7 +274,7 @@ export default function TerminalTab({ projectId }: Props) {
             return (
               <TouchableOpacity
                 key={termId}
-                onPress={() => setActiveTerminalId(termId)}
+                onPress={() => terminalStore.setActiveTerminal(projectId, termId)}
                 style={[
                   styles.shellTab,
                   {
