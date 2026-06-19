@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { 
   View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, 
-  TextInput, ActivityIndicator, Alert, Modal, RefreshControl
+  TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler
 } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
@@ -11,12 +11,14 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import { 
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
-  CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft
+  CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
+  Eye, EyeOff, Sparkles
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useUIStore } from '@/store/ui'
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuthStore()
@@ -25,6 +27,48 @@ export default function SettingsScreen() {
 
   // Subscreen navigation state: 'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys'
   const [currentSubScreen, setCurrentSubScreen] = useState<'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys'>('main')
+
+  const { setTabBarVisible } = useUIStore()
+  const [isFocused, setIsFocused] = useState(false)
+
+  // Visibility toggles for BYOK keys
+  const [showGeminiKey, setShowGeminiKey] = useState(false)
+  const [showOpenaiKey, setShowOpenaiKey] = useState(false)
+  const [showAnthropicKey, setShowAnthropicKey] = useState(false)
+
+  // Track settings tab screen focus state
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true)
+      return () => {
+        setIsFocused(false)
+        setTabBarVisible(true)
+      }
+    }, [setTabBarVisible])
+  )
+
+  // Dynamically set tab bar visibility based on current subscreen
+  useEffect(() => {
+    if (isFocused) {
+      setTabBarVisible(currentSubScreen === 'main')
+    }
+  }, [currentSubScreen, isFocused, setTabBarVisible])
+
+  // Intercept Android hardware back press inside subscreens
+  useEffect(() => {
+    const onBackPress = () => {
+      if (currentSubScreen !== 'main') {
+        setCurrentSubScreen('main')
+        return true // Intercept & block exit to dashboard
+      }
+      return false
+    }
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress)
+    return () => {
+      subscription.remove()
+    }
+  }, [currentSubScreen])
   const [billingData, setBillingData] = useState<any>(null)
   const [loadingBilling, setLoadingBilling] = useState(true)
   const [upgradeModal, setUpgradeModal] = useState<{ visible: boolean; tierName: 'pro' | 'advanced' | null }>({
@@ -741,25 +785,30 @@ export default function SettingsScreen() {
 
   const renderAiKeysView = () => {
     return (
-      <View style={{ gap: 20 }}>
-        <View style={styles.subHeader}>
-          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={styles.backBtn}>
-            <ArrowLeft size={18} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>AI Providers</Text>
-        </View>
+      <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
+        {/* Back navigation */}
+        <TouchableOpacity 
+          onPress={() => setCurrentSubScreen('main')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
+        >
+          <ArrowLeft size={16} color={colors.primary} />
+          <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Settings</Text>
+        </TouchableOpacity>
 
-        {/* Toggle Provider Mode */}
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
-                <Zap size={16} color={colors.text} strokeWidth={1.5} />
+        {/* Title */}
+        <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, marginBottom: 20 }}>AI Providers</Text>
+
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 16, marginHorizontal: 0 }]}>
+          {/* Toggle BYOK */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, paddingRight: 8 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(14, 17, 22, 0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                <Zap size={18} color={colors.text} strokeWidth={1.5} />
               </View>
-              <View>
-                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Bring Your Own Key (BYOK)</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>
-                  Use your own custom API keys instead of hosted defaults.
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Bring Your Own Key (BYOK)</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+                  Route AI requests directly to your own custom API keys instead of hosted defaults.
                 </Text>
               </View>
             </View>
@@ -770,71 +819,137 @@ export default function SettingsScreen() {
               thumbColor={colors.background}
             />
           </View>
-        </View>
 
-        {byokMode && (
-          <View style={{ gap: 14 }}>
-            <View style={{ gap: 5 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Gemini API Key</Text>
-              <TextInput
-                value={customGeminiKey}
-                onChangeText={setCustomGeminiKey}
-                secureTextEntry
-                placeholder="Enter Gemini API Key..."
-                placeholderTextColor={colors.textSecondary + '70'}
-                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-                autoCapitalize="none"
-                autoComplete="off"
-                autoCorrect={false}
-              />
-            </View>
+          {byokMode && (
+            <>
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
 
-            <View style={{ gap: 5 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>OpenAI API Key (Optional)</Text>
-              <TextInput
-                value={customOpenaiKey}
-                onChangeText={setCustomOpenaiKey}
-                secureTextEntry
-                placeholder="Enter OpenAI API Key..."
-                placeholderTextColor={colors.textSecondary + '70'}
-                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-                autoCapitalize="none"
-                autoComplete="off"
-                autoCorrect={false}
-              />
-            </View>
+              <View style={{ gap: 16 }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>API KEYS CONFIGURATION</Text>
+                
+                {/* Gemini API Key */}
+                <View style={{ gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Sparkles size={14} color="#8B5CF6" />
+                    <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Gemini API Key</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>*Required</Text>
+                  </View>
+                  <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                    <TextInput
+                      value={customGeminiKey}
+                      onChangeText={setCustomGeminiKey}
+                      secureTextEntry={!showGeminiKey}
+                      placeholder="Enter Gemini API Key..."
+                      placeholderTextColor={colors.textSecondary + '70'}
+                      style={[styles.textInput, { color: colors.text }]}
+                      autoCapitalize="none"
+                      autoComplete="off"
+                      autoCorrect={false}
+                    />
+                    {customGeminiKey.length > 0 && (
+                      <TouchableOpacity 
+                        onPress={() => setShowGeminiKey(!showGeminiKey)}
+                        style={styles.eyeBtn}
+                        activeOpacity={0.7}
+                      >
+                        {showGeminiKey ? (
+                          <EyeOff size={16} color={colors.textSecondary} />
+                        ) : (
+                          <Eye size={16} color={colors.textSecondary} />
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
 
-            <View style={{ gap: 5 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Anthropic API Key (Optional)</Text>
-              <TextInput
-                value={customAnthropicKey}
-                onChangeText={setCustomAnthropicKey}
-                secureTextEntry
-                placeholder="Enter Anthropic API Key..."
-                placeholderTextColor={colors.textSecondary + '70'}
-                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-                autoCapitalize="none"
-                autoComplete="off"
-                autoCorrect={false}
-              />
-            </View>
-          </View>
-        )}
+                {/* OpenAI API Key */}
+                <View style={{ gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Cpu size={14} color="#10B981" />
+                    <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>OpenAI API Key</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
+                  </View>
+                  <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                    <TextInput
+                      value={customOpenaiKey}
+                      onChangeText={setCustomOpenaiKey}
+                      secureTextEntry={!showOpenaiKey}
+                      placeholder="Enter OpenAI API Key..."
+                      placeholderTextColor={colors.textSecondary + '70'}
+                      style={[styles.textInput, { color: colors.text }]}
+                      autoCapitalize="none"
+                      autoComplete="off"
+                      autoCorrect={false}
+                    />
+                    {customOpenaiKey.length > 0 && (
+                      <TouchableOpacity 
+                        onPress={() => setShowOpenaiKey(!showOpenaiKey)}
+                        style={styles.eyeBtn}
+                        activeOpacity={0.7}
+                      >
+                        {showOpenaiKey ? (
+                          <EyeOff size={16} color={colors.textSecondary} />
+                        ) : (
+                          <Eye size={16} color={colors.textSecondary} />
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={[styles.primaryBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0E1116', marginTop: 12 }]}
-          onPress={handleSaveAiKeys}
-          disabled={savingAiKeys}
-        >
-          {savingAiKeys ? (
-            <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
-          ) : (
-            <Text style={[styles.primaryBtnText, { color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
-              Save AI Key Settings
-            </Text>
+                {/* Anthropic API Key */}
+                <View style={{ gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Shield size={14} color="#D97706" />
+                    <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Anthropic API Key</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
+                  </View>
+                  <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                    <TextInput
+                      value={customAnthropicKey}
+                      onChangeText={setCustomAnthropicKey}
+                      secureTextEntry={!showAnthropicKey}
+                      placeholder="Enter Anthropic API Key..."
+                      placeholderTextColor={colors.textSecondary + '70'}
+                      style={[styles.textInput, { color: colors.text }]}
+                      autoCapitalize="none"
+                      autoComplete="off"
+                      autoCorrect={false}
+                    />
+                    {customAnthropicKey.length > 0 && (
+                      <TouchableOpacity 
+                        onPress={() => setShowAnthropicKey(!showAnthropicKey)}
+                        style={styles.eyeBtn}
+                        activeOpacity={0.7}
+                      >
+                        {showAnthropicKey ? (
+                          <EyeOff size={16} color={colors.textSecondary} />
+                        ) : (
+                          <Eye size={16} color={colors.textSecondary} />
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </>
           )}
-        </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
+            onPress={handleSaveAiKeys}
+            disabled={savingAiKeys}
+          >
+            {savingAiKeys ? (
+              <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
+            ) : (
+              <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                Save AI Key Settings
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     )
   }
@@ -1407,5 +1522,25 @@ const styles = StyleSheet.create({
   },
   dependencyCard: {
     marginHorizontal: 24,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 40,
+    marginBottom: 4,
+  },
+  textInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    paddingVertical: 0,
+  },
+  eyeBtn: {
+    padding: 8,
+    marginRight: -4,
   },
 })
