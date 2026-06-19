@@ -107,7 +107,8 @@ export async function execInContainer(
   containerId: string,
   command: string[],
   onData: (data: string) => void,
-  user?: string
+  user?: string,
+  env?: string[]
 ): Promise<number> {
   const container = docker.getContainer(containerId)
   const exec = await container.exec({
@@ -115,7 +116,8 @@ export async function execInContainer(
     AttachStdout: true,
     AttachStderr: true,
     Tty: false,
-    ...(user ? { User: user } : {})
+    ...(user ? { User: user } : {}),
+    ...(env ? { Env: env } : {}),
   })
 
   return new Promise((resolve, reject) => {
