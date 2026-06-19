@@ -21,7 +21,7 @@ export default function BillingSuccessScreen() {
   useEffect(() => {
     let attempt = 0
     const maxAttempts = 4
-    let timeoutId: NodeJS.Timeout
+    let timeoutId: any
 
     async function verifyPlan() {
       try {
