@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Terminal, Shield, Check, Cpu, ChevronDown, ChevronUp } from 'lucide-react-native'
+import { Terminal, Shield, Check, Cpu, ChevronDown, ChevronUp, Info } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { BlurView } from 'expo-blur'
 
@@ -81,7 +81,16 @@ export default function OnboardingWizardScreen() {
               </Text>
             </View>
 
-            <View style={styles.promptBox}>
+            <View style={[
+              styles.promptBox,
+              {
+                backgroundColor: isDark ? 'rgba(167, 139, 250, 0.06)' : 'rgba(167, 139, 250, 0.04)',
+                borderColor: isDark ? 'rgba(167, 139, 250, 0.2)' : 'rgba(167, 139, 250, 0.12)',
+              }
+            ]}>
+              <View style={[styles.promptIconContainer, { backgroundColor: isDark ? 'rgba(167, 139, 250, 0.15)' : 'rgba(167, 139, 250, 0.08)' }]}>
+                <Info size={16} color={isDark ? '#C084FC' : '#9333EA'} />
+              </View>
               <Text style={[styles.promptText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
                 We are installing essential development runtimes (Node.js, Git, GCC, Python) as a pre-requisite. Would you like to proceed?
               </Text>
@@ -231,15 +240,25 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   promptBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 16,
+    borderWidth: 1,
     marginBottom: 20,
+    gap: 12,
+  },
+  promptIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   promptText: {
-    fontSize: 13,
+    flex: 1,
+    fontSize: 12.5,
     lineHeight: 18,
-    textAlign: 'center',
     opacity: 0.9,
   },
   loadingContainer: {
