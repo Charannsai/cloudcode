@@ -72,8 +72,8 @@ function sanitizePath(projectId: string, filePath: string): string | null {
   const workspacePath = getWorkspacePath(projectId)
   const resolved = path.resolve(workspacePath, filePath)
   
-  // Prevent path traversal attacks
-  if (!resolved.startsWith(workspacePath)) return null
+  // SECURITY: Enforce directory separator boundary to prevent prefix-based traversal
+  if (resolved !== workspacePath && !resolved.startsWith(workspacePath + path.sep)) return null
   
   return resolved
 }

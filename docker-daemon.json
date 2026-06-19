@@ -1,0 +1,21 @@
+{
+  "icc": false,
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "default-ulimits": {
+    "nproc": {
+      "Name": "nproc",
+      "Hard": 1024,
+      "Soft": 512
+    },
+    "nofile": {
+      "Name": "nofile",
+      "Hard": 65536,
+      "Soft": 32768
+    }
+  }
+}
