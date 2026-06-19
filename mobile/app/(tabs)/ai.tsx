@@ -1194,9 +1194,9 @@ export default function AIScreen() {
               style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
               onPress={() => setModelModalVisible(false)}
             >
-              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+            <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Cancel</Text>
+          </TouchableOpacity>
+        </Animated.View>
         </View>
       </Modal>
 
@@ -1413,17 +1413,34 @@ export default function AIScreen() {
         statusBarTranslucent={true}
         onRequestClose={() => setHistoryModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={[styles.modalBackdrop, { backgroundColor: 'transparent' }]}>
+          <Animated.View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+                opacity: historyAnim 
+              }
+            ]} 
+          />
           <TouchableOpacity 
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
             onPress={() => setHistoryModalVisible(false)}
           />
-          <View style={[
+          <Animated.View style={[
             styles.modalContent, 
             { 
               backgroundColor: isDark ? '#151922' : '#FFFFFF', 
-              borderColor: isDark ? '#21262D' : '#E5E7EB' 
+              borderColor: isDark ? '#21262D' : '#E5E7EB',
+              transform: [
+                {
+                  translateY: historyAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [150, 0],
+                  })
+                }
+              ]
             }
           ]}>
             <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
