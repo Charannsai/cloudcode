@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
 import { 
   View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, 
-  TextInput, ActivityIndicator, Alert, Linking 
+  TextInput, ActivityIndicator, Alert, Modal
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
+import * as Linking from 'expo-linking'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { 
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
-  CreditCard, ArrowUpRight
+  CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
@@ -20,6 +21,15 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuthStore()
   const { colors, toggleTheme, isDark } = useAppTheme()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
+
+  // Subscreen navigation state: 'main' or 'billing'
+  const [currentSubScreen, setCurrentSubScreen] = useState<'main' | 'billing'>('main')
+  const [billingData, setBillingData] = useState<any>(null)
+  const [loadingBilling, setLoadingBilling] = useState(true)
+  const [upgradeModal, setUpgradeModal] = useState<{ visible: boolean; tierName: 'pro' | 'advanced' | null }>({
+    visible: false,
+    tierName: null,
+  })
 
   // Custom Modal Alert State
   const [modalConfig, setModalConfig] = useState<{
@@ -80,6 +90,18 @@ export default function SettingsScreen() {
   const [loadingSsh, setLoadingSsh] = useState(true)
   const [copied, setCopied] = useState(false)
 
+  async function fetchBillingStatus() {
+    setLoadingBilling(true)
+    try {
+      const data = await api.billing.status()
+      setBillingData(data)
+    } catch (err) {
+      console.warn('Failed to load billing status:', err)
+    } finally {
+      setLoadingBilling(false)
+    }
+  }
+
   useEffect(() => {
     async function loadData() {
       // 1. Load Git author info from cache
@@ -99,6 +121,9 @@ export default function SettingsScreen() {
       } finally {
         setLoadingSsh(false)
       }
+
+      // 3. Load Billing status
+      fetchBillingStatus()
     }
     loadData()
   }, [])
@@ -166,6 +191,291 @@ export default function SettingsScreen() {
 
   const ThemeIcon = isDark ? Moon : Sun
 
+  function renderFeatureItem(text: string) {
+    return (
+      <View key={text} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Check size={14} color="#22c55e" strokeWidth={2.5} />
+        <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_400Regular' }}>{text}</Text>
+      </View>
+    )
+  }
+
+  function renderUsageRow(
+    label: string, 
+    used: string | number, 
+    limit: string | number, 
+    percent: number, 
+    Icon: any, 
+    color: string
+  ) {
+    const displayPercent = isNaN(percent) ? 0 : Math.min(percent, 100)
+    return (
+      <View key={label} style={{ gap: 5 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon size={13} color={color} strokeWidth={2} />
+            <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>{label}</Text>
+          </View>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>
+            {used} / {limit}
+          </Text>
+        </View>
+        <View style={{ height: 5, backgroundColor: isDark ? '#1C2128' : '#E5E7EB', borderRadius: 2.5, overflow: 'hidden' }}>
+          <View style={{ height: '100%', width: `${displayPercent}%`, backgroundColor: color, borderRadius: 2.5 }} />
+        </View>
+      </View>
+    )
+  }
+
+  function renderUpgradeModal() {
+    return (
+      <Modal
+        visible={upgradeModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setUpgradeModal({ visible: false, tierName: null })}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: isDark ? '#0F141C' : '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 20, width: '100%', maxWidth: 360, gap: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 18 }}>
+                {upgradeModal.tierName === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Advanced'}
+              </Text>
+              <TouchableOpacity onPress={() => setUpgradeModal({ visible: false, tierName: null })}>
+                <Text style={{ color: colors.textSecondary, fontSize: 18 }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ backgroundColor: isDark ? '#161B22' : '#F9FAFB', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24 }}>
+                {upgradeModal.tierName === 'pro' ? '$25.00' : '$99.00'}
+                <Text style={{ fontSize: 14, fontWeight: 'normal', color: colors.textSecondary }}>/month</Text>
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Cancel anytime · Instant provisioning</Text>
+            </View>
+            <View style={{ gap: 10 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>WHAT'S INCLUDED:</Text>
+              {upgradeModal.tierName === 'pro' ? (
+                <>
+                  {renderFeatureItem('4 vCPUs (Blazing fast builds)')}
+                  {renderFeatureItem('8 GB RAM (No OOM compilation)')}
+                  {renderFeatureItem('50 GB Fast SSD Storage')}
+                  {renderFeatureItem('1 Hour Idle Container Timeout')}
+                  {renderFeatureItem('1 Workspace pinned as Always-On')}
+                  {renderFeatureItem('Claude Latest, ChatGPT & Gemini Latest')}
+                  {renderFeatureItem('5 Million Monthly AI Tokens')}
+                </>
+              ) : (
+                <>
+                  {renderFeatureItem('8 to 16 vCPUs (Max performance)')}
+                  {renderFeatureItem('32 GB RAM (Docker-in-Docker / ML)')}
+                  {renderFeatureItem('200 GB Fast SSD Storage')}
+                  {renderFeatureItem('Unlimited Container Timeout')}
+                  {renderFeatureItem('5 Workspaces pinned as Always-On')}
+                  {renderFeatureItem('Unlimited AI Premium Access')}
+                  {renderFeatureItem('Priority Low-Latency Model API')}
+                </>
+              )}
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={async () => {
+                const tierName = upgradeModal.tierName
+                setUpgradeModal({ visible: false, tierName: null })
+                if (!tierName) return
+                try {
+                  const returnUrl = Linking.createURL('/billing/success')
+                  const planType = tierName === 'pro' ? 'pro_monthly' : 'advanced_monthly'
+                  const { checkoutUrl } = await api.billing.checkout(planType, returnUrl)
+                  if (checkoutUrl) {
+                    await WebBrowser.openBrowserAsync(checkoutUrl)
+                  }
+                } catch (err: any) {
+                  showModal(
+                    'Upgrade Error',
+                    err.message || 'Failed to initialize payment session.',
+                    'error'
+                  )
+                }
+              }}
+              style={{ backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}
+            >
+              <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_700Bold', fontSize: 14 }}>Subscribe Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    )
+  }
+
+  function renderBillingView() {
+    if (loadingBilling) {
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 300, paddingTop: 100 }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ color: colors.textSecondary, marginTop: 12, fontFamily: 'Inter_500Medium' }}>Loading billing details...</Text>
+        </View>
+      )
+    }
+
+    const usage = billingData?.usage || {
+      workspaces: { used: 0, limit: 3 },
+      cpu: { usedHours: 0, limitHours: 50 },
+      ram: { usedMB: 0, limitMB: 512 },
+      disk: { usedGB: 0, limitGB: 5 },
+      aiTokens: { used: 0, limit: 50000 },
+      networkSpeed: { currentMbps: 15, limitMbps: 15 }
+    }
+
+    const currentTier = billingData?.tier || { name: 'free', displayName: 'Free Plan', price: { monthly: 0, yearly: 0 } }
+    const subscription = billingData?.subscription || { id: null, status: 'none' }
+
+    return (
+      <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
+        <TouchableOpacity 
+          onPress={() => setCurrentSubScreen('main')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
+        >
+          <ArrowLeft size={16} color={colors.primary} />
+          <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Settings</Text>
+        </TouchableOpacity>
+        <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, marginBottom: 20 }}>Billing & Usage</Text>
+        <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 18, marginBottom: 24, gap: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: currentTier.name === 'free' ? 'rgba(107, 114, 128, 0.1)' : 'rgba(59, 130, 246, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                <Zap size={20} color={currentTier.name === 'free' ? '#9CA3AF' : '#3B82F6'} strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }}>{currentTier.displayName}</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
+                  {currentTier.name === 'free' ? '$0 / month' : currentTier.name === 'pro' ? '$25 / month' : '$99 / month'}
+                </Text>
+              </View>
+            </View>
+            <View style={{ backgroundColor: currentTier.name === 'free' ? 'rgba(107, 114, 128, 0.12)' : 'rgba(59, 130, 246, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: currentTier.name === 'free' ? '#9CA3AF40' : '#3B82F640' }}>
+              <Text style={{ color: currentTier.name === 'free' ? '#9CA3AF' : '#3B82F6', fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>
+                {subscription.status === 'active' ? 'ACTIVE' : 'FREE TIER'}
+              </Text>
+            </View>
+          </View>
+          {currentTier.name === 'free' && (
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+              <TouchableOpacity 
+                activeOpacity={0.8}
+                onPress={() => setUpgradeModal({ visible: true, tierName: 'pro' })}
+                style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Pro</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                activeOpacity={0.8}
+                onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
+                style={{ flex: 1, borderWidth: 1, borderColor: colors.border, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Adv</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {currentTier.name === 'pro' && (
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+              <TouchableOpacity 
+                activeOpacity={0.8}
+                onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
+                style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Advanced</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+        <View style={{ marginBottom: 28 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <BarChart2 size={16} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>CURRENT MONTH USAGE</Text>
+          </View>
+          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 16, gap: 16 }}>
+            {renderUsageRow('Compute (CPU Hours)', usage.cpu.usedHours, usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`, (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100, Cpu, '#8B5CF6')}
+            {renderUsageRow('Active RAM', usage.ram.usedMB + ' MB', usage.ram.limitMB + ' MB', (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100, HardDrive, '#3B82F6')}
+            {renderUsageRow('Disk Space', usage.disk.usedGB + ' GB', usage.disk.limitGB + ' GB', (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100, HardDrive, '#F59E0B')}
+            {renderUsageRow('Workspaces Created', usage.workspaces.used, usage.workspaces.limit, (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100, Server, '#EF4444')}
+            {renderUsageRow('AI Tokens Consumed', usage.aiTokens.used.toLocaleString(), usage.aiTokens.limit.toLocaleString(), (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100, Zap, '#10B981')}
+          </View>
+        </View>
+        {billingData?.usageHistory && billingData.usageHistory.length > 0 && (
+          <View style={{ marginBottom: 28 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <TrendingUp size={16} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>USAGE HISTORY</Text>
+            </View>
+            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
+              {billingData.usageHistory.map((item: any, idx: number, arr: any[]) => (
+                <View key={item.month} style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>{item.month}</Text>
+                  <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
+                      {item.cpuHours} hrs CPU · {item.tokens.toLocaleString()} tokens
+                    </Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_400Regular' }}>
+                      {item.workspaces} workspace{item.workspaces > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+        {billingData?.billingHistory && billingData.billingHistory.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <History size={16} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>BILLING HISTORY</Text>
+            </View>
+            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
+              {billingData.billingHistory.map((item: any, idx: number, arr: any[]) => (
+                <View key={item.invoiceId} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                  <View style={{ gap: 2 }}>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>{item.plan}</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{item.date} · {item.invoiceId}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_400Regular', fontSize: 13 }}>{item.amount}</Text>
+                    <View style={{ backgroundColor: '#22c55e15', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                      <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PAID</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+    )
+  }
+
+  if (currentSubScreen === 'billing') {
+    return (
+      <ScrollView 
+        style={[styles.container, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {renderBillingView()}
+        {renderUpgradeModal()}
+        <ConfirmModal
+          visible={modalConfig.visible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          type={modalConfig.type}
+          singleButton={modalConfig.singleButton}
+          onConfirm={modalConfig.onConfirm}
+          onCancel={modalConfig.onCancel}
+        />
+      </ScrollView>
+    )
+  }
+
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]} 
@@ -224,110 +534,37 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Billing & Plan */}
+      {/* Billing & Subscription */}
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>BILLING & PLAN</Text>
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 14 }]}>
-          
-          {/* Current Plan Badge */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? 'rgba(63, 185, 80, 0.1)' : '#e6ffec', alignItems: 'center', justifyContent: 'center' }}>
-                <Zap size={18} color="#3FB950" strokeWidth={2} />
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>BILLING & SUBSCRIPTION</Text>
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+          <TouchableOpacity 
+            activeOpacity={0.7} 
+            onPress={() => setCurrentSubScreen('billing')}
+            style={[styles.row]}
+          >
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
+                <CreditCard size={16} color={colors.text} strokeWidth={1.5} />
               </View>
               <View>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Free Plan</Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 }}>$0/month</Text>
+                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Billing & Usage</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
+                  {billingData ? `${billingData.tier.displayName} · Active` : 'Manage plan & usage analytics'}
+                </Text>
               </View>
             </View>
-            <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.12)' : '#e6ffec', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.25)' : '#3FB95040' }}>
-              <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
-            </View>
-          </View>
-
-          <View style={{ height: 1, backgroundColor: colors.border }} />
-
-          {/* Resource Usage Bars */}
-          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 0.5 }}>RESOURCE LIMITS</Text>
-          
-          {[
-            { label: 'vCPUs', value: '0.5', max: '0.5', percent: 100, icon: Cpu, color: '#8B5CF6' },
-            { label: 'RAM', value: '512 MB', max: '512 MB', percent: 100, icon: HardDrive, color: '#3B82F6' },
-            { label: 'Storage', value: '5 GB', max: '5 GB', percent: 100, icon: HardDrive, color: '#F59E0B' },
-            { label: 'Idle Timeout', value: '10 min', max: '10 min', percent: 100, icon: Clock, color: '#EF4444' },
-            { label: 'Network', value: '15 Mbps', max: '15 Mbps', percent: 100, icon: Wifi, color: '#06B6D4' },
-          ].map((item) => (
-            <View key={item.label} style={{ gap: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <item.icon size={12} color={item.color} strokeWidth={2} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>{item.label}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {billingData?.tier.name && billingData?.tier.name !== 'free' && (
+                <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                  <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>
+                    {billingData.tier.name.toUpperCase()}
+                  </Text>
                 </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>{item.value}</Text>
-              </View>
-              <View style={{ height: 4, backgroundColor: isDark ? '#1C2128' : '#E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
-                <View style={{ height: '100%', width: `${Math.min(item.percent, 100)}%`, backgroundColor: item.color + '80', borderRadius: 2 }} />
-              </View>
+              )}
+              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
             </View>
-          ))}
-
-          <View style={{ height: 1, backgroundColor: colors.border, marginTop: 2 }} />
-
-          {/* AI Limits */}
-          <View style={{ gap: 4 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>AI Tokens (Monthly)</Text>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>50,000</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Workspaces</Text>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>3 max</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 12 }}>API Rate Limit</Text>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>25 req/min</Text>
-            </View>
-          </View>
-
-          <View style={{ height: 1, backgroundColor: colors.border, marginTop: 2 }} />
-
-          {/* Upgrade CTA */}
-          <TouchableOpacity 
-            activeOpacity={0.8}
-            style={{ 
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-              backgroundColor: isDark ? '#F3F4F6' : '#0E1116',
-              paddingVertical: 12, borderRadius: 10, marginTop: 2 
-            }}
-            onPress={async () => {
-              try {
-                const returnUrl = Linking.createURL('/billing/success')
-                const { checkoutUrl } = await api.billing.checkout('pro_monthly', returnUrl)
-                if (checkoutUrl) {
-                  await WebBrowser.openBrowserAsync(checkoutUrl)
-                }
-              } catch (err: any) {
-                showModal(
-                  'Upgrade',
-                  err.message || 'Failed to open checkout. Please try again.',
-                  'error'
-                )
-              }
-            }}
-          >
-            <ArrowUpRight size={16} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2} />
-            <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }}>
-              Upgrade to Pro
-            </Text>
           </TouchableOpacity>
-
-          {/* BYOK Notice */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 4 }}>
-            <Key size={12} color={colors.textSecondary} strokeWidth={1.5} style={{ marginTop: 2 }} />
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, flex: 1, lineHeight: 16 }}>
-              Bring Your Own API Key (BYOK) is available on all tiers for unlimited AI usage with your own keys.
-            </Text>
-          </View>
         </View>
       </View>
 
