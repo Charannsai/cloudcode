@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, 
   TextInput, ActivityIndicator, Alert, Modal
 } from 'react-native'
+import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import * as Linking from 'expo-linking'
 import { useAuthStore } from '@/store/auth'
@@ -90,17 +91,24 @@ export default function SettingsScreen() {
   const [loadingSsh, setLoadingSsh] = useState(true)
   const [copied, setCopied] = useState(false)
 
-  async function fetchBillingStatus() {
-    setLoadingBilling(true)
+  async function fetchBillingStatus(silent = false) {
+    if (!silent) setLoadingBilling(true)
     try {
       const data = await api.billing.status()
       setBillingData(data)
     } catch (err) {
       console.warn('Failed to load billing status:', err)
     } finally {
-      setLoadingBilling(false)
+      if (!silent) setLoadingBilling(false)
     }
   }
+
+  // Auto-refresh stats in background when settings tab gets focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchBillingStatus(true)
+    }, [])
+  )
 
   useEffect(() => {
     async function loadData() {
@@ -123,7 +131,7 @@ export default function SettingsScreen() {
       }
 
       // 3. Load Billing status
-      fetchBillingStatus()
+      fetchBillingStatus(false)
     }
     loadData()
   }, [])
