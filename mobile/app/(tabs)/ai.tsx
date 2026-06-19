@@ -281,18 +281,14 @@ export default function AIScreen() {
     }
   }, [pendingPrompt, selectedProjectId, isStreaming])
 
-  // Hide the global tab bar completely when on this screen
+  // Hide the global tab bar completely when on this screen and sync projects
   useFocusEffect(
     React.useCallback(() => {
       setTabBarVisible(false)
+      fetchProjects(true)
       return () => setTabBarVisible(true)
-    }, [])
+    }, [fetchProjects])
   )
-
-  // Fetch projects if not loaded
-  useEffect(() => {
-    if (projects.length === 0) fetchProjects()
-  }, [])
 
   // Bouncing dots for Thinking state
   const dot1 = useSharedValue(0)
@@ -472,29 +468,37 @@ export default function AIScreen() {
             <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
               Hi {username}
             </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-              Ask me to read, edit, or create code{'\n'}in your project. I can also run commands.
-            </Text>
+            {selectedProjectId === 'global' ? (
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular', marginBottom: 0 }]}>
+                Ask questions, explain code, or brainstorm ideas.{'\n'}Universal AI mode is active.
+              </Text>
+            ) : (
+              <>
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                  Ask me to read, edit, or create code{'\n'}in your project. I can also run commands.
+                </Text>
 
-            {/* Quick prompts */}
-            <View style={styles.quickPrompts}>
-              {[
-                { label: 'Show project structure', icon: FolderTree },
-                { label: 'Find and fix bugs', icon: Bug },
-                { label: 'Add a new feature', icon: Sparkles },
-                { label: 'Install dependencies', icon: Package },
-              ].map((prompt, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={[styles.quickPrompt, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-                  onPress={() => setInputText(prompt.label)}
-                  activeOpacity={0.7}
-                >
-                  <prompt.icon size={14} color={isDark ? '#8B929A' : '#656D76'} strokeWidth={1.5} />
-                  <Text style={[styles.quickPromptText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>{prompt.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                {/* Quick prompts */}
+                <View style={styles.quickPrompts}>
+                  {[
+                    { label: 'Show project structure', icon: FolderTree },
+                    { label: 'Find and fix bugs', icon: Bug },
+                    { label: 'Add a new feature', icon: Sparkles },
+                    { label: 'Install dependencies', icon: Package },
+                  ].map((prompt, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={[styles.quickPrompt, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
+                      onPress={() => setInputText(prompt.label)}
+                      activeOpacity={0.7}
+                    >
+                      <prompt.icon size={14} color={isDark ? '#8B929A' : '#656D76'} strokeWidth={1.5} />
+                      <Text style={[styles.quickPromptText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>{prompt.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
           </Animated.View>
         )}
 
@@ -620,9 +624,9 @@ export default function AIScreen() {
             activeOpacity={1}
             style={{ width: '100%' }}
           >
-            <View style={[styles.modalContent, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+            <View style={[styles.modalContent, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#E5E7EB' }]}>
               {/* Drag/Indicator Handle */}
-              <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+              <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#2D333B' : '#E5E7EB' }]} />
               
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
@@ -652,10 +656,7 @@ export default function AIScreen() {
                         styles.projectOption,
                         {
                           backgroundColor: isSelected 
-                            ? (isDark ? '#1C2128' : '#F6F8FA')
-                            : 'transparent',
-                          borderColor: isSelected
-                            ? (isDark ? '#30363D' : '#D8DEE4')
+                            ? (isDark ? '#1C2128' : '#F0F2F5')
                             : 'transparent'
                         }
                       ]}
@@ -687,7 +688,7 @@ export default function AIScreen() {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setWorkspaceModalVisible(false)}
-                style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
+                style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }]}
               >
                 <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
                   Cancel
@@ -847,51 +848,59 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderWidth: 1,
     borderBottomWidth: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingHorizontal: 24,
+    paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 34 : 24,
-    maxHeight: '80%',
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 20,
   },
   modalDragHandle: {
-    width: 36,
+    width: 38,
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 18,
-  },
-  modalHeader: {
     marginBottom: 16,
   },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 18,
+    paddingHorizontal: 10,
+  },
   modalTitle: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 22,
+    textAlign: 'center',
     marginBottom: 4,
   },
   modalSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    opacity: 0.7,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
+    opacity: 0.6,
   },
   modalList: {
-    maxHeight: 250,
+    maxHeight: 260,
   },
   projectOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 4,
   },
   projectOptionLeft: {
     flexDirection: 'row',
@@ -903,9 +912,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalCancelBtn: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
+    height: 46,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
