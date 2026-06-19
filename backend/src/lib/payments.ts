@@ -24,13 +24,10 @@ export default dodo
 
 /**
  * Product IDs from Dodo Payments Dashboard.
- * TODO: Replace with actual product IDs once created in the Dodo dashboard.
  */
 export const DODO_PRODUCTS = {
-  pro_monthly: process.env.DODO_PRO_MONTHLY_PRODUCT_ID || 'prod_placeholder_pro_monthly',
-  pro_yearly: process.env.DODO_PRO_YEARLY_PRODUCT_ID || 'prod_placeholder_pro_yearly',
-  advanced_monthly: process.env.DODO_ADVANCED_MONTHLY_PRODUCT_ID || 'prod_placeholder_advanced_monthly',
-  advanced_yearly: process.env.DODO_ADVANCED_YEARLY_PRODUCT_ID || 'prod_placeholder_advanced_yearly',
+  pro_monthly: 'pdt_0NhNM0y7hHQCd9HGuMdQf',
+  advanced_monthly: 'pdt_0NhNOQt0fFgiiST9ykZj4',
 } as const
 
 export type PlanType = keyof typeof DODO_PRODUCTS
