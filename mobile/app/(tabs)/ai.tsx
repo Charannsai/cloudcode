@@ -7,7 +7,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
-  Mic, Volume2, VolumeX, FolderGit2
+  Mic, Volume2, VolumeX, FolderGit2, ChevronDown
 } from 'lucide-react-native'
 
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -120,7 +120,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
         styles.bubble,
         isUser
           ? [styles.userBubble, { backgroundColor: isDark ? '#1C2128' : '#0E1116' }]
-          : [styles.modelBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]
+          : styles.modelBubble
       ]}>
         {/* Tool calls */}
         {message.toolCalls?.map((tc, i) => (
@@ -139,32 +139,32 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
 
             {/* AI Action Row */}
             {message.text ? (
-              <View style={[styles.actionRow, { borderTopColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+              <View style={styles.actionRow}>
                 <TouchableOpacity 
-                  style={[styles.actionBtn, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]} 
+                  style={styles.actionBtn} 
                   onPress={() => Clipboard.setStringAsync(message.text)}
                   activeOpacity={0.7}
                 >
-                  <Copy size={11} color={colors.textSecondary} strokeWidth={1.5} />
+                  <Copy size={12} color={colors.textSecondary} strokeWidth={1.5} />
                   <Text style={[styles.actionText, { color: colors.textSecondary }]}>Copy</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.actionBtn, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]} 
+                  style={styles.actionBtn} 
                   onPress={() => Share.share({ message: message.text })}
                   activeOpacity={0.7}
                 >
-                  <ShareIcon size={11} color={colors.textSecondary} strokeWidth={1.5} />
+                  <ShareIcon size={12} color={colors.textSecondary} strokeWidth={1.5} />
                   <Text style={[styles.actionText, { color: colors.textSecondary }]}>Share</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.actionBtn, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]} 
+                  style={styles.actionBtn} 
                   onPress={() => onSpeakPress(message.id, message.text)}
                   activeOpacity={0.7}
                 >
                   {speakingMessageId === message.id ? (
-                    <VolumeX size={11} color={colors.primary} strokeWidth={1.5} />
+                    <VolumeX size={12} color={colors.primary} strokeWidth={1.5} />
                   ) : (
-                    <Volume2 size={11} color={colors.textSecondary} strokeWidth={1.5} />
+                    <Volume2 size={12} color={colors.textSecondary} strokeWidth={1.5} />
                   )}
                   <Text style={[styles.actionText, { color: speakingMessageId === message.id ? colors.primary : colors.textSecondary }]}>
                     {speakingMessageId === message.id ? 'Stop' : 'Speak'}
@@ -519,7 +519,7 @@ export default function AIScreen() {
             <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: 1 }]}>
               <Sparkles size={14} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={1.5} />
             </View>
-            <View style={[styles.bubble, styles.modelBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+            <View style={[styles.bubble, styles.modelBubble]}>
               {currentToolCalls.map((tc, i) => (
                 <ToolCallCard key={i} tool={tc} isDark={isDark} colors={colors} />
               ))}
@@ -534,10 +534,10 @@ export default function AIScreen() {
                 </Markdown>
               ) : currentToolCalls.length === 0 ? (
                 <View style={styles.typingIndicator}>
-                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#6E7681' : '#656D76' }, dotStyle1]} />
-                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#6E7681' : '#656D76' }, dotStyle2]} />
-                  <Animated.View style={[styles.typingDot, { backgroundColor: isDark ? '#6E7681' : '#656D76' }, dotStyle3]} />
-                  <Text style={[styles.typingText, { color: isDark ? '#6E7681' : '#656D76', marginLeft: 6 }]}>Thinking</Text>
+                  <Text style={[styles.thinkingText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>
+                    Thinking
+                  </Text>
+                  <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
                 </View>
               ) : null}
             </View>
@@ -784,22 +784,36 @@ const styles = StyleSheet.create({
   },
   quickPromptText: { fontSize: 13, letterSpacing: -0.2 },
   messageBubbleWrapper: {
-    flexDirection: 'row', marginBottom: 16, gap: 8,
-    alignItems: 'flex-end',
+    flexDirection: 'row', 
+    marginBottom: 10, 
+    gap: 8,
+    alignItems: 'flex-start',
   },
   userWrapper: { justifyContent: 'flex-end' },
   modelWrapper: { justifyContent: 'flex-start' },
   avatarCircle: {
-    width: 30, height: 30, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
+    width: 26, 
+    height: 26, 
+    borderRadius: 13,
+    alignItems: 'center', 
+    justifyContent: 'center',
+    marginTop: 2,
   },
   bubble: {
-    maxWidth: SCREEN_WIDTH * 0.76, borderRadius: 16, padding: 14,
+    maxWidth: SCREEN_WIDTH * 0.78, 
+    borderRadius: 16, 
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   userBubble: { 
     borderBottomRightRadius: 4,
   },
-  modelBubble: { borderBottomLeftRadius: 4, borderWidth: 1 },
+  modelBubble: { 
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
   messageText: {
     fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22, letterSpacing: -0.2,
   },
@@ -819,14 +833,18 @@ const styles = StyleSheet.create({
     width: 6, height: 6, borderRadius: 3,
   },
   typingText: { fontSize: 13, fontFamily: 'Inter_400Regular' },
+  thinkingText: { fontSize: 13, fontFamily: 'Inter_400Regular' },
   actionRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10,
-    borderTopWidth: 1, paddingTop: 8,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12, 
+    marginTop: 6,
+    paddingTop: 2,
   },
   actionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 8, paddingVertical: 5,
-    borderRadius: 6,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 4,
   },
   actionText: {
     fontSize: 10, fontFamily: 'Inter_500Medium', textTransform: 'uppercase', letterSpacing: 0.3,
