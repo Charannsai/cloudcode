@@ -15,66 +15,16 @@ import Animated, {
 import { useState, useCallback, memo } from 'react'
 import { useUIStore } from '@/store/ui'
 
-const TAB_BAR_HEIGHT = 56
+const TAB_BAR_HEIGHT = 64
 const SPRING_CONFIG = {
   damping: 24,
   stiffness: 200,
   mass: 0.8,
 }
 
-const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isDark }: any) => {
-  const Icon = options.tabBarIcon
-  const scale = useSharedValue(1)
-
-  useEffect(() => {
-    scale.value = withSpring(isFocused ? 1.05 : 1, SPRING_CONFIG)
-  }, [isFocused])
-
-  const iconStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }]
-    }
-  })
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={onPress}
-      onLayout={(e) => onLayout(index, e)}
-      style={styles.tabItem}
-    >
-      <Animated.View style={iconStyle}>
-        <Icon 
-          color={isFocused 
-            ? (isDark ? '#0E1116' : '#FFFFFF') 
-            : (isDark ? '#6E7681' : '#656D76')
-          } 
-          size={18} 
-          strokeWidth={isFocused ? 2.2 : 1.8}
-        />
-      </Animated.View>
-      {isFocused && (
-        <Animated.Text 
-          entering={FadeIn.springify()}
-          exiting={FadeOut.duration(80)}
-          style={[
-            styles.tabLabel, 
-            { color: isDark ? '#0E1116' : '#FFFFFF' }
-          ]}
-        >
-          {options.title || route.name}
-        </Animated.Text>
-      )}
-    </TouchableOpacity>
-  )
-})
-
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { isDark } = useAppTheme()
   const router = useRouter()
-  const [tabWidths, setTabWidths] = useState<number[]>(new Array(state.routes.length).fill(0))
-  const [tabPositions, setTabPositions] = useState<number[]>(new Array(state.routes.length).fill(0))
-  
   const { tabBarVisible } = useUIStore()
   const isVisible = useSharedValue(1)
 
@@ -97,34 +47,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     isVisible.value = withSpring(tabBarVisible ? 1 : 0, SPRING_CONFIG)
   }, [tabBarVisible])
 
-  const handleLayout = useCallback((index: number, event: LayoutChangeEvent) => {
-    const { x, width } = event.nativeEvent.layout
-    setTabWidths(prev => {
-      if (prev[index] === width) return prev
-      const next = [...prev]
-      next[index] = width
-      return next
-    })
-    setTabPositions(prev => {
-      if (prev[index] === x) return prev
-      const next = [...prev]
-      next[index] = x
-      return next
-    })
-  }, [])
-
-  const indicatorStyle = useAnimatedStyle(() => {
-    const width = tabWidths[state.index] || 0
-    const x = tabPositions[state.index] || 0
-    
-    return {
-      width: withSpring(width, SPRING_CONFIG),
-      transform: [
-        { translateX: withSpring(x, SPRING_CONFIG) },
-      ],
-    }
-  }, [state.index, tabWidths, tabPositions])
-
   const wrapperStyle = useAnimatedStyle(() => {
     return {
       opacity: isVisible.value,
@@ -134,32 +56,50 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     }
   })
 
+  // Symmetrical 5-column layout: Home, Work, FAB, AI, System
+  const columns = [
+    { type: 'route', routeIndex: 0, key: 'dashboard', name: 'Home', icon: LayoutDashboard },
+    { type: 'route', routeIndex: 1, key: 'projects', name: 'Work', icon: FolderGit2 },
+    { type: 'fab', key: 'fab' },
+    { type: 'route', routeIndex: 2, key: 'ai', name: 'AI', icon: Sparkles },
+    { type: 'route', routeIndex: 3, key: 'settings', name: 'System', icon: SlidersHorizontal }
+  ]
+
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
       <BlurView
-        intensity={isDark ? 30 : 70}
+        intensity={isDark ? 35 : 75}
         tint={isDark ? 'dark' : 'light'}
         style={[
           styles.tabBarContainer,
           { 
             borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-            backgroundColor: isDark ? 'rgba(21, 25, 34, 0.75)' : 'rgba(255, 255, 255, 0.8)',
+            backgroundColor: isDark ? 'rgba(21, 25, 34, 0.78)' : 'rgba(255, 255, 255, 0.85)',
           }
         ]}
       >
-        <Animated.View 
-          style={[
-            styles.indicator, 
-            { 
-              backgroundColor: isDark ? '#F3F4F6' : '#0E1116',
-            },
-            indicatorStyle
-          ]} 
-        />
-        
-        {state.routes.map((route: any, index: number) => {
+        {columns.map((col) => {
+          if (col.type === 'fab') {
+            return (
+              <TouchableOpacity
+                key="fab"
+                style={[
+                  styles.fabButton,
+                  { backgroundColor: isDark ? '#FFFFFF' : '#0E1116' }
+                ]}
+                onPress={() => {
+                  router.push('/new-project')
+                }}
+                activeOpacity={0.8}
+              >
+                <Plus size={18} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
+              </TouchableOpacity>
+            )
+          }
+
+          const route = state.routes[col.routeIndex!]
           const { options } = descriptors[route.key]
-          const isFocused = state.index === index
+          const isFocused = state.index === col.routeIndex!
 
           const onPress = () => {
             const event = navigation.emit({
@@ -173,39 +113,42 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             }
           }
 
-          const itemComponent = (
-            <TabItem 
+          const Icon = col.icon as any
+          const activeColor = isDark ? '#D2A8FF' : '#8250DF'
+          const inactiveColor = isDark ? '#6E7681' : '#8C959F'
+
+          return (
+            <TouchableOpacity
               key={route.key}
-              route={route}
-              options={options}
-              isFocused={isFocused}
-              index={index}
+              activeOpacity={0.7}
               onPress={onPress}
-              onLayout={handleLayout}
-              isDark={isDark}
-            />
+              style={styles.tabItem}
+            >
+              <View style={styles.tabItemContent}>
+                <Icon 
+                  color={isFocused ? activeColor : inactiveColor} 
+                  size={16} 
+                  strokeWidth={isFocused ? 2.0 : 1.6}
+                />
+                <Text style={[
+                  styles.tabLabel,
+                  { 
+                    color: isFocused ? (isDark ? '#FFFFFF' : '#0E1116') : inactiveColor,
+                    marginTop: 2
+                  }
+                ]}>
+                  {col.name}
+                </Text>
+                {isFocused && (
+                  <Animated.View
+                    entering={FadeIn.duration(200)}
+                    exiting={FadeOut.duration(150)}
+                    style={[styles.activeDot, { backgroundColor: activeColor }]}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
           )
-
-          if (index === 2) {
-            return [
-              <TouchableOpacity
-                key="fab"
-                style={[
-                  styles.fabButton,
-                  { backgroundColor: isDark ? '#FFFFFF' : '#0E1116' }
-                ]}
-                onPress={() => {
-                  router.push('/new-project')
-                }}
-                activeOpacity={0.8}
-              >
-                <Plus size={20} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
-              </TouchableOpacity>,
-              itemComponent
-            ]
-          }
-
-          return itemComponent
         })}
       </BlurView>
     </Animated.View>
@@ -273,8 +216,8 @@ const styles = StyleSheet.create({
   tabBarWrapper: {
     position: 'absolute',
     bottom: 32,
-    left: 24,
-    right: 24,
+    left: 20,
+    right: 20,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
@@ -283,37 +226,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_HEIGHT / 2,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
     elevation: 8,
-  },
-  indicator: {
-    position: 'absolute',
-    height: 44,
-    borderRadius: 22,
-    left: 0,
-    zIndex: -1,
+    width: '100%',
   },
   tabItem: {
-    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    paddingHorizontal: 16,
-    borderRadius: 22,
-    gap: 7,
+    height: '100%',
+  },
+  tabItemContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    height: '100%',
+    paddingTop: 4,
   },
   tabLabel: {
-    fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
-    letterSpacing: -0.2,
+    fontSize: 9,
+    fontFamily: 'Inter_500Medium',
+    letterSpacing: -0.1,
+  },
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 3,
+    bottom: 1,
   },
   fabButton: {
     width: 44,
@@ -321,11 +269,10 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 6,
   },
 })

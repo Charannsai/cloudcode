@@ -182,13 +182,6 @@ export default function ProjectsScreen() {
             {projects.length} active {projects.length === 1 ? 'workspace' : 'workspaces'}
           </Text>
         </View>
-        <TouchableOpacity 
-          style={[styles.addBtn, { backgroundColor: colors.text }]}
-          onPress={() => router.push('/new-project')}
-          activeOpacity={0.8}
-        >
-          <Plus size={18} color={colors.background} strokeWidth={2.5} />
-        </TouchableOpacity>
       </View>
 
       {showSkeletonState ? (
