@@ -1,6 +1,7 @@
 import { getToken } from './auth'
 import { Project, FileNode } from '@/types'
 import EventSource from 'react-native-sse'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
