@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent, Keyboard } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
+import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus, Terminal } from 'lucide-react-native'
 import { BlurView } from 'expo-blur'
 import Animated, { 
   useAnimatedStyle, 
@@ -244,6 +244,15 @@ export default function TabsLayout() {
           title: 'Work',
           tabBarIcon: ({ color, size }: any) => (
             <FolderGit2 size={size || 18} color={color} strokeWidth={1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="terminal"
+        options={{
+          title: 'Terminal',
+          tabBarIcon: ({ color, size }: any) => (
+            <Terminal size={size || 18} color={color} strokeWidth={1.8} />
           ),
         }}
       />

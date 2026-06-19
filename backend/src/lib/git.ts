@@ -52,6 +52,14 @@ async function ensureSshRemote(containerId: string): Promise<void> {
 }
 
 export async function getGitStatus(containerId: string): Promise<GitStatus> {
+  // Pre-fetch remote status updates in the background (with timeout/fail-safe)
+  try {
+    await ensureSshRemote(containerId)
+    await execInContainer(containerId, ['git', '-C', WORKSPACE, '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'fetch', '--quiet'], () => {})
+  } catch (fetchErr) {
+    // Ignore fetch failures (e.g. no remote or offline)
+  }
+
   let statusOutput = ''
 
   let exitCode = await execInContainer(containerId, ['git', '-C', WORKSPACE, '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'status', '--porcelain', '-b'], (data) => {
@@ -258,5 +266,45 @@ export async function gitLog(containerId: string, count = 20): Promise<string> {
   if (exitCode !== 0) {
     throw new Error(output.trim() || `git log failed with exit code ${exitCode}`)
   }
+  return output
+}
+
+export async function gitGetConflicts(containerId: string): Promise<string[]> {
+  let output = ''
+  const exitCode = await execInContainer(
+    containerId,
+    ['git', '-C', WORKSPACE, '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'diff', '--name-only', '--diff-filter=U'],
+    (data) => { output += data }
+  )
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git diff --name-only --diff-filter=U failed with exit code ${exitCode}`)
+  }
+  return output.trim().split('\n').filter(Boolean)
+}
+
+export async function gitResolveConflict(containerId: string, filePath: string, strategy: 'ours' | 'theirs'): Promise<string> {
+  let output = ''
+  const strategyArg = strategy === 'ours' ? '--ours' : '--theirs'
+  
+  // Checkout conflict strategy
+  let exitCode = await execInContainer(
+    containerId,
+    ['git', '-C', WORKSPACE, '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'checkout', strategyArg, '--', filePath],
+    (data) => { output += data }
+  )
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git checkout ${strategyArg} failed with exit code ${exitCode}`)
+  }
+
+  // Stage resolved file
+  exitCode = await execInContainer(
+    containerId,
+    ['git', '-C', WORKSPACE, '-c', 'safe.directory=/workspace', '-c', 'core.fileMode=false', 'add', '--', filePath],
+    (data) => { output += data }
+  )
+  if (exitCode !== 0) {
+    throw new Error(output.trim() || `git add failed with exit code ${exitCode}`)
+  }
+
   return output
 }

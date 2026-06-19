@@ -35,6 +35,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import Svg, { Path, Defs, RadialGradient, Rect, Stop, Line, Circle, G, Ellipse, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 const { width, height } = Dimensions.get('window')
@@ -961,8 +962,17 @@ export default function WelcomeScreen() {
   // Handle auto redirect if logged in after the splash screen completes (4.1s)
   useEffect(() => {
     if (!loading && user) {
-      const redirectTimer = setTimeout(() => {
-        router.replace('/(tabs)/dashboard')
+      const redirectTimer = setTimeout(async () => {
+        try {
+          const completed = await AsyncStorage.getItem('onboarding_completed')
+          if (completed === 'true') {
+            router.replace('/(tabs)/dashboard')
+          } else {
+            router.replace('/onboarding-wizard')
+          }
+        } catch {
+          router.replace('/(tabs)/dashboard')
+        }
       }, 4100)
       return () => clearTimeout(redirectTimer)
     }
@@ -1048,6 +1058,20 @@ export default function WelcomeScreen() {
     }
   }, [isWelcomePhase, currentScreen, signingIn])
 
+  async function handleLoginSuccess(token: string) {
+    setToken(token)
+    try {
+      const completed = await AsyncStorage.getItem('onboarding_completed')
+      if (completed === 'true') {
+        router.replace('/(tabs)/dashboard')
+      } else {
+        router.replace('/onboarding-wizard')
+      }
+    } catch {
+      router.replace('/(tabs)/dashboard')
+    }
+  }
+
   // GitHub Auth Flow
   async function signInWithGitHub() {
     setSigningIn(true)
@@ -1064,8 +1088,7 @@ export default function WelcomeScreen() {
         const url = new URL(result.url)
         const token = url.searchParams.get('token')
         if (token) {
-          setToken(token)
-          router.replace('/(tabs)/dashboard')
+          await handleLoginSuccess(token)
         }
       }
     } catch (err) {
@@ -1091,8 +1114,7 @@ export default function WelcomeScreen() {
         const url = new URL(result.url)
         const token = url.searchParams.get('token')
         if (token) {
-          setToken(token)
-          router.replace('/(tabs)/dashboard')
+          await handleLoginSuccess(token)
         }
       }
     } catch (err) {

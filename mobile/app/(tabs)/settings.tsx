@@ -23,8 +23,8 @@ export default function SettingsScreen() {
   const { colors, toggleTheme, isDark } = useAppTheme()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
 
-  // Subscreen navigation state: 'main' | 'billing' | 'gitSsh'
-  const [currentSubScreen, setCurrentSubScreen] = useState<'main' | 'billing' | 'gitSsh'>('main')
+  // Subscreen navigation state: 'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys'
+  const [currentSubScreen, setCurrentSubScreen] = useState<'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys'>('main')
   const [billingData, setBillingData] = useState<any>(null)
   const [loadingBilling, setLoadingBilling] = useState(true)
   const [upgradeModal, setUpgradeModal] = useState<{ visible: boolean; tierName: 'pro' | 'advanced' | null }>({

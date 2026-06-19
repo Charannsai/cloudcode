@@ -147,6 +147,13 @@ export const api = {
       if (count) params.set('count', count.toString())
       return apiFetch<{ log: string }>(`/api/projects/${projectId}/git/log?${params}`)
     },
+    conflicts: (projectId: string) =>
+      apiFetch<{ conflicts: string[] }>(`/api/projects/${projectId}/git/conflicts`),
+    resolve: (projectId: string, file: string, strategy: 'ours' | 'theirs') =>
+      apiFetch<{ success: boolean; output: string }>(`/api/projects/${projectId}/git/resolve`, {
+        method: 'POST',
+        body: JSON.stringify({ file, strategy }),
+      }),
   },
 
   billing: {
@@ -166,6 +173,16 @@ export const api = {
       apiFetch<{ checkoutUrl: string; sessionId: string }>('/api/billing/checkout', {
         method: 'POST',
         body: JSON.stringify({ planType, returnUrl }),
+      }),
+  },
+
+  system: {
+    runtimes: () =>
+      apiFetch<{ runtimes: { name: string; version: string; key: string }[] }>('/api/system/runtimes'),
+    installRuntime: (runtime: string) =>
+      apiFetch<{ success: boolean; message: string }>('/api/system/runtimes', {
+        method: 'POST',
+        body: JSON.stringify({ runtime }),
       }),
   },
 
