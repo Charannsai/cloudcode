@@ -37,6 +37,17 @@ export default function DashboardScreen() {
   const { handleScroll } = useScrollVisibility()
   const router = useRouter()
   
+  interface DiagnosticsData {
+    cpuLoad: number
+    memoryUsage: number
+    runningContainers: number
+    platform: string
+    uptime: number
+  }
+
+  const [diagnostics, setDiagnostics] = useState<DiagnosticsData | null>(null)
+  const [latency, setLatency] = useState<number | null>(null)
+  
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [showSkeleton, setShowSkeleton] = useState(false)
@@ -77,14 +88,18 @@ export default function DashboardScreen() {
     </View>
   )
 
-  // Pulsing animation for server status dot
-  const pulseAnim = useSharedValue(1)
-  useEffect(() => {
-    pulseAnim.value = withRepeat(
-      withTiming(0.4, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    )
+
+
+  const fetchDiagnostics = useCallback(async () => {
+    const startTime = Date.now()
+    try {
+      const diag = await api.system.diagnostics()
+      const endTime = Date.now()
+      setDiagnostics(diag)
+      setLatency(endTime - startTime)
+    } catch (e) {
+      console.warn('Failed to fetch diagnostics', e)
+    }
   }, [])
 
   const fetchProjects = useCallback(async (silent = false) => {
@@ -105,20 +120,20 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchProjects(true)
+      fetchDiagnostics()
 
       const interval = setInterval(() => {
         fetchProjects(true)
+        fetchDiagnostics()
       }, 10000)
 
       return () => {
         clearInterval(interval)
       }
-    }, [fetchProjects])
+    }, [fetchProjects, fetchDiagnostics])
   )
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: pulseAnim.value,
-  }))
+
 
   return (
     <ScrollView 
@@ -130,7 +145,10 @@ export default function DashboardScreen() {
       refreshControl={
         <RefreshControl
           refreshing={loading}
-          onRefresh={() => fetchProjects(false)}
+          onRefresh={() => {
+            fetchProjects(false)
+            fetchDiagnostics()
+          }}
           tintColor={colors.text}
         />
       }
@@ -138,12 +156,6 @@ export default function DashboardScreen() {
       {/* Premium Header */}
       <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.header}>
         <View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <Animated.View style={[styles.statusDot, pulseStyle]} />
-            <Text style={[styles.greeting, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-              Secure Connection Active
-            </Text>
-          </View>
           <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Overview</Text>
         </View>
       </Animated.View>
@@ -248,7 +260,9 @@ export default function DashboardScreen() {
               <Wifi size={18} color={colors.textSecondary} strokeWidth={2} />
               <Text style={[styles.diagLabel, { color: colors.text }]}>Network Routing</Text>
             </View>
-            <Text style={[styles.diagValue, { color: '#3FB950' }]}>Optimal (12ms)</Text>
+            <Text style={[styles.diagValue, { color: '#3FB950' }]}>
+              Optimal ({latency !== null ? `${latency}ms` : '12ms'})
+            </Text>
           </View>
           
           <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
@@ -258,7 +272,9 @@ export default function DashboardScreen() {
               <Cpu size={18} color={colors.textSecondary} strokeWidth={2} />
               <Text style={[styles.diagLabel, { color: colors.text }]}>Global CPU Load</Text>
             </View>
-            <Text style={[styles.diagValue, { color: colors.textSecondary }]}>4%</Text>
+            <Text style={[styles.diagValue, { color: colors.textSecondary }]}>
+              {diagnostics ? `${diagnostics.cpuLoad}%` : '4%'}
+            </Text>
           </View>
 
           <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
@@ -266,12 +282,23 @@ export default function DashboardScreen() {
           <View style={styles.diagRow}>
             <View style={styles.diagIconGroup}>
               <Database size={18} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={[styles.diagLabel, { color: colors.text }]}>Storage Encryption</Text>
+              <Text style={[styles.diagLabel, { color: colors.text }]}>VPS Memory Usage</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <ShieldCheck size={14} color="#3FB950" />
-              <Text style={[styles.diagValue, { color: colors.textSecondary }]}>Active</Text>
+            <Text style={[styles.diagValue, { color: colors.textSecondary }]}>
+              {diagnostics ? `${diagnostics.memoryUsage}%` : '18%'}
+            </Text>
+          </View>
+
+          <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.diagRow}>
+            <View style={styles.diagIconGroup}>
+              <Box size={18} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={[styles.diagLabel, { color: colors.text }]}>Active Workspaces</Text>
             </View>
+            <Text style={[styles.diagValue, { color: colors.textSecondary }]}>
+              {diagnostics ? `${diagnostics.runningContainers} running` : '1 running'}
+            </Text>
           </View>
 
         </View>

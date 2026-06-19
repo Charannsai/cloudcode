@@ -185,6 +185,15 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ runtime }),
       }),
+    diagnostics: () =>
+      apiFetch<{
+        cpuLoad: number
+        memoryUsage: number
+        runningContainers: number
+        platform: string
+        uptime: number
+        timestamp: number
+      }>('/api/system/diagnostics'),
   },
 
   terminal: {
