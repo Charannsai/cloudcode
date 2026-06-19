@@ -44,35 +44,8 @@ const formatTimestamp = (timestamp: number) => {
 
 
 function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boolean; colors: any }) {
-  const [expanded, setExpanded] = useState(tool.status === 'pending')
   const [isActionLoading, setIsActionLoading] = useState(false)
-
-  const iconMap: Record<string, any> = {
-    read_file: FileCode,
-    edit_file: FileCode,
-    create_file: FileCode,
-    delete_file: FileCode,
-    run_command: Terminal,
-    list_files: FileCode,
-  }
-  const Icon = iconMap[tool.name] || Wrench
-  const labelMap: Record<string, string> = {
-    read_file: 'Reading file',
-    edit_file: 'Editing file',
-    create_file: 'Creating file',
-    delete_file: 'Deleting file',
-    run_command: 'Shell command',
-    list_files: 'Listing files',
-  }
-
-  const label = labelMap[tool.name] || tool.name
-  const target = (tool.args?.path || tool.args?.command || '') as string
-
-  useEffect(() => {
-    if (tool.status === 'pending') {
-      setExpanded(true)
-    }
-  }, [tool.status])
+  const [modalOpen, setModalOpen] = useState(false)
 
   const handleApprove = async () => {
     const approvalId = tool.args?.approvalId as string
@@ -105,193 +78,312 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
   const isError = tool.status === 'error'
   const isDone = tool.status === 'done'
 
-  // Dynamic status text or badge color
-  const statusColor = isPending
-    ? (isDark ? '#E2B714' : '#B08500')
+  // Determine status text & colors
+  const statusBg = isPending
+    ? 'rgba(226, 183, 20, 0.12)'
     : isRunning
-      ? (isDark ? '#58A6FF' : '#0969DA')
+      ? 'rgba(88, 166, 255, 0.12)'
+      : isDone
+        ? 'rgba(63, 185, 80, 0.12)'
+        : 'rgba(248, 81, 73, 0.12)'
+  
+  const statusColor = isPending
+    ? '#E2B714'
+    : isRunning
+      ? '#58A6FF'
       : isDone
         ? '#3FB950'
         : '#F85149'
 
-  const renderDetails = () => {
-    if (tool.name === 'run_command') {
-      const command = (tool.args?.command || '') as string
-      const resultObj = tool.result as any
-      const output = (resultObj?.output || resultObj?.error || resultObj?.message || '') as string
+  const statusText = isPending
+    ? 'PENDING'
+    : isRunning
+      ? 'RUNNING'
+      : isDone
+        ? 'DONE'
+        : 'ERROR'
 
-      return (
-        <View style={[styles.terminalBox, { backgroundColor: '#0D1117', borderColor: '#21262D' }]}>
-          {/* Header bar of terminal */}
-          <View style={styles.terminalHeader}>
-            <View style={styles.terminalDots}>
-              <View style={[styles.terminalDot, { backgroundColor: '#FF5F56' }]} />
-              <View style={[styles.terminalDot, { backgroundColor: '#FFBD2E' }]} />
-              <View style={[styles.terminalDot, { backgroundColor: '#27C93F' }]} />
-            </View>
-            <Text style={styles.terminalTitle}>bash (workspace)</Text>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={true}
-            contentContainerStyle={{ flexGrow: 1 }}
-          >
-            <View style={styles.terminalContent}>
-              <Text style={styles.terminalPromptLine}>
-                <Text style={styles.terminalPrompt}>$ </Text>
-                <Text style={styles.terminalCommandText}>{command}</Text>
-              </Text>
-
-              {isPending && (
-                <View style={styles.permissionCard}>
-                  <Text style={styles.permissionText}>
-                    ⚠️ Command requires approval to execute.
-                  </Text>
-                  <View style={styles.permissionActionRow}>
-                    <TouchableOpacity
-                      style={[styles.permissionBtn, styles.approveBtn]}
-                      onPress={handleApprove}
-                      disabled={isActionLoading}
-                      activeOpacity={0.8}
-                    >
-                      {isActionLoading ? (
-                        <ActivityIndicator size="small" color="#ffffff" />
-                      ) : (
-                        <Text style={styles.approveBtnText}>Approve</Text>
-                      )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.permissionBtn, styles.rejectBtn]}
-                      onPress={handleReject}
-                      disabled={isActionLoading}
-                      activeOpacity={0.8}
-                    >
-                      {isActionLoading ? (
-                        <ActivityIndicator size="small" color="#F85149" />
-                      ) : (
-                        <Text style={styles.rejectBtnText}>Reject</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
-              {isRunning && (
-                <View style={styles.terminalRunningRow}>
-                  <ActivityIndicator size="small" color="#58A6FF" style={{ marginRight: 6 }} />
-                  <Text style={styles.terminalRunningText}>Executing command...</Text>
-                </View>
-              )}
-
-              {(output || isDone || isError) && !isPending && (
-                <Text style={[
-                  styles.terminalOutputText,
-                  isError && { color: '#F85149' }
-                ]}>
-                  {output || (isDone ? 'Command completed with no output.' : '')}
-                </Text>
-              )}
-            </View>
-          </ScrollView>
-        </View>
-      )
-    }
-
-    // For file system tools
-    let paramDetails = ''
-    let resultDetails = ''
-
-    if (tool.name === 'read_file') {
-      paramDetails = `Path: ${tool.args?.path || ''}`
-      if (tool.result) {
-        const res = tool.result as any
-        if (res.content) {
-          const lines = res.content.split('\n')
-          const preview = lines.slice(0, 5).join('\n')
-          const count = lines.length
-          resultDetails = `Read ${count} lines:\n${preview}${lines.length > 5 ? '\n...' : ''}`
-        } else if (res.error) {
-          resultDetails = `Error: ${res.error}`
-        }
-      }
-    } else if (tool.name === 'edit_file') {
-      paramDetails = `Path: ${tool.args?.path || ''}\nTarget length: ${(tool.args?.target as string)?.length || 0} chars`
-      if (tool.result) {
-        const res = tool.result as any
-        resultDetails = res.error ? `Error: ${res.error}` : `Success: ${res.message || 'File edited'}`
-      }
-    } else if (tool.name === 'create_file') {
-      paramDetails = `Path: ${tool.args?.path || ''}\nContent length: ${(tool.args?.content as string)?.length || 0} chars`
-      if (tool.result) {
-        const res = tool.result as any
-        resultDetails = res.error ? `Error: ${res.error}` : `Success: ${res.message || 'File created'}`
-      }
-    } else if (tool.name === 'delete_file') {
-      paramDetails = `Path: ${tool.args?.path || ''}`
-      if (tool.result) {
-        const res = tool.result as any
-        resultDetails = res.error ? `Error: ${res.error}` : `Success: ${res.message || 'File deleted'}`
-      }
-    } else if (tool.name === 'list_files') {
-      paramDetails = `Directory: ${tool.args?.path || ''}`
-      if (tool.result) {
-        const res = tool.result as any
-        if (res.files) {
-          resultDetails = `Found ${res.files.length} files:\n` + res.files.slice(0, 5).map((f: string) => `- ${f}`).join('\n') + (res.files.length > 5 ? '\n...' : '')
-        } else if (res.error) {
-          resultDetails = `Error: ${res.error}`
-        }
-      }
-    }
+  // Render Command Line Executions
+  if (tool.name === 'run_command') {
+    const command = (tool.args?.command || '') as string
+    const resultObj = tool.result as any
+    const output = (resultObj?.output || resultObj?.error || resultObj?.message || '') as string
 
     return (
-      <View style={[styles.expandedDetailsCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-        {paramDetails ? <Text style={[styles.detailsParamText, { color: isDark ? '#8B929A' : '#57606A' }]}>{paramDetails}</Text> : null}
-        {resultDetails ? (
-          <Text style={[styles.detailsResultText, { color: isDark ? '#C9D1D9' : '#24292F', backgroundColor: isDark ? '#0D1117' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-            {resultDetails}
-          </Text>
-        ) : isRunning ? (
-          <Text style={[styles.detailsParamText, { color: isDark ? '#8B929A' : '#57606A', fontStyle: 'italic' }]}>Executing operation...</Text>
-        ) : null}
+      <View style={[styles.terminalBox, { backgroundColor: '#0D1117', borderColor: '#21262D', marginVertical: 6 }]}>
+        <View style={styles.terminalHeader}>
+          <View style={styles.terminalDots}>
+            <View style={[styles.terminalDot, { backgroundColor: '#FF5F56' }]} />
+            <View style={[styles.terminalDot, { backgroundColor: '#FFBD2E' }]} />
+            <View style={[styles.terminalDot, { backgroundColor: '#27C93F' }]} />
+          </View>
+          <Text style={styles.terminalTitle}>bash (workspace)</Text>
+          <View style={{ backgroundColor: statusBg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+            <Text style={{ color: statusColor, fontSize: 8, fontFamily: 'Inter_700Bold' }}>{statusText}</Text>
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <View style={styles.terminalContent}>
+            <Text style={styles.terminalPromptLine}>
+              <Text style={styles.terminalPrompt}>$ </Text>
+              <Text style={styles.terminalCommandText}>{command}</Text>
+            </Text>
+
+            {isPending && (
+              <View style={styles.permissionCard}>
+                <Text style={styles.permissionText}>
+                  ⚠️ Shell execution requires approval.
+                </Text>
+                <View style={styles.permissionActionRow}>
+                  <TouchableOpacity
+                    style={[styles.permissionBtn, styles.approveBtn]}
+                    onPress={handleApprove}
+                    disabled={isActionLoading}
+                    activeOpacity={0.8}
+                  >
+                    {isActionLoading ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text style={styles.approveBtnText}>Approve</Text>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.permissionBtn, styles.rejectBtn]}
+                    onPress={handleReject}
+                    disabled={isActionLoading}
+                    activeOpacity={0.8}
+                  >
+                    {isActionLoading ? (
+                      <ActivityIndicator size="small" color="#F85149" />
+                    ) : (
+                      <Text style={styles.rejectBtnText}>Reject</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {isRunning && (
+              <View style={styles.terminalRunningRow}>
+                <ActivityIndicator size="small" color="#58A6FF" style={{ marginRight: 6 }} />
+                <Text style={styles.terminalRunningText}>Executing command...</Text>
+              </View>
+            )}
+
+            {(output || isDone || isError) && !isPending && (
+              <Text style={[
+                styles.terminalOutputText,
+                isError && { color: '#F85149' }
+              ]}>
+                {output || (isDone ? 'Command completed with no output.' : '')}
+              </Text>
+            )}
+          </View>
+        </ScrollView>
       </View>
     )
   }
 
+  // File Operations Card Design (read_file, edit_file, create_file, delete_file, list_files)
+  let accentColor = '#8B929A'
+  let label = tool.name
+  let Icon = FileCode
+  let bgTint = isDark ? '#1C2128' : '#F6F8FA'
+
+  if (tool.name === 'create_file') {
+    accentColor = '#3FB950'
+    label = 'Create File'
+    Icon = Plus
+    bgTint = isDark ? 'rgba(63, 185, 80, 0.05)' : 'rgba(230, 255, 236, 0.4)'
+  } else if (tool.name === 'edit_file') {
+    accentColor = '#58A6FF'
+    label = 'Edit File'
+    Icon = FileCode
+    bgTint = isDark ? 'rgba(88, 166, 255, 0.05)' : 'rgba(221, 244, 255, 0.4)'
+  } else if (tool.name === 'delete_file') {
+    accentColor = '#F85149'
+    label = 'Delete File'
+    Icon = Trash2
+    bgTint = isDark ? 'rgba(248, 81, 73, 0.05)' : 'rgba(255, 235, 235, 0.4)'
+  } else if (tool.name === 'read_file') {
+    accentColor = '#8250DF'
+    label = 'Read File'
+    Icon = FileCode
+    bgTint = isDark ? 'rgba(130, 80, 223, 0.05)' : 'rgba(245, 240, 255, 0.4)'
+  } else if (tool.name === 'list_files') {
+    accentColor = '#D97706'
+    label = 'List Directory'
+    Icon = FolderTree
+    bgTint = isDark ? 'rgba(217, 119, 6, 0.05)' : 'rgba(255, 253, 230, 0.4)'
+  }
+
+  const target = (tool.args?.path || '') as string
+
+  // Compile summary & preview
+  let summaryText = ''
+  let previewText = ''
+
+  if (tool.name === 'read_file' && tool.result) {
+    const res = tool.result as any
+    if (res.content) {
+      const lines = res.content.split('\n')
+      summaryText = `Read ${lines.length} lines`
+      previewText = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '\n...' : '')
+    } else if (res.error) {
+      summaryText = `Failed to read: ${res.error}`
+    }
+  } else if (tool.name === 'create_file') {
+    const content = (tool.args?.content || '') as string
+    const lines = content.split('\n')
+    summaryText = `Created with ${lines.length} lines`
+    previewText = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '\n...' : '')
+  } else if (tool.name === 'edit_file') {
+    const replacement = (tool.args?.replacementContent || tool.args?.replacement || '') as string
+    const targetContent = (tool.args?.targetContent || tool.args?.target || '') as string
+    summaryText = `Replacing code chunk`
+    previewText = `- Target:\n${targetContent.split('\n').slice(0, 1).join('\n')}\n+ Replacement:\n${replacement.split('\n').slice(0, 1).join('\n')}`
+  } else if (tool.name === 'list_files' && tool.result) {
+    const res = tool.result as any
+    if (res.files) {
+      summaryText = `Found ${res.files.length} items`
+      previewText = res.files.slice(0, 3).map((f: string) => `- ${f}`).join('\n') + (res.files.length > 3 ? '\n...' : '')
+    } else if (res.error) {
+      summaryText = `Error: ${res.error}`
+    }
+  } else if (tool.name === 'delete_file') {
+    summaryText = `Deleted file from project workspace`
+  }
+
+  const hasFullPreview = !!(previewText && (tool.result || tool.args?.content || tool.args?.replacement || tool.args?.replacementContent))
+
   return (
-    <View style={styles.toolRowContainer}>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => setExpanded(!expanded)}
-        style={[styles.toolHeaderRow, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-      >
-        <View style={styles.toolHeaderLeft}>
-          {isRunning ? (
-            <ActivityIndicator size="small" color={statusColor} style={{ width: 14, height: 14 }} />
-          ) : isPending ? (
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          ) : isDone ? (
-            <CheckCircle2 size={14} color={statusColor} />
-          ) : (
-            <AlertCircle size={14} color={statusColor} />
-          )}
-          <Icon size={13} color={isDark ? '#8B929A' : '#57606A'} strokeWidth={1.8} />
-          <Text style={[styles.toolLabelText, { color: isDark ? '#8B929A' : '#57606A' }]}>
+    <View style={[
+      styles.fileCardContainer,
+      {
+        backgroundColor: bgTint,
+        borderLeftColor: accentColor,
+        borderColor: isDark ? '#21262D' : '#D8DEE4',
+      }
+    ]}>
+      {/* File Card Header */}
+      <View style={styles.fileCardHeader}>
+        <View style={styles.fileCardTitleContainer}>
+          <Icon size={14} color={accentColor} style={{ marginRight: 6 }} />
+          <Text style={[styles.fileCardLabel, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
             {label}
           </Text>
-          <Text style={[styles.toolTargetText, { color: isDark ? '#C9D1D9' : '#24292F' }]} numberOfLines={1}>
-            {target}
+        </View>
+        <View style={{ backgroundColor: statusBg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+          <Text style={{ color: statusColor, fontSize: 8, fontFamily: 'Inter_700Bold' }}>{statusText}</Text>
+        </View>
+      </View>
+
+      {/* Target Path */}
+      <Text style={[styles.fileCardPath, { color: colors.textSecondary }]} numberOfLines={1}>
+        {target || 'Workspace Root'}
+      </Text>
+
+      {/* Summary */}
+      {summaryText ? (
+        <Text style={[styles.fileCardSummary, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
+          {summaryText}
+        </Text>
+      ) : null}
+
+      {/* Mini Code Preview Box */}
+      {previewText ? (
+        <View style={[styles.fileCardPreviewBox, { backgroundColor: isDark ? '#0D1117' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+          <Text style={[styles.fileCardPreviewText, { color: isDark ? '#C9D1D9' : '#24292F' }]}>
+            {previewText}
           </Text>
         </View>
-        {expanded ? (
-          <ChevronUp size={14} color={isDark ? '#8B929A' : '#57606A'} />
-        ) : (
-          <ChevronDown size={14} color={isDark ? '#8B929A' : '#57606A'} />
-        )}
-      </TouchableOpacity>
+      ) : null}
 
-      {expanded && renderDetails()}
+      {/* Preview details action button */}
+      {hasFullPreview && (
+        <View style={{ flexDirection: 'row', marginTop: 8 }}>
+          <TouchableOpacity
+            style={[styles.previewLinkBtn, { borderColor: accentColor }]}
+            onPress={() => setModalOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.previewLinkBtnText, { color: accentColor }]}>View Full Details</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Full Content Preview Modal */}
+      <Modal
+        visible={modalOpen}
+        transparent
+        animationType="slide"
+        statusBarTranslucent={true}
+        onRequestClose={() => setModalOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setModalOpen(false)}
+          />
+          <View style={[
+            styles.modalContent,
+            {
+              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              borderColor: isDark ? '#21262D' : '#E5E7EB',
+              height: '80%',
+            }
+          ]}>
+            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                {label} Details
+              </Text>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }]}>
+                {target}
+              </Text>
+            </View>
+
+            <ScrollView style={{ flex: 1, marginVertical: 8 }} showsVerticalScrollIndicator={true}>
+              <View style={[styles.fullPreviewCodeBox, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+                <Text style={[styles.fullPreviewCodeText, { color: isDark ? '#C9D1D9' : '#24292F' }]}>
+                  {(() => {
+                    if (tool.name === 'read_file' && tool.result) {
+                      return (tool.result as any).content || 'No content';
+                    }
+                    if (tool.name === 'create_file') {
+                      return (tool.args?.content || '') as string;
+                    }
+                    if (tool.name === 'edit_file') {
+                      const replacement = (tool.args?.replacementContent || tool.args?.replacement || '') as string;
+                      const targetContent = (tool.args?.targetContent || tool.args?.target || '') as string;
+                      return `Target:\n${targetContent}\n\nReplacement:\n${replacement}`;
+                    }
+                    if (tool.name === 'list_files' && tool.result) {
+                      return (tool.result as any).files?.join('\n') || 'No files';
+                    }
+                    return 'No details available.';
+                  })()}
+                </Text>
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
+              onPress={() => setModalOpen(false)}
+            >
+              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -1973,5 +2065,67 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderLeftWidth: 1,
     borderLeftColor: 'rgba(0,0,0,0.05)',
+  },
+  fileCardContainer: {
+    borderLeftWidth: 4,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginVertical: 6,
+    width: '100%',
+  },
+  fileCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  fileCardTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fileCardLabel: {
+    fontSize: 13,
+  },
+  fileCardPath: {
+    fontSize: 11,
+    fontFamily: 'JetBrainsMono_400Regular',
+    marginBottom: 6,
+  },
+  fileCardSummary: {
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  fileCardPreviewBox: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    marginTop: 4,
+  },
+  fileCardPreviewText: {
+    fontSize: 10,
+    fontFamily: 'JetBrainsMono_400Regular',
+    lineHeight: 14,
+  },
+  previewLinkBtn: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginTop: 4,
+  },
+  previewLinkBtnText: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  fullPreviewCodeBox: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+  },
+  fullPreviewCodeText: {
+    fontSize: 11,
+    fontFamily: 'JetBrainsMono_400Regular',
+    lineHeight: 16,
   },
 })
