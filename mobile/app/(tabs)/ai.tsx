@@ -405,8 +405,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
   }
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(250).springify()}
+    <View
       style={[styles.messageBubbleWrapper, isUser ? styles.userWrapper : styles.modelWrapper]}
     >
       {!isUser && (
@@ -480,7 +479,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
           <User size={14} color={colors.textSecondary} strokeWidth={1.5} />
         </View>
       )}
-    </Animated.View>
+    </View>
   )
 }
 
@@ -746,82 +745,7 @@ export default function AIScreen() {
         </View>
       </View>
 
-      {/* Sleek Segmented Switcher */}
-      <View style={[styles.switcherContainer, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4', borderBottomWidth: 1 }]}>
-        <View style={[styles.segmentedControl, { backgroundColor: isDark ? '#161B22' : '#F0F2F5', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setSelectedProjectId('global')}
-            style={[
-              styles.segmentItem,
-              (selectedProjectId === 'global' || !selectedProjectId) && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#21262D' : '#FFFFFF', borderColor: isDark ? '#30363D' : '#E1E4E8' }
-              ]
-            ]}
-          >
-            <Sparkles size={13} color={(selectedProjectId === 'global' || !selectedProjectId) ? colors.text : colors.textSecondary} style={{ marginRight: 5 }} />
-            <Text style={[
-              styles.segmentText,
-              { 
-                color: (selectedProjectId === 'global' || !selectedProjectId) ? colors.text : colors.textSecondary,
-                fontFamily: (selectedProjectId === 'global' || !selectedProjectId) ? 'Inter_600SemiBold' : 'Inter_400Regular'
-              }
-            ]}>
-              Universal AI
-            </Text>
-          </TouchableOpacity>
-
-          {projects.length > 0 && (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => {
-                if (projects.length > 1) {
-                  setWorkspaceModalVisible(true)
-                } else if (projects.length === 1) {
-                  setSelectedProjectId(projects[0].id)
-                }
-              }}
-              style={[
-                styles.segmentItem,
-                selectedProjectId !== 'global' && selectedProjectId !== null && [
-                  styles.segmentItemActive,
-                  { backgroundColor: isDark ? '#21262D' : '#FFFFFF', borderColor: isDark ? '#30363D' : '#E1E4E8' }
-                ]
-              ]}
-            >
-              <FolderGit2 size={13} color={selectedProjectId !== 'global' && selectedProjectId !== null ? colors.text : colors.textSecondary} style={{ marginRight: 5 }} />
-              <Text 
-                numberOfLines={1} 
-                style={[
-                  styles.segmentText,
-                  { 
-                    color: selectedProjectId !== 'global' && selectedProjectId !== null ? colors.text : colors.textSecondary,
-                    fontFamily: selectedProjectId !== 'global' && selectedProjectId !== null ? 'Inter_600SemiBold' : 'Inter_400Regular',
-                    maxWidth: 120
-                  }
-                ]}
-              >
-                {selectedProjectId !== 'global' && selectedProjectId !== null
-                  ? (projects.find(p => p.id === selectedProjectId)?.name || 'Workspace')
-                  : 'Workspace'}
-              </Text>
-              {projects.length > 1 && (
-                <Text 
-                  style={{ 
-                    fontSize: 10, 
-                    color: selectedProjectId !== 'global' && selectedProjectId !== null ? colors.text : colors.textSecondary, 
-                    marginLeft: 4, 
-                    opacity: 0.8 
-                  }}
-                >
-                  ▾
-                </Text>
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      {/* Switcher removed */}
 
       {/* Messages */}
       <ScrollView
@@ -831,7 +755,7 @@ export default function AIScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {messages.length === 0 && !isStreaming && (
-          <Animated.View entering={FadeIn.delay(200)} style={styles.emptyState}>
+          <View style={styles.emptyState}>
             <View style={[styles.emptyIcon, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
               <Sparkles size={28} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={1.2} />
             </View>
@@ -896,7 +820,7 @@ export default function AIScreen() {
                 <ChevronRight size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
-          </Animated.View>
+          </View>
         )}
 
         {messages.map((msg) => (
@@ -912,7 +836,7 @@ export default function AIScreen() {
 
         {/* Streaming indicator */}
         {isStreaming && (
-          <Animated.View entering={FadeInDown.duration(200)} style={[styles.messageBubbleWrapper, styles.modelWrapper]}>
+          <View style={[styles.messageBubbleWrapper, styles.modelWrapper]}>
             <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: 1 }]}>
               <Sparkles size={14} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={1.5} />
             </View>
@@ -937,32 +861,21 @@ export default function AIScreen() {
                   >
                     <View style={styles.typingIndicator}>
                       <View style={styles.thinkingTextContainer}>
-                        {['T', 'h', 'i', 'n', 'k', 'i', 'n', 'g'].map((char, index) => {
-                          const animStyles = [styleL0, styleL1, styleL2, styleL3, styleL4, styleL5, styleL6, styleL7]
-                          return (
-                            <Animated.Text
-                              key={index}
-                              style={[
-                                styles.thinkingChar,
-                                animStyles[index],
-                                { color: isDark ? '#8B929A' : '#656D76' }
-                              ]}
-                            >
-                              {char}
-                            </Animated.Text>
-                          )
-                        })}
+                        <ActivityIndicator size="small" color={isDark ? '#8B929A' : '#656D76'} style={{ marginRight: 6 }} />
+                        <Text style={[styles.thinkingChar, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>
+                          Thinking...
+                        </Text>
                       </View>
                       {reasoningExpanded ? (
-                        <ChevronUp size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
+                        <ChevronUp size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4 }} />
                       ) : (
-                        <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
+                        <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4 }} />
                       )}
                     </View>
                   </TouchableOpacity>
 
                   {reasoningExpanded && (
-                    <Animated.View entering={FadeInDown.duration(200)} style={styles.reasoningContainer}>
+                    <View style={styles.reasoningContainer}>
                       <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
                         Analyzing workspace context...
                       </Text>
@@ -972,12 +885,12 @@ export default function AIScreen() {
                       <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
                         Formulating response strategy...
                       </Text>
-                    </Animated.View>
+                    </View>
                   )}
                 </View>
               ) : null}
             </View>
-          </Animated.View>
+          </View>
         )}
 
         <View style={{ height: 20 }} />
@@ -1226,10 +1139,10 @@ export default function AIScreen() {
             
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                Switch Workspace
+                Switch Context
               </Text>
               <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                Connect your AI chat to a different workspace context:
+                Connect your AI chat to a different workspace or universal mode:
               </Text>
             </View>
 
@@ -1238,6 +1151,43 @@ export default function AIScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 10 }}
             >
+              {/* Universal AI Option */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  setSelectedProjectId('global')
+                  setWorkspaceModalVisible(false)
+                }}
+                style={[
+                  styles.projectOption,
+                  {
+                    backgroundColor: selectedProjectId === 'global' || !selectedProjectId
+                      ? (isDark ? '#1C2128' : '#F0F2F5')
+                      : 'transparent'
+                  }
+                ]}
+              >
+                <View style={styles.projectOptionLeft}>
+                  <Sparkles 
+                    size={14} 
+                    color={selectedProjectId === 'global' || !selectedProjectId ? '#8B5CF6' : colors.textSecondary} 
+                    style={{ marginRight: 10 }} 
+                  />
+                  <Text style={[
+                    styles.projectName,
+                    { 
+                      color: colors.text,
+                      fontFamily: selectedProjectId === 'global' || !selectedProjectId ? 'Inter_600SemiBold' : 'Inter_400Regular'
+                    }
+                  ]}>
+                    Universal AI (No Project)
+                  </Text>
+                </View>
+                {(selectedProjectId === 'global' || !selectedProjectId) && (
+                  <CheckCircle2 size={14} color="#8B5CF6" />
+                )}
+              </TouchableOpacity>
+
               {projects.map((proj) => {
                 const isSelected = selectedProjectId === proj.id
                 return (
