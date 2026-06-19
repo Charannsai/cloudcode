@@ -389,7 +389,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
   const handleOpenInEditor = (file: string) => {
     router.navigate({
-      pathname: `/project/${projectId}/editor`,
+      pathname: `/project/${projectId}/editor` as any,
       params: { path: file }
     })
   }
