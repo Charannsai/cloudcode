@@ -9,7 +9,7 @@ import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
   Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp, Cpu, Shield, Lock,
-  MoreVertical, History, Plus, ChevronRight
+  MoreVertical, History, Plus, ChevronRight, StopCircle
 } from 'lucide-react-native'
 
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -40,6 +40,53 @@ const formatTimestamp = (timestamp: number) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// Generate real-time execution logs from active/past tool calls
+function getRealtimeReasoning(toolCalls: ToolCallInfo[], isStreaming: boolean): string[] {
+  const steps: string[] = []
+  
+  if (!toolCalls || toolCalls.length === 0) {
+    if (isStreaming) {
+      steps.push('Analyzing query and workspace context...')
+      steps.push('Planning next steps...')
+    } else {
+      steps.push('Completed analysis.')
+    }
+    return steps
+  }
+
+  toolCalls.forEach((tc) => {
+    let statusText = 'Completed'
+    if (tc.status === 'pending') statusText = 'Waiting for permission'
+    if (tc.status === 'running') statusText = 'Running'
+    if (tc.status === 'error') statusText = 'Failed'
+
+    if (tc.name === 'read_file') {
+      steps.push(`${statusText} reading file: ${tc.args?.path || ''}`)
+    } else if (tc.name === 'edit_file') {
+      steps.push(`${statusText} editing file: ${tc.args?.path || ''}`)
+    } else if (tc.name === 'create_file') {
+      steps.push(`${statusText} creating file: ${tc.args?.path || ''}`)
+    } else if (tc.name === 'delete_file') {
+      steps.push(`${statusText} deleting file: ${tc.args?.path || ''}`)
+    } else if (tc.name === 'run_command') {
+      steps.push(`${statusText} command: "${tc.args?.command || ''}"`)
+    } else if (tc.name === 'list_files') {
+      steps.push(`${statusText} scanning project structure`)
+    } else {
+      steps.push(`${statusText} tool call: ${tc.name}`)
+    }
+  })
+
+  if (isStreaming) {
+    const lastTc = toolCalls[toolCalls.length - 1]
+    if (lastTc.status === 'done') {
+      steps.push('Synthesizing results and planning next steps...')
+    }
+  }
+
+  return steps
 }
 
 
@@ -492,7 +539,7 @@ export default function AIScreen() {
     sendMessage, clearChat, pendingPrompt, setPendingPrompt,
     activeProjectId: selectedProjectId, setActiveProject: setSelectedProjectId,
     currentThreadId, savedConversations, byokEnabled, byokConfigured,
-    initConversations, loadConversation, deleteConversation, toggleByok, startNewChat
+    initConversations, loadConversation, deleteConversation, toggleByok, startNewChat, stopGeneration
   } = useAIStore()
 
   const insets = useSafeAreaInsets()
@@ -820,15 +867,11 @@ export default function AIScreen() {
 
                   {reasoningExpanded && (
                     <View style={styles.reasoningContainer}>
-                      <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
-                        Analyzing workspace context...
-                      </Text>
-                      <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
-                        Locating relevant codebase items...
-                      </Text>
-                      <Text style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
-                        Formulating response strategy...
-                      </Text>
+                      {getRealtimeReasoning(currentToolCalls, isStreaming).map((step, idx) => (
+                        <Text key={idx} style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
+                          • {step}
+                        </Text>
+                      ))}
                     </View>
                   )}
                 </View>
@@ -880,24 +923,37 @@ export default function AIScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.sendBtn,
-              {
-                backgroundColor: inputText.trim() && !isStreaming
-                  ? (isDark ? '#F3F4F6' : '#0E1116')
-                  : (isDark ? '#1C2128' : '#F6F8FA')
-              }
-            ]}
-            onPress={handleSend}
-            disabled={!inputText.trim() || isStreaming}
-          >
-            <ArrowUp
-              size={16}
-              color={inputText.trim() && !isStreaming ? (isDark ? '#0E1116' : '#FFFFFF') : (isDark ? '#484F58' : '#8C959F')}
-              strokeWidth={2.5}
-            />
-          </TouchableOpacity>
+          {isStreaming ? (
+            <TouchableOpacity
+              style={[
+                styles.sendBtn,
+                { backgroundColor: '#F85149' }
+              ]}
+              onPress={stopGeneration}
+              activeOpacity={0.8}
+            >
+              <StopCircle size={15} color="#FFFFFF" strokeWidth={2} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.sendBtn,
+                {
+                  backgroundColor: inputText.trim()
+                    ? (isDark ? '#F3F4F6' : '#0E1116')
+                    : (isDark ? '#1C2128' : '#F6F8FA')
+                }
+              ]}
+              onPress={handleSend}
+              disabled={!inputText.trim()}
+            >
+              <ArrowUp
+                size={16}
+                color={inputText.trim() ? (isDark ? '#0E1116' : '#FFFFFF') : (isDark ? '#484F58' : '#8C959F')}
+                strokeWidth={2.5}
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 

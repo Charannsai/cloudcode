@@ -25,6 +25,8 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   return result.data as T
 }
 
+let activeAbort: (() => void) | null = null
+
 export const api = {
   projects: {
     list: () => apiFetch<Project[]>('/api/projects'),
@@ -205,6 +207,11 @@ export const api = {
   },
 
   ai: {
+    abort: () => {
+      if (activeAbort) {
+        activeAbort()
+      }
+    },
     approve: (approvalId: string, action: 'approve' | 'reject') =>
       apiFetch<{ success: boolean }>('/api/ai/approve', {
         method: 'POST',
@@ -236,10 +243,25 @@ export const api = {
           body: JSON.stringify({ projectId, messages, openFile, model }),
         })
 
+        const onAbort = () => {
+          es.close()
+          cleanup()
+          reject(new Error('Generation stopped by user.'))
+        }
+
+        activeAbort = onAbort
+
+        const cleanup = () => {
+          if (activeAbort === onAbort) {
+            activeAbort = null
+          }
+        }
+
         es.addEventListener('message', (event) => {
           if (!event.data) return
           if (event.data === '[DONE]') {
             es.close()
+            cleanup()
             resolve()
             return
           }
@@ -254,6 +276,7 @@ export const api = {
         es.addEventListener('error', (event) => {
           console.error('SSE Error:', event)
           es.close()
+          cleanup()
           reject(new Error('AI stream failed or closed prematurely'))
         })
       })
