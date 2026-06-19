@@ -285,7 +285,7 @@ const Screen1Illustration = () => {
           strokeWidth="2" 
           strokeDasharray="4, 4" 
         />
-        <Path 
+        <AnimatedPath 
           d="M 50 70 Q 110 70 140 120" 
           fill="none" 
           stroke="#00E5FF" 
@@ -300,7 +300,7 @@ const Screen1Illustration = () => {
           strokeWidth="2" 
           strokeDasharray="4, 4" 
         />
-        <Path 
+        <AnimatedPath 
           d="M 210 120 Q 240 60 300 60" 
           fill="none" 
           stroke="#61DAFB" 
@@ -315,7 +315,7 @@ const Screen1Illustration = () => {
           strokeWidth="2" 
           strokeDasharray="4, 4" 
         />
-        <Path 
+        <AnimatedPath 
           d="M 210 120 Q 240 120 290 130" 
           fill="none" 
           stroke="#13B9FD" 
@@ -330,7 +330,7 @@ const Screen1Illustration = () => {
           strokeWidth="2" 
           strokeDasharray="4, 4" 
         />
-        <Path 
+        <AnimatedPath 
           d="M 210 120 Q 240 180 280 200" 
           fill="none" 
           stroke="#2496ED" 
