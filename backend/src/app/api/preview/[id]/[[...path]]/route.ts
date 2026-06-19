@@ -230,6 +230,12 @@ export async function GET(req: NextRequest, { params }: Params) {
   const subPath = '/' + (finalPathSegments.join('/') || '')
   const isHtml = subPath === '/' || subPath === '' || req.headers.get('accept')?.includes('text/html')
 
+  // SECURITY: Prevent SSRF authority injection via double slashes or @ in path
+  if (subPath.startsWith('//') || subPath.includes('@')) {
+    if (isHtml) return withCookies(errorHtmlResponse('Invalid path parameters.', 400), projectId, token)
+    return withCookies(errorResponse('Invalid path parameters', 400), projectId, token)
+  }
+
   const { data: project } = await supabaseAdmin
     .from('projects')
     .select('id, user_github_id, port, container_id, status')
