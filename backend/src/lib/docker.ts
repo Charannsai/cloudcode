@@ -41,42 +41,85 @@ export async function createContainer(projectId: string, userTier?: TierName): P
   const tier = getTierConfig(userTier)
   const dockerLimits = getTierDockerLimits(tier)
 
-  const container = await docker.createContainer({
-    Image: IMAGE,
-    name: `cloudcode-${projectId}`,
-    Entrypoint: ['tail', '-f', '/dev/null'], // Override image entrypoint to prevent auto-starts!
-    Cmd: [],
-    WorkingDir: WORKSPACE_ROOT,
-    Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0'], // Force Next.js & Vite to listen on all interfaces
-    Tty: true,
-    AttachStdin: true,
-    AttachStdout: true,
-    AttachStderr: true,
-    ExposedPorts: {
-      '3000/tcp': {},
-      '5000/tcp': {},
-      '5173/tcp': {},
-      '8000/tcp': {},
-      '8080/tcp': {},
-    },
-    HostConfig: {
-      Binds: [`${hostPath}:${WORKSPACE_ROOT}`, `${sshVolumeName}:/home/coder/.ssh`],
-      // Tier-based resource limits (from tiers.ts)
-      NanoCpus: dockerLimits.NanoCpus,
-      Memory: dockerLimits.Memory,
-      StorageOpt: dockerLimits.StorageOpt,
-      PortBindings: {
-        '3000/tcp': [{ HostPort: '' }],
-        '5000/tcp': [{ HostPort: '' }],
-        '5173/tcp': [{ HostPort: '' }],
-        '8000/tcp': [{ HostPort: '' }],
-        '8080/tcp': [{ HostPort: '' }],
+  let container
+  try {
+    container = await docker.createContainer({
+      Image: IMAGE,
+      name: `cloudcode-${projectId}`,
+      Entrypoint: ['tail', '-f', '/dev/null'], // Override image entrypoint to prevent auto-starts!
+      Cmd: [],
+      WorkingDir: WORKSPACE_ROOT,
+      Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0'], // Force Next.js & Vite to listen on all interfaces
+      Tty: true,
+      AttachStdin: true,
+      AttachStdout: true,
+      AttachStderr: true,
+      ExposedPorts: {
+        '3000/tcp': {},
+        '5000/tcp': {},
+        '5173/tcp': {},
+        '8000/tcp': {},
+        '8080/tcp': {},
       },
-      // SECURITY: ICC (Inter-Container Communication) is disabled at daemon level via docker-daemon.json
-      NetworkMode: 'bridge',
-      RestartPolicy: { Name: 'no' },  // Managed by idle auto-stop — don't auto-restart
-    },
-  })
+      HostConfig: {
+        Binds: [`${hostPath}:${WORKSPACE_ROOT}`, `${sshVolumeName}:/home/coder/.ssh`],
+        // Tier-based resource limits (from tiers.ts)
+        NanoCpus: dockerLimits.NanoCpus,
+        Memory: dockerLimits.Memory,
+        StorageOpt: dockerLimits.StorageOpt,
+        PortBindings: {
+          '3000/tcp': [{ HostPort: '' }],
+          '5000/tcp': [{ HostPort: '' }],
+          '5173/tcp': [{ HostPort: '' }],
+          '8000/tcp': [{ HostPort: '' }],
+          '8080/tcp': [{ HostPort: '' }],
+        },
+        // SECURITY: ICC (Inter-Container Communication) is disabled at daemon level via docker-daemon.json
+        NetworkMode: 'bridge',
+        RestartPolicy: { Name: 'no' },  // Managed by idle auto-stop — don't auto-restart
+      },
+    })
+  } catch (err: any) {
+    const errMsg = err.message || ''
+    if (errMsg.includes('storage-opt') || errMsg.includes('StorageOpt')) {
+      console.warn(`[Docker] Storage limits (StorageOpt) not supported by host filesystem. Falling back without storage limits...`)
+      container = await docker.createContainer({
+        Image: IMAGE,
+        name: `cloudcode-${projectId}`,
+        Entrypoint: ['tail', '-f', '/dev/null'],
+        Cmd: [],
+        WorkingDir: WORKSPACE_ROOT,
+        Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0'],
+        Tty: true,
+        AttachStdin: true,
+        AttachStdout: true,
+        AttachStderr: true,
+        ExposedPorts: {
+          '3000/tcp': {},
+          '5000/tcp': {},
+          '5173/tcp': {},
+          '8000/tcp': {},
+          '8080/tcp': {},
+        },
+        HostConfig: {
+          Binds: [`${hostPath}:${WORKSPACE_ROOT}`, `${sshVolumeName}:/home/coder/.ssh`],
+          NanoCpus: dockerLimits.NanoCpus,
+          Memory: dockerLimits.Memory,
+          PortBindings: {
+            '3000/tcp': [{ HostPort: '' }],
+            '5000/tcp': [{ HostPort: '' }],
+            '5173/tcp': [{ HostPort: '' }],
+            '8000/tcp': [{ HostPort: '' }],
+            '8080/tcp': [{ HostPort: '' }],
+          },
+          NetworkMode: 'bridge',
+          RestartPolicy: { Name: 'no' },
+        },
+      })
+    } else {
+      throw err
+    }
+  }
 
   await container.start()
   const info = await container.inspect()
