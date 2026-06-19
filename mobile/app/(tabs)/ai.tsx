@@ -409,8 +409,21 @@ export default function AIScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => {
-                const firstProj = projects.find(p => p.id === selectedProjectId) || projects[0]
-                setSelectedProjectId(firstProj.id)
+                if (projects.length > 1) {
+                  Alert.alert(
+                    'Switch Project Context',
+                    'Select a project container to connect this AI session:',
+                    [
+                      ...projects.map(p => ({
+                        text: p.name,
+                        onPress: () => setSelectedProjectId(p.id)
+                      })),
+                      { text: 'Cancel', style: 'cancel' as const }
+                    ]
+                  )
+                } else if (projects.length === 1) {
+                  setSelectedProjectId(projects[0].id)
+                }
               }}
               style={[
                 styles.segmentItem,
@@ -436,32 +449,21 @@ export default function AIScreen() {
                   ? (projects.find(p => p.id === selectedProjectId)?.name || 'Workspace')
                   : 'Workspace'}
               </Text>
+              {projects.length > 1 && (
+                <Text 
+                  style={{ 
+                    fontSize: 10, 
+                    color: selectedProjectId !== 'global' && selectedProjectId !== null ? colors.text : colors.textSecondary, 
+                    marginLeft: 4, 
+                    opacity: 0.8 
+                  }}
+                >
+                  ▾
+                </Text>
+              )}
             </TouchableOpacity>
           )}
         </View>
-        
-        {/* Project Selector Dropdown trigger */}
-        {projects.length > 1 && selectedProjectId !== 'global' && selectedProjectId !== null && (
-          <TouchableOpacity 
-            activeOpacity={0.7}
-            onPress={() => {
-              Alert.alert(
-                'Switch Project Context',
-                'Select a project container to connect this AI session:',
-                [
-                  ...projects.map(p => ({
-                    text: p.name,
-                    onPress: () => setSelectedProjectId(p.id)
-                  })),
-                  { text: 'Cancel', style: 'cancel' as const }
-                ]
-              )
-            }}
-            style={[styles.dropdownTrigger, { backgroundColor: isDark ? '#161B22' : '#F0F2F5', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-          >
-            <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }}>SWITCH ▾</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Messages */}
@@ -672,14 +674,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: -0.2,
   },
-  dropdownTrigger: {
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
   messagesContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 160 },
   emptyState: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 20 },
   emptyIcon: {
