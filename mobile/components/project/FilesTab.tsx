@@ -308,7 +308,7 @@ export default function FilesTab({ projectId, isActive }: Props) {
       <Modal
         visible={createModal.visible}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setCreateModal(prev => ({ ...prev, visible: false }))}
       >
         <View style={styles.promptOverlay}>
@@ -372,7 +372,7 @@ export default function FilesTab({ projectId, isActive }: Props) {
       <Modal
         visible={showOptionsModal}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setShowOptionsModal(false)}
       >
         <View style={styles.promptOverlay}>
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   toolBtn: {
     width: 28,
     height: 28,
-    borderRadius: 7,
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -517,11 +517,11 @@ const styles = StyleSheet.create({
   },
   promptContent: {
     width: '100%',
-    maxWidth: 320,
-    borderRadius: 16,
+    maxWidth: 300,
+    borderRadius: 8,
     borderWidth: 1,
-    padding: 20,
-    gap: 16,
+    padding: 16,
+    gap: 12,
   },
   promptTitle: {
     fontSize: 16,
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   promptInput: {
     height: 40,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 4,
     paddingHorizontal: 12,
     fontSize: 14,
   },
@@ -559,8 +559,8 @@ const styles = StyleSheet.create({
   },
   optionsContent: {
     width: '100%',
-    maxWidth: 280,
-    borderRadius: 14,
+    maxWidth: 260,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
   },

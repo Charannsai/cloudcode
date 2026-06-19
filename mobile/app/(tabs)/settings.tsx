@@ -352,20 +352,20 @@ export default function SettingsScreen() {
       <Modal
         visible={upgradeModal.visible}
         transparent={true}
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setUpgradeModal({ visible: false, tierName: null })}
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: isDark ? '#0F141C' : '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 20, width: '100%', maxWidth: 360, gap: 16 }}>
+          <View style={{ backgroundColor: isDark ? '#0F141C' : '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, width: '100%', maxWidth: 320, gap: 12 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 18 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }}>
                 {upgradeModal.tierName === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Advanced'}
               </Text>
               <TouchableOpacity onPress={() => setUpgradeModal({ visible: false, tierName: null })}>
-                <Text style={{ color: colors.textSecondary, fontSize: 18 }}>✕</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 16 }}>✕</Text>
               </TouchableOpacity>
             </View>
-            <View style={{ backgroundColor: isDark ? '#161B22' : '#F9FAFB', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+            <View style={{ backgroundColor: isDark ? '#161B22' : '#F9FAFB', padding: 10, borderRadius: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
               <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24 }}>
                 {upgradeModal.tierName === 'pro' ? '$25.00' : '$99.00'}
                 <Text style={{ fontSize: 14, fontWeight: 'normal', color: colors.textSecondary }}>/month</Text>
@@ -1423,7 +1423,7 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     marginHorizontal: 24,
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -1431,18 +1431,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
+    padding: 12,
   },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowLabel: { fontSize: 14 },
-  rowValue: { fontSize: 12 },
+  rowLabel: { fontSize: 13 },
+  rowValue: { fontSize: 11.5 },
   signOutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1450,8 +1450,8 @@ const styles = StyleSheet.create({
     gap: 8,
     marginHorizontal: 24,
     marginTop: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingVertical: 10,
+    borderRadius: 6,
     borderWidth: 1,
   },
   signOutText: { fontSize: 14 },
@@ -1471,17 +1471,17 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   inputField: {
-    height: 40,
+    height: 36,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 6,
     paddingHorizontal: 12,
     fontSize: 13,
     fontFamily: 'Inter_400Regular',
     marginBottom: 4,
   },
   primaryBtn: {
-    height: 40,
-    borderRadius: 8,
+    height: 36,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
@@ -1491,9 +1491,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryBtn: {
-    height: 40,
+    height: 36,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
@@ -1501,21 +1501,21 @@ const styles = StyleSheet.create({
   subHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     paddingHorizontal: 24,
-    paddingTop: 64,
-    paddingBottom: 16,
+    paddingTop: 54,
+    paddingBottom: 12,
   },
   backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   subTitle: {
-    fontSize: 20,
-    letterSpacing: -0.4,
+    fontSize: 18,
+    letterSpacing: -0.3,
   },
   dependencyCard: {
     marginHorizontal: 24,
@@ -1524,9 +1524,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 6,
     paddingHorizontal: 12,
-    height: 40,
+    height: 36,
     marginBottom: 4,
   },
   textInput: {
