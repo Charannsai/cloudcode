@@ -64,7 +64,9 @@ async function buildFileTree(basePath: string, currentPath: string): Promise<Fil
 function sanitizePath(projectId: string, filePath: string): string | null {
   const workspacePath = getWorkspacePath(projectId)
   const resolved = path.resolve(workspacePath, filePath)
-  if (!resolved.startsWith(workspacePath)) return null
+  // SECURITY: Enforce directory separator boundary to prevent prefix-based traversal
+  // e.g., /projects/123-uuid-other would match startsWith(/projects/123-uuid) without this fix
+  if (resolved !== workspacePath && !resolved.startsWith(workspacePath + path.sep)) return null
   return resolved
 }
 
