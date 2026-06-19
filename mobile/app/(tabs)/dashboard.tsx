@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { BlurView } from 'expo-blur'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
@@ -47,10 +47,10 @@ export default function DashboardScreen() {
       -1,
       true
     )
-    fetchProjects()
   }, [])
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const data = await api.projects.list()
       // Sort by recently updated if possible, or just take first 5
@@ -60,7 +60,22 @@ export default function DashboardScreen() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  // Auto-refresh workspaces list on focus and poll every 10s
+  useFocusEffect(
+    useCallback(() => {
+      fetchProjects(true)
+
+      const interval = setInterval(() => {
+        fetchProjects(true)
+      }, 10000)
+
+      return () => {
+        clearInterval(interval)
+      }
+    }, [fetchProjects])
+  )
 
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulseAnim.value,
@@ -73,6 +88,13 @@ export default function DashboardScreen() {
       onScroll={handleScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={() => fetchProjects(false)}
+          tintColor={colors.text}
+        />
+      }
     >
       {/* Premium Header */}
       <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.header}>
