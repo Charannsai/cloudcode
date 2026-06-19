@@ -15,42 +15,18 @@ export default function BillingSuccessScreen() {
   const email = (params.email as string) || 'N/A'
   const status = (params.status as string) || 'active'
 
-  const [verifying, setVerifying] = useState(true)
   const [billingInfo, setBillingInfo] = useState<any>(null)
 
   useEffect(() => {
-    let attempt = 0
-    const maxAttempts = 4
-    let timeoutId: any
-
-    async function verifyPlan() {
+    async function syncBilling() {
       try {
         const data = await api.billing.status()
         setBillingInfo(data)
-        
-        // If they are no longer on 'free' tier, or if we have retried enough, stop loading
-        if (data.tier.name !== 'free' || attempt >= maxAttempts) {
-          setVerifying(false)
-        } else {
-          attempt++
-          timeoutId = setTimeout(verifyPlan, 2500) // Poll every 2.5s
-        }
       } catch (err) {
-        console.warn('Failed to fetch plan verification:', err)
-        if (attempt >= maxAttempts) {
-          setVerifying(false)
-        } else {
-          attempt++
-          timeoutId = setTimeout(verifyPlan, 2500)
-        }
+        console.warn('Failed to sync billing status:', err)
       }
     }
-
-    verifyPlan()
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId)
-    }
+    syncBilling()
   }, [])
 
   const currentTierDisplayName = billingInfo?.tier?.displayName || 'Pro Plan'
@@ -76,70 +52,60 @@ export default function BillingSuccessScreen() {
         </Text>
       </Animated.View>
 
-      {/* Verification state loader */}
-      {verifying ? (
-        <Animated.View entering={FadeInDown.delay(300).duration(600)} style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          <ActivityIndicator color={colors.primary} size="small" />
-          <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-            Verifying subscription tier on backend...
-          </Text>
-        </Animated.View>
-      ) : (
-        <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.cardContainer}>
-          {/* Plan badge */}
-          <View style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, gap: 14 }]}>
-            <View style={styles.row}>
-              <View style={[styles.iconBg, { backgroundColor: colors.success + '10' }]}>
-                <Sparkles size={18} color={colors.success} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>ACTIVE PLAN</Text>
-                <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'Inter_700Bold' }}>
-                  {currentTierDisplayName}
-                </Text>
-              </View>
-              <View style={[styles.statusBadge, { backgroundColor: colors.success + '15', borderColor: colors.success + '30' }]}>
-                <Text style={{ color: colors.success, fontSize: 10, fontFamily: 'Inter_700Bold' }}>
-                  {status.toUpperCase()}
-                </Text>
-              </View>
+      <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.cardContainer}>
+        {/* Plan badge */}
+        <View style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, gap: 14 }]}>
+          <View style={styles.row}>
+            <View style={[styles.iconBg, { backgroundColor: colors.success + '10' }]}>
+              <Sparkles size={18} color={colors.success} />
             </View>
-
-            <View style={{ height: 1, backgroundColor: colors.border }} />
-
-            {/* Details */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelRow}>
-                <Mail size={13} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Email Address</Text>
-              </View>
-              <Text style={[styles.detailValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
-                {email}
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>ACTIVE PLAN</Text>
+              <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'Inter_700Bold' }}>
+                {currentTierDisplayName}
               </Text>
             </View>
-
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelRow}>
-                <CreditCard size={13} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Subscription ID</Text>
-              </View>
-              <Text style={[styles.detailValue, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
-                {subscriptionId}
-              </Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <View style={styles.detailLabelRow}>
-                <ShieldCheck size={13} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Secure Provisioning</Text>
-              </View>
-              <Text style={[styles.detailValue, { color: colors.success, fontFamily: 'Inter_600SemiBold' }]}>
-                Instant
+            <View style={[styles.statusBadge, { backgroundColor: colors.success + '15', borderColor: colors.success + '30' }]}>
+              <Text style={{ color: colors.success, fontSize: 10, fontFamily: 'Inter_700Bold' }}>
+                {status.toUpperCase()}
               </Text>
             </View>
           </View>
-        </Animated.View>
-      )}
+
+          <View style={{ height: 1, backgroundColor: colors.border }} />
+
+          {/* Details */}
+          <View style={styles.detailRow}>
+            <View style={styles.detailLabelRow}>
+              <Mail size={13} color={colors.textSecondary} />
+              <Text style={[styles.detailLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Email Address</Text>
+            </View>
+            <Text style={[styles.detailValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
+              {email}
+            </Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <View style={styles.detailLabelRow}>
+              <CreditCard size={13} color={colors.textSecondary} />
+              <Text style={[styles.detailLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Subscription ID</Text>
+            </View>
+            <Text style={[styles.detailValue, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
+              {subscriptionId}
+            </Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <View style={styles.detailLabelRow}>
+              <ShieldCheck size={13} color={colors.textSecondary} />
+              <Text style={[styles.detailLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>Secure Provisioning</Text>
+            </View>
+            <Text style={[styles.detailValue, { color: colors.success, fontFamily: 'Inter_600SemiBold' }]}>
+              Instant
+            </Text>
+          </View>
+        </View>
+      </Animated.View>
 
       {/* Button Action */}
       <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.buttonContainer}>
