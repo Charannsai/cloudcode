@@ -1386,4 +1386,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 4,
   },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingTop: 64,
+    paddingBottom: 16,
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subTitle: {
+    fontSize: 20,
+    letterSpacing: -0.4,
+  },
+  dependencyCard: {
+    marginHorizontal: 24,
+  },
 })
