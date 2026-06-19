@@ -72,7 +72,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (loading || !fontsLoaded) return
 
-    const inAuthGroup = segments[0] === '(tabs)' || segments[0] === 'project' || segments[0] === 'new-project'
+    const inAuthGroup = segments[0] === '(tabs)' || segments[0] === 'project' || segments[0] === 'new-project' || segments[0] === 'billing'
 
     if (!user && inAuthGroup) {
       router.replace('/')
@@ -96,6 +96,7 @@ export default function RootLayout() {
         <Stack.Screen name="new-project" options={{ presentation: 'modal' }} />
         <Stack.Screen name="project/[id]/index" />
         <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
+        <Stack.Screen name="billing/success" />
       </Stack>
     {/*
       Floating Voice Assistant
