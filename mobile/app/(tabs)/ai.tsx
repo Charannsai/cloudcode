@@ -7,7 +7,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
-  Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp
+  Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp, Cpu, Shield
 } from 'lucide-react-native'
 
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -394,6 +394,9 @@ export default function AIScreen() {
   const router = useRouter()
   const { setTabBarVisible } = useUIStore()
 
+  const [selectedModel, setSelectedModel] = useState<'gemini' | 'openai' | 'anthropic'>('gemini')
+  const [modelModalVisible, setModelModalVisible] = useState(false)
+
   const [isListening, setIsListening] = useState(false)
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
 
@@ -469,9 +472,9 @@ export default function AIScreen() {
     if (pendingPrompt && selectedProjectId && !isStreaming) {
       const prompt = pendingPrompt
       setPendingPrompt(null)
-      sendMessage(prompt, selectedProjectId)
+      sendMessage(prompt, selectedProjectId, undefined, selectedModel)
     }
-  }, [pendingPrompt, selectedProjectId, isStreaming])
+  }, [pendingPrompt, selectedProjectId, isStreaming, selectedModel])
 
   // Hide the global tab bar completely when on this screen and sync projects
   useFocusEffect(
@@ -548,7 +551,7 @@ export default function AIScreen() {
 
     const text = inputText.trim()
     setInputText('')
-    await sendMessage(text, selectedProjectId)
+    await sendMessage(text, selectedProjectId, undefined, selectedModel)
   }
 
   const username = user?.login || 'developer'
@@ -593,9 +596,25 @@ export default function AIScreen() {
             </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={clearChat} style={[styles.clearBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
-          <Trash2 size={14} color={colors.textSecondary} strokeWidth={1.5} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TouchableOpacity 
+            onPress={() => setModelModalVisible(true)}
+            style={[styles.modelPill, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}
+            activeOpacity={0.8}
+          >
+            {selectedModel === 'gemini' && <Sparkles size={12} color="#8B5CF6" />}
+            {selectedModel === 'openai' && <Cpu size={12} color="#10B981" />}
+            {selectedModel === 'anthropic' && <Shield size={12} color="#D97706" />}
+            <Text style={[styles.modelPillText, { color: colors.text }]}>
+              {selectedModel === 'gemini' ? 'Gemini' : selectedModel === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'}
+            </Text>
+            <ChevronDown size={10} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={clearChat} style={[styles.clearBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+            <Trash2 size={14} color={colors.textSecondary} strokeWidth={1.5} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Sleek Segmented Switcher */}
@@ -868,6 +887,124 @@ export default function AIScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Model Selection Modal */}
+      <Modal
+        visible={modelModalVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => setModelModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setModelModalVisible(false)}
+          />
+          <View style={[
+            styles.modalContent, 
+            { 
+              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+              borderColor: isDark ? '#21262D' : '#E5E7EB' 
+            }
+          ]}>
+            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                Select AI Model
+              </Text>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                Choose which model powers your coding assistant.
+              </Text>
+            </View>
+
+            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+              {/* Gemini Option */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setSelectedModel('gemini')
+                  setModelModalVisible(false)
+                }}
+                style={[
+                  styles.projectOption,
+                  { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' },
+                  selectedModel === 'gemini' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' }
+                ]}
+              >
+                <View style={styles.projectOptionLeft}>
+                  <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(139, 92, 246, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <Sparkles size={14} color="#8B5CF6" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Gemini Flash</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>Fast, default assistant with rich tool integration.</Text>
+                  </View>
+                </View>
+                {selectedModel === 'gemini' && <CheckCircle2 size={16} color="#8B5CF6" />}
+              </TouchableOpacity>
+
+              {/* OpenAI Option */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setSelectedModel('openai')
+                  setModelModalVisible(false)
+                }}
+                style={[
+                  styles.projectOption,
+                  { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
+                  selectedModel === 'openai' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' }
+                ]}
+              >
+                <View style={styles.projectOptionLeft}>
+                  <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <Cpu size={14} color="#10B981" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>gpt-4o</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>ChatGPT flagship model for high reasoning and logic.</Text>
+                  </View>
+                </View>
+                {selectedModel === 'openai' && <CheckCircle2 size={16} color="#10B981" />}
+              </TouchableOpacity>
+
+              {/* Anthropic Option */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setSelectedModel('anthropic')
+                  setModelModalVisible(false)
+                }}
+                style={[
+                  styles.projectOption,
+                  { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
+                  selectedModel === 'anthropic' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' }
+                ]}
+              >
+                <View style={styles.projectOptionLeft}>
+                  <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(217, 119, 6, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <Shield size={14} color="#D97706" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Claude Opus 4.6</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>State of the art reasoning & code planning capabilities.</Text>
+                  </View>
+                </View>
+                {selectedModel === 'anthropic' && <CheckCircle2 size={16} color="#D97706" />}
+              </TouchableOpacity>
+            </ScrollView>
+
+            <TouchableOpacity 
+              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
+              onPress={() => setModelModalVisible(false)}
+            >
+              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Workspace Switcher Modal */}
       <Modal
@@ -1388,5 +1525,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 4,
     lineHeight: 14,
+  },
+  modelPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 6,
+  },
+  modelPillText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
 })
