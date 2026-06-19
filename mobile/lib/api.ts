@@ -214,6 +214,7 @@ export const api = {
       projectId: string,
       messages: { role: 'user' | 'model'; text: string }[],
       openFile?: { path: string; content: string },
+      model?: string,
       onChunk?: (chunk: AIStreamChunk) => void
     ) => {
       const token = await getToken()
@@ -232,7 +233,7 @@ export const api = {
             ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
             ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
           },
-          body: JSON.stringify({ projectId, messages, openFile }),
+          body: JSON.stringify({ projectId, messages, openFile, model }),
         })
 
         es.addEventListener('message', (event) => {

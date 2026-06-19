@@ -29,7 +29,8 @@ interface AIState {
   sendMessage: (
     text: string,
     projectId: string,
-    openFile?: { path: string; content: string }
+    openFile?: { path: string; content: string },
+    model?: string
   ) => Promise<void>
   clearChat: () => void
 }
@@ -45,7 +46,7 @@ export const useAIStore = create<AIState>((set, get) => ({
   setActiveProject: (projectId) => set({ activeProjectId: projectId }),
   setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
 
-  sendMessage: async (text, projectId, openFile) => {
+  sendMessage: async (text, projectId, openFile, model) => {
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -70,7 +71,7 @@ export const useAIStore = create<AIState>((set, get) => ({
     const toolCalls: ToolCallInfo[] = []
 
     try {
-      await api.ai.chat(projectId, history, openFile, (chunk: AIStreamChunk) => {
+      await api.ai.chat(projectId, history, openFile, model, (chunk: AIStreamChunk) => {
         switch (chunk.type) {
           case 'text':
             fullText += chunk.content || ''

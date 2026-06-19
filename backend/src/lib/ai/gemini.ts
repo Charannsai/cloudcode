@@ -9,6 +9,9 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = 'gemini-3-flash-preview'
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
+
 export interface GeminiMessage {
   role: 'user' | 'model'
   parts: GeminiPart[]
@@ -341,6 +344,341 @@ export async function* chatWithGemini(
       if (!hasFunctionCall) {
         break
       }
+    } catch (err) {
+      yield { type: 'error', content: `Error: ${(err as Error).message}` }
+      return
+    }
+  }
+
+  yield { type: 'done' }
+}
+
+function convertSchemaToLowercase(schema: any): any {
+  if (!schema) return schema
+  const newSchema = { ...schema }
+  if (typeof newSchema.type === 'string') {
+    newSchema.type = newSchema.type.toLowerCase()
+  }
+  if (newSchema.properties) {
+    const newProps: any = {}
+    for (const key of Object.keys(newSchema.properties)) {
+      newProps[key] = convertSchemaToLowercase(newSchema.properties[key])
+    }
+    newSchema.properties = newProps
+  }
+  return newSchema
+}
+
+export async function* chatWithOpenAI(
+  messages: { role: 'user' | 'model'; text: string }[],
+  containerId: string,
+  context?: { fileTree?: string; openFile?: { path: string; content: string } },
+  customApiKey?: string
+): AsyncGenerator<StreamChunk> {
+  const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
+  const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : OPENAI_API_KEY
+
+  if (!apiKey) {
+    yield { type: 'error', content: 'OpenAI API key not configured. Please add it under AI API Keys (BYOK) in settings.' }
+    return
+  }
+
+  // Convert schema types to lowercase for OpenAI function calling compatibility
+  const openAITools = TOOL_DECLARATIONS.map(tool => ({
+    type: 'function',
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: convertSchemaToLowercase(tool.parameters)
+    }
+  }))
+
+  const openAIMessages: any[] = []
+  openAIMessages.push({
+    role: 'system',
+    content: hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant. Advise the user to select a project if they want you to read, edit, or run commands on files.'
+  })
+
+  let firstUserProcessed = false
+  for (const m of messages) {
+    let content = m.text
+    if (!firstUserProcessed && m.role === 'user' && context) {
+      firstUserProcessed = true
+      let contextPrefix = ''
+      if (context.fileTree) {
+        contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+      }
+      if (context.openFile) {
+        contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
+      }
+      content = contextPrefix + content
+    }
+    openAIMessages.push({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: content
+    })
+  }
+
+  let loopCount = 0
+  const MAX_LOOPS = 10
+
+  while (loopCount < MAX_LOOPS) {
+    loopCount++
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: openAIMessages,
+          ...(hasContainer ? { tools: openAITools, tool_choice: 'auto' } : {}),
+          temperature: 0.7,
+        })
+      })
+
+      if (!response.ok) {
+        const errText = await response.text()
+        yield { type: 'error', content: `OpenAI API error: ${response.status} - ${errText}` }
+        return
+      }
+
+      const data = await response.json()
+      const choice = data.choices?.[0]
+      if (!choice || !choice.message) {
+        yield { type: 'error', content: 'No response from OpenAI' }
+        return
+      }
+
+      const assistantMsg = choice.message
+      openAIMessages.push(assistantMsg)
+
+      if (assistantMsg.content) {
+        yield { type: 'text', content: assistantMsg.content }
+      }
+
+      const toolCalls = assistantMsg.tool_calls
+      if (!toolCalls || toolCalls.length === 0) {
+        break
+      }
+
+      for (const tc of toolCalls) {
+        const name = tc.function.name
+        let args: Record<string, unknown> = {}
+        try {
+          args = JSON.parse(tc.function.arguments)
+        } catch (e) {
+          console.error('Failed to parse tool arguments:', e)
+        }
+
+        let result: any
+        if (name === 'run_command') {
+          const command = args.command as string
+          const approvalId = uuidv4()
+
+          yield { 
+            type: 'tool_call', 
+            toolName: name, 
+            toolArgs: { ...args, approvalId, status: 'pending' } 
+          }
+
+          const approvalPromise = new Promise<boolean>((resolve) => {
+            (global as any).pendingCommands.set(approvalId, { resolve, command })
+          })
+
+          const approved = await approvalPromise
+
+          if (approved) {
+            yield { 
+              type: 'tool_call', 
+              toolName: name, 
+              toolArgs: { ...args, approvalId, status: 'running' } 
+            }
+            result = await executeTool(containerId, name, args)
+          } else {
+            result = { error: 'Command execution rejected by user.' }
+          }
+        } else {
+          yield { type: 'tool_call', toolName: name, toolArgs: args }
+          result = await executeTool(containerId, name, args)
+        }
+
+        yield { 
+          type: 'tool_result', 
+          toolName: name, 
+          toolResult: result,
+          toolArgs: { approvalId: (args as any).approvalId }
+        }
+
+        openAIMessages.push({
+          role: 'tool',
+          tool_call_id: tc.id,
+          content: JSON.stringify(result)
+        })
+      }
+    } catch (err) {
+      yield { type: 'error', content: `Error: ${(err as Error).message}` }
+      return
+    }
+  }
+
+  yield { type: 'done' }
+}
+
+export async function* chatWithAnthropic(
+  messages: { role: 'user' | 'model'; text: string }[],
+  containerId: string,
+  context?: { fileTree?: string; openFile?: { path: string; content: string } },
+  customApiKey?: string
+): AsyncGenerator<StreamChunk> {
+  const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
+  const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : ANTHROPIC_API_KEY
+
+  if (!apiKey) {
+    yield { type: 'error', content: 'Anthropic API key not configured. Please add it under AI API Keys (BYOK) in settings.' }
+    return
+  }
+
+  const anthropicTools = TOOL_DECLARATIONS.map(tool => ({
+    name: tool.name,
+    description: tool.description,
+    input_schema: convertSchemaToLowercase(tool.parameters)
+  }))
+
+  const anthropicMessages: any[] = []
+  let firstUserProcessed = false
+  for (const m of messages) {
+    let content = m.text
+    if (!firstUserProcessed && m.role === 'user' && context) {
+      firstUserProcessed = true
+      let contextPrefix = ''
+      if (context.fileTree) {
+        contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+      }
+      if (context.openFile) {
+        contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
+      }
+      content = contextPrefix + content
+    }
+    anthropicMessages.push({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: content
+    })
+  }
+
+  let loopCount = 0
+  const MAX_LOOPS = 10
+
+  while (loopCount < MAX_LOOPS) {
+    loopCount++
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-opus-20240229',
+          max_tokens: 4096,
+          system: hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant. Advise the user to select a project if they want you to read, edit, or run commands on files.',
+          messages: anthropicMessages,
+          ...(hasContainer ? { tools: anthropicTools } : {}),
+          temperature: 0.7,
+        })
+      })
+
+      if (!response.ok) {
+        const errText = await response.text()
+        yield { type: 'error', content: `Anthropic API error: ${response.status} - ${errText}` }
+        return
+      }
+
+      const data = await response.json()
+      if (!data.content || data.content.length === 0) {
+        yield { type: 'error', content: 'No response from Anthropic' }
+        return
+      }
+
+      // Add to messages array
+      anthropicMessages.push({
+        role: 'assistant',
+        content: data.content
+      })
+
+      const toolResultBlocks: any[] = []
+      let hasToolUse = false
+
+      for (const block of data.content) {
+        if (block.type === 'text') {
+          yield { type: 'text', content: block.text }
+        }
+
+        if (block.type === 'tool_use') {
+          hasToolUse = true
+          const name = block.name
+          const args = block.input || {}
+          
+          let result: any
+          if (name === 'run_command') {
+            const command = args.command as string
+            const approvalId = uuidv4()
+
+            yield { 
+              type: 'tool_call', 
+              toolName: name, 
+              toolArgs: { ...args, approvalId, status: 'pending' } 
+            }
+
+            const approvalPromise = new Promise<boolean>((resolve) => {
+              (global as any).pendingCommands.set(approvalId, { resolve, command })
+            })
+
+            const approved = await approvalPromise
+
+            if (approved) {
+              yield { 
+                type: 'tool_call', 
+                toolName: name, 
+                toolArgs: { ...args, approvalId, status: 'running' } 
+              }
+              result = await executeTool(containerId, name, args)
+            } else {
+              result = { error: 'Command execution rejected by user.' }
+            }
+          } else {
+            yield { type: 'tool_call', toolName: name, toolArgs: args }
+            result = await executeTool(containerId, name, args)
+          }
+
+          yield { 
+            type: 'tool_result', 
+            toolName: name, 
+            toolResult: result,
+            toolArgs: { approvalId: (args as any).approvalId }
+          }
+
+          toolResultBlocks.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: JSON.stringify(result)
+          })
+        }
+      }
+
+      if (!hasToolUse) {
+        break
+      }
+
+      anthropicMessages.push({
+        role: 'user',
+        content: toolResultBlocks
+      })
     } catch (err) {
       yield { type: 'error', content: `Error: ${(err as Error).message}` }
       return

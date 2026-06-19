@@ -3,7 +3,7 @@
 import { NextRequest } from 'next/server'
 import { getUserFromRequest, errorResponse } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { chatWithGemini, GeminiMessage } from '@/lib/ai/gemini'
+import { chatWithGemini, chatWithOpenAI, chatWithAnthropic, GeminiMessage } from '@/lib/ai/gemini'
 import { execInContainer, ensureContainerRunning } from '@/lib/docker'
 
 export async function POST(req: NextRequest) {
@@ -11,16 +11,33 @@ export async function POST(req: NextRequest) {
   if (!user) return errorResponse('Unauthorized', 401)
 
   const customGeminiKey = req.headers.get('x-gemini-key') || undefined
+  const customOpenaiKey = req.headers.get('x-openai-key') || undefined
+  const customAnthropicKey = req.headers.get('x-anthropic-key') || undefined
 
   const body = await req.json()
-  const { projectId, messages, openFile } = body as {
+  const { projectId, messages, openFile, model } = body as {
     projectId: string
     messages: { role: 'user' | 'model'; text: string }[]
     openFile?: { path: string; content: string }
+    model?: string
   }
 
   if (!projectId || !messages || messages.length === 0) {
     return errorResponse('Missing projectId or messages')
+  }
+
+  const getGenerator = (containerId: string, context?: { fileTree?: string; openFile?: { path: string; content: string } }) => {
+    if (model === 'openai') {
+      return chatWithOpenAI(messages, containerId, context, customOpenaiKey)
+    } else if (model === 'anthropic') {
+      return chatWithAnthropic(messages, containerId, context, customAnthropicKey)
+    } else {
+      const geminiMessages: GeminiMessage[] = messages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }],
+      }))
+      return chatWithGemini(geminiMessages, containerId, context, customGeminiKey)
+    }
   }
 
   if (projectId === 'global') {
@@ -29,15 +46,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = chatWithGemini(
-            messages.map(m => ({
-              role: m.role === 'user' ? 'user' : 'model',
-              parts: [{ text: m.text }],
-            })),
-            'global',
-            undefined,
-            customGeminiKey
-          )
+          const generator = getGenerator('global')
 
           for await (const chunk of generator) {
             const data = JSON.stringify(chunk) + '\n'
@@ -98,23 +107,12 @@ export async function POST(req: NextRequest) {
     fileTree = '(unable to read file tree)'
   }
 
-  // Convert messages to Gemini format
-  const geminiMessages: GeminiMessage[] = messages.map(m => ({
-    role: m.role === 'user' ? 'user' : 'model',
-    parts: [{ text: m.text }],
-  }))
-
   // Stream response using SSE
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const generator = chatWithGemini(
-          geminiMessages,
-          project.container_id!,
-          { fileTree, openFile },
-          customGeminiKey
-        )
+        const generator = getGenerator(project.container_id!, { fileTree, openFile })
 
         for await (const chunk of generator) {
           const data = JSON.stringify(chunk) + '\n'
