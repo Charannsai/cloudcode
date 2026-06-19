@@ -1207,12 +1207,22 @@ export default function AIScreen() {
         animationType="none"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.popoverBackdrop}
-          activeOpacity={1}
-          onPress={() => setMenuVisible(false)}
-        >
-          <View 
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+          <Animated.View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                backgroundColor: 'rgba(0, 0, 0, 0.15)', 
+                opacity: menuAnim 
+              }
+            ]} 
+          />
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setMenuVisible(false)}
+          />
+          <Animated.View 
             style={[
               styles.popoverCard,
               {
@@ -1220,6 +1230,15 @@ export default function AIScreen() {
                 borderColor: isDark ? '#21262D' : '#D8DEE4',
                 top: insets.top > 0 ? insets.top + 50 : 60,
                 right: 16,
+                opacity: menuAnim,
+                transform: [
+                  {
+                    scale: menuAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.96, 1],
+                    })
+                  }
+                ]
               }
             ]}
           >
@@ -1382,8 +1401,8 @@ export default function AIScreen() {
               <Cpu size={13} color={colors.text} />
               <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Model...</Text>
             </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+          </Animated.View>
+        </View>
       </Modal>
 
       {/* Past Conversations Modal */}
