@@ -52,19 +52,35 @@ function TerminalSession({
   const output = useTerminalStore((s) => s.projects[projectId]?.outputs[terminalId] || '')
   const { appendOutput, clearOutput, setOutput: setStoreOutput } = useTerminalStore()
 
-  // Track whether we need to flush stored output on reconnection.
   // When reconnecting to a tmux session that already has stored output,
-  // tmux resends the current screen (prompt/workspace name). We replace
-  // the old stored output with the fresh tmux output to avoid duplication.
-  const needsReconnectFlush = useRef(output.length > 0)
+  // tmux resends its current screen buffer (prompt/workspace name).
+  // We suppress that redraw by anchoring a grace window to when the
+  // FIRST data chunk arrives (not mount time), ensuring it covers the
+  // actual tmux redraw regardless of WS connection latency.
+  const isMountedWithOutput = useRef(output.length > 0)
+  const firstDataTimestamp = useRef(0)
 
   // Use the useTerminal hook for this specific terminalId
   const { connected, error, sendInput } = useTerminal({
     projectId,
     terminalId,
     onOutput: useCallback((data: string, shouldClear: boolean) => {
-      if (shouldClear || needsReconnectFlush.current) {
-        needsReconnectFlush.current = false
+      // If we mounted with existing stored output, suppress tmux redraw
+      if (isMountedWithOutput.current) {
+        // Record when the first data chunk arrives
+        if (firstDataTimestamp.current === 0) {
+          firstDataTimestamp.current = Date.now()
+        }
+        // Discard all data within 1.5s of the first chunk (tmux redraw window)
+        if (Date.now() - firstDataTimestamp.current < 1500) {
+          return
+        }
+        // Grace period over — resume normal output
+        isMountedWithOutput.current = false
+        firstDataTimestamp.current = 0
+      }
+
+      if (shouldClear) {
         setStoreOutput(projectId, terminalId, data)
       } else {
         appendOutput(projectId, terminalId, data)
