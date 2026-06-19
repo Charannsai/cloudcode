@@ -10,6 +10,8 @@ export async function POST(req: NextRequest) {
   const user = getUserFromRequest(req)
   if (!user) return errorResponse('Unauthorized', 401)
 
+  const customGeminiKey = req.headers.get('x-gemini-key') || undefined
+
   const body = await req.json()
   const { projectId, messages, openFile } = body as {
     projectId: string
@@ -19,6 +21,46 @@ export async function POST(req: NextRequest) {
 
   if (!projectId || !messages || messages.length === 0) {
     return errorResponse('Missing projectId or messages')
+  }
+
+  if (projectId === 'global') {
+    // Stream response using SSE without docker or database checks
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const generator = chatWithGemini(
+            messages.map(m => ({
+              role: m.role === 'user' ? 'user' : 'model',
+              parts: [{ text: m.text }],
+            })),
+            'global',
+            undefined,
+            customGeminiKey
+          )
+
+          for await (const chunk of generator) {
+            const data = JSON.stringify(chunk) + '\n'
+            controller.enqueue(encoder.encode(`data: ${data}\n`))
+          }
+
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        } catch (err) {
+          const errMsg = JSON.stringify({ type: 'error', content: (err as Error).message })
+          controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`))
+          controller.close()
+        }
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
   }
 
   // WAKE CONTAINER: Auto-wake container if it is asleep
@@ -61,8 +103,6 @@ export async function POST(req: NextRequest) {
     role: m.role === 'user' ? 'user' : 'model',
     parts: [{ text: m.text }],
   }))
-
-  const customGeminiKey = req.headers.get('x-gemini-key') || undefined
 
   // Stream response using SSE
   const encoder = new TextEncoder()

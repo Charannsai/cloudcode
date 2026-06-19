@@ -317,12 +317,12 @@ export default function AIScreen() {
   const dotStyle2 = useAnimatedStyle(() => ({ transform: [{ translateY: dot2.value }] }))
   const dotStyle3 = useAnimatedStyle(() => ({ transform: [{ translateY: dot3.value }] }))
 
-  // Auto-select first project
+  // Auto-select global by default if no project is active
   useEffect(() => {
-    if (projects.length > 0 && !selectedProjectId) {
-      setSelectedProjectId(projects[0].id)
+    if (!selectedProjectId) {
+      setSelectedProjectId('global')
     }
-  }, [projects])
+  }, [selectedProjectId])
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
@@ -379,36 +379,58 @@ export default function AIScreen() {
       </View>
 
       {/* Project selector */}
-      {projects.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.projectBar} contentContainerStyle={styles.projectBarContent}>
-          {projects.map((p) => (
-            <TouchableOpacity
-              key={p.id}
-              style={[
-                styles.projectChip,
-                {
-                  backgroundColor: selectedProjectId === p.id
-                    ? (isDark ? '#F3F4F6' : '#0E1116')
-                    : 'transparent',
-                  borderColor: selectedProjectId === p.id
-                    ? 'transparent'
-                    : (isDark ? '#21262D' : '#D8DEE4'),
-                }
-              ]}
-              onPress={() => setSelectedProjectId(p.id)}
-            >
-              <Text style={[
-                styles.projectChipText,
-                {
-                  color: selectedProjectId === p.id ? (isDark ? '#0E1116' : '#FFFFFF') : colors.textSecondary,
-                }
-              ]}>
-                {p.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.projectBar} contentContainerStyle={styles.projectBarContent}>
+        <TouchableOpacity
+          style={[
+            styles.projectChip,
+            {
+              backgroundColor: selectedProjectId === 'global' || !selectedProjectId
+                ? (isDark ? '#F3F4F6' : '#0E1116')
+                : 'transparent',
+              borderColor: selectedProjectId === 'global' || !selectedProjectId
+                ? 'transparent'
+                : (isDark ? '#21262D' : '#D8DEE4'),
+            }
+          ]}
+          onPress={() => setSelectedProjectId('global')}
+        >
+          <Text style={[
+            styles.projectChipText,
+            {
+              color: selectedProjectId === 'global' || !selectedProjectId ? (isDark ? '#0E1116' : '#FFFFFF') : colors.textSecondary,
+            }
+          ]}>
+            🌍 Global AI
+          </Text>
+        </TouchableOpacity>
+
+        {projects.map((p) => (
+          <TouchableOpacity
+            key={p.id}
+            style={[
+              styles.projectChip,
+              {
+                backgroundColor: selectedProjectId === p.id
+                  ? (isDark ? '#F3F4F6' : '#0E1116')
+                  : 'transparent',
+                borderColor: selectedProjectId === p.id
+                  ? 'transparent'
+                  : (isDark ? '#21262D' : '#D8DEE4'),
+              }
+            ]}
+            onPress={() => setSelectedProjectId(p.id)}
+          >
+            <Text style={[
+              styles.projectChipText,
+              {
+                color: selectedProjectId === p.id ? (isDark ? '#0E1116' : '#FFFFFF') : colors.textSecondary,
+              }
+            ]}>
+              {p.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {/* Messages */}
       <ScrollView
