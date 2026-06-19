@@ -6,7 +6,7 @@ interface ProjectsState {
   projects: Project[]
   loading: boolean
   error: string | null
-  fetchProjects: () => Promise<void>
+  fetchProjects: (silent?: boolean) => Promise<void>
   addProject: (project: Project) => void
   removeProject: (id: string) => void
   updateProject: (id: string, updates: Partial<Project>) => void
@@ -17,8 +17,8 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   loading: false,
   error: null,
 
-  fetchProjects: async () => {
-    set({ loading: true, error: null })
+  fetchProjects: async (silent = false) => {
+    if (!silent) set({ loading: true, error: null })
     try {
       const projects = await api.projects.list()
       set({ projects, loading: false })

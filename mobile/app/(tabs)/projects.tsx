@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, Alert,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -44,8 +44,23 @@ export default function ProjectsScreen() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    fetchProjects()
+    fetchProjects(false)
   }, [fetchProjects])
+
+  // Keep workspaces list updated on screen focus and poll silently every 10s
+  useFocusEffect(
+    useCallback(() => {
+      fetchProjects(true)
+
+      const interval = setInterval(() => {
+        fetchProjects(true)
+      }, 10000)
+
+      return () => {
+        clearInterval(interval)
+      }
+    }, [fetchProjects])
+  )
 
   const handleDelete = useCallback((id: string, name: string) => {
     setProjectToDelete({ id, name })

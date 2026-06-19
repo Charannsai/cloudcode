@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { 
   View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, 
-  TextInput, ActivityIndicator, Alert, Modal
+  TextInput, ActivityIndicator, Alert, Modal, RefreshControl
 } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
@@ -91,6 +91,20 @@ export default function SettingsScreen() {
   const [loadingSsh, setLoadingSsh] = useState(true)
   const [copied, setCopied] = useState(false)
 
+  async function fetchGitSshData(silent = false) {
+    if (!silent) setLoadingSsh(true)
+    try {
+      const ssh = await api.git.ssh.globalGet()
+      setHasSshKey(ssh.hasKey)
+      setSshPublicKey(ssh.publicKey)
+      setSshHistory(ssh.history || [])
+    } catch (err) {
+      console.warn('Failed to load global SSH key:', err)
+    } finally {
+      if (!silent) setLoadingSsh(false)
+    }
+  }
+
   async function fetchBillingStatus(silent = false) {
     if (!silent) setLoadingBilling(true)
     try {
@@ -103,11 +117,32 @@ export default function SettingsScreen() {
     }
   }
 
-  // Auto-refresh stats in background when settings tab gets focused
+  // Auto-refresh stats in background when settings tab gets focused, and poll periodically
   useFocusEffect(
     useCallback(() => {
-      fetchBillingStatus(true)
-    }, [])
+      if (currentSubScreen === 'billing') {
+        fetchBillingStatus(true)
+      } else if (currentSubScreen === 'gitSsh') {
+        fetchGitSshData(true)
+      } else {
+        fetchBillingStatus(true)
+        fetchGitSshData(true)
+      }
+
+      const interval = setInterval(() => {
+        if (currentSubScreen === 'billing') {
+          fetchBillingStatus(true)
+        } else if (currentSubScreen === 'gitSsh') {
+          fetchGitSshData(true)
+        } else {
+          fetchBillingStatus(true)
+        }
+      }, 10000)
+
+      return () => {
+        clearInterval(interval)
+      }
+    }, [currentSubScreen])
   )
 
   useEffect(() => {
@@ -118,17 +153,8 @@ export default function SettingsScreen() {
       if (cachedName) setGitName(cachedName)
       if (cachedEmail) setGitEmail(cachedEmail)
 
-      // 2. Load SSH key status from global API
-      try {
-        const ssh = await api.git.ssh.globalGet()
-        setHasSshKey(ssh.hasKey)
-        setSshPublicKey(ssh.publicKey)
-        setSshHistory(ssh.history || [])
-      } catch (err) {
-        console.warn('Failed to load global SSH key:', err)
-      } finally {
-        setLoadingSsh(false)
-      }
+      // 2. Load SSH key status
+      fetchGitSshData(false)
 
       // 3. Load Billing status
       fetchBillingStatus(false)
@@ -627,6 +653,14 @@ export default function SettingsScreen() {
         style={[styles.container, { backgroundColor: colors.background }]} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={loadingBilling}
+            onRefresh={() => fetchBillingStatus(false)}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {renderBillingView()}
         {renderUpgradeModal()}
@@ -651,6 +685,14 @@ export default function SettingsScreen() {
         style={[styles.container, { backgroundColor: colors.background }]} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={loadingSsh}
+            onRefresh={() => fetchGitSshData(false)}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {renderGitSshView()}
         <ConfirmModal
