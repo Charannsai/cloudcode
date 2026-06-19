@@ -203,6 +203,10 @@ export const api = {
       onChunk?: (chunk: AIStreamChunk) => void
     ) => {
       const token = await getToken()
+      const byokEnabled = await AsyncStorage.getItem('byok_enabled')
+      const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
+      const customOpenaiKey = await AsyncStorage.getItem('custom_openai_key')
+      const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
 
       return new Promise<void>((resolve, reject) => {
         const es = new EventSource(`${API_URL}/api/ai/chat`, {
@@ -210,6 +214,9 @@ export const api = {
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
+            ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
+            ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
           },
           body: JSON.stringify({ projectId, messages, openFile }),
         })

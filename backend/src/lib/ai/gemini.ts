@@ -201,7 +201,8 @@ export async function executeTool(
 export async function* chatWithGemini(
   messages: GeminiMessage[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string } }
+  context?: { fileTree?: string; openFile?: { path: string; content: string } },
+  customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   // Build the full message history with context
   const contents: GeminiMessage[] = [...messages]
@@ -229,7 +230,8 @@ export async function* chatWithGemini(
     loopCount++
 
     try {
-      const response = await fetch(`${GEMINI_API_URL}:generateContent?key=${GEMINI_API_KEY}`, {
+      const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : GEMINI_API_KEY
+      const response = await fetch(`${GEMINI_API_URL}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

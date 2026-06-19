@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
     parts: [{ text: m.text }],
   }))
 
+  const customGeminiKey = req.headers.get('x-gemini-key') || undefined
+
   // Stream response using SSE
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
@@ -70,7 +72,8 @@ export async function POST(req: NextRequest) {
         const generator = chatWithGemini(
           geminiMessages,
           project.container_id!,
-          { fileTree, openFile }
+          { fileTree, openFile },
+          customGeminiKey
         )
 
         for await (const chunk of generator) {
