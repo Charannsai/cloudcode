@@ -19,6 +19,7 @@ import {
   Globe,
   GitBranch,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react-native'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import Animated, { FadeInDown } from 'react-native-reanimated'
