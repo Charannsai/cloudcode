@@ -109,13 +109,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     })
   }, [])
 
-  const getColIndex = (stateIndex: number) => {
-    if (stateIndex < 2) return stateIndex
-    return stateIndex + 1 // skips index 2 (FAB)
-  }
-
   const indicatorStyle = useAnimatedStyle(() => {
-    const colIndex = getColIndex(state.index)
+    const stateIndex = state.index
+    const colIndex = stateIndex < 2 ? stateIndex : stateIndex + 1
     const width = tabWidths[colIndex] || 0
     const x = tabPositions[colIndex] || 0
     
