@@ -174,21 +174,18 @@ export default function ProjectsScreen() {
     </View>
   )
 
-  const DiagnosticsWidget = () => {
-    const [cpuLoad, setCpuLoad] = useState(8)
-    useEffect(() => {
-      const timer = setInterval(() => {
-        setCpuLoad(Math.floor(Math.random() * 8) + 7) // 7% to 14%
-      }, 3000)
-      return () => clearInterval(timer)
-    }, [])
-
-    const handleSuggestion = (promptText: string) => {
-      if (projects.length > 0) {
-        useAIStore.setState({ activeProjectId: projects[0].id })
-      }
-      useAIStore.setState({ pendingPrompt: promptText })
+  const QuickActionsWidget = () => {
+    const handleAskAIToBuild = () => {
+      useAIStore.setState({ pendingPrompt: "Help me design and build a new workspace application..." })
       router.push('/(tabs)/ai')
+    }
+
+    const handleOpenWorkspace = () => {
+      if (projects.length > 0) {
+        router.push(`/project/${projects[0].id}`)
+      } else {
+        Alert.alert("No Workspaces", "Please create a workspace first.")
+      }
     }
 
     const activeColor = isDark ? '#D2A8FF' : '#8250DF'
@@ -196,88 +193,56 @@ export default function ProjectsScreen() {
     return (
       <View style={{ marginTop: 24, paddingBottom: 60 }}>
         {/* Section Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <View style={{ marginBottom: 12 }}>
           <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Developer Diagnostics
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3FB950' }} />
-            <Text style={{ fontSize: 10.5, fontFamily: 'JetBrainsMono_400Regular', color: colors.textSecondary }}>System Ready</Text>
-          </View>
-        </View>
-
-        {/* Metrics Grid */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-          {/* CPU Card */}
-          <View style={[styles.card, { flex: 1, backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, marginBottom: 0, padding: 12 }]}>
-            <Text style={{ fontSize: 10, fontFamily: 'Inter_500Medium', color: colors.textSecondary, textTransform: 'uppercase' }}>CPU Activity</Text>
-            <Text style={{ fontSize: 18, fontFamily: 'JetBrainsMono_700Bold', color: colors.text, marginTop: 4 }}>{cpuLoad}%</Text>
-            <View style={{ height: 3, backgroundColor: isDark ? '#1C2128' : '#F3F4F6', borderRadius: 1.5, marginTop: 8, overflow: 'hidden' }}>
-              <View style={{ height: '100%', width: `${cpuLoad * 5}%`, backgroundColor: activeColor }} />
-            </View>
-          </View>
-
-          {/* RAM Card */}
-          <View style={[styles.card, { flex: 1, backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, marginBottom: 0, padding: 12 }]}>
-            <Text style={{ fontSize: 10, fontFamily: 'Inter_500Medium', color: colors.textSecondary, textTransform: 'uppercase' }}>RAM Allocation</Text>
-            <Text style={{ fontSize: 18, fontFamily: 'JetBrainsMono_700Bold', color: colors.text, marginTop: 4 }}>512 MB</Text>
-            <View style={{ height: 3, backgroundColor: isDark ? '#1C2128' : '#F3F4F6', borderRadius: 1.5, marginTop: 8, overflow: 'hidden' }}>
-              <View style={{ height: '100%', width: '25%', backgroundColor: activeColor }} />
-            </View>
-          </View>
-        </View>
-
-        {/* Suggestion list */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-          <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Autonomous Suggestions
+            Quick Actions
           </Text>
         </View>
 
-        {/* Suggestion 1 */}
+        {/* CTA 1: Create New Workspace */}
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => handleSuggestion("Analyze the health of my active workspaces and recommend optimizations.")}
+          onPress={() => router.push('/new-project')}
           style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
         >
           <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', alignItems: 'center', justifyContent: 'center' }}>
-            <Activity size={14} color={activeColor} />
+            <Plus size={14} color={activeColor} strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Analyze Workspace Health</Text>
-            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Audit logs and container state for runtime optimization.</Text>
+            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Create New Workspace</Text>
+            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Initialize a blank container or clone from repository template.</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* Suggestion 2 */}
+        {/* CTA 2: Open Latest Workspace */}
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => handleSuggestion("Run a security scan on my current project containers and list open vulnerabilities.")}
-          style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
-        >
-          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', alignItems: 'center', justifyContent: 'center' }}>
-            <Cpu size={14} color={activeColor} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Audit Workspace Security</Text>
-            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Verify sandbox container port isolation and configurations.</Text>
-          </View>
-          <ChevronRight size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
-
-        {/* Suggestion 3 */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => handleSuggestion("Check for temporary files, build caches, and unused docker volumes to free space.")}
+          onPress={handleOpenWorkspace}
           style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
         >
           <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', alignItems: 'center', justifyContent: 'center' }}>
             <Terminal size={14} color={activeColor} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Clean Up Workspace Storage</Text>
-            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Remove build artifacts and Docker logs from the node runtime.</Text>
+            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Open Active Workspace</Text>
+            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Connect to your latest workspace terminal, file tree, and preview.</Text>
+          </View>
+          <ChevronRight size={14} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        {/* CTA 3: Ask AI to Build */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleAskAIToBuild}
+          style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
+        >
+          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', alignItems: 'center', justifyContent: 'center' }}>
+            <Sparkles size={14} color={activeColor} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Ask AI to Build</Text>
+            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Instruct the AI Assistant to provision and build a workspace application.</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -309,7 +274,7 @@ export default function ProjectsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={loading ? null : emptyState}
-          ListFooterComponent={projects.length > 0 ? <DiagnosticsWidget /> : null}
+          ListFooterComponent={projects.length > 0 ? <QuickActionsWidget /> : null}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
