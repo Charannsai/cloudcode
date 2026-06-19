@@ -13,7 +13,7 @@ export interface ToolCallInfo {
   name: string
   args: Record<string, unknown>
   result?: unknown
-  status: 'running' | 'done' | 'error'
+  status: 'running' | 'done' | 'error' | 'pending'
 }
 
 interface AIState {
@@ -78,23 +78,68 @@ export const useAIStore = create<AIState>((set, get) => ({
             break
 
           case 'tool_call': {
-            const tc: ToolCallInfo = {
-              name: chunk.toolName || '',
-              args: chunk.toolArgs || {},
-              status: 'running',
+            const args = chunk.toolArgs || {}
+            const approvalId = args.approvalId as string | undefined
+            const name = chunk.toolName || ''
+            const status = (args.status as 'pending' | 'running' | 'done' | 'error') || 'running'
+
+            if (name === 'run_command' && approvalId) {
+              const existingIndex = toolCalls.findIndex(
+                (tc) => tc.name === 'run_command' && tc.args?.approvalId === approvalId
+              )
+              if (existingIndex !== -1) {
+                toolCalls[existingIndex] = {
+                  ...toolCalls[existingIndex],
+                  args,
+                  status,
+                }
+              } else {
+                toolCalls.push({
+                  name,
+                  args,
+                  status,
+                })
+              }
+            } else {
+              toolCalls.push({
+                name,
+                args,
+                status: 'running',
+              })
             }
-            toolCalls.push(tc)
             set({ currentToolCalls: [...toolCalls] })
             break
           }
 
           case 'tool_result': {
-            const lastTc = toolCalls[toolCalls.length - 1]
-            if (lastTc) {
-              lastTc.result = chunk.toolResult
-              lastTc.status = 'done'
-              set({ currentToolCalls: [...toolCalls] })
+            const approvalId = chunk.toolArgs?.approvalId as string | undefined
+            let updated = false
+            if (approvalId) {
+              const existingIndex = toolCalls.findIndex(
+                (tc) => tc.name === 'run_command' && tc.args?.approvalId === approvalId
+              )
+              if (existingIndex !== -1) {
+                const res = chunk.toolResult as any
+                const isError = res && (typeof res === 'object' && ('error' in res || 'err' in res))
+                toolCalls[existingIndex] = {
+                  ...toolCalls[existingIndex],
+                  result: chunk.toolResult,
+                  status: isError ? 'error' : 'done',
+                }
+                updated = true
+              }
             }
+
+            if (!updated) {
+              const lastTc = toolCalls[toolCalls.length - 1]
+              if (lastTc) {
+                const res = chunk.toolResult as any
+                const isError = res && (typeof res === 'object' && ('error' in res || 'err' in res))
+                lastTc.result = chunk.toolResult
+                lastTc.status = isError ? 'error' : 'done'
+              }
+            }
+            set({ currentToolCalls: [...toolCalls] })
             break
           }
 

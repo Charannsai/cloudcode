@@ -196,6 +196,11 @@ export const api = {
   },
 
   ai: {
+    approve: (approvalId: string, action: 'approve' | 'reject') =>
+      apiFetch<{ success: boolean }>('/api/ai/approve', {
+        method: 'POST',
+        body: JSON.stringify({ approvalId, action }),
+      }),
     chat: async (
       projectId: string,
       messages: { role: 'user' | 'model'; text: string }[],
