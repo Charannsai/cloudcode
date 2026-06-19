@@ -454,11 +454,11 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
               style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
               onPress={() => setModalOpen(false)}
             >
-              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+            <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
                 Close
               </Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
