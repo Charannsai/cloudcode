@@ -67,25 +67,9 @@ export async function POST(req: NextRequest) {
 
       case 'subscription.cancelled':
       case 'subscription.expired': {
-        const metadata = data.metadata || {}
-        const userId = metadata.cloudcode_user_id
-
-        if (!userId) {
-          // Try to find user by subscription_id
-          const subId = data.subscription_id || data.id
-          if (subId) {
-            const { error } = await supabaseAdmin
-              .from('users')
-              .update({
-                tier: 'free',
-                subscription_status: eventType === 'subscription.cancelled' ? 'cancelled' : 'expired',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('subscription_id', subId)
-
-            if (error) console.error('[Dodo Webhook] Failed to downgrade by sub ID:', error)
-            else console.log(`[Dodo Webhook] Subscription ${subId} → free tier (${eventType})`)
-          }
+        const subId = data.subscription_id || data.id
+        if (!subId) {
+          console.error('[Dodo Webhook] No subscription ID in cancellation event')
           break
         }
 
@@ -96,12 +80,12 @@ export async function POST(req: NextRequest) {
             subscription_status: eventType === 'subscription.cancelled' ? 'cancelled' : 'expired',
             updated_at: new Date().toISOString(),
           })
-          .eq('github_id', userId)
+          .eq('subscription_id', subId)
 
         if (error) {
-          console.error('[Dodo Webhook] Failed to downgrade user:', error)
+          console.error(`[Dodo Webhook] Failed to downgrade subscription ${subId}:`, error)
         } else {
-          console.log(`[Dodo Webhook] User ${userId} downgraded to free tier (${eventType})`)
+          console.log(`[Dodo Webhook] Subscription ${subId} downgraded to free tier (${eventType})`)
         }
         break
       }
