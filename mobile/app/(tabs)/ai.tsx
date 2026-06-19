@@ -7,7 +7,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
-  Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp, Cpu, Shield
+  Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp, Cpu, Shield, Lock
 } from 'lucide-react-native'
 
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -396,6 +396,7 @@ export default function AIScreen() {
 
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'openai' | 'anthropic'>('gemini')
   const [modelModalVisible, setModelModalVisible] = useState(false)
+  const [userTier, setUserTier] = useState<string>('free')
 
   const [isListening, setIsListening] = useState(false)
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
@@ -481,8 +482,18 @@ export default function AIScreen() {
     React.useCallback(() => {
       setTabBarVisible(false)
       fetchProjects(true)
+
+      // Fetch active user tier status for premium model checks
+      api.billing.status()
+        .then(data => {
+          if (data?.tier?.name) {
+            setUserTier(data.tier.name)
+          }
+        })
+        .catch(err => console.warn('Failed to load user tier config:', err))
+
       return () => setTabBarVisible(true)
-    }, [fetchProjects])
+    }, [fetchProjects, setTabBarVisible])
   )
 
   // Jumping letters animation for Thinking state
@@ -949,13 +960,21 @@ export default function AIScreen() {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => {
+                  if (userTier === 'free') {
+                    Alert.alert(
+                      'Premium Feature',
+                      'gpt-4o is restricted to Pro and Advanced tiers. Please upgrade your billing plan in Settings.'
+                    )
+                    return
+                  }
                   setSelectedModel('openai')
                   setModelModalVisible(false)
                 }}
                 style={[
                   styles.projectOption,
                   { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
-                  selectedModel === 'openai' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' }
+                  selectedModel === 'openai' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' },
+                  userTier === 'free' && { opacity: 0.6 }
                 ]}
               >
                 <View style={styles.projectOptionLeft}>
@@ -963,24 +982,43 @@ export default function AIScreen() {
                     <Cpu size={14} color="#10B981" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>gpt-4o</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>gpt-4o</Text>
+                      {userTier === 'free' && (
+                        <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 }}>
+                          <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PRO</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>ChatGPT flagship model for high reasoning and logic.</Text>
                   </View>
                 </View>
-                {selectedModel === 'openai' && <CheckCircle2 size={16} color="#10B981" />}
+                {userTier === 'free' ? (
+                  <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                ) : (
+                  selectedModel === 'openai' && <CheckCircle2 size={16} color="#10B981" />
+                )}
               </TouchableOpacity>
 
               {/* Anthropic Option */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => {
+                  if (userTier === 'free') {
+                    Alert.alert(
+                      'Premium Feature',
+                      'Claude Opus 4.6 is restricted to Pro and Advanced tiers. Please upgrade your billing plan in Settings.'
+                    )
+                    return
+                  }
                   setSelectedModel('anthropic')
                   setModelModalVisible(false)
                 }}
                 style={[
                   styles.projectOption,
                   { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
-                  selectedModel === 'anthropic' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' }
+                  selectedModel === 'anthropic' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' },
+                  userTier === 'free' && { opacity: 0.6 }
                 ]}
               >
                 <View style={styles.projectOptionLeft}>
@@ -988,11 +1026,22 @@ export default function AIScreen() {
                     <Shield size={14} color="#D97706" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Claude Opus 4.6</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Claude Opus 4.6</Text>
+                      {userTier === 'free' && (
+                        <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 }}>
+                          <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PRO</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>State of the art reasoning & code planning capabilities.</Text>
                   </View>
                 </View>
-                {selectedModel === 'anthropic' && <CheckCircle2 size={16} color="#D97706" />}
+                {userTier === 'free' ? (
+                  <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                ) : (
+                  selectedModel === 'anthropic' && <CheckCircle2 size={16} color="#D97706" />
+                )}
               </TouchableOpacity>
             </ScrollView>
 
