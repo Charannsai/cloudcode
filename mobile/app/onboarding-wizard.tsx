@@ -60,14 +60,12 @@ export default function OnboardingWizardScreen() {
         <View style={[styles.glowRing, { borderColor: isDark ? 'rgba(167, 139, 250, 0.15)' : 'rgba(167, 139, 250, 0.08)' }]} />
         
         <View style={styles.cardWrapper}>
-          <BlurView
-            intensity={blurIntensity}
-            tint={isDark ? 'dark' : 'light'}
+          <View
             style={[
               styles.card,
               { 
                 borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.75)' : 'rgba(255, 255, 255, 0.8)' 
+                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.95)' : '#FFFFFF' 
               }
             ]}
           >
@@ -175,7 +173,7 @@ export default function OnboardingWizardScreen() {
                 </TouchableOpacity>
               </ScrollView>
             )}
-          </BlurView>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -204,7 +202,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     borderRadius: 24,
-    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
@@ -215,6 +212,7 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 24,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   header: {
     alignItems: 'center',
