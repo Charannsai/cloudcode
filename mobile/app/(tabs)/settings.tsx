@@ -765,14 +765,16 @@ export default function SettingsScreen() {
               <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
                 <Key size={16} color={colors.text} strokeWidth={1.5} />
               </View>
-              <View style={{ flex: 1, marginRight: 8 }}>
+              <View>
                 <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Git & SSH Keys</Text>
                 <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
                   {gitName ? `${gitName} · Configured` : 'Configure credentials & deploy keys'}
                 </Text>
               </View>
             </View>
-            <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+            </View>
           </TouchableOpacity>
         </View>
       </View>
