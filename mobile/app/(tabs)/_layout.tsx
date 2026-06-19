@@ -7,6 +7,8 @@ import { BlurView } from 'expo-blur'
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
+  withTiming,
+  Easing,
   useSharedValue,
   FadeIn,
   FadeOut,
@@ -21,6 +23,55 @@ const SPRING_CONFIG = {
   stiffness: 200,
   mass: 0.8,
 }
+
+const TabItem = memo(({ col, isFocused, activeColor, inactiveColor, isDark, onPress }: any) => {
+  const scale = useSharedValue(isFocused ? 1.05 : 1)
+
+  useEffect(() => {
+    scale.value = withTiming(isFocused ? 1.08 : 1, {
+      duration: 100,
+      easing: Easing.bezier(0.16, 1, 0.3, 1),
+    })
+  }, [isFocused])
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }))
+
+  const Icon = col.icon as any
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onPress}
+      style={styles.tabItem}
+    >
+      <Animated.View style={[styles.tabItemContent, animStyle]}>
+        <Icon 
+          color={isFocused ? activeColor : inactiveColor} 
+          size={16} 
+          strokeWidth={isFocused ? 2.0 : 1.6}
+        />
+        <Text style={[
+          styles.tabLabel,
+          { 
+            color: isFocused ? (isDark ? '#FFFFFF' : '#0E1116') : inactiveColor,
+            marginTop: 2
+          }
+        ]}>
+          {col.name}
+        </Text>
+        {isFocused && (
+          <Animated.View
+            entering={FadeIn.duration(120)}
+            exiting={FadeOut.duration(80)}
+            style={[styles.activeDot, { backgroundColor: activeColor }]}
+          />
+        )}
+      </Animated.View>
+    </TouchableOpacity>
+  )
+})
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { isDark } = useAppTheme()
@@ -98,7 +149,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           }
 
           const route = state.routes[col.routeIndex!]
-          const { options } = descriptors[route.key]
           const isFocused = state.index === col.routeIndex!
 
           const onPress = () => {
@@ -113,41 +163,19 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             }
           }
 
-          const Icon = col.icon as any
           const activeColor = isDark ? '#D2A8FF' : '#8250DF'
           const inactiveColor = isDark ? '#6E7681' : '#8C959F'
 
           return (
-            <TouchableOpacity
+            <TabItem
               key={route.key}
-              activeOpacity={0.7}
+              col={col}
+              isFocused={isFocused}
+              activeColor={activeColor}
+              inactiveColor={inactiveColor}
+              isDark={isDark}
               onPress={onPress}
-              style={styles.tabItem}
-            >
-              <View style={styles.tabItemContent}>
-                <Icon 
-                  color={isFocused ? activeColor : inactiveColor} 
-                  size={16} 
-                  strokeWidth={isFocused ? 2.0 : 1.6}
-                />
-                <Text style={[
-                  styles.tabLabel,
-                  { 
-                    color: isFocused ? (isDark ? '#FFFFFF' : '#0E1116') : inactiveColor,
-                    marginTop: 2
-                  }
-                ]}>
-                  {col.name}
-                </Text>
-                {isFocused && (
-                  <Animated.View
-                    entering={FadeIn.duration(200)}
-                    exiting={FadeOut.duration(150)}
-                    style={[styles.activeDot, { backgroundColor: activeColor }]}
-                  />
-                )}
-              </View>
-            </TouchableOpacity>
+            />
           )
         })}
       </BlurView>

@@ -12,7 +12,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withDelay,
   Easing,
   runOnJS,
 } from 'react-native-reanimated'
@@ -85,24 +84,24 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const { colors, isDark } = useAppTheme()
   const opacity = useSharedValue(0)
-  const scale = useSharedValue(0.96)
-  const translateY = useSharedValue(10)
+  const scale = useSharedValue(0.98)
+  const translateY = useSharedValue(8)
   const [renderModal, setRenderModal] = React.useState(visible)
 
   useEffect(() => {
     if (visible) {
       setRenderModal(true)
-      opacity.value = withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) })
-      scale.value = withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) })
-      translateY.value = withTiming(0, { duration: 100, easing: Easing.out(Easing.quad) })
+      opacity.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      scale.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      translateY.value = withTiming(0, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      opacity.value = withTiming(0, { duration: 80, easing: Easing.in(Easing.quad) }, (finished) => {
+      opacity.value = withTiming(0, { duration: 60, easing: Easing.linear }, (finished) => {
         if (finished) {
           runOnJS(setRenderModal)(false)
         }
       })
-      scale.value = withTiming(0.96, { duration: 80, easing: Easing.in(Easing.quad) })
-      translateY.value = withTiming(4, { duration: 80, easing: Easing.in(Easing.quad) })
+      scale.value = withTiming(0.98, { duration: 60, easing: Easing.linear })
+      translateY.value = withTiming(4, { duration: 60, easing: Easing.linear })
     }
   }, [visible])
 
@@ -130,7 +129,7 @@ export function ConfirmModal({
     <Modal transparent visible={renderModal} animationType="none" onRequestClose={handleDismiss}>
       <Animated.View style={[styles.overlay, backdropStyle]}>
         <BlurView
-          intensity={isDark ? 20 : 15}
+          intensity={isDark ? 15 : 10}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
@@ -151,18 +150,12 @@ export function ConfirmModal({
           ]}
         >
           <View style={styles.content}>
-            <View
-              style={[
-                styles.iconContainer,
-                { backgroundColor: isDark ? config.bgDark : config.bgLight },
-              ]}
-            >
-              <Icon size={24} color={config.color} strokeWidth={2} />
+            <View style={styles.headerRow}>
+              <Icon size={16} color={config.color} strokeWidth={2.5} />
+              <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                {title}
+              </Text>
             </View>
-
-            <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-              {title}
-            </Text>
             <Text
               style={[
                 styles.message,
@@ -173,39 +166,48 @@ export function ConfirmModal({
             </Text>
           </View>
 
-          <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
+          <View style={styles.actionRow}>
             {showCancel && (
-              <>
-                <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={onCancel}
-                  activeOpacity={0.7}
-                  disabled={isLoading}
+              <TouchableOpacity
+                style={[
+                  styles.btn,
+                  styles.cancelBtn,
+                  { 
+                    borderColor: colors.border,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
+                  }
+                ]}
+                onPress={onCancel}
+                activeOpacity={0.8}
+                disabled={isLoading}
+              >
+                <Text
+                  style={[
+                    styles.btnText,
+                    { color: colors.textSecondary, fontFamily: 'Inter_500Medium' },
+                  ]}
                 >
-                  <Text
-                    style={[
-                      styles.buttonText,
-                      { color: colors.text, fontFamily: 'Inter_500Medium' },
-                    ]}
-                  >
-                    {cancelText}
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={[styles.separator, { backgroundColor: colors.border }]} />
-              </>
+                  {cancelText}
+                </Text>
+              </TouchableOpacity>
             )}
 
             <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={[
+                styles.btn,
+                styles.confirmBtn,
+                { 
+                  backgroundColor: type === 'danger' || type === 'logout' ? '#F85149' : config.color,
+                }
+              ]}
               onPress={onConfirm}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
               disabled={isLoading}
             >
               <Text
                 style={[
-                  styles.buttonText,
-                  { color: type === 'success' ? '#3FB950' : config.color, fontFamily: 'Inter_600SemiBold' },
+                  styles.btnText,
+                  { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' },
                 ]}
               >
                 {isLoading ? 'Processing...' : confirmText}
@@ -221,74 +223,69 @@ export function ConfirmModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 24,
   },
   modalContainer: {
     width: '100%',
-    maxWidth: 300,
+    maxWidth: 310,
     borderRadius: 8,
     borderWidth: 1,
-    overflow: 'hidden',
+    padding: 16,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.08,
         shadowRadius: 8,
       },
       android: {
-        elevation: 6,
+        elevation: 4,
       },
     }),
   },
   content: {
-    padding: 16,
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 6,
-    justifyContent: 'center',
+  headerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    gap: 8,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 15,
-    marginBottom: 6,
-    textAlign: 'center',
+    fontSize: 14,
     letterSpacing: -0.2,
   },
   message: {
     fontSize: 13,
-    textAlign: 'center',
     lineHeight: 18,
     opacity: 0.9,
+    paddingLeft: 24,
   },
   actionRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    height: 42,
+    justifyContent: 'flex-end',
+    gap: 8,
   },
-  button: {
-    flex: 1,
-    justifyContent: 'center',
+  btn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 6,
     alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 70,
   },
-  cancelButton: {
-    // optional styling
+  cancelBtn: {
+    borderWidth: 1,
   },
-  confirmButton: {
-    // optional styling
+  confirmBtn: {
+    // background dynamically set
   },
-  buttonText: {
-    fontSize: 13,
-  },
-  separator: {
-    width: 1,
-    height: '100%',
+  btnText: {
+    fontSize: 12,
   },
 })

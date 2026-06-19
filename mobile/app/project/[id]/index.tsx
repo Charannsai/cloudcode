@@ -7,7 +7,7 @@ import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch } from 'lucide-react-native'
-import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, withSpring, withTiming, Easing, useSharedValue } from 'react-native-reanimated'
 
 // Lazy-load tab screens
 import FilesTab from '@/components/project/FilesTab'
@@ -49,8 +49,8 @@ export default function ProjectScreen() {
   useEffect(() => {
     const layout = tabLayouts[activeTab]
     if (layout) {
-      indicatorX.value = withSpring(layout.x, SPRING)
-      indicatorW.value = withSpring(layout.width, SPRING)
+      indicatorX.value = withTiming(layout.x, { duration: 120, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      indicatorW.value = withTiming(layout.width, { duration: 120, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     }
   }, [activeTab, tabLayouts])
 
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   backBtnFallback: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 6,
     marginTop: 12,
   },
   backBtnFallbackText: { fontSize: 14 },
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   headerBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     padding: 3,
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     position: 'relative',
   },
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 3,
     height: '100%',
-    borderRadius: 9,
+    borderRadius: 6,
     zIndex: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: 9,
-    borderRadius: 9,
+    borderRadius: 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
