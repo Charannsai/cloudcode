@@ -19,6 +19,7 @@ const startServer = async () => {
   const { default: Docker } = await import('dockerode')
   const { recordActivity, isIdle, getTrackedProjects } = await import('./lib/activityTracker')
   const { stopContainer, ensureLocalhostBridge } = await import('./lib/docker')
+  const { getTierConfig } = await import('./lib/tiers')
 
   const app = next({ dev, hostname, port })
   const handle = app.getRequestHandler()
@@ -321,26 +322,36 @@ const startServer = async () => {
   })
 
   // ── Container Idle Auto-Stop Cron ──
-  // Runs every 2 minutes. Stops containers that have had no activity for 10 minutes (Free tier).
-  // TODO: Make threshold dynamic based on user subscription tier (Free=10m, Pro=60m, Advanced=user-defined)
-  const IDLE_THRESHOLD_MS = 10 * 60 * 1000 // 10 minutes (Free tier)
+  // Runs every 2 minutes. Stops containers dynamically based on user's subscription tier.
   const IDLE_CHECK_INTERVAL_MS = 2 * 60 * 1000 // Check every 2 minutes
 
   setInterval(async () => {
     try {
-      // Get all projects with running containers
+      // Get all projects with running containers, joining users to get their tier
       const { data: activeProjects } = await supabaseAdmin
         .from('projects')
-        .select('id, name, container_id, status')
+        .select('id, name, container_id, status, user_github_id, users:users!projects_user_github_id_fkey(tier)')
         .not('container_id', 'is', null)
-        .in('status', ['ready', 'running'])
+        .in('status', ['ready', 'running']) as any
 
       if (!activeProjects || activeProjects.length === 0) return
 
       for (const project of activeProjects) {
         if (!project.container_id) continue
 
-        if (isIdle(project.id, IDLE_THRESHOLD_MS)) {
+        // Resolve tier name and dynamic idle threshold
+        const userTier = project.users?.tier || 'free'
+        const tierConfig = getTierConfig(userTier)
+        const idleMinutes = tierConfig.container.idleTimeoutMinutes
+
+        // If idleMinutes is 0, container is user-defined / always-on (bypass auto-stop)
+        if (idleMinutes === 0) {
+          continue
+        }
+
+        const thresholdMs = idleMinutes * 60 * 1000
+
+        if (isIdle(project.id, thresholdMs)) {
           try {
             await stopContainer(project.container_id)
             await supabaseAdmin
@@ -348,7 +359,7 @@ const startServer = async () => {
               .update({ status: 'sleeping' })
               .eq('id', project.id)
 
-            console.log(`[Idle Auto-Stop] Stopped container for "${project.name}" (${project.id}) after 10 min inactivity`)
+            console.log(`[Idle Auto-Stop] Stopped container for "${project.name}" (${project.id}) after ${idleMinutes} min inactivity (${userTier} tier)`)
           } catch (err) {
             console.error(`[Idle Auto-Stop] Failed to stop container for ${project.id}:`, err)
           }

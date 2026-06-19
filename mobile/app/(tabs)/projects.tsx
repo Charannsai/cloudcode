@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, Alert,
+  RefreshControl, Alert, ScrollView,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
@@ -42,6 +42,36 @@ export default function ProjectsScreen() {
 
   const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showSkeleton, setShowSkeleton] = useState(false)
+
+  useEffect(() => {
+    let t: any
+    if (loading) {
+      t = setTimeout(() => {
+        setShowSkeleton(true)
+      }, 150)
+    } else {
+      setShowSkeleton(false)
+    }
+    return () => clearTimeout(t)
+  }, [loading])
+
+  const showSkeletonState = showSkeleton && projects.length === 0
+
+  const ProjectSkeleton = () => (
+    <View style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, opacity: 0.6 }]}>
+      <View style={styles.cardMain}>
+        <View style={[styles.iconBox, { backgroundColor: isDark ? '#1C2128' : '#F3F4F6', width: 36, height: 36, borderRadius: 10 }]} />
+        <View style={styles.cardInfo}>
+          <View style={{ backgroundColor: isDark ? '#1C2128' : '#E5E7EB', height: 14, width: '60%', borderRadius: 4 }} />
+          <View style={[styles.cardMeta, { marginTop: 8 }]}>
+            <View style={{ backgroundColor: isDark ? '#1C2128' : '#E5E7EB', height: 10, width: '30%', borderRadius: 4 }} />
+          </View>
+        </View>
+        <ChevronRight size={16} color={colors.border} strokeWidth={1.5} />
+      </View>
+    </View>
+  )
 
   useEffect(() => {
     fetchProjects(false)
@@ -161,19 +191,27 @@ export default function ProjectsScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={projects}
-        renderItem={renderProject}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={loading ? null : emptyState}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={fetchProjects} tintColor={colors.text} />
-        }
-      />
+      {showSkeletonState ? (
+        <ScrollView style={styles.list} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+          <ProjectSkeleton />
+          <ProjectSkeleton />
+          <ProjectSkeleton />
+        </ScrollView>
+      ) : (
+        <FlatList
+          data={projects}
+          renderItem={renderProject}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={loading ? null : emptyState}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={fetchProjects} tintColor={colors.text} />
+          }
+        />
+      )}
 
       <ConfirmModal
         visible={!!projectToDelete}

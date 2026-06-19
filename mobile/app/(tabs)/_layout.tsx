@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
-import { Tabs } from 'expo-router'
+import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent, Keyboard } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal } from 'lucide-react-native'
+import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
+import { BlurView } from 'expo-blur'
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
@@ -70,6 +71,7 @@ const TabItem = memo(({ route, options, isFocused, index, onPress, onLayout, isD
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { isDark } = useAppTheme()
+  const router = useRouter()
   const [tabWidths, setTabWidths] = useState<number[]>(new Array(state.routes.length).fill(0))
   const [tabPositions, setTabPositions] = useState<number[]>(new Array(state.routes.length).fill(0))
   
@@ -134,12 +136,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
-      <View
+      <BlurView
+        intensity={isDark ? 30 : 70}
+        tint={isDark ? 'dark' : 'light'}
         style={[
           styles.tabBarContainer,
           { 
-            backgroundColor: isDark ? '#151922' : '#FFFFFF',
-            borderColor: isDark ? '#21262D' : '#D8DEE4',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            backgroundColor: isDark ? 'rgba(21, 25, 34, 0.75)' : 'rgba(255, 255, 255, 0.8)',
           }
         ]}
       >
@@ -169,7 +173,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             }
           }
 
-          return (
+          const itemComponent = (
             <TabItem 
               key={route.key}
               route={route}
@@ -181,8 +185,29 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               isDark={isDark}
             />
           )
+
+          if (index === 2) {
+            return [
+              <TouchableOpacity
+                key="fab"
+                style={[
+                  styles.fabButton,
+                  { backgroundColor: isDark ? '#FFFFFF' : '#0E1116' }
+                ]}
+                onPress={() => {
+                  router.push('/new-project')
+                }}
+                activeOpacity={0.8}
+              >
+                <Plus size={20} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
+              </TouchableOpacity>,
+              itemComponent
+            ]
+          }
+
+          return itemComponent
         })}
-      </View>
+      </BlurView>
     </Animated.View>
   )
 }
@@ -289,5 +314,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.2,
+  },
+  fabButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
   },
 })

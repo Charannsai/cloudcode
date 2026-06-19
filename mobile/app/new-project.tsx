@@ -7,15 +7,20 @@ import { useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { useProjectsStore } from '@/store/projects'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Terminal, Atom, ChevronLeft, Check, Box, Github, Link2, Folder } from 'lucide-react-native'
+import { Terminal, Atom, ChevronLeft, Check, Box, Github, Link2, Folder, Globe, Cpu, Flame, Code } from 'lucide-react-native'
 
 type CreationMode = 'template' | 'clone'
-type NodeType = 'node' | 'react' | 'empty'
+type NodeType = 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs'
 
 const TEMPLATES: { id: NodeType, label: string, icon: any, desc: string, group: string }[] = [
   { id: 'empty', label: 'Blank Project', icon: Box, desc: 'Empty workspace with core binary', group: 'PROJECT' },
   { id: 'node', label: 'Node.js', icon: Terminal, desc: 'Node + Express pre-configured', group: 'TEMPLATE' },
   { id: 'react', label: 'React + Vite', icon: Atom, desc: 'Frontend stack with hot-reload', group: 'TEMPLATE' },
+  { id: 'nextjs', label: 'Next.js Boilerplate', icon: Globe, desc: 'Next.js App Router full-stack skeleton', group: 'TEMPLATE' },
+  { id: 'flask', label: 'Python Flask', icon: Flame, desc: 'Minimal Python Flask API server', group: 'TEMPLATE' },
+  { id: 'fastapi', label: 'Python FastAPI', icon: Cpu, desc: 'Python FastAPI server with Swagger docs', group: 'TEMPLATE' },
+  { id: 'gin', label: 'Go Gin', icon: Code, desc: 'Go Web API with Gin framework', group: 'TEMPLATE' },
+  { id: 'rust', label: 'Rust Cargo', icon: Box, desc: 'Basic Rust cargo binary workspace', group: 'TEMPLATE' },
 ]
 
 export default function NewProjectScreen() {

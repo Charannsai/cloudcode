@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { Project } from '@/types'
 import { api } from '@/lib/api'
 
+import { cache } from '@/hooks/useCache'
+
 interface ProjectsState {
   projects: Project[]
   loading: boolean
@@ -22,6 +24,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
     try {
       const projects = await api.projects.list()
       set({ projects, loading: false })
+      await cache.set('cached_projects', projects)
     } catch (err) {
       set({ error: (err as Error).message, loading: false })
     }
@@ -38,3 +41,10 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
       projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
     })),
 }))
+
+// Initialize store state from cache on load
+cache.get<Project[]>('cached_projects').then((cached) => {
+  if (cached) {
+    useProjectsStore.setState({ projects: cached })
+  }
+})

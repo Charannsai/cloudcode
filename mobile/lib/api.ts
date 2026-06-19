@@ -28,7 +28,7 @@ export const api = {
   projects: {
     list: () => apiFetch<Project[]>('/api/projects'),
     get: (id: string) => apiFetch<Project>(`/api/projects/${id}`),
-    create: (name: string, type: 'node' | 'react' | 'empty') =>
+    create: (name: string, type: 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs') =>
       apiFetch<Project>('/api/projects', {
         method: 'POST',
         body: JSON.stringify({ name, type }),

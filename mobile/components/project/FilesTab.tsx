@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, memo } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator,
+  TextInput, Alert, ActivityIndicator, Modal,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { api } from '@/lib/api'
@@ -48,10 +48,10 @@ function getFileColor(name: string): string {
 }
 
 const FileTreeItem = memo(function FileTreeItem({
-  item, depth, projectId, onRefresh, colors, isDark, router, onDeleteRequest
+  item, depth, projectId, onRefresh, colors, isDark, router, onOptionsRequest
 }: {
   item: FileItem; depth: number; projectId: string;
-  onRefresh: () => void; colors: any; isDark: boolean; router: any; onDeleteRequest: (item: FileItem) => void;
+  onRefresh: () => void; colors: any; isDark: boolean; router: any; onOptionsRequest: (item: FileItem) => void;
 }) {
   const [expanded, setExpanded] = useState(depth === 0)
   const isDir = item.type === 'directory'
@@ -68,8 +68,8 @@ const FileTreeItem = memo(function FileTreeItem({
     }
   }
 
-  const handleDelete = () => {
-    onDeleteRequest(item)
+  const handleLongPress = () => {
+    onOptionsRequest(item)
   }
 
   return (
@@ -77,7 +77,7 @@ const FileTreeItem = memo(function FileTreeItem({
       <TouchableOpacity
         style={[styles.treeItem, { paddingLeft: 12 + depth * 16 }]}
         onPress={handlePress}
-        onLongPress={handleDelete}
+        onLongPress={handleLongPress}
         activeOpacity={0.6}
       >
         {isDir && (
@@ -117,7 +117,7 @@ const FileTreeItem = memo(function FileTreeItem({
           colors={colors}
           isDark={isDark}
           router={router}
-          onDeleteRequest={onDeleteRequest}
+          onOptionsRequest={onOptionsRequest}
         />
       ))}
     </View>
@@ -133,6 +133,21 @@ export default function FilesTab({ projectId, isActive }: Props) {
   const [showSearch, setShowSearch] = useState(false)
   const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Options Menu and Custom Modal creation states
+  const [selectedItem, setSelectedItem] = useState<FileItem | null>(null)
+  const [showOptionsModal, setShowOptionsModal] = useState(false)
+  const [createModal, setCreateModal] = useState<{
+    visible: boolean
+    parentPath: string
+    type: 'file' | 'directory'
+    name: string
+  }>({
+    visible: false,
+    parentPath: '',
+    type: 'file',
+    name: '',
+  })
 
   const fetchFiles = useCallback(async () => {
     setLoading(true)
@@ -188,18 +203,9 @@ export default function FilesTab({ projectId, isActive }: Props) {
 
   const filtered = useMemo(() => filterTree(files, searchQuery), [files, searchQuery, filterTree])
 
-  const createFile = () => {
-    if (Alert.prompt) {
-      Alert.prompt('New File', 'Enter file name', (name: string) => {
-        if (name) {
-          api.files.create(projectId, name, 'file')
-            .then(fetchFiles)
-            .catch(err => Alert.alert('Error', err.message))
-        }
-      })
-    } else {
-      Alert.alert('Not Supported', 'Prompt dialogs are only supported on iOS. Please use the terminal to create new files on Android.')
-    }
+  const handleOptionsRequest = (item: FileItem) => {
+    setSelectedItem(item)
+    setShowOptionsModal(true)
   }
 
   return (
@@ -221,11 +227,32 @@ export default function FilesTab({ projectId, isActive }: Props) {
           <RefreshCw size={13} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={createFile}
+          onPress={() => {
+            setCreateModal({
+              visible: true,
+              parentPath: '',
+              type: 'file',
+              name: '',
+            })
+          }}
           style={[styles.toolBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
           activeOpacity={0.7}
         >
           <FilePlus size={13} color={colors.textSecondary} strokeWidth={1.8} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setCreateModal({
+              visible: true,
+              parentPath: '',
+              type: 'directory',
+              name: '',
+            })
+          }}
+          style={[styles.toolBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          activeOpacity={0.7}
+        >
+          <FolderPlus size={13} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
       </View>
 
@@ -270,12 +297,142 @@ export default function FilesTab({ projectId, isActive }: Props) {
                 colors={colors}
                 isDark={isDark}
                 router={router}
-                onDeleteRequest={setFileToDelete}
+                onOptionsRequest={handleOptionsRequest}
               />
             ))
           )}
         </ScrollView>
       )}
+
+      {/* Creation Dialog Modal */}
+      <Modal
+        visible={createModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCreateModal(prev => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.promptOverlay}>
+          <View style={[styles.promptContent, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
+            <Text style={[styles.promptTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+              {createModal.type === 'file' ? 'New File' : 'New Folder'}
+            </Text>
+            
+            <View style={styles.promptForm}>
+              <Text style={[styles.promptLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                Parent Directory: {createModal.parentPath ? `/${createModal.parentPath}` : 'Root (/)'}
+              </Text>
+              
+              <TextInput
+                style={[styles.promptInput, { color: colors.text, borderColor: colors.border, fontFamily: 'Inter_400Regular' }]}
+                placeholder={createModal.type === 'file' ? "filename.txt" : "folder_name"}
+                placeholderTextColor={colors.textSecondary + '60'}
+                value={createModal.name}
+                onChangeText={(text) => setCreateModal(prev => ({ ...prev, name: text }))}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+              />
+            </View>
+
+            <View style={[styles.promptActions, { borderTopColor: colors.border }]}>
+              <TouchableOpacity
+                style={styles.promptBtn}
+                onPress={() => setCreateModal(prev => ({ ...prev, visible: false }))}
+              >
+                <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium' }}>Cancel</Text>
+              </TouchableOpacity>
+              <View style={[styles.separator, { backgroundColor: colors.border }]} />
+              <TouchableOpacity
+                style={styles.promptBtn}
+                onPress={async () => {
+                  const name = createModal.name.trim()
+                  if (!name) return
+                  
+                  const targetPath = createModal.parentPath 
+                    ? `${createModal.parentPath}/${name}` 
+                    : name
+                  
+                  try {
+                    await api.files.create(projectId, targetPath, createModal.type)
+                    fetchFiles()
+                    setCreateModal(prev => ({ ...prev, visible: false }))
+                  } catch (err: any) {
+                    Alert.alert('Error', err.message)
+                  }
+                }}
+              >
+                <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Options Dropdown Menu Modal */}
+      <Modal
+        visible={showOptionsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowOptionsModal(false)}
+      >
+        <View style={styles.promptOverlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowOptionsModal(false)} />
+          <View style={[styles.optionsContent, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
+            <Text style={[styles.optionsTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]} numberOfLines={1}>
+              {selectedItem?.name}
+            </Text>
+            
+            <View style={styles.optionsList}>
+              {selectedItem?.type === 'directory' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.optionItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      setShowOptionsModal(false)
+                      setCreateModal({
+                        visible: true,
+                        parentPath: selectedItem.path,
+                        type: 'file',
+                        name: '',
+                      })
+                    }}
+                  >
+                    <FilePlus size={16} color={colors.text} style={{ marginRight: 10 }} />
+                    <Text style={[styles.optionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>New File inside</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.optionItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      setShowOptionsModal(false)
+                      setCreateModal({
+                        visible: true,
+                        parentPath: selectedItem.path,
+                        type: 'directory',
+                        name: '',
+                      })
+                    }}
+                  >
+                    <FolderPlus size={16} color={colors.text} style={{ marginRight: 10 }} />
+                    <Text style={[styles.optionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>New Folder inside</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => {
+                  setShowOptionsModal(false)
+                  setFileToDelete(selectedItem)
+                }}
+              >
+                <Trash2 size={16} color="#F85149" style={{ marginRight: 10 }} />
+                <Text style={[styles.optionText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <ConfirmModal
         visible={!!fileToDelete}
@@ -350,5 +507,81 @@ const styles = StyleSheet.create({
     paddingTop: 40, 
     fontSize: 13, 
     opacity: 0.5 
+  },
+  promptOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  promptContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    gap: 16,
+  },
+  promptTitle: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  promptForm: {
+    gap: 8,
+  },
+  promptLabel: {
+    fontSize: 11,
+    opacity: 0.7,
+  },
+  promptInput: {
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
+  },
+  promptActions: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingTop: 12,
+    marginTop: 4,
+  },
+  promptBtn: {
+    flex: 1,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  separator: {
+    width: 1,
+    height: '100%',
+  },
+  optionsContent: {
+    width: '100%',
+    maxWidth: 280,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  optionsTitle: {
+    fontSize: 14,
+    padding: 14,
+    textAlign: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    opacity: 0.8,
+  },
+  optionsList: {
+    width: '100%',
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  optionText: {
+    fontSize: 13,
   },
 })
