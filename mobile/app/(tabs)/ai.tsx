@@ -291,33 +291,54 @@ export default function AIScreen() {
     }, [fetchProjects])
   )
 
-  // Bouncing dots for Thinking state
-  const dot1 = useSharedValue(0)
-  const dot2 = useSharedValue(0)
-  const dot3 = useSharedValue(0)
-
-  // Pulse animation for Thinking state
-  const thinkingOpacity = useSharedValue(1)
+  // Jumping letters animation for Thinking state
+  const letter0 = useSharedValue(0)
+  const letter1 = useSharedValue(0)
+  const letter2 = useSharedValue(0)
+  const letter3 = useSharedValue(0)
+  const letter4 = useSharedValue(0)
+  const letter5 = useSharedValue(0)
+  const letter6 = useSharedValue(0)
+  const letter7 = useSharedValue(0)
 
   useEffect(() => {
     const isThinking = isStreaming && !currentStreamText && currentToolCalls.length === 0
     if (isThinking) {
-      thinkingOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.4, { duration: 600, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1,
-        true
-      )
+      const animateLetter = (anim: any, delay: number) => {
+        setTimeout(() => {
+          anim.value = withRepeat(
+            withSequence(
+              withTiming(-3, { duration: 180, easing: Easing.inOut(Easing.ease) }),
+              withTiming(0, { duration: 180, easing: Easing.inOut(Easing.ease) }),
+              withTiming(0, { duration: 600 })
+            ),
+            -1,
+            false
+          )
+        }, delay)
+      }
+      animateLetter(letter0, 0)
+      animateLetter(letter1, 80)
+      animateLetter(letter2, 160)
+      animateLetter(letter3, 240)
+      animateLetter(letter4, 320)
+      animateLetter(letter5, 400)
+      animateLetter(letter6, 480)
+      animateLetter(letter7, 560)
     } else {
-      thinkingOpacity.value = 1
+      letter0.value = 0; letter1.value = 0; letter2.value = 0; letter3.value = 0;
+      letter4.value = 0; letter5.value = 0; letter6.value = 0; letter7.value = 0;
     }
   }, [isStreaming, currentStreamText, currentToolCalls.length])
 
-  const animatedThinkingStyle = useAnimatedStyle(() => ({
-    opacity: thinkingOpacity.value,
-  }))
+  const styleL0 = useAnimatedStyle(() => ({ transform: [{ translateY: letter0.value }] }))
+  const styleL1 = useAnimatedStyle(() => ({ transform: [{ translateY: letter1.value }] }))
+  const styleL2 = useAnimatedStyle(() => ({ transform: [{ translateY: letter2.value }] }))
+  const styleL3 = useAnimatedStyle(() => ({ transform: [{ translateY: letter3.value }] }))
+  const styleL4 = useAnimatedStyle(() => ({ transform: [{ translateY: letter4.value }] }))
+  const styleL5 = useAnimatedStyle(() => ({ transform: [{ translateY: letter5.value }] }))
+  const styleL6 = useAnimatedStyle(() => ({ transform: [{ translateY: letter6.value }] }))
+  const styleL7 = useAnimatedStyle(() => ({ transform: [{ translateY: letter7.value }] }))
 
   // Auto-select global by default if no project is active
   useEffect(() => {
@@ -542,16 +563,30 @@ export default function AIScreen() {
                     activeOpacity={0.7}
                     onPress={() => setReasoningExpanded(!reasoningExpanded)}
                   >
-                    <Animated.View style={[styles.typingIndicator, animatedThinkingStyle]}>
-                      <Text style={[styles.thinkingText, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>
-                        Thinking
-                      </Text>
+                    <View style={styles.typingIndicator}>
+                      <View style={styles.thinkingTextContainer}>
+                        {['T', 'h', 'i', 'n', 'k', 'i', 'n', 'g'].map((char, index) => {
+                          const animStyles = [styleL0, styleL1, styleL2, styleL3, styleL4, styleL5, styleL6, styleL7]
+                          return (
+                            <Animated.Text
+                              key={index}
+                              style={[
+                                styles.thinkingChar,
+                                animStyles[index],
+                                { color: isDark ? '#8B929A' : '#656D76' }
+                              ]}
+                            >
+                              {char}
+                            </Animated.Text>
+                          )
+                        })}
+                      </View>
                       {reasoningExpanded ? (
                         <ChevronUp size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
                       ) : (
                         <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4, marginTop: 1 }} />
                       )}
-                    </Animated.View>
+                    </View>
                   </TouchableOpacity>
 
                   {reasoningExpanded && (
@@ -984,5 +1019,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     opacity: 0.8,
+  },
+  thinkingTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  thinkingChar: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
   },
 })
