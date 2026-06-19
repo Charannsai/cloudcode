@@ -3,6 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import net from 'net'
 import { supabaseAdmin } from './supabase'
+import { getTierConfig, getTierDockerLimits, type TierName } from './tiers'
 
 function ensureProjectDir(path: string) {
   if (!fs.existsSync(path)) {
@@ -28,13 +29,17 @@ export interface ContainerInfo {
  * Create and start a Docker container for a project.
  * Mounts a host directory to /workspace inside the container.
  */
-export async function createContainer(projectId: string): Promise<ContainerInfo> {
+export async function createContainer(projectId: string, userTier?: TierName): Promise<ContainerInfo> {
   const hostPath = getWorkspacePath(projectId)
   ensureProjectDir(hostPath)
 
   const { data: project } = await supabaseAdmin.from('projects').select('user_github_id').eq('id', projectId).single()
   const userId = project?.user_github_id || 'default'
   const sshVolumeName = `cloudcode-ssh-${userId}`
+
+  // Resolve tier-based resource limits
+  const tier = getTierConfig(userTier)
+  const dockerLimits = getTierDockerLimits(tier)
 
   const container = await docker.createContainer({
     Image: IMAGE,
@@ -56,8 +61,10 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
     },
     HostConfig: {
       Binds: [`${hostPath}:${WORKSPACE_ROOT}`, `${sshVolumeName}:/home/coder/.ssh`],
-      Memory: 1024 * 1024 * 1024, // 1GB memory cap (prevents starving the VPS host RAM)
-      CpuShares: 512,
+      // Tier-based resource limits (from tiers.ts)
+      NanoCpus: dockerLimits.NanoCpus,
+      Memory: dockerLimits.Memory,
+      StorageOpt: dockerLimits.StorageOpt,
       PortBindings: {
         '3000/tcp': [{ HostPort: '' }],
         '5000/tcp': [{ HostPort: '' }],
@@ -65,6 +72,7 @@ export async function createContainer(projectId: string): Promise<ContainerInfo>
         '8000/tcp': [{ HostPort: '' }],
         '8080/tcp': [{ HostPort: '' }],
       },
+      // SECURITY: ICC (Inter-Container Communication) is disabled at daemon level via docker-daemon.json
       NetworkMode: 'bridge',
       RestartPolicy: { Name: 'no' },  // Managed by idle auto-stop — don't auto-restart
     },

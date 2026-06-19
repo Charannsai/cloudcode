@@ -304,13 +304,14 @@ const startServer = async () => {
   httpServer.listen(port, () => {
     console.log(`> Ready on http://${hostname}:${port}`)
     console.log(`> WebSocket terminal proxy active`)
-    console.log(`> Container idle auto-stop cron active (30 min threshold)`)
+    console.log(`> Container idle auto-stop cron active (10 min threshold for Free tier)`)
   })
 
   // ── Container Idle Auto-Stop Cron ──
-  // Runs every 5 minutes. Stops containers that have had no activity for 30 minutes.
-  const IDLE_THRESHOLD_MS = 30 * 60 * 1000 // 30 minutes
-  const IDLE_CHECK_INTERVAL_MS = 5 * 60 * 1000 // Check every 5 minutes
+  // Runs every 2 minutes. Stops containers that have had no activity for 10 minutes (Free tier).
+  // TODO: Make threshold dynamic based on user subscription tier (Free=10m, Pro=60m, Advanced=user-defined)
+  const IDLE_THRESHOLD_MS = 10 * 60 * 1000 // 10 minutes (Free tier)
+  const IDLE_CHECK_INTERVAL_MS = 2 * 60 * 1000 // Check every 2 minutes
 
   setInterval(async () => {
     try {
@@ -334,7 +335,7 @@ const startServer = async () => {
               .update({ status: 'sleeping' })
               .eq('id', project.id)
 
-            console.log(`[Idle Auto-Stop] Stopped container for "${project.name}" (${project.id}) after 30 min inactivity`)
+            console.log(`[Idle Auto-Stop] Stopped container for "${project.name}" (${project.id}) after 10 min inactivity`)
           } catch (err) {
             console.error(`[Idle Auto-Stop] Failed to stop container for ${project.id}:`, err)
           }
