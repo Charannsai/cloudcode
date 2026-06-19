@@ -52,12 +52,19 @@ function TerminalSession({
   const output = useTerminalStore((s) => s.projects[projectId]?.outputs[terminalId] || '')
   const { appendOutput, clearOutput, setOutput: setStoreOutput } = useTerminalStore()
 
+  // Track whether we need to flush stored output on reconnection.
+  // When reconnecting to a tmux session that already has stored output,
+  // tmux resends the current screen (prompt/workspace name). We replace
+  // the old stored output with the fresh tmux output to avoid duplication.
+  const needsReconnectFlush = useRef(output.length > 0)
+
   // Use the useTerminal hook for this specific terminalId
   const { connected, error, sendInput } = useTerminal({
     projectId,
     terminalId,
     onOutput: useCallback((data: string, shouldClear: boolean) => {
-      if (shouldClear) {
+      if (shouldClear || needsReconnectFlush.current) {
+        needsReconnectFlush.current = false
         setStoreOutput(projectId, terminalId, data)
       } else {
         appendOutput(projectId, terminalId, data)
