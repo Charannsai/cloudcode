@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
 import { createContainer, getWorkspacePath } from '@/lib/docker'
 import path from 'path'
-import { execSync } from 'child_process'
+import { spawnSync } from 'child_process'
 import fs from 'fs'
 
 const ImportSchema = z.object({
@@ -49,13 +49,18 @@ async function cloneAndProvision(projectId: string, githubUrl: string) {
   const workspacePath = getWorkspacePath(projectId)
   try {
     fs.mkdirSync(workspacePath, { recursive: true })
-    execSync(`git clone --depth=1 "${githubUrl}" "${workspacePath}"`, {
+    // SECURITY: Use spawnSync with array args to prevent shell injection via githubUrl
+    const cloneResult = spawnSync('git', ['clone', '--depth=1', githubUrl, workspacePath], {
       timeout: 60000,
       stdio: 'pipe',
     })
+    if (cloneResult.status !== 0) {
+      throw new Error(`git clone failed: ${cloneResult.stderr?.toString() || 'unknown error'}`)
+    }
     
     // Grant full permissions recursively so the Docker "coder" user can read/write the cloned code!
-    execSync(`chmod -R 777 "${workspacePath}"`, { stdio: 'ignore' })
+    // SECURITY: Use spawnSync with array args to prevent shell injection via workspacePath
+    spawnSync('chmod', ['-R', '777', workspacePath], { stdio: 'ignore' })
 
     const { containerId, port } = await createContainer(projectId)
     await supabaseAdmin
