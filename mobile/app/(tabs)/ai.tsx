@@ -613,90 +613,93 @@ export default function AIScreen() {
         visible={workspaceModalVisible}
         transparent
         animationType="fade"
+        statusBarTranslucent={true}
         onRequestClose={() => setWorkspaceModalVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setWorkspaceModalVisible(false)}
-        >
-          <TouchableOpacity
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill}
             activeOpacity={1}
-            style={{ width: '100%' }}
-          >
-            <View style={[styles.modalContent, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-              {/* Drag/Indicator Handle */}
-              <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#2D333B' : '#E5E7EB' }]} />
-              
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                  Switch Workspace
-                </Text>
-                <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  Connect your AI chat to a different workspace context:
-                </Text>
-              </View>
-
-              <ScrollView 
-                style={styles.modalList} 
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 10 }}
-              >
-                {projects.map((proj) => {
-                  const isSelected = selectedProjectId === proj.id
-                  return (
-                    <TouchableOpacity
-                      key={proj.id}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        setSelectedProjectId(proj.id)
-                        setWorkspaceModalVisible(false)
-                      }}
-                      style={[
-                        styles.projectOption,
-                        {
-                          backgroundColor: isSelected 
-                            ? (isDark ? '#1C2128' : '#F0F2F5')
-                            : 'transparent'
-                        }
-                      ]}
-                    >
-                      <View style={styles.projectOptionLeft}>
-                        <FolderGit2 
-                          size={14} 
-                          color={isSelected ? (isDark ? '#58A6FF' : '#0969DA') : colors.textSecondary} 
-                          style={{ marginRight: 10 }} 
-                        />
-                        <Text style={[
-                          styles.projectName,
-                          { 
-                            color: colors.text,
-                            fontFamily: isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular'
-                          }
-                        ]}>
-                          {proj.name}
-                        </Text>
-                      </View>
-                      {isSelected && (
-                        <CheckCircle2 size={14} color={isDark ? '#58A6FF' : '#0969DA'} />
-                      )}
-                    </TouchableOpacity>
-                  )
-                })}
-              </ScrollView>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setWorkspaceModalVisible(false)}
-                style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }]}
-              >
-                <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+            onPress={() => setWorkspaceModalVisible(false)}
+          />
+          <View style={[
+            styles.modalContent, 
+            { 
+              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+              borderColor: isDark ? '#21262D' : '#E5E7EB' 
+            }
+          ]}>
+            {/* Drag/Indicator Handle */}
+            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#2D333B' : '#E5E7EB' }]} />
+            
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                Switch Workspace
+              </Text>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                Connect your AI chat to a different workspace context:
+              </Text>
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+
+            <ScrollView 
+              style={styles.modalList} 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 10 }}
+            >
+              {projects.map((proj) => {
+                const isSelected = selectedProjectId === proj.id
+                return (
+                  <TouchableOpacity
+                    key={proj.id}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setSelectedProjectId(proj.id)
+                      setWorkspaceModalVisible(false)
+                    }}
+                    style={[
+                      styles.projectOption,
+                      {
+                        backgroundColor: isSelected 
+                          ? (isDark ? '#1C2128' : '#F0F2F5')
+                          : 'transparent'
+                      }
+                    ]}
+                  >
+                    <View style={styles.projectOptionLeft}>
+                      <FolderGit2 
+                        size={14} 
+                        color={isSelected ? (isDark ? '#58A6FF' : '#0969DA') : colors.textSecondary} 
+                        style={{ marginRight: 10 }} 
+                      />
+                      <Text style={[
+                        styles.projectName,
+                        { 
+                          color: colors.text,
+                          fontFamily: isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular'
+                        }
+                      ]}>
+                        {proj.name}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <CheckCircle2 size={14} color={isDark ? '#58A6FF' : '#0969DA'} />
+                    )}
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setWorkspaceModalVisible(false)}
+              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#1C2128' : '#F0F2F5' }]}
+            >
+              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </KeyboardAvoidingView>
   )
@@ -854,7 +857,9 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    borderWidth: 1,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
     borderBottomWidth: 0,
     paddingHorizontal: 24,
     paddingTop: 8,
@@ -891,6 +896,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   modalList: {
+    minHeight: 150,
     maxHeight: 260,
   },
   projectOption: {
