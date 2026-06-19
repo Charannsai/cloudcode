@@ -146,13 +146,6 @@ export default function DashboardScreen() {
           </View>
           <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Overview</Text>
         </View>
-        <TouchableOpacity 
-          style={[styles.newBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0E1116' }]}
-          onPress={() => router.push('/new-project')}
-          activeOpacity={0.8}
-        >
-          <Plus size={20} color={isDark ? '#000' : '#FFF'} strokeWidth={2.5} />
-        </TouchableOpacity>
       </Animated.View>
 
       {/* Your Workspaces Carousel */}
