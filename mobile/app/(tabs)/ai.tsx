@@ -16,6 +16,7 @@ import { useUIStore } from '@/store/ui'
 import { useAIStore, ChatMessage, ToolCallInfo } from '@/store/ai'
 import { useProjectsStore } from '@/store/projects'
 import { api } from '@/lib/api'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice'
 import * as Speech from 'expo-speech'
 import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated'
@@ -383,6 +384,8 @@ export default function AIScreen() {
     activeProjectId: selectedProjectId, setActiveProject: setSelectedProjectId
   } = useAIStore()
 
+  const insets = useSafeAreaInsets()
+
   const [inputText, setInputText] = useState('')
   const [workspaceModalVisible, setWorkspaceModalVisible] = useState(false)
   const [reasoningExpanded, setReasoningExpanded] = useState(false)
@@ -569,7 +572,13 @@ export default function AIScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+      <View style={[
+        styles.header,
+        {
+          borderBottomColor: isDark ? '#21262D' : '#D8DEE4',
+          paddingTop: insets.top > 0 ? insets.top + 8 : 20,
+        }
+      ]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/projects')}
@@ -803,7 +812,7 @@ export default function AIScreen() {
       <View style={[styles.inputContainer, { 
         backgroundColor: colors.background, 
         borderTopColor: isDark ? '#21262D' : '#D8DEE4',
-        paddingBottom: Platform.OS === 'ios' ? 24 : 16
+        paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 16
       }]}>
         <View style={[styles.inputBox, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
           <TextInput
