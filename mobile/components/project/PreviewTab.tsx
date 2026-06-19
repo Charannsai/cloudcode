@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
-  Platform, Linking, LayoutAnimation,
+  Platform, Linking, LayoutAnimation, ScrollView,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { getToken } from '@/lib/auth'
 import {
   Globe, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, Copy,
-  ExternalLink, ChevronDown, ChevronUp, Info, Home,
+  ExternalLink, ChevronDown, ChevronUp, Info, Home, AlertTriangle, Sparkles, X, Terminal,
 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
+import { BlurView } from 'expo-blur'
+import { useAIStore } from '@/store/ai'
+import { useRouter } from 'expo-router'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -35,20 +38,91 @@ function getInternalPort(publicPort: number, portsMap?: Record<string, number>):
   return publicPort
 }
 
+function DOMInspectorNode({ node, depth = 0 }: { node: any; depth: number }) {
+  const { colors } = useAppTheme()
+  const [collapsed, setCollapsed] = useState(false)
+
+  if (!node) return null
+
+  if (node.type === 'text') {
+    return (
+      <View style={{ paddingLeft: depth * 12, paddingVertical: 2 }}>
+        <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
+          "{node.text}"
+        </Text>
+      </View>
+    )
+  }
+
+  const hasChildren = node.children && node.children.length > 0
+  const classText = node.className ? ` class="${node.className}"` : ''
+  const idText = node.id ? ` id="${node.id}"` : ''
+
+  return (
+    <View style={{ paddingLeft: depth * 12 }}>
+      <TouchableOpacity 
+        onPress={() => setCollapsed(c => !c)} 
+        disabled={!hasChildren}
+        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 2 }}
+        activeOpacity={0.7}
+      >
+        <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: '#F47067' }}>
+          &lt;{node.tagName}
+          <Text style={{ color: '#F2C078' }}>{idText}</Text>
+          <Text style={{ color: '#58A6FF' }}>{classText}</Text>
+          &gt;
+        </Text>
+        {hasChildren && (
+          <Text style={{ fontSize: 9, color: colors.textSecondary, marginLeft: 4 }}>
+            {collapsed ? `[+${node.children.length}]` : '[-]'}
+          </Text>
+        )}
+      </TouchableOpacity>
+      
+      {!collapsed && hasChildren && node.children.map((child: any, idx: number) => (
+        <DOMInspectorNode key={idx} node={child} depth={depth + 1} />
+      ))}
+      
+      {hasChildren && !collapsed && (
+        <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: '#F47067', paddingLeft: depth * 12 }}>
+          &lt;/{node.tagName}&gt;
+        </Text>
+      )}
+    </View>
+  )
+}
+
 export default function PreviewTab({ projectId, port, ports }: Props) {
   const { colors, isDark } = useAppTheme()
   const webViewRef = useRef<WebView>(null)
+  const router = useRouter()
+  const { setActiveProject, setPendingPrompt } = useAIStore()
+  
   const [url, setUrl] = useState('')
   const [canGoBack, setCanGoBack] = useState(false)
   const [canGoForward, setCanGoForward] = useState(false)
   const [currentUrl, setCurrentUrl] = useState('')
   const [showBrowserInfo, setShowBrowserInfo] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [latestError, setLatestError] = useState<string | null>(null)
+  const [showErrorOverlay, setShowErrorOverlay] = useState(false)
+  const [consoleLogs, setConsoleLogs] = useState<{ type: 'log' | 'warn' | 'error'; data: string; timestamp: number }[]>([])
+  const [networkLogs, setNetworkLogs] = useState<{ url: string; method: string; status: string | number; duration: number; timestamp: number }[]>([])
+  const [domTree, setDomTree] = useState<any>(null)
+  const [activeDevTab, setActiveDevTab] = useState<'console' | 'network' | 'dom'>('console')
+  const [showDevTools, setShowDevTools] = useState(false)
 
   const handleSetError = (error: boolean) => {
     setHasError(error)
     if (error) {
       setCurrentUrl('')
+    } else {
+      setLatestError(null)
+      setShowErrorOverlay(false)
+      setNetworkLogs([])
+      setDomTree(null)
+      setShowDevTools(false)
+      setConsoleLogs([])
     }
   }
 
@@ -57,6 +131,12 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     setUrl('')
     setCurrentUrl('')
     setHasError(false)
+    setLatestError(null)
+    setShowErrorOverlay(false)
+    setConsoleLogs([])
+    setNetworkLogs([])
+    setDomTree(null)
+    setShowDevTools(false)
   }, [projectId])
 
   const handleNavigateToPort = async (targetPort: number) => {
@@ -346,6 +426,100 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                   }));
                   return false;
                 };
+
+                // Fetch intercept
+                var originalFetch = window.fetch;
+                window.fetch = function(input, init) {
+                  var url = (typeof input === 'string') ? input : input.url;
+                  var method = (init && init.method) || 'GET';
+                  var startTime = performance.now();
+                  return originalFetch.apply(this, arguments).then(function(response) {
+                    var duration = performance.now() - startTime;
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                      type: 'network',
+                      data: { url: url, method: method, status: response.status, duration: Math.round(duration) }
+                    }));
+                    return response;
+                  }).catch(function(error) {
+                    var duration = performance.now() - startTime;
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                      type: 'network',
+                      data: { url: url, method: method, status: 'Failed', duration: Math.round(duration) }
+                    }));
+                    throw error;
+                  });
+                };
+
+                // XHR Intercept
+                var originalOpen = XMLHttpRequest.prototype.open;
+                var originalSend = XMLHttpRequest.prototype.send;
+                XMLHttpRequest.prototype.open = function(method, url) {
+                  this._method = method;
+                  this._url = url;
+                  this._startTime = performance.now();
+                  return originalOpen.apply(this, arguments);
+                };
+                XMLHttpRequest.prototype.send = function() {
+                  var self = this;
+                  this.addEventListener('load', function() {
+                    var duration = performance.now() - self._startTime;
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                      type: 'network',
+                      data: { url: self._url, method: self._method, status: self.status, duration: Math.round(duration) }
+                    }));
+                  });
+                  this.addEventListener('error', function() {
+                    var duration = performance.now() - self._startTime;
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                      type: 'network',
+                      data: { url: self._url, method: self._method, status: 'Failed', duration: Math.round(duration) }
+                    }));
+                  });
+                  return originalSend.apply(this, arguments);
+                };
+
+                // DOM Tree Builder
+                function buildDomTree(node) {
+                  if (!node) return null;
+                  if (node.nodeType === 3) {
+                    const text = node.nodeValue.trim();
+                    if (!text) return null;
+                    return { type: 'text', text: text };
+                  }
+                  if (node.nodeType !== 1) return null;
+                  if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME'].includes(node.tagName)) return null;
+                  
+                  const children = [];
+                  for (var i = 0; i < node.childNodes.length; i++) {
+                    var childTree = buildDomTree(node.childNodes[i]);
+                    if (childTree) children.push(childTree);
+                  }
+                  
+                  return {
+                    type: 'element',
+                    tagName: node.tagName.toLowerCase(),
+                    id: node.id || '',
+                    className: (typeof node.className === 'string') ? node.className : '',
+                    children: children
+                  };
+                }
+
+                window.sendDomTree = function() {
+                  var tree = buildDomTree(document.body);
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'dom',
+                    data: tree
+                  }));
+                };
+
+                // Set up MutationObserver to auto-post DOM changes
+                var observer = new MutationObserver(function() {
+                  window.sendDomTree();
+                });
+                observer.observe(document.body, { subtree: true, childList: true, attributes: true });
+                
+                // Send initial DOM tree when loaded
+                setTimeout(window.sendDomTree, 1000);
               })();
               true;
             `}
@@ -355,6 +529,19 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                 if (msg.type === 'proxy_error') {
                   handleSetError(true)
                   return
+                }
+                if (msg.type === 'log' || msg.type === 'warn' || msg.type === 'error') {
+                  setConsoleLogs(prev => [...prev.slice(-199), { type: msg.type, data: msg.data, timestamp: Date.now() }])
+                }
+                if (msg.type === 'error') {
+                  setLatestError(msg.data)
+                  setShowErrorOverlay(true)
+                }
+                if (msg.type === 'network') {
+                  setNetworkLogs(prev => [...prev.slice(-99), { ...msg.data, timestamp: Date.now() }])
+                }
+                if (msg.type === 'dom') {
+                  setDomTree(msg.data)
                 }
                 console.log(`[WebView Console ${msg.type.toUpperCase()}]`, msg.data)
               } catch (e) {
@@ -449,6 +636,202 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           )}
         </View>
       ) : null}
+
+      {/* DevTools Bottom Drawer */}
+      {url && (
+        <View style={[styles.devToolsContainer, { borderTopColor: colors.border, height: showDevTools ? 260 : 38 }]}>
+          <TouchableOpacity 
+            style={[styles.devToolsHeader, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]} 
+            onPress={() => setShowDevTools(s => !s)}
+            activeOpacity={0.8}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Terminal size={13} color={colors.text} />
+              <Text style={[styles.devToolsTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                Developer Tools
+              </Text>
+            </View>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>
+                Logs: {consoleLogs.length} | Net: {networkLogs.length}
+              </Text>
+              <ChevronUp size={14} color={colors.textSecondary} style={{ transform: [{ rotate: showDevTools ? '180deg' : '0deg' }] }} />
+            </View>
+          </TouchableOpacity>
+
+          {showDevTools && (
+            <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
+              {/* Tab Bar */}
+              <View style={[styles.devTabBar, { borderBottomColor: colors.border }]}>
+                {(['console', 'network', 'dom'] as const).map((tab) => (
+                  <TouchableOpacity
+                    key={tab}
+                    onPress={() => {
+                      setActiveDevTab(tab)
+                      if (tab === 'dom' && webViewRef.current) {
+                        webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
+                      }
+                    }}
+                    style={[
+                      styles.devTabItem,
+                      activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                    ]}
+                  >
+                    <Text style={[
+                      styles.devTabText,
+                      { 
+                        color: activeDevTab === tab ? colors.primary : colors.textSecondary,
+                        fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
+                      }
+                    ]}>
+                      {tab.toUpperCase()}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Tab Content */}
+              <View style={{ flex: 1 }}>
+                {activeDevTab === 'console' && (
+                  <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
+                    {consoleLogs.length === 0 ? (
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                        No console logs captured yet.
+                      </Text>
+                    ) : (
+                      consoleLogs.map((log, idx) => (
+                        <Text 
+                          key={idx} 
+                          style={{
+                            fontFamily: 'JetBrainsMono_400Regular',
+                            fontSize: 10.5,
+                            color: log.type === 'error' ? '#FF7B72' : log.type === 'warn' ? '#F2C078' : colors.text,
+                            borderBottomWidth: 0.5,
+                            borderBottomColor: colors.border + '30',
+                            paddingVertical: 3
+                          }}
+                        >
+                          [{log.type.toUpperCase()}] {log.data}
+                        </Text>
+                      ))
+                    )}
+                  </ScrollView>
+                )}
+
+                {activeDevTab === 'network' && (
+                  <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
+                    {networkLogs.length === 0 ? (
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                        No network requests intercepted.
+                      </Text>
+                    ) : (
+                      networkLogs.map((log, idx) => (
+                        <View 
+                          key={idx} 
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            borderBottomWidth: 0.5,
+                            borderBottomColor: colors.border + '30',
+                            paddingVertical: 4,
+                          }}
+                        >
+                          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.text, flex: 1, marginRight: 8 }} numberOfLines={1}>
+                            {log.method} {log.url}
+                          </Text>
+                          <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: log.status === 'Failed' || Number(log.status) >= 400 ? '#FF7B72' : '#3FB950' }}>
+                              Status: {log.status}
+                            </Text>
+                            <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
+                              {log.duration}ms
+                            </Text>
+                          </View>
+                        </View>
+                      ))
+                    )}
+                  </ScrollView>
+                )}
+
+                {activeDevTab === 'dom' && (
+                  <ScrollView contentContainerStyle={{ padding: 10 }}>
+                    {domTree ? (
+                      <DOMInspectorNode node={domTree} depth={0} />
+                    ) : (
+                      <View style={{ alignItems: 'center', marginTop: 20, gap: 8 }}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                          Reading DOM structure...
+                        </Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Error Overlay with Auto-Fix Agent */}
+      {showErrorOverlay && latestError && (
+        <View style={styles.errorOverlayContainer}>
+          <BlurView
+            intensity={isDark ? 30 : 70}
+            tint={isDark ? 'dark' : 'light'}
+            style={[
+              styles.errorOverlayBlur,
+              {
+                borderColor: isDark ? 'rgba(248, 81, 73, 0.3)' : 'rgba(248, 81, 73, 0.2)',
+                backgroundColor: isDark ? 'rgba(30, 20, 20, 0.85)' : 'rgba(255, 245, 245, 0.95)',
+              }
+            ]}
+          >
+            <View style={styles.errorOverlayHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <AlertTriangle size={15} color="#F85149" strokeWidth={2} />
+                <Text style={[styles.errorOverlayTitle, { color: isDark ? '#FF7B72' : '#C9D1D9', fontFamily: 'Inter_700Bold' }]}>
+                  Runtime/Compilation Error
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowErrorOverlay(false)}
+                style={styles.errorOverlayClose}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={14} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={[styles.errorTraceContainer, { maxHeight: 120 }]} showsVerticalScrollIndicator={true}>
+              <Text style={[styles.errorTraceText, { color: isDark ? '#E6EDF3' : '#1F2328', fontFamily: 'JetBrainsMono_400Regular' }]}>
+                {latestError}
+              </Text>
+            </ScrollView>
+
+            <View style={styles.errorOverlayActions}>
+              <TouchableOpacity
+                style={[styles.autoFixBtn, { backgroundColor: colors.primary }]}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setActiveProject(projectId)
+                  setPendingPrompt(
+                    `My app is encountering a preview runtime/compilation error:\n\n\`\`\`\n${latestError}\n\`\`\`\n\nCan you inspect the project codebase and explain why this happens, and then propose or make a code change to fix this error?`
+                  )
+                  setShowErrorOverlay(false)
+                  router.push('/(tabs)/ai')
+                }}
+              >
+                <Sparkles size={13} color="#FFFFFF" strokeWidth={2} />
+                <Text style={[styles.autoFixBtnText, { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                  Ask AI to Fix
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </BlurView>
+        </View>
+      )}
     </View>
   )
 }
@@ -677,5 +1060,93 @@ const styles = StyleSheet.create({
   shortcutSub: {
     fontSize: 10,
     opacity: 0.5,
+  },
+  errorOverlayContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 12,
+    right: 12,
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  errorOverlayBlur: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    overflow: 'hidden',
+  },
+  errorOverlayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  errorOverlayTitle: {
+    fontSize: 12.5,
+    fontWeight: 'bold',
+  },
+  errorOverlayClose: {
+    padding: 2,
+  },
+  errorTraceContainer: {
+    maxHeight: 120,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 8,
+    padding: 8,
+    marginVertical: 4,
+  },
+  errorTraceText: {
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  errorOverlayActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  autoFixBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  autoFixBtnText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  devToolsContainer: {
+    borderTopWidth: 1,
+    overflow: 'hidden',
+  },
+  devToolsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    height: 38,
+  },
+  devToolsTitle: {
+    fontSize: 12,
+  },
+  devTabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    height: 34,
+  },
+  devTabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  devTabText: {
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
 })

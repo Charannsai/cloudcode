@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS projects (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_github_id  TEXT NOT NULL REFERENCES users(github_id) ON DELETE CASCADE,
   name            TEXT NOT NULL,
-  type            TEXT NOT NULL CHECK (type IN ('node', 'react', 'empty')),
+  type            TEXT NOT NULL CHECK (type IN ('node', 'react', 'empty', 'flask', 'fastapi', 'rust', 'gin', 'nextjs')),
   status          TEXT NOT NULL DEFAULT 'creating' CHECK (status IN ('creating', 'ready', 'running', 'stopped', 'error')),
   container_id    TEXT,
   port            INTEGER,

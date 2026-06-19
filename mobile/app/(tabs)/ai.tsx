@@ -190,11 +190,11 @@ export default function AIScreen() {
   const { projects, fetchProjects } = useProjectsStore()
   const {
     messages, isStreaming, currentStreamText, currentToolCalls,
-    sendMessage, clearChat, pendingPrompt, setPendingPrompt
+    sendMessage, clearChat, pendingPrompt, setPendingPrompt,
+    activeProjectId: selectedProjectId, setActiveProject: setSelectedProjectId
   } = useAIStore()
 
   const [inputText, setInputText] = useState('')
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const scrollRef = useRef<ScrollView>(null)
 
   const router = useRouter()

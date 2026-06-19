@@ -14,6 +14,7 @@ import FilesTab from '@/components/project/FilesTab'
 import TerminalTab from '@/components/project/TerminalTab'
 import PreviewTab from '@/components/project/PreviewTab'
 import GitTab from '@/components/project/GitTab'
+import VoiceOverlay from '@/components/VoiceOverlay'
 
 const TABS = [
   { id: 'Terminal', icon: Terminal },
@@ -27,12 +28,18 @@ type Tab = typeof TABS[number]['id']
 const SPRING = { damping: 24, stiffness: 200, mass: 0.8 }
 
 export default function ProjectScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, tab } = useLocalSearchParams<{ id: string; tab?: Tab }>()
   const router = useRouter()
   const { colors, isDark } = useAppTheme()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('Terminal')
+
+  useEffect(() => {
+    if (tab) {
+      setActiveTab(tab)
+    }
+  }, [tab])
 
   // Animated indicator
   const indicatorX = useSharedValue(0)
@@ -183,6 +190,9 @@ export default function ProjectScreen() {
           <PreviewTab projectId={project.id} port={project.port || 3000} ports={project.ports} />
         </View>
       </View>
+      
+      {/* Voice-Controlled Autonomous Shake-to-Act */}
+      <VoiceOverlay projectId={project.id} />
     </View>
   )
 }

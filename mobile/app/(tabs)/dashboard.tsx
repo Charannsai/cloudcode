@@ -5,6 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { BlurView } from 'expo-blur'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
+import { cache } from '@/hooks/useCache'
 import { 
   Cpu, 
   Terminal,
@@ -38,6 +39,43 @@ export default function DashboardScreen() {
   
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [showSkeleton, setShowSkeleton] = useState(false)
+
+  // Load cached projects on startup
+  useEffect(() => {
+    async function loadCached() {
+      const cached = await cache.get<Project[]>('cached_projects')
+      if (cached) {
+        setProjects(cached.slice(0, 5))
+      }
+    }
+    loadCached()
+  }, [])
+
+  useEffect(() => {
+    let t: any
+    if (loading) {
+      t = setTimeout(() => {
+        setShowSkeleton(true)
+      }, 150)
+    } else {
+      setShowSkeleton(false)
+    }
+    return () => clearTimeout(t)
+  }, [loading])
+
+  const showSkeletonState = showSkeleton && projects.length === 0
+
+  const DashboardProjectSkeleton = () => (
+    <View style={[styles.projectCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border, opacity: 0.6 }]}>
+      <View style={styles.projectHeader}>
+        <View style={[styles.projectIcon, { backgroundColor: isDark ? '#21262D' : '#E5E7EB', width: 36, height: 36, borderRadius: 10 }]} />
+        <View style={{ backgroundColor: isDark ? '#21262D' : '#E5E7EB', width: 60, height: 16, borderRadius: 8 }} />
+      </View>
+      <View style={{ backgroundColor: isDark ? '#21262D' : '#E5E7EB', height: 16, width: '70%', borderRadius: 4, marginTop: 12 }} />
+      <View style={{ backgroundColor: isDark ? '#21262D' : '#E5E7EB', height: 12, width: '40%', borderRadius: 4, marginTop: 8 }} />
+    </View>
+  )
 
   // Pulsing animation for server status dot
   const pulseAnim = useSharedValue(1)
@@ -53,8 +91,9 @@ export default function DashboardScreen() {
     if (!silent) setLoading(true)
     try {
       const data = await api.projects.list()
-      // Sort by recently updated if possible, or just take first 5
-      setProjects(data.slice(0, 5))
+      const sorted = data.slice(0, 5)
+      setProjects(sorted)
+      await cache.set('cached_projects', data)
     } catch (error) {
       console.warn('Failed to fetch projects', error)
     } finally {
@@ -125,13 +164,10 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {loading ? (
+        {showSkeletonState ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
-            {[1, 2].map((i) => (
-              <View key={i} style={[styles.projectCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}>
-                <ActivityIndicator color={colors.textSecondary} style={{ alignSelf: 'center', marginTop: 40 }} />
-              </View>
-            ))}
+            <DashboardProjectSkeleton />
+            <DashboardProjectSkeleton />
           </ScrollView>
         ) : projects.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}>
