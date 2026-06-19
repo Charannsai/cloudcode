@@ -1,8 +1,10 @@
+
+
 import { NextRequest } from 'next/server'
 import { getUserFromRequest, errorResponse } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { chatWithGemini, GeminiMessage } from '@/lib/ai/gemini'
-import { execInContainer } from '@/lib/docker'
+import { execInContainer, ensureContainerRunning } from '@/lib/docker'
 
 export async function POST(req: NextRequest) {
   const user = getUserFromRequest(req)
@@ -17,6 +19,13 @@ export async function POST(req: NextRequest) {
 
   if (!projectId || !messages || messages.length === 0) {
     return errorResponse('Missing projectId or messages')
+  }
+
+  // WAKE CONTAINER: Auto-wake container if it is asleep
+  try {
+    await ensureContainerRunning(projectId)
+  } catch (err) {
+    console.error('[AI Chat] Failed to ensure container is running:', err)
   }
 
   // Get project container

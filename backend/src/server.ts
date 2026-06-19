@@ -235,23 +235,36 @@ const startServer = async () => {
       disconnectTimeouts.delete(sessionKey)
     }
 
-    // Get container mapping from DB
-    const { data: project } = await supabaseAdmin
+    // Get container mapping from DB to check ownership first
+    const { data: initialProject } = await supabaseAdmin
       .from('projects')
       .select('container_id, user_github_id')
       .eq('id', projectId)
       .single()
 
-    if (!project || project.user_github_id !== user.id || !project.container_id) {
+    if (!initialProject || initialProject.user_github_id !== user.id || !initialProject.container_id) {
       ws.close(4003, 'Unauthorized or container not found')
       return
     }
 
     try {
-      // Get project name for the prompt
-      const { data: projDetails } = await supabaseAdmin.from('projects').select('name').eq('id', projectId).single()
-      const projectName = projDetails?.name || 'workspace'
+      // Auto-wake container if stopped/sleeping
+      const { ensureContainerRunning } = await import('./lib/docker')
+      await ensureContainerRunning(projectId)
 
+      // Fetch the project details again to get the updated container_id in case it was recreated
+      const { data: project } = await supabaseAdmin
+        .from('projects')
+        .select('container_id, name')
+        .eq('id', projectId)
+        .single()
+
+      if (!project || !project.container_id) {
+        ws.close(4003, 'Container not found after wake')
+        return
+      }
+
+      const projectName = project.name || 'workspace'
       const container = docker.getContainer(project.container_id)
       const exec = await container.exec({
         // Try to attach to/create a tmux session. If tmux isn't installed, fall back to sh.

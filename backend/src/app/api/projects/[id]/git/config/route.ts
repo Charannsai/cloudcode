@@ -10,22 +10,32 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (!user) return errorResponse('Unauthorized', 401)
   const { id } = await params
 
-  const { data: project } = await supabaseAdmin
+  // Verify ownership
+  const { data: projectCheck } = await supabaseAdmin
     .from('projects')
-    .select('container_id, user_github_id')
+    .select('user_github_id')
     .eq('id', id)
-    .eq('user_github_id', user.id)
     .single()
 
-  if (!project || !project.container_id) return errorResponse('Project container not found', 404)
+  if (!projectCheck || projectCheck.user_github_id !== user.id) return errorResponse('Project container not found', 404)
 
   let name = ''
   let email = ''
 
   try {
     await ensureContainerRunning(id)
-    await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.name'], (data) => { name += data })
-    await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.email'], (data) => { email += data })
+
+    // Fetch updated container_id
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('container_id')
+      .eq('id', id)
+      .single()
+
+    if (project?.container_id) {
+      await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.name'], (data) => { name += data })
+      await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', 'config', 'user.email'], (data) => { email += data })
+    }
   } catch {}
 
   return successResponse({ 
@@ -39,14 +49,14 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!user) return errorResponse('Unauthorized', 401)
   const { id } = await params
 
-  const { data: project } = await supabaseAdmin
+  // Verify ownership
+  const { data: projectCheck } = await supabaseAdmin
     .from('projects')
-    .select('container_id, user_github_id')
+    .select('user_github_id')
     .eq('id', id)
-    .eq('user_github_id', user.id)
     .single()
 
-  if (!project || !project.container_id) return errorResponse('Project container not found', 404)
+  if (!projectCheck || projectCheck.user_github_id !== user.id) return errorResponse('Project container not found', 404)
 
   const body = await req.json().catch(() => null)
   if (!body?.name || !body?.email) {
@@ -55,6 +65,16 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   try {
     await ensureContainerRunning(id)
+
+    // Fetch updated container_id
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('container_id')
+      .eq('id', id)
+      .single()
+
+    if (!project || !project.container_id) return errorResponse('Container not found after wake', 404)
+
     await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', '--git-dir=/workspace/.git', 'config', 'user.name', body.name], () => {})
     await execInContainer(project.container_id, ['git', '-c', 'safe.directory=/workspace', '--git-dir=/workspace/.git', 'config', 'user.email', body.email], () => {})
     return successResponse({ saved: true })

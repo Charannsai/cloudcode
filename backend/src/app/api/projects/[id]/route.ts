@@ -29,13 +29,24 @@ export async function GET(req: NextRequest, { params }: Params) {
   // Auto-restart sleeping containers when user views the project
   if (data.container_id) {
     await ensureContainerRunning(id)
-    const details = await getContainerDetails(data.container_id)
-    return successResponse({ 
-      ...data, 
-      container_status: details.status,
-      ports: details.ports,
-      port: details.ports['3000'] || data.port || null
-    })
+    
+    // Fetch updated container_id and status from database in case it was recreated during ensureContainerRunning
+    const { data: updatedData } = await supabaseAdmin
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    const finalData = updatedData || data
+    if (finalData.container_id) {
+      const details = await getContainerDetails(finalData.container_id)
+      return successResponse({ 
+        ...finalData, 
+        container_status: details.status,
+        ports: details.ports,
+        port: details.ports['3000'] || finalData.port || null
+      })
+    }
   }
 
   return successResponse(data)

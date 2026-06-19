@@ -119,6 +119,20 @@ export async function execInContainer(
   env?: string[]
 ): Promise<number> {
   const container = docker.getContainer(containerId)
+
+  // Fail-safe: Auto-wake container if it is stopped
+  try {
+    const info = await container.inspect()
+    if (info.State.Status !== 'running') {
+      console.log(`[execInContainer] Container ${containerId} is stopped. Auto-waking...`)
+      await container.start()
+      // Brief sleep to ensure services are warm
+      await new Promise(r => setTimeout(r, 1000))
+    }
+  } catch (inspectErr) {
+    console.warn(`[execInContainer] Failed to inspect/start container ${containerId}:`, inspectErr)
+  }
+
   const exec = await container.exec({
     Cmd: command,
     AttachStdout: true,
