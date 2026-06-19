@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { api, AIStreamChunk } from '@/lib/api'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
 
 export interface ChatMessage {
   id: string
@@ -16,6 +18,14 @@ export interface ToolCallInfo {
   status: 'running' | 'done' | 'error' | 'pending'
 }
 
+export interface ConversationThread {
+  id: string
+  title: string
+  projectId: string
+  messages: ChatMessage[]
+  timestamp: number
+}
+
 interface AIState {
   messages: ChatMessage[]
   isStreaming: boolean
@@ -23,6 +33,12 @@ interface AIState {
   currentToolCalls: ToolCallInfo[]
   activeProjectId: string | null
   pendingPrompt: string | null
+
+  // Conversation History fields
+  currentThreadId: string | null
+  savedConversations: ConversationThread[]
+  byokEnabled: boolean
+  byokConfigured: boolean
 
   setActiveProject: (projectId: string) => void
   setPendingPrompt: (prompt: string | null) => void
@@ -33,7 +49,16 @@ interface AIState {
     model?: string
   ) => Promise<void>
   clearChat: () => void
+
+  // Conversation History actions
+  initConversations: () => Promise<void>
+  loadConversation: (threadId: string) => Promise<void>
+  deleteConversation: (threadId: string) => Promise<void>
+  toggleByok: (enabled: boolean) => Promise<void>
+  checkByokStatus: () => Promise<void>
+  startNewChat: () => void
 }
+
 
 export const useAIStore = create<AIState>((set, get) => ({
   messages: [],
@@ -43,10 +68,21 @@ export const useAIStore = create<AIState>((set, get) => ({
   activeProjectId: null,
   pendingPrompt: null,
 
+  currentThreadId: null,
+  savedConversations: [],
+  byokEnabled: false,
+  byokConfigured: false,
+
   setActiveProject: (projectId) => set({ activeProjectId: projectId }),
   setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
 
   sendMessage: async (text, projectId, openFile, model) => {
+    let threadId = get().currentThreadId
+    if (!threadId) {
+      threadId = Date.now().toString()
+      set({ currentThreadId: threadId })
+    }
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -54,12 +90,35 @@ export const useAIStore = create<AIState>((set, get) => ({
       timestamp: Date.now(),
     }
 
+    const updatedUserMessages = [...get().messages, userMsg]
+
     set((state) => ({
-      messages: [...state.messages, userMsg],
+      messages: updatedUserMessages,
       isStreaming: true,
       currentStreamText: '',
       currentToolCalls: [],
     }))
+
+    // Save user message step to AsyncStorage
+    const firstUserMsg = updatedUserMessages.find(m => m.role === 'user')?.text || 'New Conversation'
+    const title = firstUserMsg.length > 50 ? firstUserMsg.slice(0, 50) + '...' : firstUserMsg
+    const userThread: ConversationThread = {
+      id: threadId,
+      title,
+      projectId,
+      messages: updatedUserMessages,
+      timestamp: Date.now()
+    }
+    const saved = [...get().savedConversations]
+    const idx = saved.findIndex(t => t.id === threadId)
+    if (idx !== -1) {
+      saved[idx] = userThread
+    } else {
+      saved.unshift(userThread)
+    }
+    await AsyncStorage.setItem('cloudcode_ai_conversations', JSON.stringify(saved))
+    set({ savedConversations: saved })
+
 
     // Build message history for API (last 10 messages for context)
     const history = [...get().messages].slice(-10).map((m) => ({
@@ -162,13 +221,84 @@ export const useAIStore = create<AIState>((set, get) => ({
       timestamp: Date.now(),
     }
 
+    const updatedMessages = [...get().messages, modelMsg]
+
     set((state) => ({
-      messages: [...state.messages, modelMsg],
+      messages: updatedMessages,
       isStreaming: false,
       currentStreamText: '',
       currentToolCalls: [],
     }))
+
+    // Save final response step to AsyncStorage
+    const finalThreadId = get().currentThreadId || threadId
+    const firstUserMsgFinal = updatedMessages.find(m => m.role === 'user')?.text || 'New Conversation'
+    const titleFinal = firstUserMsgFinal.length > 50 ? firstUserMsgFinal.slice(0, 50) + '...' : firstUserMsgFinal
+    const finalThread: ConversationThread = {
+      id: finalThreadId,
+      title: titleFinal,
+      projectId,
+      messages: updatedMessages,
+      timestamp: Date.now()
+    }
+    const savedFinal = [...get().savedConversations]
+    const idxFinal = savedFinal.findIndex(t => t.id === finalThreadId)
+    if (idxFinal !== -1) {
+      savedFinal[idxFinal] = finalThread
+    } else {
+      savedFinal.unshift(finalThread)
+    }
+    await AsyncStorage.setItem('cloudcode_ai_conversations', JSON.stringify(savedFinal))
+    set({ savedConversations: savedFinal })
   },
 
-  clearChat: () => set({ messages: [], currentStreamText: '', currentToolCalls: [] }),
+  clearChat: () => set({ messages: [], currentStreamText: '', currentToolCalls: [], currentThreadId: null }),
+
+  initConversations: async () => {
+    const stored = await AsyncStorage.getItem('cloudcode_ai_conversations')
+    let saved: ConversationThread[] = []
+    if (stored) {
+      try {
+        saved = JSON.parse(stored)
+      } catch (e) {}
+    }
+    set({ savedConversations: saved })
+    await get().checkByokStatus()
+  },
+
+  loadConversation: async (threadId) => {
+    const thread = get().savedConversations.find(t => t.id === threadId)
+    if (thread) {
+      set({
+        messages: thread.messages,
+        currentThreadId: thread.id,
+        activeProjectId: thread.projectId
+      })
+    }
+  },
+
+  deleteConversation: async (threadId) => {
+    const filtered = get().savedConversations.filter(t => t.id !== threadId)
+    await AsyncStorage.setItem('cloudcode_ai_conversations', JSON.stringify(filtered))
+    set({ savedConversations: filtered })
+    if (get().currentThreadId === threadId) {
+      set({ messages: [], currentThreadId: null })
+    }
+  },
+
+  toggleByok: async (enabled) => {
+    await AsyncStorage.setItem('byok_enabled', enabled ? 'true' : 'false')
+    set({ byokEnabled: enabled })
+  },
+
+  checkByokStatus: async () => {
+    const byokEnabled = (await AsyncStorage.getItem('byok_enabled')) === 'true'
+    const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
+    const byokConfigured = !!(customGeminiKey && customGeminiKey.trim())
+    set({ byokEnabled, byokConfigured })
+  },
+
+  startNewChat: () => {
+    set({ messages: [], currentStreamText: '', currentToolCalls: [], currentThreadId: null })
+  }
 }))
