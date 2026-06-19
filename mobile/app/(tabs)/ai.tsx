@@ -7,8 +7,9 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
-  Mic, Volume2, VolumeX
+  Mic, Volume2, VolumeX, FolderGit2
 } from 'lucide-react-native'
+
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -369,7 +370,7 @@ export default function AIScreen() {
           <View>
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode AI</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-              {selectedProject ? selectedProject.name : 'Select a project'}
+              {selectedProjectId === 'global' || !selectedProjectId ? 'Universal Assistant Mode' : `Workspace Context: ${selectedProject?.name || ''}`}
             </Text>
           </View>
         </View>
@@ -378,59 +379,90 @@ export default function AIScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Project selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.projectBar} contentContainerStyle={styles.projectBarContent}>
-        <TouchableOpacity
-          style={[
-            styles.projectChip,
-            {
-              backgroundColor: selectedProjectId === 'global' || !selectedProjectId
-                ? (isDark ? '#F3F4F6' : '#0E1116')
-                : 'transparent',
-              borderColor: selectedProjectId === 'global' || !selectedProjectId
-                ? 'transparent'
-                : (isDark ? '#21262D' : '#D8DEE4'),
-            }
-          ]}
-          onPress={() => setSelectedProjectId('global')}
-        >
-          <Text style={[
-            styles.projectChipText,
-            {
-              color: selectedProjectId === 'global' || !selectedProjectId ? (isDark ? '#0E1116' : '#FFFFFF') : colors.textSecondary,
-            }
-          ]}>
-            🌍 Global AI
-          </Text>
-        </TouchableOpacity>
-
-        {projects.map((p) => (
+      {/* Sleek Segmented Switcher */}
+      <View style={[styles.switcherContainer, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4', borderBottomWidth: 1 }]}>
+        <View style={[styles.segmentedControl, { backgroundColor: isDark ? '#161B22' : '#F0F2F5', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
           <TouchableOpacity
-            key={p.id}
+            activeOpacity={0.8}
+            onPress={() => setSelectedProjectId('global')}
             style={[
-              styles.projectChip,
-              {
-                backgroundColor: selectedProjectId === p.id
-                  ? (isDark ? '#F3F4F6' : '#0E1116')
-                  : 'transparent',
-                borderColor: selectedProjectId === p.id
-                  ? 'transparent'
-                  : (isDark ? '#21262D' : '#D8DEE4'),
-              }
+              styles.segmentItem,
+              (selectedProjectId === 'global' || !selectedProjectId) && [
+                styles.segmentItemActive,
+                { backgroundColor: isDark ? '#21262D' : '#FFFFFF', borderColor: isDark ? '#30363D' : '#E1E4E8' }
+              ]
             ]}
-            onPress={() => setSelectedProjectId(p.id)}
           >
+            <Sparkles size={13} color={(selectedProjectId === 'global' || !selectedProjectId) ? colors.text : colors.textSecondary} style={{ marginRight: 5 }} />
             <Text style={[
-              styles.projectChipText,
-              {
-                color: selectedProjectId === p.id ? (isDark ? '#0E1116' : '#FFFFFF') : colors.textSecondary,
+              styles.segmentText,
+              { 
+                color: (selectedProjectId === 'global' || !selectedProjectId) ? colors.text : colors.textSecondary,
+                fontFamily: (selectedProjectId === 'global' || !selectedProjectId) ? 'Inter_600SemiBold' : 'Inter_400Regular'
               }
             ]}>
-              {p.name}
+              Universal AI
             </Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+
+          {projects.length > 0 && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                const firstProj = projects.find(p => p.id === selectedProjectId) || projects[0]
+                setSelectedProjectId(firstProj.id)
+              }}
+              style={[
+                styles.segmentItem,
+                selectedProjectId !== 'global' && selectedProjectId !== null && [
+                  styles.segmentItemActive,
+                  { backgroundColor: isDark ? '#21262D' : '#FFFFFF', borderColor: isDark ? '#30363D' : '#E1E4E8' }
+                ]
+              ]}
+            >
+              <FolderGit2 size={13} color={selectedProjectId !== 'global' && selectedProjectId !== null ? colors.text : colors.textSecondary} style={{ marginRight: 5 }} />
+              <Text 
+                numberOfLines={1} 
+                style={[
+                  styles.segmentText,
+                  { 
+                    color: selectedProjectId !== 'global' && selectedProjectId !== null ? colors.text : colors.textSecondary,
+                    fontFamily: selectedProjectId !== 'global' && selectedProjectId !== null ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                    maxWidth: 120
+                  }
+                ]}
+              >
+                {selectedProjectId !== 'global' && selectedProjectId !== null
+                  ? (projects.find(p => p.id === selectedProjectId)?.name || 'Workspace')
+                  : 'Workspace'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        {/* Project Selector Dropdown trigger */}
+        {projects.length > 1 && selectedProjectId !== 'global' && selectedProjectId !== null && (
+          <TouchableOpacity 
+            activeOpacity={0.7}
+            onPress={() => {
+              Alert.alert(
+                'Switch Project Context',
+                'Select a project container to connect this AI session:',
+                [
+                  ...projects.map(p => ({
+                    text: p.name,
+                    onPress: () => setSelectedProjectId(p.id)
+                  })),
+                  { text: 'Cancel', style: 'cancel' as const }
+                ]
+              )
+            }}
+            style={[styles.dropdownTrigger, { backgroundColor: isDark ? '#161B22' : '#F0F2F5', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
+          >
+            <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }}>SWITCH ▾</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Messages */}
       <ScrollView
@@ -605,13 +637,49 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center',
   },
-  projectBar: { flexGrow: 0, flexShrink: 0 },
-  projectBarContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
-  projectChip: {
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 20, borderWidth: 1, marginRight: 6,
+  switcherContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+    flexShrink: 0,
   },
-  projectChipText: { fontSize: 12, fontFamily: 'Inter_500Medium', letterSpacing: -0.2 },
+  segmentedControl: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 3,
+  },
+  segmentItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+  },
+  segmentItemActive: {
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentText: {
+    fontSize: 12,
+    letterSpacing: -0.2,
+  },
+  dropdownTrigger: {
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   messagesContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 160 },
   emptyState: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 20 },
   emptyIcon: {
