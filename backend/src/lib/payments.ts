@@ -51,17 +51,16 @@ export async function createCheckoutSession(params: {
     customer: {
       email: params.email,
     },
-    payment_link: true,
     metadata: {
       cloudcode_user_id: params.userId,
       plan_type: params.planType,
     },
-    success_url: params.returnUrl,
+    return_url: params.returnUrl,
   })
 
   return {
-    checkoutUrl: session.url,
-    sessionId: session.checkout_session_id,
+    checkoutUrl: session.checkout_url || '',
+    sessionId: session.session_id,
   }
 }
 
