@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { api, AIStreamChunk } from '@/lib/api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useProjectsStore } from './projects'
+
 
 
 export interface ChatMessage {
@@ -201,6 +203,16 @@ export const useAIStore = create<AIState>((set, get) => ({
               }
             }
             set({ currentToolCalls: [...toolCalls] })
+
+            // Handle create_project success callback to register & switch active context
+            if (chunk.toolName === 'create_project' && chunk.toolResult) {
+              const res = chunk.toolResult as any
+              if (res.success && res.project) {
+                useProjectsStore.getState().addProject(res.project)
+                set({ activeProjectId: res.project.id })
+                useProjectsStore.getState().fetchProjects(true).catch(console.error)
+              }
+            }
             break
           }
 
@@ -242,7 +254,7 @@ export const useAIStore = create<AIState>((set, get) => ({
     const finalThread: ConversationThread = {
       id: finalThreadId,
       title: titleFinal,
-      projectId,
+      projectId: get().activeProjectId || projectId,
       messages: updatedMessages,
       timestamp: Date.now()
     }
