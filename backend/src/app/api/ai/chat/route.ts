@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const getGenerator = (containerId: string, context?: { fileTree?: string; openFile?: { path: string; content: string } }) => {
+  const getGenerator = (containerId: string, context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string }) => {
     if (model === 'openai') {
       return chatWithOpenAI(messages, containerId, context, customOpenaiKey)
     } else if (model === 'anthropic') {
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = getGenerator('global')
+          const generator = getGenerator('global', { userId: user.id })
 
           for await (const chunk of generator) {
             const data = JSON.stringify(chunk) + '\n'
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const generator = getGenerator(project.container_id!, { fileTree, openFile })
+        const generator = getGenerator(project.container_id!, { fileTree, openFile, userId: user.id })
 
         for await (const chunk of generator) {
           const data = JSON.stringify(chunk) + '\n'
