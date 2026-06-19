@@ -25,10 +25,7 @@ export default function SettingsScreen() {
   const { colors, toggleTheme, isDark } = useAppTheme()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
 
-  // Subscreen navigation state: 'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys'
-  const [currentSubScreen, setCurrentSubScreen] = useState<'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys'>('main')
-
-  const { setTabBarVisible } = useUIStore()
+  const { setTabBarVisible, settingsSubScreen: currentSubScreen, setSettingsSubScreen: setCurrentSubScreen } = useUIStore()
   const [isFocused, setIsFocused] = useState(false)
 
   // Visibility toggles for BYOK keys
