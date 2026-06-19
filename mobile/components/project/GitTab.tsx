@@ -49,10 +49,12 @@ export default function GitTab({ projectId, isActive }: Props) {
   const [committing, setCommitting] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncAction, setSyncAction] = useState<'push' | 'pull' | null>(null)
+  const [conflicts, setConflicts] = useState<string[]>([])
   const [expandedSections, setExpandedSections] = useState({
     staged: true,
     changes: true,
     untracked: true,
+    conflicts: true,
   })
   // Custom Alert State
   const [alertConfig, setAlertConfig] = useState<{
@@ -168,6 +170,15 @@ export default function GitTab({ projectId, isActive }: Props) {
     try {
       const data = await api.git.status(projectId)
       setStatus(data)
+      
+      // Fetch conflicts
+      try {
+        const conflictData = await api.git.conflicts(projectId)
+        setConflicts(conflictData.conflicts || [])
+      } catch (confErr) {
+        console.warn('Failed to fetch git conflicts:', confErr)
+      }
+
       // Fetch history alongside status
       fetchHistory(true)
     } catch (err) {
@@ -275,6 +286,22 @@ export default function GitTab({ projectId, isActive }: Props) {
       )
       return
     }
+
+    if (action === 'push' && status && status.behind > 0) {
+      showAlert(
+        'Out of Sync',
+        `Your local branch is behind the remote repository by ${status.behind} commit(s). Please pull changes from the remote first to merge before pushing.`,
+        'warning',
+        () => {
+          hideAlert()
+          handleSync('pull')
+        },
+        'Pull Now',
+        'Cancel'
+      )
+      return
+    }
+
     setSyncing(true)
     setSyncAction(action)
     try {
@@ -282,6 +309,23 @@ export default function GitTab({ projectId, isActive }: Props) {
       showAlert(action === 'push' ? 'Pushed' : 'Pulled', result.output || 'Success', 'success')
       fetchStatus(true)
     } catch (err) {
+      if (action === 'pull') {
+        try {
+          const conflictData = await api.git.conflicts(projectId)
+          if (conflictData.conflicts && conflictData.conflicts.length > 0) {
+            setConflicts(conflictData.conflicts)
+            showAlert(
+              'Merge Conflicts',
+              'Merge conflicts detected. Please resolve them using the strategy options under the Conflicts section below.',
+              'warning'
+            )
+            fetchStatus(true)
+            return
+          }
+        } catch (confErr) {
+          console.warn('Failed to inspect merge conflicts:', confErr)
+        }
+      }
       showAlert('Error', (err as Error).message, 'error')
     } finally {
       setSyncing(false)
@@ -324,11 +368,37 @@ export default function GitTab({ projectId, isActive }: Props) {
     }
   }
 
+  const [resolvingFiles, setResolvingFiles] = useState<Record<string, boolean>>({})
+
+  const handleResolve = async (file: string, strategy: 'ours' | 'theirs') => {
+    setResolvingFiles(prev => ({ ...prev, [file]: true }))
+    try {
+      await api.git.resolve(projectId, file, strategy)
+      showAlert('Success', `Conflict in ${file} resolved successfully.`, 'success')
+      fetchStatus(true)
+    } catch (err) {
+      showAlert('Error', (err as Error).message, 'error')
+    } finally {
+      setResolvingFiles(prev => {
+        const next = { ...prev }
+        delete next[file]
+        return next
+      })
+    }
+  }
+
+  const handleOpenInEditor = (file: string) => {
+    router.navigate({
+      pathname: `/project/${projectId}/editor`,
+      params: { path: file }
+    })
+  }
+
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
 
-  const totalChanges = (status?.staged.length || 0) + (status?.unstaged.length || 0) + (status?.untracked.length || 0)
+  const totalChanges = (status?.staged.length || 0) + (status?.unstaged.length || 0) + (status?.untracked.length || 0) + (conflicts.length || 0)
 
   if (loading) {
     return (
@@ -417,6 +487,51 @@ export default function GitTab({ projectId, isActive }: Props) {
           </View>
         ) : (
           <>
+            {/* Conflicts Section */}
+            {conflicts.length > 0 && (
+              <View style={[styles.conflictContainer, { borderColor: '#F85149', borderWidth: 1, borderRadius: 12, margin: 16, backgroundColor: isDark ? 'rgba(248, 81, 73, 0.05)' : 'rgba(248, 81, 73, 0.03)', overflow: 'hidden' }]}>
+                <TouchableOpacity style={[styles.sectionHeader, { borderBottomColor: colors.border }]} onPress={() => toggleSection('conflicts')}>
+                  {expandedSections.conflicts ? <ChevronDown size={14} color="#F85149" /> : <ChevronRight size={14} color="#F85149" />}
+                  <Text style={[styles.sectionTitle, { color: '#F85149' }]}>Conflicts</Text>
+                  <View style={[styles.countBadge, { backgroundColor: '#F85149' }]}>
+                    <Text style={styles.countText}>{conflicts.length}</Text>
+                  </View>
+                </TouchableOpacity>
+                {expandedSections.conflicts && conflicts.map(file => (
+                  <View key={file} style={[styles.conflictRow, { borderBottomColor: colors.border, padding: 12, borderBottomWidth: 1 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <AlertCircle size={14} color="#F85149" />
+                      <Text style={[styles.filePath, { color: colors.text, flex: 1 }]} numberOfLines={1}>{file}</Text>
+                      {resolvingFiles[file] && <ActivityIndicator size="small" color="#F85149" />}
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TouchableOpacity
+                        style={[styles.strategyBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border, borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 }]}
+                        onPress={() => handleResolve(file, 'ours')}
+                        disabled={resolvingFiles[file]}
+                      >
+                        <Text style={[styles.strategyBtnText, { color: colors.text, fontSize: 11, fontFamily: 'Inter_600SemiBold' }]}>Keep Mine</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.strategyBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border, borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 }]}
+                        onPress={() => handleResolve(file, 'theirs')}
+                        disabled={resolvingFiles[file]}
+                      >
+                        <Text style={[styles.strategyBtnText, { color: colors.text, fontSize: 11, fontFamily: 'Inter_600SemiBold' }]}>Keep Theirs</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.strategyBtn, { backgroundColor: colors.text, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 }]}
+                        onPress={() => handleOpenInEditor(file)}
+                        disabled={resolvingFiles[file]}
+                      >
+                        <Text style={[styles.strategyBtnText, { color: colors.background, fontSize: 11, fontFamily: 'Inter_600SemiBold' }]}>Open Editor</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
             {/* Staged Section */}
             {status!.staged.length > 0 && (
               <View>
@@ -910,6 +1025,26 @@ const styles = StyleSheet.create({
   },
   alertBtnText: {
     fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  conflictContainer: {
+    marginHorizontal: 16,
+    marginVertical: 12,
+    borderWidth: 1,
+  },
+  conflictRow: {
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  strategyBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  strategyBtnText: {
+    fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
   },
 })
