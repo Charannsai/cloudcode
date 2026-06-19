@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share, Alert, Modal
+  KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share, Alert, Modal,
+  Switch
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
   CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
-  Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp, Cpu, Shield, Lock
+  Mic, Volume2, VolumeX, FolderGit2, ChevronDown, ChevronUp, Cpu, Shield, Lock,
+  MoreVertical, History, Plus, ChevronRight
 } from 'lucide-react-native'
 
 import { useFocusEffect, useRouter } from 'expo-router'
@@ -24,6 +26,22 @@ import Markdown from 'react-native-markdown-display'
 import * as Clipboard from 'expo-clipboard'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
+
+const formatTimestamp = (timestamp: number) => {
+  const diff = Date.now() - timestamp
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return new Date(timestamp).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 
 function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boolean; colors: any }) {
   const [expanded, setExpanded] = useState(tool.status === 'pending')
@@ -381,7 +399,9 @@ export default function AIScreen() {
   const {
     messages, isStreaming, currentStreamText, currentToolCalls,
     sendMessage, clearChat, pendingPrompt, setPendingPrompt,
-    activeProjectId: selectedProjectId, setActiveProject: setSelectedProjectId
+    activeProjectId: selectedProjectId, setActiveProject: setSelectedProjectId,
+    currentThreadId, savedConversations, byokEnabled, byokConfigured,
+    initConversations, loadConversation, deleteConversation, toggleByok, startNewChat
   } = useAIStore()
 
   const insets = useSafeAreaInsets()
@@ -397,6 +417,9 @@ export default function AIScreen() {
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'openai' | 'anthropic'>('gemini')
   const [modelModalVisible, setModelModalVisible] = useState(false)
   const [userTier, setUserTier] = useState<string>('free')
+
+  const [menuModalVisible, setMenuModalVisible] = useState(false)
+  const [historyModalVisible, setHistoryModalVisible] = useState(false)
 
   const [isListening, setIsListening] = useState(false)
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
@@ -491,6 +514,9 @@ export default function AIScreen() {
           }
         })
         .catch(err => console.warn('Failed to load user tier config:', err))
+
+      // Load conversation history and check BYOK keys status
+      initConversations()
 
       return () => setTabBarVisible(true)
     }, [fetchProjects, setTabBarVisible])
@@ -622,8 +648,8 @@ export default function AIScreen() {
             <ChevronDown size={10} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={clearChat} style={[styles.clearBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
-            <Trash2 size={14} color={colors.textSecondary} strokeWidth={1.5} />
+          <TouchableOpacity onPress={() => setMenuModalVisible(true)} style={[styles.clearBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} activeOpacity={0.7}>
+            <MoreVertical size={16} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
         </View>
       </View>
@@ -750,6 +776,33 @@ export default function AIScreen() {
                   ))}
                 </View>
               </>
+            )}
+
+            {!byokConfigured && (
+              <TouchableOpacity
+                onPress={() => {
+                  useUIStore.getState().setSettingsSubScreen('aiKeys')
+                  router.push('/(tabs)/settings')
+                }}
+                activeOpacity={0.8}
+                style={[
+                  styles.byokPromoCard,
+                  {
+                    backgroundColor: isDark ? '#1C2128' : '#F6F8FA',
+                    borderColor: isDark ? '#21262D' : '#D8DEE4',
+                  }
+                ]}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
+                    Bring Your Own Key (BYOK)
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+                    AI features are currently using default hosted keys. Tap to configure your custom API keys.
+                  </Text>
+                </View>
+                <ChevronRight size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
             )}
           </Animated.View>
         )}
@@ -1144,6 +1197,278 @@ export default function AIScreen() {
               <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
                 Cancel
               </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Options Context Menu Modal */}
+      <Modal
+        visible={menuModalVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => setMenuModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setMenuModalVisible(false)}
+          />
+          <View style={[
+            styles.modalContent, 
+            { 
+              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+              borderColor: isDark ? '#21262D' : '#E5E7EB' 
+            }
+          ]}>
+            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                AI Options
+              </Text>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                Manage your assistant's settings and history.
+              </Text>
+            </View>
+
+            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+              {/* New Chat */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  startNewChat()
+                  setMenuModalVisible(false)
+                }}
+                style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
+              >
+                <View style={styles.menuOptionLeft}>
+                  <Plus size={14} color={colors.text} />
+                  <Text style={[styles.menuOptionText, { color: colors.text }]}>New Chat Thread</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Past Conversations */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setMenuModalVisible(false)
+                  setHistoryModalVisible(true)
+                }}
+                style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
+              >
+                <View style={styles.menuOptionLeft}>
+                  <History size={14} color={colors.text} />
+                  <Text style={[styles.menuOptionText, { color: colors.text }]}>Past Conversations</Text>
+                </View>
+                {savedConversations.length > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{savedConversations.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* BYOK Toggle / Configure */}
+              {byokConfigured ? (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    toggleByok(!byokEnabled)
+                  }}
+                  style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
+                >
+                  <View style={styles.menuOptionLeft}>
+                    <Shield size={14} color={byokEnabled ? '#10B981' : colors.text} />
+                    <Text style={[styles.menuOptionText, { color: colors.text }]}>
+                      {byokEnabled ? 'Using Custom Keys (BYOK)' : 'Use Custom Keys (BYOK)'}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={byokEnabled}
+                    onValueChange={toggleByok}
+                    trackColor={{ false: colors.border, true: '#10B981' }}
+                    thumbColor={colors.background}
+                  />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setMenuModalVisible(false)
+                    useUIStore.getState().setSettingsSubScreen('aiKeys')
+                    router.push('/(tabs)/settings')
+                  }}
+                  style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
+                >
+                  <View style={styles.menuOptionLeft}>
+                    <Lock size={14} color="#F59E0B" />
+                    <Text style={[styles.menuOptionText, { color: colors.text }]}>Configure BYOK Keys</Text>
+                  </View>
+                  <ChevronRight size={14} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+
+              {/* Switch Model Shortcut */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setMenuModalVisible(false)
+                  setModelModalVisible(true)
+                }}
+                style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
+              >
+                <View style={styles.menuOptionLeft}>
+                  <Cpu size={14} color={colors.text} />
+                  <Text style={[styles.menuOptionText, { color: colors.text }]}>Switch Model...</Text>
+                </View>
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  {selectedModel === 'gemini' ? 'Gemini' : selectedModel === 'openai' ? 'gpt-4o' : 'Claude'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Switch Workspace Shortcut */}
+              {projects.length > 1 && (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setMenuModalVisible(false)
+                    setWorkspaceModalVisible(true)
+                  }}
+                  style={[styles.menuOption, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
+                >
+                  <View style={styles.menuOptionLeft}>
+                    <FolderGit2 size={14} color={colors.text} />
+                    <Text style={[styles.menuOptionText, { color: colors.text }]}>Switch Workspace...</Text>
+                  </View>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    {projects.find(p => p.id === selectedProjectId)?.name || 'Select'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity 
+              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
+              onPress={() => setMenuModalVisible(false)}
+            >
+              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Past Conversations Modal */}
+      <Modal
+        visible={historyModalVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => setHistoryModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setHistoryModalVisible(false)}
+          />
+          <View style={[
+            styles.modalContent, 
+            { 
+              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+              borderColor: isDark ? '#21262D' : '#E5E7EB' 
+            }
+          ]}>
+            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                Past Conversations
+              </Text>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+                Restore previous chats or clear your history.
+              </Text>
+            </View>
+
+            <ScrollView 
+              style={[styles.modalList, { maxHeight: 350 }]} 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 10 }}
+            >
+              {savedConversations.length === 0 ? (
+                <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                  <History size={32} color={colors.textSecondary} style={{ opacity: 0.5, marginBottom: 12 }} />
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13 }}>
+                    No saved conversations found.
+                  </Text>
+                </View>
+              ) : (
+                savedConversations.map((thread) => {
+                  const isCurrent = currentThreadId === thread.id
+                  const projName = thread.projectId === 'global' ? 'Universal AI' : (projects.find(p => p.id === thread.projectId)?.name || 'Workspace')
+
+                  return (
+                    <View
+                      key={thread.id}
+                      style={[
+                        styles.historyItemRow,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: isCurrent ? (isDark ? '#1C2128' : '#F0F2F5') : 'transparent'
+                        }
+                      ]}
+                    >
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          loadConversation(thread.id)
+                          setHistoryModalVisible(false)
+                        }}
+                        style={{ flex: 1, paddingVertical: 10, paddingLeft: 12 }}
+                      >
+                        <Text style={[styles.historyItemTitle, { color: colors.text, fontFamily: isCurrent ? 'Inter_600SemiBold' : 'Inter_400Regular' }]} numberOfLines={1}>
+                          {thread.title}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                          <Text style={{ color: colors.textSecondary, fontSize: 10 }}>
+                            {formatTimestamp(thread.timestamp)}
+                          </Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 10 }}>•</Text>
+                          <Text style={{ color: colors.primary, fontSize: 10, fontFamily: 'Inter_500Medium' }}>
+                            {projName}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => {
+                          Alert.alert(
+                            'Delete Conversation',
+                            'Are you sure you want to permanently delete this conversation history?',
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              { 
+                                text: 'Delete', 
+                                style: 'destructive',
+                                onPress: () => deleteConversation(thread.id)
+                              }
+                            ]
+                          )
+                        }}
+                        style={styles.historyDeleteBtn}
+                      >
+                        <Trash2 size={14} color="#F85149" strokeWidth={1.5} />
+                      </TouchableOpacity>
+                    </View>
+                  )
+                })
+              )}
+            </ScrollView>
+
+            <TouchableOpacity 
+              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
+              onPress={() => setHistoryModalVisible(false)}
+            >
+              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1587,5 +1912,66 @@ const styles = StyleSheet.create({
   modelPillText: {
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
+  },
+  byokPromoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 16,
+    width: '100%',
+  },
+  menuOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  menuOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  menuOptionText: {
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+  },
+  badge: {
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'Inter_700Bold',
+  },
+  historyItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  historyItemTitle: {
+    fontSize: 14,
+    paddingRight: 8,
+  },
+  historyDeleteBtn: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0,0,0,0.05)',
   },
 })
