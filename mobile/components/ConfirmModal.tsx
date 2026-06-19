@@ -12,7 +12,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   withDelay,
   Easing,
   runOnJS,
@@ -86,24 +85,24 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const { colors, isDark } = useAppTheme()
   const opacity = useSharedValue(0)
-  const scale = useSharedValue(0.9)
-  const translateY = useSharedValue(20)
+  const scale = useSharedValue(0.96)
+  const translateY = useSharedValue(10)
   const [renderModal, setRenderModal] = React.useState(visible)
 
   useEffect(() => {
     if (visible) {
       setRenderModal(true)
-      opacity.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.ease) })
-      scale.value = withSpring(1, { damping: 20, stiffness: 200 })
-      translateY.value = withSpring(0, { damping: 20, stiffness: 200 })
+      opacity.value = withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) })
+      scale.value = withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) })
+      translateY.value = withTiming(0, { duration: 100, easing: Easing.out(Easing.quad) })
     } else {
-      opacity.value = withTiming(0, { duration: 150 }, (finished) => {
+      opacity.value = withTiming(0, { duration: 80, easing: Easing.in(Easing.quad) }, (finished) => {
         if (finished) {
           runOnJS(setRenderModal)(false)
         }
       })
-      scale.value = withTiming(0.95, { duration: 150 })
-      translateY.value = withTiming(10, { duration: 150 })
+      scale.value = withTiming(0.96, { duration: 80, easing: Easing.in(Easing.quad) })
+      translateY.value = withTiming(4, { duration: 80, easing: Easing.in(Easing.quad) })
     }
   }, [visible])
 
