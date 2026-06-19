@@ -91,6 +91,31 @@ export default function SettingsScreen() {
   const [loadingSsh, setLoadingSsh] = useState(true)
   const [copied, setCopied] = useState(false)
 
+  // Runtimes state
+  const [runtimesList, setRuntimesList] = useState<{ name: string; version: string; key: string }[]>([])
+  const [loadingRuntimes, setLoadingRuntimes] = useState(false)
+  const [runtimesSearch, setRuntimesSearch] = useState('')
+  const [updatingRuntimes, setUpdatingRuntimes] = useState<Record<string, boolean>>({})
+
+  // AI keys states
+  const [byokMode, setByokMode] = useState(false)
+  const [customGeminiKey, setCustomGeminiKey] = useState('')
+  const [customOpenaiKey, setCustomOpenaiKey] = useState('')
+  const [customAnthropicKey, setCustomAnthropicKey] = useState('')
+  const [savingAiKeys, setSavingAiKeys] = useState(false)
+
+  const fetchRuntimesData = useCallback(async (silent = false) => {
+    if (!silent) setLoadingRuntimes(true)
+    try {
+      const data = await api.system.runtimes()
+      setRuntimesList(data.runtimes || [])
+    } catch (err) {
+      console.warn('Failed to load system runtimes:', err)
+    } finally {
+      if (!silent) setLoadingRuntimes(false)
+    }
+  }, [])
+
   async function fetchGitSshData(silent = false) {
     if (!silent) setLoadingSsh(true)
     try {
@@ -124,9 +149,12 @@ export default function SettingsScreen() {
         fetchBillingStatus(true)
       } else if (currentSubScreen === 'gitSsh') {
         fetchGitSshData(true)
+      } else if (currentSubScreen === 'dependencies') {
+        fetchRuntimesData(true)
       } else {
         fetchBillingStatus(true)
         fetchGitSshData(true)
+        fetchRuntimesData(true)
       }
 
       const interval = setInterval(() => {
@@ -134,15 +162,18 @@ export default function SettingsScreen() {
           fetchBillingStatus(true)
         } else if (currentSubScreen === 'gitSsh') {
           fetchGitSshData(true)
+        } else if (currentSubScreen === 'dependencies') {
+          fetchRuntimesData(true)
         } else {
           fetchBillingStatus(true)
+          fetchRuntimesData(true)
         }
       }, 10000)
 
       return () => {
         clearInterval(interval)
       }
-    }, [currentSubScreen])
+    }, [currentSubScreen, fetchRuntimesData])
   )
 
   useEffect(() => {
@@ -158,9 +189,23 @@ export default function SettingsScreen() {
 
       // 3. Load Billing status
       fetchBillingStatus(false)
+
+      // 4. Load System Runtimes
+      fetchRuntimesData(false)
+
+      // 5. Load AI Keys
+      const cachedByok = await AsyncStorage.getItem('byok_enabled')
+      const cachedGemini = await AsyncStorage.getItem('custom_gemini_key')
+      const cachedOpenai = await AsyncStorage.getItem('custom_openai_key')
+      const cachedAnthropic = await AsyncStorage.getItem('custom_anthropic_key')
+
+      if (cachedByok) setByokMode(cachedByok === 'true')
+      if (cachedGemini) setCustomGeminiKey(cachedGemini)
+      if (cachedOpenai) setCustomOpenaiKey(cachedOpenai)
+      if (cachedAnthropic) setCustomAnthropicKey(cachedAnthropic)
     }
     loadData()
-  }, [])
+  }, [fetchRuntimesData])
 
   const handleSaveConfig = async () => {
     if (!gitName.trim() || !gitEmail.trim()) {
@@ -679,6 +724,281 @@ export default function SettingsScreen() {
     )
   }
 
+  const handleSaveAiKeys = async () => {
+    setSavingAiKeys(true)
+    try {
+      await AsyncStorage.setItem('byok_enabled', byokMode ? 'true' : 'false')
+      await AsyncStorage.setItem('custom_gemini_key', customGeminiKey.trim())
+      await AsyncStorage.setItem('custom_openai_key', customOpenaiKey.trim())
+      await AsyncStorage.setItem('custom_anthropic_key', customAnthropicKey.trim())
+      showModal('Success', 'AI Key and Provider settings saved successfully.', 'success')
+    } catch (err) {
+      showModal('Error', (err as Error).message, 'error')
+    } finally {
+      setSavingAiKeys(false)
+    }
+  }
+
+  const renderAiKeysView = () => {
+    return (
+      <View style={{ gap: 20 }}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={styles.backBtn}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>AI Providers</Text>
+        </View>
+
+        {/* Toggle Provider Mode */}
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
+                <Zap size={16} color={colors.text} strokeWidth={1.5} />
+              </View>
+              <View>
+                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Bring Your Own Key (BYOK)</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>
+                  Use your own custom API keys instead of hosted defaults.
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={byokMode}
+              onValueChange={setByokMode}
+              trackColor={{ false: colors.border, true: colors.text }}
+              thumbColor={colors.background}
+            />
+          </View>
+        </View>
+
+        {byokMode && (
+          <View style={{ gap: 14 }}>
+            <View style={{ gap: 5 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Gemini API Key</Text>
+              <TextInput
+                value={customGeminiKey}
+                onChangeText={setCustomGeminiKey}
+                secureTextEntry
+                placeholder="Enter Gemini API Key..."
+                placeholderTextColor={colors.textSecondary + '70'}
+                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                autoCapitalize="none"
+                autoComplete="off"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={{ gap: 5 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>OpenAI API Key (Optional)</Text>
+              <TextInput
+                value={customOpenaiKey}
+                onChangeText={setCustomOpenaiKey}
+                secureTextEntry
+                placeholder="Enter OpenAI API Key..."
+                placeholderTextColor={colors.textSecondary + '70'}
+                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                autoCapitalize="none"
+                autoComplete="off"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={{ gap: 5 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Anthropic API Key (Optional)</Text>
+              <TextInput
+                value={customAnthropicKey}
+                onChangeText={setCustomAnthropicKey}
+                secureTextEntry
+                placeholder="Enter Anthropic API Key..."
+                placeholderTextColor={colors.textSecondary + '70'}
+                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                autoCapitalize="none"
+                autoComplete="off"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+        )}
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[styles.primaryBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0E1116', marginTop: 12 }]}
+          onPress={handleSaveAiKeys}
+          disabled={savingAiKeys}
+        >
+          {savingAiKeys ? (
+            <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
+          ) : (
+            <Text style={[styles.primaryBtnText, { color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+              Save AI Key Settings
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  if (currentSubScreen === 'aiKeys') {
+    return (
+      <ScrollView 
+        style={[styles.container, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {renderAiKeysView()}
+        <ConfirmModal
+          visible={modalConfig.visible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          type={modalConfig.type}
+          singleButton={modalConfig.singleButton}
+          onConfirm={modalConfig.onConfirm}
+          onCancel={modalConfig.onCancel}
+        />
+      </ScrollView>
+    )
+  }
+
+  const handleInstallRuntime = async (runtimeKey: string, runtimeName: string) => {
+    setUpdatingRuntimes(prev => ({ ...prev, [runtimeKey]: true }))
+    try {
+      const res = await api.system.installRuntime(runtimeKey)
+      showModal('Installation Started', res.message, 'success')
+      fetchRuntimesData(true)
+    } catch (err) {
+      showModal('Error', (err as Error).message, 'error')
+    } finally {
+      setUpdatingRuntimes(prev => {
+        const next = { ...prev }
+        delete next[runtimeKey]
+        return next
+      })
+    }
+  }
+
+  const renderDependenciesView = () => {
+    const filtered = runtimesList.filter(item => 
+      item.name.toLowerCase().includes(runtimesSearch.toLowerCase()) ||
+      item.version.toLowerCase().includes(runtimesSearch.toLowerCase())
+    )
+
+    return (
+      <View style={{ gap: 20 }}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={styles.backBtn}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>System Runtimes</Text>
+        </View>
+
+        <TextInput
+          value={runtimesSearch}
+          onChangeText={setRuntimesSearch}
+          placeholder="Search runtimes, compilers..."
+          placeholderTextColor={colors.textSecondary + '70'}
+          style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+        />
+
+        <View style={{ gap: 12 }}>
+          {filtered.length === 0 ? (
+            <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 20, fontFamily: 'Inter_400Regular' }}>
+              No runtimes match your search.
+            </Text>
+          ) : (
+            filtered.map(item => {
+              const isInstalled = item.version !== 'Not Installed'
+              const isUpdating = updatingRuntimes[item.key]
+              return (
+                <View 
+                  key={item.key} 
+                  style={[
+                    styles.dependencyCard, 
+                    { 
+                      backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                      borderRadius: 14,
+                      padding: 16,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }
+                  ]}
+                >
+                  <View style={{ flex: 1, marginRight: 16 }}>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>{item.name}</Text>
+                    <Text style={{ color: isInstalled ? '#3FB950' : colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, marginTop: 4 }}>
+                      {item.version}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={{
+                      backgroundColor: isInstalled ? 'rgba(0,0,0,0.03)' : colors.text,
+                      borderWidth: isInstalled ? 1 : 0,
+                      borderColor: colors.border,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      minWidth: 80,
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onPress={() => handleInstallRuntime(item.key, item.name)}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? (
+                      <ActivityIndicator size="small" color={isInstalled ? colors.text : colors.background} />
+                    ) : (
+                      <Text style={{ color: isInstalled ? colors.text : colors.background, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>
+                        {isInstalled ? 'Reinstall' : 'Install'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )
+            })
+          )}
+        </View>
+      </View>
+    )
+  }
+
+  if (currentSubScreen === 'dependencies') {
+    return (
+      <ScrollView 
+        style={[styles.container, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={loadingRuntimes}
+            onRefresh={() => fetchRuntimesData(false)}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        {renderDependenciesView()}
+        <ConfirmModal
+          visible={modalConfig.visible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          type={modalConfig.type}
+          singleButton={modalConfig.singleButton}
+          onConfirm={modalConfig.onConfirm}
+          onCancel={modalConfig.onCancel}
+        />
+      </ScrollView>
+    )
+  }
+
   if (currentSubScreen === 'gitSsh') {
     return (
       <ScrollView 
@@ -819,6 +1139,33 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Git & SSH Keys</Text>
                 <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
                   {gitName ? `${gitName} · Configured` : 'Configure credentials & deploy keys'}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Runtimes & Modules */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>DEPENDENCIES & RUNTIMES</Text>
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+          <TouchableOpacity 
+            activeOpacity={0.7} 
+            onPress={() => setCurrentSubScreen('dependencies')}
+            style={[styles.row]}
+          >
+            <View style={styles.rowLeft}>
+              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
+                <Server size={16} color={colors.text} strokeWidth={1.5} />
+              </View>
+              <View>
+                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>System Runtimes</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
+                  Verify Node, Git, Python, GCC, Go, Rust compilers
                 </Text>
               </View>
             </View>
