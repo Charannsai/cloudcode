@@ -190,9 +190,11 @@ export default function VoiceOverlay({ projectId }: Props) {
     return <Icon size={12} color={colors.textSecondary} />
   }
 
-  const renderToolStatus = (status: 'running' | 'done' | 'error') => {
+  const renderToolStatus = (status: ToolCallInfo['status']) => {
     if (status === 'running') {
       return <ActivityIndicator size="small" color={colors.primary} style={{ scaleX: 0.7, scaleY: 0.7 }} />
+    } else if (status === 'pending') {
+      return <ActivityIndicator size="small" color="#E2B714" style={{ scaleX: 0.7, scaleY: 0.7 }} />
     } else if (status === 'done') {
       return <CheckCircle2 size={13} color="#3FB950" />
     }
