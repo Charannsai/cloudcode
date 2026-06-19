@@ -1,4 +1,9 @@
 import { execInContainer } from '../docker'
+import { v4 as uuidv4 } from 'uuid'
+
+if (!(global as any).pendingCommands) {
+  (global as any).pendingCommands = new Map()
+}
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = 'gemini-3-flash-preview'
@@ -277,12 +282,47 @@ export async function* chatWithGemini(
           hasFunctionCall = true
           const { name, args } = part.functionCall
 
-          yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
+          let result: any
+          if (name === 'run_command') {
+            const command = args.command as string
+            const approvalId = uuidv4()
 
-          // Execute the tool
-          const result = await executeTool(containerId, name, args as Record<string, unknown>)
+            // Yield tool call as pending first
+            yield { 
+              type: 'tool_call', 
+              toolName: name, 
+              toolArgs: { ...args, approvalId, status: 'pending' } 
+            }
 
-          yield { type: 'tool_result', toolName: name, toolResult: result }
+            // Create a pending promise to wait for client approval
+            const approvalPromise = new Promise<boolean>((resolve) => {
+              (global as any).pendingCommands.set(approvalId, { resolve, command })
+            })
+
+            const approved = await approvalPromise
+
+            if (approved) {
+              // Yield status update to running
+              yield { 
+                type: 'tool_call', 
+                toolName: name, 
+                toolArgs: { ...args, approvalId, status: 'running' } 
+              }
+              result = await executeTool(containerId, name, args as Record<string, unknown>)
+            } else {
+              result = { error: 'Command execution rejected by user.' }
+            }
+          } else {
+            yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
+            result = await executeTool(containerId, name, args as Record<string, unknown>)
+          }
+
+          yield { 
+            type: 'tool_result', 
+            toolName: name, 
+            toolResult: result,
+            toolArgs: { approvalId: (args as any).approvalId }
+          }
 
           // Add function response to history for next loop iteration
           contents.push({
