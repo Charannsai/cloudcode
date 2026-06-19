@@ -1,5 +1,7 @@
 import { execInContainer } from '../docker'
 import { v4 as uuidv4 } from 'uuid'
+import { createProjectInternal } from '../projects'
+
 
 if (!(global as any).pendingCommands) {
   (global as any).pendingCommands = new Map()
@@ -92,6 +94,22 @@ const TOOL_DECLARATIONS = [
       required: ['path'],
     },
   },
+  {
+    name: 'create_project',
+    description: 'Create a new project/workspace with the given name and template type. Use this when the user asks you to create a workspace or project. Valid templates are "node", "react", "empty", "flask", "fastapi", "rust", "gin", "nextjs". Default to "empty" if type is not specified.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        name: { type: 'STRING', description: 'The name of the project/workspace to create' },
+        type: {
+          type: 'STRING',
+          description: 'The template type. Allowed values: "node", "react", "empty", "flask", "fastapi", "rust", "gin", "nextjs"',
+          enum: ['node', 'react', 'empty', 'flask', 'fastapi', 'rust', 'gin', 'nextjs']
+        },
+      },
+      required: ['name', 'type'],
+    },
+  },
 ]
 
 const SYSTEM_INSTRUCTION = `You are CloudCode AI, an expert coding assistant embedded in a cloud development environment. You have direct access to the user's project files running inside a Docker container.
@@ -125,11 +143,25 @@ export interface StreamChunk {
 export async function executeTool(
   containerId: string,
   toolName: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  userId?: string
 ): Promise<unknown> {
   const WORKSPACE = '/workspace'
 
   switch (toolName) {
+    case 'create_project': {
+      if (!userId) {
+        return { error: 'Unauthorized: User context is missing' }
+      }
+      try {
+        const name = args.name as string
+        const type = args.type as any
+        const project = await createProjectInternal(userId, name, type)
+        return { success: true, project }
+      } catch (err) {
+        return { error: `Failed to create project: ${(err as Error).message}` }
+      }
+    }
     case 'read_file': {
       const filePath = `${WORKSPACE}/${args.path}`
       let content = ''
@@ -209,7 +241,7 @@ export async function executeTool(
 export async function* chatWithGemini(
   messages: GeminiMessage[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string } },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   // Build the full message history with context
@@ -240,13 +272,23 @@ export async function* chatWithGemini(
     try {
       const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
       const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : GEMINI_API_KEY
+      const toolsToProvide = hasContainer 
+        ? TOOL_DECLARATIONS 
+        : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
+
       const response = await fetch(`${GEMINI_API_URL}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents,
-          ...(hasContainer ? { tools: [{ functionDeclarations: TOOL_DECLARATIONS }] } : {}),
-          systemInstruction: { parts: [{ text: hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant. Advise the user to select a project if they want you to read, edit, or run commands on files.' }] },
+          ...(toolsToProvide.length > 0 ? { tools: [{ functionDeclarations: toolsToProvide }] } : {}),
+          systemInstruction: {
+            parts: [{
+              text: hasContainer 
+                ? SYSTEM_INSTRUCTION 
+                : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.'
+            }]
+          },
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 8192,
@@ -311,13 +353,13 @@ export async function* chatWithGemini(
                 toolName: name, 
                 toolArgs: { ...args, approvalId, status: 'running' } 
               }
-              result = await executeTool(containerId, name, args as Record<string, unknown>)
+              result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
             } else {
               result = { error: 'Command execution rejected by user.' }
             }
           } else {
             yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
-            result = await executeTool(containerId, name, args as Record<string, unknown>)
+            result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
           }
 
           yield { 
@@ -372,7 +414,7 @@ function convertSchemaToLowercase(schema: any): any {
 export async function* chatWithOpenAI(
   messages: { role: 'user' | 'model'; text: string }[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string } },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
@@ -383,8 +425,12 @@ export async function* chatWithOpenAI(
     return
   }
 
+  const toolsToProvide = hasContainer 
+    ? TOOL_DECLARATIONS 
+    : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
+
   // Convert schema types to lowercase for OpenAI function calling compatibility
-  const openAITools = TOOL_DECLARATIONS.map(tool => ({
+  const openAITools = toolsToProvide.map(tool => ({
     type: 'function',
     function: {
       name: tool.name,
@@ -396,7 +442,9 @@ export async function* chatWithOpenAI(
   const openAIMessages: any[] = []
   openAIMessages.push({
     role: 'system',
-    content: hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant. Advise the user to select a project if they want you to read, edit, or run commands on files.'
+    content: hasContainer 
+      ? SYSTEM_INSTRUCTION 
+      : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.'
   })
 
   let firstUserProcessed = false
@@ -435,7 +483,7 @@ export async function* chatWithOpenAI(
         body: JSON.stringify({
           model: 'gpt-4o',
           messages: openAIMessages,
-          ...(hasContainer ? { tools: openAITools, tool_choice: 'auto' } : {}),
+          ...(toolsToProvide.length > 0 ? { tools: openAITools, tool_choice: 'auto' } : {}),
           temperature: 0.7,
         })
       })
@@ -497,13 +545,13 @@ export async function* chatWithOpenAI(
               toolName: name, 
               toolArgs: { ...args, approvalId, status: 'running' } 
             }
-            result = await executeTool(containerId, name, args)
+            result = await executeTool(containerId, name, args, context?.userId)
           } else {
             result = { error: 'Command execution rejected by user.' }
           }
         } else {
           yield { type: 'tool_call', toolName: name, toolArgs: args }
-          result = await executeTool(containerId, name, args)
+          result = await executeTool(containerId, name, args, context?.userId)
         }
 
         yield { 
@@ -531,7 +579,7 @@ export async function* chatWithOpenAI(
 export async function* chatWithAnthropic(
   messages: { role: 'user' | 'model'; text: string }[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string } },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
@@ -542,7 +590,11 @@ export async function* chatWithAnthropic(
     return
   }
 
-  const anthropicTools = TOOL_DECLARATIONS.map(tool => ({
+  const toolsToProvide = hasContainer 
+    ? TOOL_DECLARATIONS 
+    : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
+
+  const anthropicTools = toolsToProvide.map(tool => ({
     name: tool.name,
     description: tool.description,
     input_schema: convertSchemaToLowercase(tool.parameters)
@@ -586,9 +638,11 @@ export async function* chatWithAnthropic(
         body: JSON.stringify({
           model: 'claude-3-opus-20240229',
           max_tokens: 4096,
-          system: hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant. Advise the user to select a project if they want you to read, edit, or run commands on files.',
+          system: hasContainer 
+            ? SYSTEM_INSTRUCTION 
+            : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.',
           messages: anthropicMessages,
-          ...(hasContainer ? { tools: anthropicTools } : {}),
+          ...(toolsToProvide.length > 0 ? { tools: anthropicTools } : {}),
           temperature: 0.7,
         })
       })
@@ -647,13 +701,13 @@ export async function* chatWithAnthropic(
                 toolName: name, 
                 toolArgs: { ...args, approvalId, status: 'running' } 
               }
-              result = await executeTool(containerId, name, args)
+              result = await executeTool(containerId, name, args, context?.userId)
             } else {
               result = { error: 'Command execution rejected by user.' }
             }
           } else {
             yield { type: 'tool_call', toolName: name, toolArgs: args }
-            result = await executeTool(containerId, name, args)
+            result = await executeTool(containerId, name, args, context?.userId)
           }
 
           yield { 

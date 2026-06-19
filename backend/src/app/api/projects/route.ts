@@ -1,11 +1,8 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { v4 as uuidv4 } from 'uuid'
-import fs from 'fs/promises'
-import path from 'path'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { createContainer, getWorkspacePath } from '@/lib/docker'
+import { createProjectInternal } from '@/lib/projects'
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(60).regex(/^[a-zA-Z0-9_\- ]+$/),
@@ -37,156 +34,11 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return errorResponse(parsed.error.message)
 
   const { name, type } = parsed.data
-  const projectId = uuidv4()
 
-  const { data: project, error: dbError } = await supabaseAdmin
-    .from('projects')
-    .insert({
-      id: projectId,
-      user_github_id: user.id,
-      name,
-      type,
-      status: 'creating',
-    })
-    .select()
-    .single()
-
-  if (dbError) return errorResponse(dbError.message, 500)
-
-  const workspacePath = getWorkspacePath(projectId)
-  await fs.mkdir(workspacePath, { recursive: true })
-
-  await seedTemplate(workspacePath, type)
-  
-  // Grant full permissions recursively so the non-root "coder" user in Docker can write to it
   try {
-    const { execSync } = require('child_process')
-    execSync(`chmod -R 777 "${workspacePath}"`, { stdio: 'ignore' })
-  } catch (e) {
-    console.error('Failed to chmod recursively:', e)
-  }
-
-  provisionContainer(projectId).catch(console.error)
-
-  return successResponse(project, 201)
-}
-
-async function seedTemplate(dir: string, type: string) {
-  if (type === 'node') {
-    await fs.writeFile(
-      path.join(dir, 'index.js'),
-      `const http = require('http');\nconst port = 3000;\n\nhttp.createServer((req, res) => {\n  res.end('Hello from CloudCode!\\n');\n}).listen(port, () => console.log(\`Server on port \${port}\`));\n`
-    )
-    await fs.writeFile(
-      path.join(dir, 'package.json'),
-      JSON.stringify({
-        name: 'cloudcode-project',
-        version: '1.0.0',
-        main: 'index.js',
-        scripts: { start: 'node index.js', dev: 'node index.js' },
-      }, null, 2)
-    )
-  } else if (type === 'react') {
-    await fs.writeFile(
-      path.join(dir, 'package.json'),
-      JSON.stringify({
-        name: 'cloudcode-react',
-        version: '1.0.0',
-        scripts: { dev: 'vite --port 3000 --host 0.0.0.0', build: 'vite build', start: 'vite preview --port 3000 --host 0.0.0.0' },
-        dependencies: { react: '^18.0.0', 'react-dom': '^18.0.0' },
-        devDependencies: { vite: '^5.0.0', '@vitejs/plugin-react': '^4.0.0' },
-      }, null, 2)
-    )
-    await fs.writeFile(
-      path.join(dir, 'index.html'),
-      `<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><title>CloudCode App</title></head>\n<body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html>\n`
-    )
-    await fs.mkdir(path.join(dir, 'src'), { recursive: true })
-    await fs.writeFile(
-      path.join(dir, 'src', 'main.jsx'),
-      `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nReactDOM.createRoot(document.getElementById('root')).render(<h1>Hello from CloudCode!</h1>);\n`
-    )
-  } else if (type === 'nextjs') {
-    await fs.mkdir(path.join(dir, 'src', 'app'), { recursive: true })
-    await fs.writeFile(
-      path.join(dir, 'package.json'),
-      JSON.stringify({
-        name: 'cloudcode-nextjs',
-        version: '1.0.0',
-        scripts: { dev: 'next dev -p 3000 -H 0.0.0.0', build: 'next build', start: 'next start -p 3000 -H 0.0.0.0' },
-        dependencies: { next: '^14.0.0', react: '^18.2.0', 'react-dom': '^18.2.0' },
-        devDependencies: { typescript: '^5.0.0', '@types/react': '^18.2.0', '@types/node': '^20.0.0' },
-      }, null, 2)
-    )
-    await fs.writeFile(
-      path.join(dir, 'next.config.js'),
-      `/** @type {import('next').NextConfig} */\nconst nextConfig = { reactStrictMode: true };\nmodule.exports = nextConfig;\n`
-    )
-    await fs.writeFile(
-      path.join(dir, 'tsconfig.json'),
-      `{\n  "compilerOptions": {\n    "target": "es5",\n    "lib": ["dom", "dom.iterable", "esnext"],\n    "allowJs": true,\n    "skipLibCheck": true,\n    "strict": true,\n    "forceConsistentCasingInFileNames": true,\n    "noEmit": true,\n    "esModuleInterop": true,\n    "module": "esnext",\n    "moduleResolution": "node",\n    "resolveJsonModule": true,\n    "isolatedModules": true,\n    "jsx": "preserve",\n    "incremental": true,\n    "plugins": [{ "name": "next" }],\n    "paths": { "@/*": ["./src/*"] }\n  },\n  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],\n  "exclude": ["node_modules"]\n}\n`
-    )
-    await fs.writeFile(
-      path.join(dir, 'src', 'app', 'layout.tsx'),
-      `import React from 'react';\nexport const metadata = { title: 'CloudCode Next.js App', description: 'Generated by CloudCode' };\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang="en">\n      <body style={{ margin: 0, padding: 0, fontFamily: 'sans-serif' }}>{children}</body>\n    </html>\n  );\n}\n`
-    )
-    await fs.writeFile(
-      path.join(dir, 'src', 'app', 'page.tsx'),
-      `import React from 'react';\nexport default function Home() {\n  return (\n    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0e1116', color: '#ffffff' }}>\n      <h1>Hello from CloudCode Next.js Template!</h1>\n      <p>Edit src/app/page.tsx to get started.</p>\n    </div>\n  );\n}\n`
-    )
-  } else if (type === 'flask') {
-    await fs.writeFile(
-      path.join(dir, 'app.py'),
-      `from flask import Flask, jsonify\napp = Flask(__name__)\n\n@app.route("/")\ndef hello():\n    return jsonify(message="Hello from CloudCode Flask Template!")\n\nif __name__ == "__main__":\n    app.run(host="0.0.0.0", port=3000)\n`
-    )
-    await fs.writeFile(path.join(dir, 'requirements.txt'), 'flask\n')
-    await fs.writeFile(path.join(dir, 'README.md'), '# Flask Project\n\nRun:\n`pip install -r requirements.txt && python3 app.py`\n')
-  } else if (type === 'fastapi') {
-    await fs.writeFile(
-      path.join(dir, 'main.py'),
-      `from fastapi import FastAPI\napp = FastAPI(title="CloudCode API")\n\n@app.get("/")\ndef read_root():\n    return {"message": "Hello from CloudCode FastAPI Template!"}\n\nif __name__ == "__main__":\n    import uvicorn\n    uvicorn.run("main:app", host="0.0.0.0", port=3000, reload=True)\n`
-    )
-    await fs.writeFile(path.join(dir, 'requirements.txt'), 'fastapi\nuvicorn\n')
-    await fs.writeFile(path.join(dir, 'README.md'), '# FastAPI Project\n\nRun:\n`pip install -r requirements.txt && python3 main.py`\n')
-  } else if (type === 'gin') {
-    await fs.writeFile(
-      path.join(dir, 'main.go'),
-      `package main\n\nimport (\n\t"github.com/gin-gonic/gin"\n\t"net/http"\n)\n\nfunc main() {\n\tr := gin.Default()\n\tr.GET("/", func(c *gin.Context) {\n\t\tc.JSON(http.StatusOK, gin.H{\n\t\t\t"message": "Hello from CloudCode Go Gin Template!",\n\t\t})\n\t})\n\tr.Run("0.0.0.0:3000")\n}\n`
-    )
-    await fs.writeFile(path.join(dir, 'go.mod'), 'module cloudcode-gin\n\ngo 1.20\n')
-    await fs.writeFile(path.join(dir, 'README.md'), '# Go Gin Project\n\nRun:\n`go mod tidy && go run main.go`\n')
-  } else if (type === 'rust') {
-    await fs.mkdir(path.join(dir, 'src'), { recursive: true })
-    await fs.writeFile(
-      path.join(dir, 'Cargo.toml'),
-      `[package]\nname = "cloudcode-rust"\nversion = "0.1.0"\nedition = "2021"\n\n[dependencies]\n`
-    )
-    await fs.writeFile(
-      path.join(dir, 'src', 'main.rs'),
-      `fn main() {\n    println!("Hello from CloudCode Rust Template!");\n}\n`
-    )
-    await fs.writeFile(path.join(dir, 'README.md'), '# Rust Cargo Project\n\nRun:\n`cargo run`\n')
-  } else {
-    await fs.writeFile(path.join(dir, 'README.md'), '# My CloudCode Project\n\nStart coding!\n')
-  }
-}
-
-async function provisionContainer(projectId: string) {
-  try {
-    const { containerId, port } = await createContainer(projectId)
-    await supabaseAdmin
-      .from('projects')
-      .update({ 
-        status: 'ready', 
-        container_id: containerId,
-        port: port ? parseInt(port, 10) : null
-      })
-      .eq('id', projectId)
-  } catch (err) {
-    console.error('Container provisioning failed:', err)
-    await supabaseAdmin
-      .from('projects')
-      .update({ status: 'error' })
-      .eq('id', projectId)
+    const project = await createProjectInternal(user.id, name, type)
+    return successResponse(project, 201)
+  } catch (dbError: any) {
+    return errorResponse(dbError.message, 500)
   }
 }
