@@ -37,6 +37,9 @@ mindmap
     Billing & AI Customization
       Dodo Payments Integration
       Custom API Keys & Models
+    Authentication & Identity
+      Continue with Google
+      GitHub OAuth
     Security & Hardening
       ICC & Network Isolation
       Disk Space Quotas
@@ -194,6 +197,67 @@ mindmap
   - Integrate Free, Pro, and Advanced plan tiers mapping container resource allocation directly to active hours and workspace storage limits.
   - **Aggressive Free Tier Management:** Enforce a strict **5-minute idle container timeout** for free users. This aggressive auto-sleep frees up server RAM instantly and must be visually displayed in the mobile settings page so free users know their limits.
   - *Payment Provider Suggestion:* Implement **Dodo Payments** for payment handling. See evaluation below.
+
+
+comment: Here is the refactor for payments and the tiers that we are offering to the users:
+
+1. Free - 0 dollar
+2. Pro - 25 dollars/month or 225 dollars/year
+3. Advanced - 99 dollars/month or 990 dollars/year
+
+### 1. Free Tier ($0)
+**Container Boundaries:**
+- **Compute:** 0.5 vCPUs (Ensures smooth typing/editor experience, but slows down heavy builds to encourage upgrades).
+- **Memory:** 512MB RAM.
+- **Storage:** Max 3 Workspaces, capped at 5GB total disk space.
+- **Inactivity Timeout:** Strict 10-minute auto-sleep to save server resources (reducing from current 30 mins).
+- **Network Speed:** Capped at 15 Mbps (Prevents bandwidth abuse while allowing reasonable `npm install` times).
+- **API Limits:** 25 requests/minute rate limit.
+- **Cold Storage (New):** Workspaces inactive for > 30 days are automatically archived to cold storage.
+
+**AI Features:**
+- **Allowance:** 50,000 Free Tokens per month (approx. 50-75 simple queries) using default keys. 
+- **BYOK (Bring Your Own Key):** Supported for unlimited AI usage on the free tier.
+
+### 2. Pro Tier ($25/month or $225/year)
+**Container Boundaries:**
+- **Compute:** 4 vCPUs (Blazing fast compilation for React, Next.js, and full-stack apps).
+- **Memory:** 8GB RAM (Prevents OOM crashes during heavy builds).
+- **Storage:** Max 20 Workspaces, 50GB total fast SSD storage.
+- **Inactivity Timeout:** 1-hour auto-sleep (Allows users to step away for lunch without the container shutting down).
+- **Network Speed:** Uncapped (up to 1 Gbps) for instant dependency downloads.
+- **API Limits:** 500 requests/minute.
+- **Always-on:** Ability to pin 1 workspace to "Always-on" (never sleeps).
+
+**AI Features (Included):**
+- **Premium Models:** Full built-in access to **Claude Latest (e.g., Claude 4.6), ChatGPT Latest, and Gemini Latest**.
+- **Allowance:** Generous usage limits (e.g., 5 Million tokens/month) so users don't need their own API keys for daily coding.
+- **BYOK:** Supported.
+
+### 3. Advanced Tier ($99/month or $990/year)
+**Container Boundaries:**
+- **Compute:** 8 to 16 vCPUs (Heavy compute, perfect for Docker-in-Docker, ML processing, and massive monorepos).
+- **Memory:** 32GB RAM.
+- **Storage:** Unlimited Workspaces, 200GB total fast SSD storage.
+- **Inactivity Timeout:** User-defined.
+- **Network Speed:** Uncapped (up to 10 Gbps).
+- **API Limits:** Uncapped.
+- **Always-on:** Ability to pin up to 5 workspaces to "Always-on" (great for hosting live discord bots, APIs, or dev servers 24/7).
+
+**AI Features (Included):**
+- **Premium Models:** Priority, low-latency access to **Claude Latest, ChatGPT Latest, and Gemini Latest**.
+- **Allowance:** Truly Unlimited AI usage.
+
+---
+
+## 🔐 7. Authentication & User Accounts
+
+### 7.1. Seamless Social Login Integration
+* **Current Gap:** Onboarding relies on a single authentication provider (like GitHub), creating friction for users who prefer other options.
+* **Feature Description:**
+  - **Continue with Google:** Implement Google OAuth alongside GitHub for frictionless sign-up and login. 
+  - **Unified Identity:** Ensure that whether a user signs in via Google or GitHub, they map to the same underlying user account in the database (e.g., by matching email addresses).
+  - **Mobile Native Flow:** Use native mobile SDKs (e.g., Google Sign-In for iOS/Android) so the user can log in with one tap without leaving the app.
 
 ---
 
