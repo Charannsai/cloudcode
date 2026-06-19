@@ -1532,9 +1532,9 @@ export default function AIScreen() {
               style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
               onPress={() => setHistoryModalVisible(false)}
             >
-              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Close</Text>
-            </TouchableOpacity>
-          </View>
+            <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Close</Text>
+          </TouchableOpacity>
+        </Animated.View>
         </View>
       </Modal>
     </KeyboardAvoidingView>
