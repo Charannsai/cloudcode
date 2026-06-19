@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, 
   TextInput, ActivityIndicator, Alert, Linking 
 } from 'react-native'
+import * as WebBrowser from 'expo-web-browser'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { 
@@ -298,12 +299,20 @@ export default function SettingsScreen() {
               backgroundColor: isDark ? '#F3F4F6' : '#0E1116',
               paddingVertical: 12, borderRadius: 10, marginTop: 2 
             }}
-            onPress={() => {
-              showModal(
-                'Upgrade Coming Soon',
-                'Pro ($25/mo) and Advanced ($99/mo) plans are launching soon! You will get more vCPUs, RAM, storage, and premium AI models.',
-                'info'
-              )
+            onPress={async () => {
+              try {
+                const returnUrl = Linking.createURL('/billing/success')
+                const { checkoutUrl } = await api.billing.checkout('pro_monthly', returnUrl)
+                if (checkoutUrl) {
+                  await WebBrowser.openBrowserAsync(checkoutUrl)
+                }
+              } catch (err: any) {
+                showModal(
+                  'Upgrade',
+                  err.message || 'Failed to open checkout. Please try again.',
+                  'error'
+                )
+              }
             }}
           >
             <ArrowUpRight size={16} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2} />

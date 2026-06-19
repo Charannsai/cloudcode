@@ -149,6 +149,26 @@ export const api = {
     },
   },
 
+  billing: {
+    status: () =>
+      apiFetch<{
+        tier: { name: string; displayName: string; price: { monthly: number; yearly: number } }
+        subscription: { id: string | null; status: string }
+        limits: {
+          container: { cpus: number; memoryMB: number; diskGB: number; maxWorkspaces: number; idleTimeoutMinutes: number; networkSpeedMbps: number; alwaysOnSlots: number }
+          api: { requestsPerMinute: number }
+          ai: { monthlyTokens: number; premiumModels: boolean; byokSupported: boolean }
+        }
+        upgrades: { name: string; displayName: string; price: { monthly: number; yearly: number }; container: any; ai: any }[]
+      }>('/api/billing/status'),
+
+    checkout: (planType: string, returnUrl: string) =>
+      apiFetch<{ checkoutUrl: string; sessionId: string }>('/api/billing/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ planType, returnUrl }),
+      }),
+  },
+
   terminal: {
     kill: (projectId: string, terminalId: string) =>
       apiFetch<{ killed: boolean }>(`/api/projects/${projectId}/terminal/kill`, {
