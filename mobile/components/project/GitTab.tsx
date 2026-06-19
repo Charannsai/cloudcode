@@ -725,7 +725,7 @@ export default function GitTab({ projectId, isActive }: Props) {
       {/* Git credentials and SSH key config modal has been moved to global settings page */}
 
       {/* Custom Alert Modal */}
-      <Modal visible={alertConfig.visible} transparent animationType="fade" onRequestClose={hideAlert}>
+      <Modal visible={alertConfig.visible} transparent animationType="none" onRequestClose={hideAlert}>
         <View style={styles.alertOverlay}>
           <View style={[styles.alertContent, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
             <View style={styles.alertIconContainer}>
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
   },
   filePath: { flex: 1, fontSize: 13, fontFamily: 'JetBrainsMono_400Regular' },
   diffContainer: {
-    margin: 16, borderRadius: 12, borderWidth: 1, overflow: 'hidden',
+    margin: 16, borderRadius: 8, borderWidth: 1, overflow: 'hidden',
   },
   diffHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -814,16 +814,16 @@ const styles = StyleSheet.create({
   diffClose: { fontSize: 16, padding: 4 },
   diffContent: { fontSize: 12, fontFamily: 'JetBrainsMono_400Regular', padding: 12, lineHeight: 18 },
   commitBox: {
-    margin: 16, padding: 14, borderRadius: 14, borderWidth: 1, gap: 10,
+    margin: 16, padding: 12, borderRadius: 8, borderWidth: 1, gap: 8,
   },
   commitInput: {
     fontSize: 14, fontFamily: 'Inter_400Regular',
-    borderWidth: 1, borderRadius: 10, padding: 12,
+    borderWidth: 1, borderRadius: 6, padding: 10,
     minHeight: 60, textAlignVertical: 'top',
   },
   commitBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, paddingVertical: 12, borderRadius: 10,
+    gap: 8, paddingVertical: 10, borderRadius: 6,
   },
   commitBtnText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
   // Modal Configurations Styles
@@ -839,44 +839,44 @@ const styles = StyleSheet.create({
     maxWidth: 380,
   },
   modalContent: {
-    padding: 24,
-    borderRadius: 24,
+    padding: 16,
+    borderRadius: 8,
     borderWidth: 1,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 18,
-    letterSpacing: -0.4,
+    fontSize: 16,
+    letterSpacing: -0.3,
   },
   modalCloseBtn: {
     padding: 4,
   },
   section: {
-    gap: 12,
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 10,
   },
   inputField: {
-    height: 48,
+    height: 40,
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderRadius: 6,
+    paddingHorizontal: 12,
     fontSize: 14,
     backgroundColor: 'rgba(0,0,0,0.02)',
   },
   primaryBtn: {
-    height: 48,
-    borderRadius: 12,
+    height: 40,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
   },
   primaryBtnText: {
-    fontSize: 14,
+    fontSize: 13,
   },
   divider: {
     height: 1,
@@ -905,14 +905,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnText: {
-    fontSize: 12,
+    fontSize: 11.5,
   },
   // styles for Commit History Timeline
   sectionDivider: {
@@ -986,45 +986,45 @@ const styles = StyleSheet.create({
   },
   alertContent: {
     width: '100%',
-    maxWidth: 320,
-    borderRadius: 20,
+    maxWidth: 300,
+    borderRadius: 8,
     borderWidth: 1,
-    padding: 24,
+    padding: 16,
     alignItems: 'center',
   },
   alertIconContainer: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   alertIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   alertTitle: {
-    fontSize: 18,
+    fontSize: 15,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
   },
   alertMessage: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: 18,
+    marginBottom: 18,
     opacity: 0.9,
   },
   alertBtn: {
     width: '100%',
-    height: 48,
-    borderRadius: 12,
+    height: 40,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   alertBtnText: {
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: 'Inter_600SemiBold',
   },
   conflictContainer: {
@@ -1039,7 +1039,7 @@ const styles = StyleSheet.create({
   strategyBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },

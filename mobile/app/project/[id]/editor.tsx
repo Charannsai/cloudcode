@@ -986,7 +986,7 @@ export default function EditorScreen() {
       </KeyboardAvoidingView>
 
       {/* File Picker Modal */}
-      <Modal visible={showFilePicker} animationType="slide" transparent onRequestClose={() => setShowFilePicker(false)}>
+      <Modal visible={showFilePicker} animationType="none" transparent onRequestClose={() => setShowFilePicker(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
@@ -1099,11 +1099,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
     paddingTop: 54, paddingBottom: 14, borderBottomWidth: 1, gap: 12,
   },
-  backBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  backBtn: { width: 36, height: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   titleContainer: { flex: 1, gap: 2, paddingVertical: 4 },
   fileName: { fontSize: 15 },
   pathText: { fontSize: 10, opacity: 0.6 },
-  saveBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  saveBtn: { width: 36, height: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   loadingOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 10 },
   loadingText: { fontSize: 13 },
   webViewContainer: { flex: 1, position: 'relative' },
@@ -1116,7 +1116,7 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { height: '70%', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingTop: 8 },
+  modalContent: { height: '70%', borderTopLeftRadius: 8, borderTopRightRadius: 8, paddingTop: 8 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
   modalTitle: { fontSize: 16, fontFamily: 'Inter_600SemiBold' },
   closeBtn: { padding: 4 },
@@ -1138,7 +1138,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     gap: 6,
   },
@@ -1191,7 +1191,7 @@ const styles = StyleSheet.create({
   dropdownMenu: {
     position: 'absolute',
     top: 130, // Fits nicely under the menubar (header ~ 104px + menubar ~ 35px)
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     paddingVertical: 4,
     minWidth: 170,
@@ -1220,7 +1220,7 @@ const styles = StyleSheet.create({
     paddingLeft: 14,
     paddingRight: 10,
     paddingVertical: 10,
-    borderRadius: 24,
+    borderRadius: 6,
     gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -1279,7 +1279,7 @@ const styles = StyleSheet.create({
     maxWidth: '90%',
   },
   sideAIMsgBubble: {
-    borderRadius: 12,
+    borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
@@ -1294,7 +1294,7 @@ const styles = StyleSheet.create({
   sideAIInput: {
     height: 36,
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 6,
     paddingHorizontal: 12,
     fontSize: 12,
   },
