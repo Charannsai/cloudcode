@@ -591,6 +591,46 @@ export default function AIScreen() {
   const [isListening, setIsListening] = useState(false)
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
 
+  const modelAnim = useRef(new Animated.Value(0)).current
+  const menuAnim = useRef(new Animated.Value(0)).current
+  const historyAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (modelModalVisible) {
+      modelAnim.setValue(0)
+      Animated.timing(modelAnim, {
+        toValue: 1,
+        duration: 120,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [modelModalVisible])
+
+  useEffect(() => {
+    if (menuVisible) {
+      menuAnim.setValue(0)
+      Animated.timing(menuAnim, {
+        toValue: 1,
+        duration: 90,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [menuVisible])
+
+  useEffect(() => {
+    if (historyModalVisible) {
+      historyAnim.setValue(0)
+      Animated.timing(historyAnim, {
+        toValue: 1,
+        duration: 120,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [historyModalVisible])
+
   // Speech and Voice listeners initialization
   useEffect(() => {
     Voice.onSpeechStart = () => setIsListening(true)
