@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share, Alert, Modal,
-  Switch
+  Switch, Animated, Easing
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
@@ -93,6 +93,19 @@ function getRealtimeReasoning(toolCalls: ToolCallInfo[], isStreaming: boolean): 
 function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boolean; colors: any }) {
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const previewAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (modalOpen) {
+      previewAnim.setValue(0)
+      Animated.timing(previewAnim, {
+        toValue: 1,
+        duration: 120,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [modalOpen])
 
   const handleApprove = async () => {
     const approvalId = tool.args?.approvalId as string
@@ -372,18 +385,35 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
         statusBarTranslucent={true}
         onRequestClose={() => setModalOpen(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={[styles.modalBackdrop, { backgroundColor: 'transparent' }]}>
+          <Animated.View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+                opacity: previewAnim 
+              }
+            ]} 
+          />
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
             onPress={() => setModalOpen(false)}
           />
-          <View style={[
+          <Animated.View style={[
             styles.modalContent,
             {
               backgroundColor: isDark ? '#151922' : '#FFFFFF',
               borderColor: isDark ? '#21262D' : '#E5E7EB',
               height: '80%',
+              transform: [
+                {
+                  translateY: previewAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [150, 0],
+                  })
+                }
+              ]
             }
           ]}>
             <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
