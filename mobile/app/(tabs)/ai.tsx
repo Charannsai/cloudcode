@@ -1208,6 +1208,10 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     opacity: 0.8,
   },
+  thinkingTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   thinkingChar: {
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
