@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, memo } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, Modal,
+  TextInput, Alert, ActivityIndicator, Modal, Platform,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { api } from '@/lib/api'
@@ -11,6 +11,14 @@ import {
   File, Search, MoreVertical, RefreshCw, FilePlus, FolderPlus, Trash2,
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
+import { BlurView } from 'expo-blur'
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated'
 
 interface FileItem {
   name: string
@@ -123,6 +131,306 @@ const FileTreeItem = memo(function FileTreeItem({
     </View>
   )
 })
+
+interface CreateDialogProps {
+  visible: boolean
+  parentPath: string
+  type: 'file' | 'directory'
+  onClose: () => void
+  onCreate: (name: string) => Promise<void>
+}
+
+function CreateDialog({
+  visible,
+  parentPath,
+  type,
+  onClose,
+  onCreate,
+}: CreateDialogProps) {
+  const { colors, isDark } = useAppTheme()
+  const [name, setName] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  
+  const opacity = useSharedValue(0)
+  const scale = useSharedValue(0.98)
+  const translateY = useSharedValue(8)
+  const [renderModal, setRenderModal] = useState(visible)
+
+  useEffect(() => {
+    if (visible) {
+      setName('')
+      setRenderModal(true)
+      opacity.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      scale.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      translateY.value = withTiming(0, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+    } else {
+      opacity.value = withTiming(0, { duration: 60, easing: Easing.linear }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderModal)(false)
+        }
+      })
+      scale.value = withTiming(0.98, { duration: 60, easing: Easing.linear })
+      translateY.value = withTiming(4, { duration: 60, easing: Easing.linear })
+    }
+  }, [visible])
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }))
+
+  const modalStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value }
+    ],
+  }))
+
+  if (!renderModal) return null
+
+  const handleCreate = async () => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setIsLoading(true)
+    try {
+      await onCreate(trimmed)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const Icon = type === 'file' ? FilePlus : FolderPlus
+
+  return (
+    <Modal transparent visible={renderModal} animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[styles.promptOverlay, backdropStyle]}>
+        <BlurView
+          intensity={isDark ? 15 : 10}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+        <TouchableOpacity 
+          style={StyleSheet.absoluteFill} 
+          activeOpacity={1} 
+          onPress={onClose}
+        />
+
+        <Animated.View
+          style={[
+            styles.promptContent,
+            {
+              backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
+              borderColor: colors.border,
+            },
+            modalStyle,
+          ]}
+        >
+          <View style={styles.promptHeader}>
+            <View style={styles.headerRow}>
+              <Icon size={16} color={colors.primary} strokeWidth={2.5} />
+              <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                {type === 'file' ? 'New File' : 'New Folder'}
+              </Text>
+            </View>
+            <View style={styles.promptForm}>
+              <Text style={[styles.promptLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                Parent: {parentPath ? `/${parentPath}` : 'Root (/)'}
+              </Text>
+              
+              <TextInput
+                style={[
+                  styles.promptInput,
+                  {
+                    color: colors.text,
+                    borderColor: colors.border,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
+                    fontFamily: 'Inter_400Regular'
+                  }
+                ]}
+                placeholder={type === 'file' ? "filename.txt" : "folder_name"}
+                placeholderTextColor={colors.textSecondary + '60'}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+                disabled={isLoading}
+              />
+            </View>
+          </View>
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[
+                styles.btn,
+                styles.cancelBtn,
+                { 
+                  borderColor: colors.border,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
+                }
+              ]}
+              onPress={onClose}
+              activeOpacity={0.8}
+              disabled={isLoading}
+            >
+              <Text style={[styles.btnText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.btn,
+                styles.confirmBtn,
+                { backgroundColor: colors.primary }
+              ]}
+              onPress={handleCreate}
+              activeOpacity={0.8}
+              disabled={isLoading || !name.trim()}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={[styles.btnText, { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                  Create
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  )
+}
+
+interface OptionsDialogProps {
+  visible: boolean
+  selectedItem: FileItem | null
+  onClose: () => void
+  onNewFile: () => void
+  onNewFolder: () => void
+  onDelete: () => void
+}
+
+function OptionsDialog({
+  visible,
+  selectedItem,
+  onClose,
+  onNewFile,
+  onNewFolder,
+  onDelete,
+}: OptionsDialogProps) {
+  const { colors, isDark } = useAppTheme()
+  const opacity = useSharedValue(0)
+  const scale = useSharedValue(0.98)
+  const translateY = useSharedValue(8)
+  const [renderModal, setRenderModal] = useState(visible)
+
+  useEffect(() => {
+    if (visible) {
+      setRenderModal(true)
+      opacity.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      scale.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      translateY.value = withTiming(0, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+    } else {
+      opacity.value = withTiming(0, { duration: 60, easing: Easing.linear }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderModal)(false)
+        }
+      })
+      scale.value = withTiming(0.98, { duration: 60, easing: Easing.linear })
+      translateY.value = withTiming(4, { duration: 60, easing: Easing.linear })
+    }
+  }, [visible])
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }))
+
+  const modalStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value }
+    ],
+  }))
+
+  if (!renderModal || !selectedItem) return null
+
+  const isDir = selectedItem.type === 'directory'
+  const Icon = isDir ? Folder : File
+
+  return (
+    <Modal transparent visible={renderModal} animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[styles.promptOverlay, backdropStyle]}>
+        <BlurView
+          intensity={isDark ? 15 : 10}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+        <TouchableOpacity 
+          style={StyleSheet.absoluteFill} 
+          activeOpacity={1} 
+          onPress={onClose}
+        />
+
+        <Animated.View
+          style={[
+            styles.optionsContent,
+            {
+              backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
+              borderColor: colors.border,
+            },
+            modalStyle,
+          ]}
+        >
+          <View style={styles.optionsHeader}>
+            <Icon size={14} color={colors.textSecondary} strokeWidth={2} />
+            <Text 
+              style={[styles.optionsTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]} 
+              numberOfLines={1}
+            >
+              {selectedItem.name}
+            </Text>
+          </View>
+          
+          <View style={styles.optionsList}>
+            {isDir && (
+              <>
+                <TouchableOpacity
+                  style={[styles.optionItem, { borderBottomWidth: 1, borderBottomColor: colors.border + '30' }]}
+                  onPress={onNewFile}
+                  activeOpacity={0.7}
+                >
+                  <FilePlus size={14} color={colors.textSecondary} strokeWidth={1.8} style={{ marginRight: 10 }} />
+                  <Text style={[styles.optionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>New File inside</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.optionItem, { borderBottomWidth: 1, borderBottomColor: colors.border + '30' }]}
+                  onPress={onNewFolder}
+                  activeOpacity={0.7}
+                >
+                  <FolderPlus size={14} color={colors.textSecondary} strokeWidth={1.8} style={{ marginRight: 10 }} />
+                  <Text style={[styles.optionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>New Folder inside</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={onDelete}
+              activeOpacity={0.7}
+            >
+              <Trash2 size={14} color="#F85149" strokeWidth={1.8} style={{ marginRight: 10 }} />
+              <Text style={[styles.optionText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  )
+}
 
 export default function FilesTab({ projectId, isActive }: Props) {
   const { colors, isDark } = useAppTheme()
@@ -304,135 +612,40 @@ export default function FilesTab({ projectId, isActive }: Props) {
         </ScrollView>
       )}
 
-      {/* Creation Dialog Modal */}
-      <Modal
+      <CreateDialog
         visible={createModal.visible}
-        transparent
-        animationType="none"
-        onRequestClose={() => setCreateModal(prev => ({ ...prev, visible: false }))}
-      >
-        <View style={styles.promptOverlay}>
-          <View style={[styles.promptContent, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
-            <Text style={[styles.promptTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-              {createModal.type === 'file' ? 'New File' : 'New Folder'}
-            </Text>
-            
-            <View style={styles.promptForm}>
-              <Text style={[styles.promptLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                Parent Directory: {createModal.parentPath ? `/${createModal.parentPath}` : 'Root (/)'}
-              </Text>
-              
-              <TextInput
-                style={[styles.promptInput, { color: colors.text, borderColor: colors.border, fontFamily: 'Inter_400Regular' }]}
-                placeholder={createModal.type === 'file' ? "filename.txt" : "folder_name"}
-                placeholderTextColor={colors.textSecondary + '60'}
-                value={createModal.name}
-                onChangeText={(text) => setCreateModal(prev => ({ ...prev, name: text }))}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoFocus
-              />
-            </View>
+        parentPath={createModal.parentPath}
+        type={createModal.type}
+        onClose={() => setCreateModal(prev => ({ ...prev, visible: false }))}
+        onCreate={async (name) => {
+          const targetPath = createModal.parentPath ? `${createModal.parentPath}/${name}` : name
+          try {
+            await api.files.create(projectId, targetPath, createModal.type)
+            fetchFiles()
+            setCreateModal(prev => ({ ...prev, visible: false }))
+          } catch (err: any) {
+            Alert.alert('Error', err.message)
+          }
+        }}
+      />
 
-            <View style={[styles.promptActions, { borderTopColor: colors.border }]}>
-              <TouchableOpacity
-                style={styles.promptBtn}
-                onPress={() => setCreateModal(prev => ({ ...prev, visible: false }))}
-              >
-                <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium' }}>Cancel</Text>
-              </TouchableOpacity>
-              <View style={[styles.separator, { backgroundColor: colors.border }]} />
-              <TouchableOpacity
-                style={styles.promptBtn}
-                onPress={async () => {
-                  const name = createModal.name.trim()
-                  if (!name) return
-                  
-                  const targetPath = createModal.parentPath 
-                    ? `${createModal.parentPath}/${name}` 
-                    : name
-                  
-                  try {
-                    await api.files.create(projectId, targetPath, createModal.type)
-                    fetchFiles()
-                    setCreateModal(prev => ({ ...prev, visible: false }))
-                  } catch (err: any) {
-                    Alert.alert('Error', err.message)
-                  }
-                }}
-              >
-                <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>Create</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Options Dropdown Menu Modal */}
-      <Modal
+      <OptionsDialog
         visible={showOptionsModal}
-        transparent
-        animationType="none"
-        onRequestClose={() => setShowOptionsModal(false)}
-      >
-        <View style={styles.promptOverlay}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowOptionsModal(false)} />
-          <View style={[styles.optionsContent, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
-            <Text style={[styles.optionsTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]} numberOfLines={1}>
-              {selectedItem?.name}
-            </Text>
-            
-            <View style={styles.optionsList}>
-              {selectedItem?.type === 'directory' && (
-                <>
-                  <TouchableOpacity
-                    style={[styles.optionItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-                    onPress={() => {
-                      setShowOptionsModal(false)
-                      setCreateModal({
-                        visible: true,
-                        parentPath: selectedItem.path,
-                        type: 'file',
-                        name: '',
-                      })
-                    }}
-                  >
-                    <FilePlus size={16} color={colors.text} style={{ marginRight: 10 }} />
-                    <Text style={[styles.optionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>New File inside</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.optionItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-                    onPress={() => {
-                      setShowOptionsModal(false)
-                      setCreateModal({
-                        visible: true,
-                        parentPath: selectedItem.path,
-                        type: 'directory',
-                        name: '',
-                      })
-                    }}
-                  >
-                    <FolderPlus size={16} color={colors.text} style={{ marginRight: 10 }} />
-                    <Text style={[styles.optionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>New Folder inside</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-
-              <TouchableOpacity
-                style={styles.optionItem}
-                onPress={() => {
-                  setShowOptionsModal(false)
-                  setFileToDelete(selectedItem)
-                }}
-              >
-                <Trash2 size={16} color="#F85149" style={{ marginRight: 10 }} />
-                <Text style={[styles.optionText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        selectedItem={selectedItem}
+        onClose={() => setShowOptionsModal(false)}
+        onNewFile={() => {
+          setShowOptionsModal(false)
+          setCreateModal({ visible: true, parentPath: selectedItem!.path, type: 'file', name: '' })
+        }}
+        onNewFolder={() => {
+          setShowOptionsModal(false)
+          setCreateModal({ visible: true, parentPath: selectedItem!.path, type: 'directory', name: '' })
+        }}
+        onDelete={() => {
+          setShowOptionsModal(false)
+          setFileToDelete(selectedItem)
+        }}
+      />
 
       <ConfirmModal
         visible={!!fileToDelete}
@@ -510,66 +723,118 @@ const styles = StyleSheet.create({
   },
   promptOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   promptContent: {
     width: '100%',
-    maxWidth: 300,
+    maxWidth: 310,
     borderRadius: 8,
     borderWidth: 1,
     padding: 16,
-    gap: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  promptTitle: {
-    fontSize: 16,
-    textAlign: 'center',
+  promptHeader: {
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  content: {
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    width: '100%',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 14,
+    letterSpacing: -0.2,
   },
   promptForm: {
-    gap: 8,
+    gap: 6,
+    width: '100%',
   },
   promptLabel: {
-    fontSize: 11,
-    opacity: 0.7,
+    fontSize: 11.5,
+    opacity: 0.6,
+    marginBottom: 4,
   },
   promptInput: {
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    fontSize: 14,
-  },
-  promptActions: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    paddingTop: 12,
-    marginTop: 4,
-  },
-  promptBtn: {
-    flex: 1,
+    width: '100%',
     height: 38,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    fontSize: 13,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    width: '100%',
+  },
+  btn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 70,
   },
-  separator: {
-    width: 1,
-    height: '100%',
+  cancelBtn: {
+    borderWidth: 1,
+  },
+  confirmBtn: {
+    // bg set dynamically
+  },
+  btnText: {
+    fontSize: 12,
   },
   optionsContent: {
     width: '100%',
-    maxWidth: 260,
+    maxWidth: 280,
     borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  optionsTitle: {
-    fontSize: 14,
-    padding: 14,
-    textAlign: 'center',
+  optionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.05)',
+    gap: 8,
+  },
+  optionsTitle: {
+    fontSize: 13,
+    flex: 1,
     opacity: 0.8,
   },
   optionsList: {
@@ -582,6 +847,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   optionText: {
-    fontSize: 13,
+    fontSize: 12.5,
   },
 })
