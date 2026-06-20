@@ -145,12 +145,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     handleSetError(false)
     const token = await getToken()
     
-    let publicPort = targetPort
-    if (ports && ports[targetPort.toString()]) {
-      publicPort = ports[targetPort.toString()]
-    }
-    
-    const realUrl = `${API_URL}/api/preview/${projectId}?port=${publicPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+    // Send the internal port directly via iport= so the proxy doesn't need to reverse-map host ports
+    const realUrl = `${API_URL}/api/preview/${projectId}?iport=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
     setUrl(realUrl)
   }
 
@@ -166,12 +162,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
       const cleanPort = input.replace(':', '')
       const typedPort = parseInt(cleanPort, 10)
       
-      let targetPort = typedPort
-      if (ports && ports[typedPort.toString()]) {
-        targetPort = ports[typedPort.toString()]
-      }
-      
-      const realUrl = `${API_URL}/api/preview/${projectId}?port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+      // Send internal port directly — no host port mapping needed
+      const realUrl = `${API_URL}/api/preview/${projectId}?iport=${typedPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
       setUrl(realUrl)
       setCurrentUrl(`http://localhost:${typedPort}`)
       return
@@ -185,12 +177,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
       const subpath = localMatch[4] || ''
       const typedPort = portPart ? parseInt(portPart.replace(':', ''), 10) : (port || 3000)
       
-      let targetPort = typedPort
-      if (ports && ports[typedPort.toString()]) {
-        targetPort = ports[typedPort.toString()]
-      }
-      
-      const realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+      // Send internal port directly
+      const realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}iport=${typedPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
       setUrl(realUrl)
       setCurrentUrl(`http://localhost:${typedPort}${subpath}`)
       return
