@@ -324,13 +324,24 @@ export async function ensureContainerRunning(projectId: string): Promise<boolean
   console.log(`[Auto-Restart] Waking container for project ${projectId}...`)
   await startContainer(project.container_id)
 
-  // Update DB status back to ready
+  // Re-inspect to get fresh port mappings (Docker assigns new random host ports on restart)
+  let freshPort: number | null = null
+  try {
+    const freshInfo = await container.inspect()
+    const hostPort = freshInfo.NetworkSettings?.Ports?.['3000/tcp']?.[0]?.HostPort
+    if (hostPort) freshPort = parseInt(hostPort, 10)
+  } catch {}
+
+  // Update DB status and fresh port mapping
   await supabaseAdmin
     .from('projects')
-    .update({ status: 'ready' })
+    .update({ 
+      status: 'ready',
+      ...(freshPort ? { port: freshPort } : {})
+    })
     .eq('id', projectId)
 
-  console.log(`[Auto-Restart] Container for project ${projectId} is now running.`)
+  console.log(`[Auto-Restart] Container for project ${projectId} is now running. Port: ${freshPort || 'unchanged'}`)
   return true
 }
 
