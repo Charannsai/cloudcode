@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch } from 'lucide-react-native'
+import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch, Sparkles } from 'lucide-react-native'
 import Animated, { useAnimatedStyle, withSpring, withTiming, Easing, useSharedValue } from 'react-native-reanimated'
 
 // Lazy-load tab screens
@@ -14,6 +14,7 @@ import FilesTab from '@/components/project/FilesTab'
 import TerminalTab from '@/components/project/TerminalTab'
 import PreviewTab from '@/components/project/PreviewTab'
 import GitTab from '@/components/project/GitTab'
+import AITab from '@/components/project/AITab'
 import VoiceOverlay from '@/components/VoiceOverlay'
 
 const TABS = [
@@ -21,6 +22,7 @@ const TABS = [
   { id: 'Files', icon: Folder },
   { id: 'Git', icon: GitBranch },
   { id: 'Preview', icon: Globe },
+  { id: 'AI', icon: Sparkles },
 ] as const
 
 type Tab = typeof TABS[number]['id']
@@ -188,6 +190,9 @@ export default function ProjectScreen() {
         </View>
         <View style={{ flex: 1, display: activeTab === 'Preview' ? 'flex' : 'none' }}>
           <PreviewTab projectId={project.id} port={project.port || 3000} ports={project.ports} />
+        </View>
+        <View style={{ flex: 1, display: activeTab === 'AI' ? 'flex' : 'none' }}>
+          <AITab projectId={project.id} />
         </View>
       </View>
       
