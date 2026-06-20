@@ -462,6 +462,7 @@ export async function ensureLocalhostBridge(
   // Spin up a background Node.js TCP forwarder inside the container.
   console.log(`[Localhost Bridge] Spawning TCP forwarder for container ${containerId} port ${targetPort} on IP ${containerIp}`)
   
+  // Listen on 0.0.0.0 so the forwarder is reachable from both the bridge IP and any other interface
   const nodeScript = `
 const net = require("net");
 const server = net.createServer(c => {
@@ -470,7 +471,7 @@ const server = net.createServer(c => {
   c.on("error", () => s.destroy());
   s.on("error", () => c.destroy());
 });
-server.listen(${targetPort}, "${containerIp}");
+server.listen(${targetPort}, "0.0.0.0");
 server.on("error", (err) => {
   process.exit(0);
 });
@@ -480,8 +481,23 @@ server.on("error", (err) => {
   
   await execInContainer(containerId, ['sh', '-c', startProxyCmd], () => {})
   
-  // Wait briefly for the socket to bind (150ms)
-  await new Promise((resolve) => setTimeout(resolve, 150))
+  // Verify the bridge is reachable with retries (up to 500ms total)
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    const bridgeUp = await new Promise<boolean>((resolve) => {
+      const socket = new net.Socket()
+      socket.setTimeout(200)
+      socket.once('connect', () => { socket.destroy(); resolve(true) })
+      socket.once('timeout', () => { socket.destroy(); resolve(false) })
+      socket.once('error', () => { socket.destroy(); resolve(false) })
+      socket.connect(targetPort, containerIp)
+    })
+    if (bridgeUp) {
+      console.log(`[Localhost Bridge] Bridge verified reachable on attempt ${attempt + 1}`)
+      return
+    }
+  }
+  console.warn(`[Localhost Bridge] Bridge spawned but not yet reachable after 500ms — proxy will attempt anyway`)
 }
 
 export { docker }
