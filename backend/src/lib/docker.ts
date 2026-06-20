@@ -475,7 +475,7 @@ server.listen(${targetPort}, "${containerIp}");
 server.on("error", (err) => {
   process.exit(0);
 });
-`.trim().replace(/'/g, "'\\\\''")\
+`.trim().replace(/'/g, "'\\\\''")
 
   const startProxyCmd = `nohup node -e '${nodeScript}' > /dev/null 2>&1 &`
   
