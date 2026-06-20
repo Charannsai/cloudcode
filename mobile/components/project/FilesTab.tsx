@@ -322,24 +322,21 @@ function OptionsDialog({
 }: OptionsDialogProps) {
   const { colors, isDark } = useAppTheme()
   const opacity = useSharedValue(0)
-  const scale = useSharedValue(0.98)
-  const translateY = useSharedValue(8)
+  const translateY = useSharedValue(300)
   const [renderModal, setRenderModal] = useState(visible)
 
   useEffect(() => {
     if (visible) {
       setRenderModal(true)
-      opacity.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      scale.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      translateY.value = withTiming(0, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      opacity.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) })
+      translateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) })
     } else {
-      opacity.value = withTiming(0, { duration: 60, easing: Easing.linear }, (finished) => {
+      opacity.value = withTiming(0, { duration: 180, easing: Easing.in(Easing.cubic) }, (finished) => {
         if (finished) {
           runOnJS(setRenderModal)(false)
         }
       })
-      scale.value = withTiming(0.98, { duration: 60, easing: Easing.linear })
-      translateY.value = withTiming(4, { duration: 60, easing: Easing.linear })
+      translateY.value = withTiming(300, { duration: 180, easing: Easing.in(Easing.cubic) })
     }
   }, [visible])
 
@@ -347,12 +344,8 @@ function OptionsDialog({
     opacity: opacity.value,
   }))
 
-  const modalStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value }
-    ],
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
   }))
 
   if (!renderModal || !selectedItem) return null
@@ -362,7 +355,7 @@ function OptionsDialog({
 
   return (
     <Modal transparent visible={renderModal} animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[styles.promptOverlay, backdropStyle]}>
+      <Animated.View style={[styles.bottomSheetOverlay, backdropStyle]}>
         <BlurView
           intensity={isDark ? 15 : 10}
           tint={isDark ? 'dark' : 'light'}
@@ -376,122 +369,95 @@ function OptionsDialog({
 
         <Animated.View
           style={[
-            styles.promptContent,
+            styles.bottomSheetContent,
             {
               backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
               borderColor: colors.border,
             },
-            modalStyle,
+            sheetStyle,
           ]}
         >
-          <View style={styles.content}>
-            <View style={styles.headerRow}>
-              <Icon size={16} color={colors.primary} strokeWidth={2.5} />
-              <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                {isDir ? 'Folder Options' : 'File Options'}
+          <View style={[styles.bottomSheetHandle, { backgroundColor: isDark ? '#30363D' : '#D0D7DE' }]} />
+          
+          <View style={[styles.bottomSheetHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Icon size={18} color={colors.primary} strokeWidth={2} />
+              <Text 
+                style={[styles.bottomSheetTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}
+                numberOfLines={1}
+              >
+                {selectedItem.name}
               </Text>
             </View>
-            <View style={styles.promptForm}>
-              <Text style={[styles.promptLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                Target: {selectedItem.name}
-              </Text>
-              
-              <View style={{ gap: 8, marginTop: 8, width: '100%' }}>
-                {isDir && (
-                  <>
-                    <TouchableOpacity
-                      style={[
-                        styles.btn,
-                        styles.cancelBtn,
-                        { 
-                          borderColor: colors.border,
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-                          flexDirection: 'row',
-                          gap: 8,
-                          justifyContent: 'flex-start',
-                          paddingHorizontal: 12,
-                          height: 38,
-                          width: '100%',
-                        }
-                      ]}
-                      onPress={onNewFile}
-                      activeOpacity={0.8}
-                    >
-                      <FilePlus size={14} color={colors.text} strokeWidth={2} />
-                      <Text style={[styles.btnText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
-                        New File inside
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.btn,
-                        styles.cancelBtn,
-                        { 
-                          borderColor: colors.border,
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-                          flexDirection: 'row',
-                          gap: 8,
-                          justifyContent: 'flex-start',
-                          paddingHorizontal: 12,
-                          height: 38,
-                          width: '100%',
-                        }
-                      ]}
-                      onPress={onNewFolder}
-                      activeOpacity={0.8}
-                    >
-                      <FolderPlus size={14} color={colors.text} strokeWidth={2} />
-                      <Text style={[styles.btnText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
-                        New Folder inside
-                      </Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-                
-                <TouchableOpacity
-                  style={[
-                    styles.btn,
-                    { 
-                      backgroundColor: '#F85149',
-                      flexDirection: 'row',
-                      gap: 8,
-                      justifyContent: 'flex-start',
-                      paddingHorizontal: 12,
-                      height: 38,
-                      width: '100%',
-                    }
-                  ]}
-                  onPress={onDelete}
-                  activeOpacity={0.8}
-                >
-                  <Trash2 size={14} color="#FFFFFF" strokeWidth={2} />
-                  <Text style={[styles.btnText, { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
-                    Delete
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_500Medium', marginLeft: 8 }}>
+              {isDir ? 'Folder' : 'File'}
+            </Text>
           </View>
 
-          <View style={[styles.actionRow, { borderTopWidth: 1, borderTopColor: colors.border + '30', paddingTop: 12, marginTop: 4 }]}>
+          <View style={{ gap: 4, width: '100%' }}>
+            {isDir && (
+              <>
+                <TouchableOpacity
+                  style={[
+                    styles.bottomSheetOption,
+                    { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }
+                  ]}
+                  onPress={onNewFile}
+                  activeOpacity={0.7}
+                >
+                  <FilePlus size={16} color={colors.textSecondary} strokeWidth={2} />
+                  <Text style={[styles.bottomSheetOptionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
+                    New File
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.bottomSheetOption,
+                    { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }
+                  ]}
+                  onPress={onNewFolder}
+                  activeOpacity={0.7}
+                >
+                  <FolderPlus size={16} color={colors.textSecondary} strokeWidth={2} />
+                  <Text style={[styles.bottomSheetOptionText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
+                    New Folder
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
             <TouchableOpacity
               style={[
-                styles.btn,
-                styles.cancelBtn,
-                { 
-                  borderColor: colors.border,
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-                }
+                styles.bottomSheetOption,
+                { borderBottomColor: 'transparent' }
               ]}
-              onPress={onClose}
-              activeOpacity={0.8}
+              onPress={onDelete}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.btnText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                Close
+              <Trash2 size={16} color="#FF453A" strokeWidth={2} />
+              <Text style={[styles.bottomSheetOptionText, { color: '#FF453A', fontFamily: 'Inter_600SemiBold' }]}>
+                Delete {isDir ? 'Folder' : 'File'}
               </Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={[
+              styles.bottomSheetCancelBtn,
+              { 
+                borderColor: colors.border,
+                backgroundColor: isDark ? '#21262D' : '#F6F8FA',
+                marginTop: 16
+              }
+            ]}
+            onPress={onClose}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 13, color: colors.text, fontFamily: 'Inter_600SemiBold' }}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
         </Animated.View>
       </Animated.View>
     </Modal>
@@ -914,5 +880,68 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 12.5,
+  },
+  bottomSheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheetContent: {
+    width: '100%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  bottomSheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  bottomSheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 0.5,
+  },
+  bottomSheetTitle: {
+    fontSize: 16,
+    letterSpacing: -0.2,
+  },
+  bottomSheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
+  },
+  bottomSheetOptionText: {
+    fontSize: 14,
+  },
+  bottomSheetCancelBtn: {
+    width: '100%',
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

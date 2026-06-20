@@ -60,7 +60,7 @@ async function resolveTarget(
   console.warn(`[Proxy] Port ${clientPort} not matched in host bindings. Scanning for active listener...`)
   for (const candidatePort of STANDARD_INTERNAL_PORTS) {
     const hexPort = parseInt(candidatePort, 10).toString(16).toUpperCase().padStart(4, '0')
-    const checkCmd = `cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | grep -i -E ":${hexPort} .* 0A"`
+    const checkCmd = `(cat /proc/net/tcp 2>/dev/null | grep -i -E "(0100007F|00000000):${hexPort} .* 0A") || (cat /proc/net/tcp6 2>/dev/null | grep -i -E "(00000000000000000000000001000000|00000000000000000000000000000000):${hexPort} .* 0A")`
     let found = false
     try {
       const exitCode = await (await import('@/lib/docker')).execInContainer(
@@ -314,9 +314,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   // Retry logic: After container wake or bridge spawn, the server may need
-  // a moment to start. We retry once with a delay to avoid false negatives.
+  // a moment to start. We retry up to 4 times with a 1.5s delay to avoid false negatives.
   let lastError: any = null
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const maxAttempts = 4
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       const { containerIp, internalPort } = await resolveTarget(project.container_id, port, queryInternalPort)
       
@@ -431,9 +432,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     } catch (err) {
       lastError = err
-      if (attempt === 0) {
-        // First failure — wait 1.5s and retry (server may be starting up after wake)
-        console.warn(`[Proxy] Attempt ${attempt + 1} failed for [${subPath}], retrying in 1.5s...`)
+      if (attempt < maxAttempts - 1) {
+        // Wait 1.5s and retry (server may be starting up after wake or bridge connecting)
+        console.warn(`[Proxy] Attempt ${attempt + 1} failed for [${subPath}], retrying in 1.5s... (Error: ${err instanceof Error ? err.message : String(err)})`)
         await new Promise(r => setTimeout(r, 1500))
         continue
       }
