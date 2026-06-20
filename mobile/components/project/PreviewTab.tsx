@@ -192,7 +192,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     }
 
     // 4. Check if it is a domain name (contains a dot, no spaces, e.g. "google.com" or "dev.to/about")
-    const domainRegex = /^[a-z0-9\-]+\.[a-z]{2,}(\/.*)?$/i
+    const domainRegex = /^(?:[a-z0-9\-]+\.)+[a-z]{2,}(\/.*)?$/i
     if (domainRegex.test(input) && !/\s/.test(input)) {
       const realUrl = `https://${input}`
       setUrl(realUrl)
@@ -374,10 +374,18 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             startInLoadingState={true}
             renderLoading={renderLoadingPage}
             renderError={renderErrorPage}
-            onError={() => handleSetError(true)}
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent
+              // Only trigger the "Server Not Connected" error page if it's the preview proxy
+              if (url.startsWith(API_URL + '/api/preview/')) {
+                handleSetError(true)
+              } else {
+                console.warn('[Browser] Navigation error on external page:', nativeEvent.description)
+              }
+            }}
             onHttpError={(syntheticEvent) => {
               const { statusCode } = syntheticEvent.nativeEvent
-              if (statusCode === 502 || statusCode === 503) {
+              if ((statusCode === 502 || statusCode === 503) && url.startsWith(API_URL + '/api/preview/')) {
                 handleSetError(true)
               }
             }}
