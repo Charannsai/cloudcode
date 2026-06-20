@@ -1167,7 +1167,7 @@ export default function AITab({ projectId }: Props) {
               activeOpacity={0.8}
               style={styles.popoverItem}
               onPress={() => {
-                handleStartNewChat()
+                handleNewChatThread()
                 setMenuVisible(false)
               }}
             >
@@ -1811,5 +1811,24 @@ const styles = StyleSheet.create({
   popoverDivider: {
     height: 1,
     marginHorizontal: 8,
+  },
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  typingDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  typingText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+  },
+  thinkingText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
   },
 })
