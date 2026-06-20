@@ -313,127 +313,141 @@ export async function GET(req: NextRequest, { params }: Params) {
     return withCookies(new Response('Container is waking up', { status: 503 }), projectId, token, port.toString())
   }
 
-  try {
-    const { containerIp, internalPort } = await resolveTarget(project.container_id, port, queryInternalPort)
-    
-    // Dynamically bridge local/localhost ports if needed
-    await ensureLocalhostBridge(project.container_id, containerIp, internalPort)
+  // Retry logic: After container wake or bridge spawn, the server may need
+  // a moment to start. We retry once with a delay to avoid false negatives.
+  let lastError: any = null
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { containerIp, internalPort } = await resolveTarget(project.container_id, port, queryInternalPort)
+      
+      // Dynamically bridge local/localhost ports if needed
+      await ensureLocalhostBridge(project.container_id, containerIp, internalPort)
 
-    const targetUrl = `http://${containerIp}:${internalPort}${subPath}${search}`
+      const targetUrl = `http://${containerIp}:${internalPort}${subPath}${search}`
 
-    const headersToForward: Record<string, string> = {
-      'Host': `localhost:${internalPort}`,
-      'Accept': req.headers.get('accept') || '*/*',
-      'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
-      'Accept-Encoding': 'identity', // Strongly request uncompressed
-    }
+      const headersToForward: Record<string, string> = {
+        'Host': `localhost:${internalPort}`,
+        'Accept': req.headers.get('accept') || '*/*',
+        'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
+        'Accept-Encoding': 'identity', // Strongly request uncompressed
+      }
 
-    if (req.headers.get('origin')) {
-      headersToForward['Origin'] = `http://localhost:${internalPort}`
-    }
-    if (req.headers.get('referer')) {
-      headersToForward['Referer'] = `http://localhost:${internalPort}${subPath}`
-    }
+      if (req.headers.get('origin')) {
+        headersToForward['Origin'] = `http://localhost:${internalPort}`
+      }
+      if (req.headers.get('referer')) {
+        headersToForward['Referer'] = `http://localhost:${internalPort}${subPath}`
+      }
 
-    const cookieHeader = req.headers.get('cookie')
-    if (cookieHeader) {
-      headersToForward['Cookie'] = cookieHeader
-    }
+      const cookieHeader = req.headers.get('cookie')
+      if (cookieHeader) {
+        headersToForward['Cookie'] = cookieHeader
+      }
 
-    const response = await fetch(targetUrl, {
-      headers: headersToForward,
-      redirect: 'manual',
-      signal: AbortSignal.timeout(120_000), // 120s for heavy first-compilations (Framer Motion, GSAP, etc.)
-    })
+      const response = await fetch(targetUrl, {
+        headers: headersToForward,
+        redirect: 'manual',
+        signal: AbortSignal.timeout(120_000), // 120s for heavy first-compilations (Framer Motion, GSAP, etc.)
+      })
 
-    // Handle 304 Not Modified & other bodyless responses
-    if (response.status === 304 || response.status === 204 || !response.body) {
+      // Handle 304 Not Modified & other bodyless responses
+      if (response.status === 304 || response.status === 204 || !response.body) {
+        const resHeaders = new Headers(response.headers)
+        resHeaders.delete('content-encoding')
+        resHeaders.delete('content-length')
+        resHeaders.delete('transfer-encoding')
+        
+        return withCookies(new Response(null, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
+      }
+
       const resHeaders = new Headers(response.headers)
+      
+      // !! ESSENTIAL: Strip hop-by-hop and encoding headers
       resHeaders.delete('content-encoding')
       resHeaders.delete('content-length')
+      // ... other deletes ...
       resHeaders.delete('transfer-encoding')
-      
-      return withCookies(new Response(null, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
+      resHeaders.delete('connection')
+      resHeaders.delete('keep-alive')
+      resHeaders.delete('proxy-authenticate')
+      resHeaders.delete('proxy-authorization')
+      resHeaders.delete('te')
+      resHeaders.delete('trailers')
+      resHeaders.delete('upgrade')
+
+      resHeaders.set('Access-Control-Allow-Origin', '*')
+      resHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+      resHeaders.set('X-Proxy-Target', targetUrl)
+
+      // Rewrite Location header for redirects
+      const location = response.headers.get('location')
+      if (location?.startsWith('/')) {
+        resHeaders.set('Location', `/api/preview/${projectId}${location}`)
+      }
+
+      // HTML Content Rewriting: Inject <base> tag so the browser resolves ALL
+      // relative URLs (CSS url(), JS import(), img src, fetch, etc.) through the
+      // proxy path automatically. This replaces the old naïve replaceAll approach
+      // which corrupted inline JS in heavy bundles (Framer Motion, GSAP, etc.).
+      const body = await response.arrayBuffer()
+      const contentType = response.headers.get('content-type') || ''
+      let finalBody: BodyInit = body
+
+      if (contentType.includes('text/html')) {
+          try {
+              const decoder = new TextDecoder()
+              let htmlText = decoder.decode(body)
+
+              // Inject <base> tag if not already present
+              if (!htmlText.includes('<base')) {
+                  htmlText = htmlText.replace(
+                      /<head([^>]*)>/i,
+                      `<head$1><base href="/api/preview/${projectId}/">`
+                  )
+              }
+
+              finalBody = new TextEncoder().encode(htmlText)
+          } catch (e) {
+              console.error('HTML Proxy rewrite failed:', e)
+          }
+      }
+
+      // Also rewrite CSS url() references for stylesheets served separately
+      if (contentType.includes('text/css')) {
+          try {
+              const decoder = new TextDecoder()
+              let cssText = decoder.decode(body)
+              const cssReplacement = `/api/preview/${projectId}/`
+              cssText = cssText.replaceAll('url(/', `url(${cssReplacement}`)
+              cssText = cssText.replaceAll("url('/", `url('${cssReplacement}`)
+              cssText = cssText.replaceAll('url("/', `url("${cssReplacement}`)
+              finalBody = new TextEncoder().encode(cssText)
+          } catch (e) {
+              console.error('CSS Proxy rewrite failed:', e)
+          }
+      }
+
+      return withCookies(new Response(finalBody, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
+
+    } catch (err) {
+      lastError = err
+      if (attempt === 0) {
+        // First failure — wait 1.5s and retry (server may be starting up after wake)
+        console.warn(`[Proxy] Attempt ${attempt + 1} failed for [${subPath}], retrying in 1.5s...`)
+        await new Promise(r => setTimeout(r, 1500))
+        continue
+      }
     }
-
-    const resHeaders = new Headers(response.headers)
-    
-    // !! ESSENTIAL: Strip hop-by-hop and encoding headers
-    resHeaders.delete('content-encoding')
-    resHeaders.delete('content-length')
-    // ... other deletes ...
-    resHeaders.delete('transfer-encoding')
-    resHeaders.delete('connection')
-    resHeaders.delete('keep-alive')
-    resHeaders.delete('proxy-authenticate')
-    resHeaders.delete('proxy-authorization')
-    resHeaders.delete('te')
-    resHeaders.delete('trailers')
-    resHeaders.delete('upgrade')
-
-    resHeaders.set('Access-Control-Allow-Origin', '*')
-    resHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    resHeaders.set('X-Proxy-Target', targetUrl)
-
-    // Rewrite Location header for redirects
-    const location = response.headers.get('location')
-    if (location?.startsWith('/')) {
-      resHeaders.set('Location', `/api/preview/${projectId}${location}`)
-    }
-
-    // HTML Content Rewriting: Inject <base> tag so the browser resolves ALL
-    // relative URLs (CSS url(), JS import(), img src, fetch, etc.) through the
-    // proxy path automatically. This replaces the old naïve replaceAll approach
-    // which corrupted inline JS in heavy bundles (Framer Motion, GSAP, etc.).
-    const body = await response.arrayBuffer()
-    const contentType = response.headers.get('content-type') || ''
-    let finalBody: BodyInit = body
-
-    if (contentType.includes('text/html')) {
-        try {
-            const decoder = new TextDecoder()
-            let htmlText = decoder.decode(body)
-
-            // Inject <base> tag if not already present
-            if (!htmlText.includes('<base')) {
-                htmlText = htmlText.replace(
-                    /<head([^>]*)>/i,
-                    `<head$1><base href="/api/preview/${projectId}/">`
-                )
-            }
-
-            finalBody = new TextEncoder().encode(htmlText)
-        } catch (e) {
-            console.error('HTML Proxy rewrite failed:', e)
-        }
-    }
-
-    // Also rewrite CSS url() references for stylesheets served separately
-    if (contentType.includes('text/css')) {
-        try {
-            const decoder = new TextDecoder()
-            let cssText = decoder.decode(body)
-            const cssReplacement = `/api/preview/${projectId}/`
-            cssText = cssText.replaceAll('url(/', `url(${cssReplacement}`)
-            cssText = cssText.replaceAll("url('/", `url('${cssReplacement}`)
-            cssText = cssText.replaceAll('url("/', `url("${cssReplacement}`)
-            finalBody = new TextEncoder().encode(cssText)
-        } catch (e) {
-            console.error('CSS Proxy rewrite failed:', e)
-        }
-    }
-
-    return withCookies(new Response(finalBody, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
-
-  } catch (err) {
-    console.error(`Preview proxy error [${subPath}]:`, err)
-    if (isHtml) {
-      return withCookies(
-        errorHtmlResponse("We couldn't reach your project server. Make sure your development server (e.g. npm run dev) is running in the Terminal tab.", 502),
-        projectId,
-        token
-      )
-    }
-    return withCookies(new Response('', { status: 502 }), projectId, token)
   }
+
+  // Both attempts failed
+  console.error(`Preview proxy error [${subPath}]:`, lastError)
+  if (isHtml) {
+    return withCookies(
+      errorHtmlResponse("We couldn't reach your project server. Make sure your development server (e.g. npm run dev) is running in the Terminal tab.", 502),
+      projectId,
+      token
+    )
+  }
+  return withCookies(new Response('', { status: 502 }), projectId, token)
 }
