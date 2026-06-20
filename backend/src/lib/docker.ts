@@ -402,8 +402,13 @@ export function getWorkspacePath(projectId: string): string {
 
 /**
  * Verifies if a container port is reachable directly on the bridge network.
- * If refused, checks if there is a loopback listener inside the container,
- * and if so, spawns a background Node.js TCP forwarder inside the container.
+ * If refused, checks if there is a LOOPBACK listener (real server on 127.0.0.1)
+ * inside the container, and if so, spawns a TCP forwarder on the container's
+ * bridge IP to make it externally reachable.
+ *
+ * IMPORTANT: The forwarder MUST listen on the specific containerIp (not 0.0.0.0).
+ * If it listened on 0.0.0.0 it would also bind to 127.0.0.1, creating a
+ * self-connection loop when forwarding to 127.0.0.1:port.
  */
 export async function ensureLocalhostBridge(
   containerId: string,
@@ -412,57 +417,52 @@ export async function ensureLocalhostBridge(
 ): Promise<void> {
   const targetPort = parseInt(port.toString(), 10)
   
-  // Kill any stale forwarder on this port inside the container first
-  const killStaleCmd = `ps -ef | grep "net.createServer" | grep "${targetPort}" | grep -v grep | awk '{print \$2}' | xargs kill -9 2>/dev/null || true`
-  await execInContainer(containerId, ['sh', '-c', killStaleCmd], () => {})
-
-  // 1. Check if the port is reachable directly from the host
-  const isReachable = await new Promise<boolean>((resolve) => {
-    const socket = new net.Socket()
-    socket.setTimeout(1000)
-    socket.once('connect', () => {
-      socket.destroy()
-      resolve(true)
-    })
-    socket.once('timeout', () => {
-      socket.destroy()
-      resolve(false)
-    })
-    socket.once('error', () => {
-      socket.destroy()
-      resolve(false)
-    })
-    socket.connect(targetPort, containerIp)
-  })
-
+  // 1. Check if the port is already reachable on the container's bridge IP.
+  //    (This covers: server binds to 0.0.0.0, OR a working bridge already exists.)
+  //    Do NOT kill bridges first — check reachability of existing ones.
+  const isReachable = await tcpProbe(containerIp, targetPort, 800)
   if (isReachable) {
     return // Reachable directly, no bridge needed!
   }
 
-  // 2. Not reachable. Check if a process is listening on this port inside the container.
-  // We check for any listener on this port (e.g. 127.0.0.1:port or 0.0.0.0:port).
-  // We first inspect /proc/net/tcp and /proc/net/tcp6 which is zero-dependency and works on all Linux.
-  // If not found, we fall back to ss/netstat.
+  // 2. Not reachable externally. Check if a REAL server is listening on
+  //    LOOPBACK (127.0.0.1) inside the container. We specifically check for
+  //    loopback listeners only (hex 0100007F) to avoid detecting our own
+  //    bridge forwarder (which binds to the container bridge IP, not loopback).
   const hexPort = targetPort.toString(16).toUpperCase().padStart(4, '0')
-  const checkCmd = `cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | grep -i -E ":${hexPort} .* 0A" || (ss -lnt || netstat -an) | grep -E ':${targetPort}\\b|\\.${targetPort}\\b'`
+  const checkLoopbackCmd = [
+    // IPv4 loopback: 127.0.0.1 in little-endian hex = 0100007F
+    `cat /proc/net/tcp 2>/dev/null | grep -i "0100007F:${hexPort}" | grep -E "\\s0A\\s"`,
+    // IPv6 loopback: ::1 in little-endian hex
+    `cat /proc/net/tcp6 2>/dev/null | grep -i "00000000000000000000000001000000:${hexPort}" | grep -E "\\s0A\\s"`,
+  ].join(' || ')
   
-  let checkListenerOutput = ''
-  const hasListener = await execInContainer(
+  let listenerFound = false
+  const exitCode = await execInContainer(
     containerId,
-    ['sh', '-c', checkCmd],
-    (data) => { checkListenerOutput += data }
+    ['sh', '-c', checkLoopbackCmd],
+    (data) => { if (data.trim()) listenerFound = true }
   )
 
-  if (hasListener !== 0) {
-    // No listener found on this port at all. The server is likely not running.
+  if (exitCode !== 0 && !listenerFound) {
+    // No loopback listener found. The dev server is not running.
+    console.log(`[Localhost Bridge] No loopback listener on port ${targetPort} inside container. Server not running.`)
     return
   }
 
-  // 3. Listener exists internally, but not externally reachable.
-  // Spin up a background Node.js TCP forwarder inside the container.
+  // 3. A real server is listening on loopback but isn't reachable externally.
+  //    Kill any stale forwarder processes on this port, then spawn a new one.
+  const killStaleCmd = `ps -ef | grep "net.createServer" | grep "${targetPort}" | grep -v grep | awk '{print $2}' | xargs kill -9 2>/dev/null || true`
+  await execInContainer(containerId, ['sh', '-c', killStaleCmd], () => {})
+  
+  // Brief pause after killing stale processes
+  await new Promise(r => setTimeout(r, 50))
+
   console.log(`[Localhost Bridge] Spawning TCP forwarder for container ${containerId} port ${targetPort} on IP ${containerIp}`)
   
-  // Listen on 0.0.0.0 so the forwarder is reachable from both the bridge IP and any other interface
+  // CRITICAL: Listen on the specific containerIp (e.g., 172.17.0.2), NOT on 0.0.0.0.
+  // If we listened on 0.0.0.0, the forwarder would also be on 127.0.0.1:port,
+  // and its connect(port, "127.0.0.1") would connect back to ITSELF → infinite loop.
   const nodeScript = `
 const net = require("net");
 const server = net.createServer(c => {
@@ -471,33 +471,40 @@ const server = net.createServer(c => {
   c.on("error", () => s.destroy());
   s.on("error", () => c.destroy());
 });
-server.listen(${targetPort}, "0.0.0.0");
+server.listen(${targetPort}, "${containerIp}");
 server.on("error", (err) => {
   process.exit(0);
 });
-`.trim().replace(/'/g, "'\\''")
+`.trim().replace(/'/g, "'\\\\''")\
 
   const startProxyCmd = `nohup node -e '${nodeScript}' > /dev/null 2>&1 &`
   
   await execInContainer(containerId, ['sh', '-c', startProxyCmd], () => {})
   
-  // Verify the bridge is reachable with retries (up to 500ms total)
-  for (let attempt = 0; attempt < 5; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    const bridgeUp = await new Promise<boolean>((resolve) => {
-      const socket = new net.Socket()
-      socket.setTimeout(200)
-      socket.once('connect', () => { socket.destroy(); resolve(true) })
-      socket.once('timeout', () => { socket.destroy(); resolve(false) })
-      socket.once('error', () => { socket.destroy(); resolve(false) })
-      socket.connect(targetPort, containerIp)
-    })
-    if (bridgeUp) {
+  // Verify the bridge is reachable with retries (up to 600ms total)
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 100))
+    if (await tcpProbe(containerIp, targetPort, 200)) {
       console.log(`[Localhost Bridge] Bridge verified reachable on attempt ${attempt + 1}`)
       return
     }
   }
-  console.warn(`[Localhost Bridge] Bridge spawned but not yet reachable after 500ms — proxy will attempt anyway`)
+  console.warn(`[Localhost Bridge] Bridge spawned but not yet reachable after 600ms — proxy will attempt anyway`)
+}
+
+/**
+ * Quick TCP connectivity probe. Returns true if a TCP connection
+ * to host:port succeeds within timeoutMs.
+ */
+async function tcpProbe(host: string, port: number, timeoutMs: number): Promise<boolean> {
+  return new Promise<boolean>(resolve => {
+    const socket = new net.Socket()
+    socket.setTimeout(timeoutMs)
+    socket.once('connect', () => { socket.destroy(); resolve(true) })
+    socket.once('timeout', () => { socket.destroy(); resolve(false) })
+    socket.once('error', () => { socket.destroy(); resolve(false) })
+    socket.connect(port, host)
+  })
 }
 
 export { docker }
