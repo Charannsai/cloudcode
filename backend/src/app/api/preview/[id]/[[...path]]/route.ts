@@ -11,7 +11,13 @@ const docker = new Docker({
 
 type Params = { params: Promise<{ id: string; path?: string[] }> }
 
-async function resolveTarget(containerId: string, clientPort: number | string): Promise<{ containerIp: string; internalPort: string }> {
+const STANDARD_INTERNAL_PORTS = ['3000', '5000', '5173', '8000', '8080']
+
+async function resolveTarget(
+  containerId: string,
+  clientPort: number | string,
+  internalPortHint?: string | null
+): Promise<{ containerIp: string; internalPort: string }> {
   const container = docker.getContainer(containerId)
   const info = await container.inspect()
 
@@ -24,29 +30,54 @@ async function resolveTarget(containerId: string, clientPort: number | string): 
     throw new Error('Container IP not found. Is it running?')
   }
 
-  let internalPort = clientPort.toString()
-  let matched = false
+  // Priority 1: If caller passed an explicit internal port hint (via ?iport=), use it directly.
+  // This is the preferred path — no reverse-mapping needed.
+  if (internalPortHint && STANDARD_INTERNAL_PORTS.includes(internalPortHint)) {
+    return { containerIp, internalPort: internalPortHint }
+  }
+
+  // Priority 2: If clientPort itself IS a standard internal port, use it directly.
+  const clientStr = clientPort.toString()
+  if (STANDARD_INTERNAL_PORTS.includes(clientStr)) {
+    return { containerIp, internalPort: clientStr }
+  }
+
+  // Priority 3: Reverse-lookup host port → internal port from current bindings.
+  let internalPort = clientStr
   const portSettings = info.NetworkSettings?.Ports
   if (portSettings) {
     for (const [containerPortKey, bindings] of Object.entries(portSettings)) {
       const hostPort = (bindings as any)?.[0]?.HostPort
-      if (hostPort === clientPort.toString()) {
+      if (hostPort === clientStr) {
         internalPort = containerPortKey.split('/')[0]
-        matched = true
-        break
+        return { containerIp, internalPort }
       }
     }
   }
 
-  // Fallback: If clientPort is not an active host port, and it's not a standard internal port,
-  // it is likely a stale host port. Fallback to '3000' (or the first exposed port).
-  const standardInternalPorts = ['3000', '5000', '5173', '8000', '8080']
-  if (!matched && !standardInternalPorts.includes(internalPort)) {
-    console.warn(`[Proxy Fallback] Port ${clientPort} not found in container host bindings. Falling back to default internal port 3000.`)
-    internalPort = '3000'
+  // Priority 4: Host port didn't match (likely stale after restart).
+  // Scan standard ports to find one with an active listener inside the container.
+  console.warn(`[Proxy] Port ${clientPort} not matched in host bindings. Scanning for active listener...`)
+  for (const candidatePort of STANDARD_INTERNAL_PORTS) {
+    const hexPort = parseInt(candidatePort, 10).toString(16).toUpperCase().padStart(4, '0')
+    const checkCmd = `cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | grep -i -E ":${hexPort} .* 0A"`
+    let found = false
+    try {
+      const exitCode = await (await import('@/lib/docker')).execInContainer(
+        containerId,
+        ['sh', '-c', checkCmd],
+        () => { found = true }
+      )
+      if (exitCode === 0 && found) {
+        console.log(`[Proxy] Found active listener on internal port ${candidatePort}`)
+        return { containerIp, internalPort: candidatePort }
+      }
+    } catch {}
   }
-  
-  return { containerIp, internalPort }
+
+  // Final fallback
+  console.warn(`[Proxy] No active listener found. Falling back to port 3000.`)
+  return { containerIp, internalPort: '3000' }
 }
 
 /**
@@ -259,12 +290,14 @@ export async function GET(req: NextRequest, { params }: Params) {
   const wasAsleep = await ensureContainerRunning(projectId)
 
   const queryPort = req.nextUrl.searchParams.get('port')
+  const queryInternalPort = req.nextUrl.searchParams.get('iport') // Direct internal port (preferred)
   const cookiePort = req.cookies.get('preview_port')?.value
   const port = queryPort || cookiePort || project.port || 3000
   
   const searchParams = new URLSearchParams(req.nextUrl.search)
   searchParams.delete('token')
   searchParams.delete('port')
+  searchParams.delete('iport')
   const search = searchParams.toString() ? '?' + searchParams.toString() : ''
   
   // If the container was just woken up, return 503 / waking up page
@@ -281,7 +314,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   try {
-    const { containerIp, internalPort } = await resolveTarget(project.container_id, port)
+    const { containerIp, internalPort } = await resolveTarget(project.container_id, port, queryInternalPort)
     
     // Dynamically bridge local/localhost ports if needed
     await ensureLocalhostBridge(project.container_id, containerIp, internalPort)
