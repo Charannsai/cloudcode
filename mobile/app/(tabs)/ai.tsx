@@ -731,12 +731,10 @@ export default function AIScreen() {
 
   // Thinking animation states removed for performance
 
-  // Auto-select global by default if no project is active
+  // Auto-select global for the main assistant
   useEffect(() => {
-    if (!selectedProjectId) {
-      setSelectedProjectId('global')
-    }
-  }, [selectedProjectId])
+    setSelectedProjectId('global')
+  }, [])
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
@@ -789,7 +787,7 @@ export default function AIScreen() {
           <View>
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode AI</Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-              {selectedProjectId === 'global' || !selectedProjectId ? 'General Assistant' : selectedProject?.name || 'Workspace'}
+              General Assistant
             </Text>
           </View>
         </View>
@@ -1242,86 +1240,7 @@ export default function AIScreen() {
               }
             ]}
           >
-            {/* Workspace Context Section */}
-            <Text style={[styles.popoverHeader, { color: colors.textSecondary, paddingBottom: 6 }]}>CHAT CONTEXT</Text>
-            
-            <View style={{ paddingHorizontal: 10, paddingBottom: 8 }}>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 6, paddingRight: 10 }}
-              >
-                {/* General Assistant Card */}
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={[
-                    styles.contextCard,
-                    {
-                      borderColor: (selectedProjectId === 'global' || !selectedProjectId)
-                        ? '#8B5CF6'
-                        : (isDark ? '#21262D' : '#D8DEE4'),
-                      backgroundColor: (selectedProjectId === 'global' || !selectedProjectId)
-                        ? (isDark ? 'rgba(139, 92, 246, 0.12)' : 'rgba(243, 239, 255, 1)')
-                        : 'transparent',
-                    }
-                  ]}
-                  onPress={() => {
-                    setSelectedProjectId('global')
-                    setMenuVisible(false)
-                  }}
-                >
-                  <Sparkles size={11} color={(selectedProjectId === 'global' || !selectedProjectId) ? '#8B5CF6' : colors.textSecondary} />
-                  <Text style={[
-                    styles.contextCardText,
-                    { 
-                      color: (selectedProjectId === 'global' || !selectedProjectId) ? colors.text : colors.textSecondary,
-                      fontFamily: (selectedProjectId === 'global' || !selectedProjectId) ? 'Inter_600SemiBold' : 'Inter_400Regular'
-                    }
-                  ]}>
-                    General Assistant
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Project Context Cards */}
-                {projects.map((proj) => {
-                  const isSelected = selectedProjectId === proj.id
-                  return (
-                    <TouchableOpacity
-                      key={proj.id}
-                      activeOpacity={0.8}
-                      style={[
-                        styles.contextCard,
-                        {
-                          borderColor: isSelected
-                            ? (isDark ? '#58A6FF' : '#0969DA')
-                            : (isDark ? '#21262D' : '#D8DEE4'),
-                          backgroundColor: isSelected
-                            ? (isDark ? 'rgba(88, 166, 255, 0.12)' : 'rgba(235, 244, 255, 1)')
-                            : 'transparent',
-                        }
-                      ]}
-                      onPress={() => {
-                        setSelectedProjectId(proj.id)
-                        setMenuVisible(false)
-                      }}
-                    >
-                      <FolderGit2 size={11} color={isSelected ? (isDark ? '#58A6FF' : '#0969DA') : colors.textSecondary} />
-                      <Text style={[
-                        styles.contextCardText,
-                        { 
-                          color: isSelected ? colors.text : colors.textSecondary,
-                          fontFamily: isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular'
-                        }
-                      ]} numberOfLines={1}>
-                        {proj.name}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                })}
-              </ScrollView>
-            </View>
-
-            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8', marginBottom: 4 }]} />
+            {/* Context switcher removed */}
 
             {/* New Chat */}
             <TouchableOpacity
