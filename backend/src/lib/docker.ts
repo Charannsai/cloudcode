@@ -425,11 +425,13 @@ export async function ensureLocalhostBridge(
   }
 
   // 2. Not reachable. Check if a process is listening on this port inside the container.
-  // We check for any listener on this port (e.g. 127.0.0.1:port or 0.0.0.0:port)
-  let checkListenerOutput = ''
-  // Use netstat or ss. Containers usually have ss or netstat.
-  const checkCmd = `(ss -lnt || netstat -an) | grep -E ':${targetPort}\\b|\\.${targetPort}\\b'`
+  // We check for any listener on this port (e.g. 127.0.0.1:port or 0.0.0.0:port).
+  // We first inspect /proc/net/tcp and /proc/net/tcp6 which is zero-dependency and works on all Linux.
+  // If not found, we fall back to ss/netstat.
+  const hexPort = targetPort.toString(16).toUpperCase().padStart(4, '0')
+  const checkCmd = `cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | grep -i -E ":${hexPort} .* 0A" || (ss -lnt || netstat -an) | grep -E ':${targetPort}\\b|\\.${targetPort}\\b'`
   
+  let checkListenerOutput = ''
   const hasListener = await execInContainer(
     containerId,
     ['sh', '-c', checkCmd],

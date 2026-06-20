@@ -161,45 +161,61 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     handleSetError(false)
     const token = await getToken()
 
-    // If user just typed a number (e.g. "5000"), format it as "localhost:5000"
-    if (/^\d+$/.test(input)) {
-      input = `localhost:${input}`
-      setCurrentUrl(input)
-    }
-
-    // Ensure it is formatted correctly. If it doesn't contain localhost or 127.0.0.1, we assume localhost
-    if (!input.includes('localhost') && !input.includes('127.0.0.1') && !input.startsWith('http://') && !input.startsWith('https://')) {
-      if (/^\d+/.test(input)) {
-        const portMatch = input.match(/^(\d+)(.*)/)
-        if (portMatch) {
-          input = `localhost:${portMatch[1]}${portMatch[2]}`
-        }
-      } else {
-        input = `localhost:${input}`
-      }
-      setCurrentUrl(input)
-    }
-
-    // Match localhost:XXXX/subpath or 127.0.0.1:XXXX/subpath
-    const match = input.match(/(?:localhost|127\.0\.0\.1):(\d+)(.*)/i)
-    let realUrl = input
-
-    if (match) {
-      const typedPort = parseInt(match[1], 10)
-      const subpath = match[2] || ''
+    // 1. If it's a raw port number (e.g. "3000" or ":3000")
+    if (/^:?\d+$/.test(input)) {
+      const cleanPort = input.replace(':', '')
+      const typedPort = parseInt(cleanPort, 10)
       
       let targetPort = typedPort
       if (ports && ports[typedPort.toString()]) {
         targetPort = ports[typedPort.toString()]
       }
       
-      realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
-    } else {
-      const targetPort = port || 3000
-      realUrl = `${API_URL}/api/preview/${projectId}?port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+      const realUrl = `${API_URL}/api/preview/${projectId}?port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+      setUrl(realUrl)
+      setCurrentUrl(`http://localhost:${typedPort}`)
+      return
     }
 
-    setUrl(realUrl)
+    // 2. Check if it's a localhost / 127.0.0.1 url
+    const localhostRegex = /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/i
+    const localMatch = input.match(localhostRegex)
+    if (localMatch) {
+      const portPart = localMatch[3]
+      const subpath = localMatch[4] || ''
+      const typedPort = portPart ? parseInt(portPart.replace(':', ''), 10) : (port || 3000)
+      
+      let targetPort = typedPort
+      if (ports && ports[typedPort.toString()]) {
+        targetPort = ports[typedPort.toString()]
+      }
+      
+      const realUrl = `${API_URL}/api/preview/${projectId}${subpath}${subpath.includes('?') ? '&' : '?'}port=${targetPort}${token ? `&token=${encodeURIComponent(token)}` : ''}`
+      setUrl(realUrl)
+      setCurrentUrl(`http://localhost:${typedPort}${subpath}`)
+      return
+    }
+
+    // 3. Check if it starts with http:// or https:// (and is not localhost)
+    if (/^https?:\/\//i.test(input)) {
+      setUrl(input)
+      setCurrentUrl(input)
+      return
+    }
+
+    // 4. Check if it is a domain name (contains a dot, no spaces, e.g. "google.com" or "dev.to/about")
+    const domainRegex = /^[a-z0-9\-]+\.[a-z]{2,}(\/.*)?$/i
+    if (domainRegex.test(input) && !/\s/.test(input)) {
+      const realUrl = `https://${input}`
+      setUrl(realUrl)
+      setCurrentUrl(realUrl)
+      return
+    }
+
+    // 5. Treat as search query
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(input)}`
+    setUrl(searchUrl)
+    setCurrentUrl(input)
   }
 
   const handleCopy = () => {
