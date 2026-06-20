@@ -401,6 +401,10 @@ export async function ensureLocalhostBridge(
 ): Promise<void> {
   const targetPort = parseInt(port.toString(), 10)
   
+  // Kill any stale forwarder on this port inside the container first
+  const killStaleCmd = `ps -ef | grep "net.createServer" | grep "${targetPort}" | grep -v grep | awk '{print \$2}' | xargs kill -9 2>/dev/null || true`
+  await execInContainer(containerId, ['sh', '-c', killStaleCmd], () => {})
+
   // 1. Check if the port is reachable directly from the host
   const isReachable = await new Promise<boolean>((resolve) => {
     const socket = new net.Socket()
