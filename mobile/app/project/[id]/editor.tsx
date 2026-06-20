@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  ActivityIndicator, Alert, Platform, ScrollView, Modal, Keyboard,
+  ActivityIndicator, Alert, Platform, ScrollView, Modal,
   KeyboardAvoidingView
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -10,146 +10,9 @@ import { api } from '@/lib/api'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { ArrowLeft, Save, Check, ChevronDown, ChevronRight, X, File, Folder, FileCode, Code, Hash, FileJson, FileText, Settings, Columns, Sparkles } from 'lucide-react-native'
 import { FileNode } from '@/types'
-import { WebView } from 'react-native-webview'
 import { getToken } from '@/lib/auth'
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
-
-function getLanguage(fileName: string) {
-  const ext = fileName.split('.').pop()?.toLowerCase() || '';
-  switch(ext) {
-    case 'js': case 'jsx': return 'javascript';
-    case 'ts': case 'tsx': return 'typescript';
-    case 'json': return 'json';
-    case 'html': return 'html';
-    case 'css': return 'css';
-    case 'md': return 'markdown';
-    case 'py': return 'python';
-    default: return 'plaintext';
-  }
-}
-
-function getMonacoHtml(isDark: boolean, colors: any) {
-  const bg = colors.background;
-  const monacoTheme = isDark ? 'vs-dark' : 'vs';
-
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <style>
-    body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: ${bg}; }
-    #container { width: 100%; height: 100%; }
-    * { -webkit-tap-highlight-color: transparent; }
-    /* Hide Monaco's own textarea since we use native RN TextInput for keyboard */
-    .monaco-editor .inputarea { opacity: 0 !important; height: 1px !important; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
-</head>
-<body>
-  <div id="container"></div>
-  <script>
-    window.MonacoEnvironment = {
-      getWorkerUrl: function() {
-        return "data:text/javascript;charset=utf-8," + encodeURIComponent(
-          "self.MonacoEnvironment = { baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/' };" +
-          "importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/base/worker/workerMain.js');"
-        );
-      }
-    };
-
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
-    require(['vs/editor/editor.main'], function() {
-
-      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: true, noSyntaxValidation: true,
-      });
-      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: true, noSyntaxValidation: true,
-      });
-
-      window.editor = monaco.editor.create(document.getElementById('container'), {
-        value: '',
-        language: 'plaintext',
-        theme: '${monacoTheme}',
-        automaticLayout: true,
-        minimap: { enabled: false },
-        fontSize: 14,
-        fontFamily: "'JetBrains Mono', 'Courier New', monospace",
-        wordWrap: 'off',
-        scrollBeyondLastLine: false,
-        renderLineHighlight: 'all',
-        padding: { top: 16 },
-        readOnly: true,
-        contextmenu: false,
-        scrollbar: { vertical: 'auto', horizontal: 'auto' }
-      });
-
-      // Disable native browser context menu on long press
-      document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, true);
-
-      // When user taps on a line in Monaco, send the tap position back to RN
-      window.editor.onDidChangeCursorPosition(function(e) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'CURSOR_CHANGE',
-          line: e.position.lineNumber,
-          column: e.position.column
-        }));
-      });
-
-      // When user highlights text in Monaco, send the selection back to RN
-      window.editor.onDidChangeCursorSelection(function(e) {
-        var selection = window.editor.getSelection();
-        var selectedText = window.editor.getModel().getValueInRange(selection);
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'SELECTION_CHANGE',
-          text: selectedText
-        }));
-      });
-
-      // Differentiate TAP vs SCROLL: only open keyboard on genuine taps
-      var touchState = { startX: 0, startY: 0, startTime: 0, moved: false };
-      
-      document.addEventListener('touchstart', function(e) {
-        var t = e.touches[0];
-        touchState.startX = t.clientX;
-        touchState.startY = t.clientY;
-        touchState.startTime = Date.now();
-        touchState.moved = false;
-      }, true);
-      
-      document.addEventListener('touchmove', function(e) {
-        var t = e.touches[0];
-        var dx = Math.abs(t.clientX - touchState.startX);
-        var dy = Math.abs(t.clientY - touchState.startY);
-        // If finger moved more than 10px, it's a scroll not a tap
-        if (dx > 10 || dy > 10) touchState.moved = true;
-      }, true);
-      
-      document.addEventListener('touchend', function() {
-        var duration = Date.now() - touchState.startTime;
-        // Only trigger keyboard if: short tap (<300ms) AND finger didn't move
-        if (!touchState.moved && duration < 300) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'REQUEST_KEYBOARD' }));
-        }
-      }, true);
-
-      window.editor.onDidChangeModelContent(function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'CONTENT_CHANGE',
-          content: window.editor.getValue()
-        }));
-      });
-
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'EDITOR_READY' }));
-    });
-  </script>
-</body>
-</html>
-  `;
-}
 
 function FileRow({ node, depth, currentPath, onFilePress }: {
   node: FileNode; depth: number; currentPath: string; onFilePress: (path: string) => void;
@@ -203,27 +66,20 @@ export default function EditorScreen() {
   const { id, path } = useLocalSearchParams<{ id: string; path: string }>()
   const router = useRouter()
   const { colors, isDark } = useAppTheme()
-  const webViewRef = useRef<WebView>(null)
-  const webViewRef2 = useRef<WebView>(null)
-  const nativeInputRef = useRef<TextInput>(null)
+  const inputRef1 = useRef<TextInput>(null)
+  const inputRef2 = useRef<TextInput>(null)
 
-  const {
-    setActiveProject, setPendingPrompt,
-    messages, isStreaming, currentStreamText, sendMessage: sendAIChatMessage
-  } = useAIStore()
+  const { setActiveProject, setPendingPrompt } = useAIStore()
 
   const [content, setContent] = useState('')
   const [originalContent, setOriginalContent] = useState('')
   const [selectedText, setSelectedText] = useState('')
-  const [showAIPanel, setShowAIPanel] = useState(false)
-  const [aiInput, setAiInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [currentPath, setCurrentPath] = useState<string>(path as string)
   const [showFilePicker, setShowFilePicker] = useState(false)
   const [fileTree, setFileTree] = useState<FileNode[]>([])
   const [fetchingFiles, setFetchingFiles] = useState(false)
-  const [editorReady, setEditorReady] = useState(false)
 
   // Multi-File Tab System state
   const [openTabs, setOpenTabs] = useState<{ path: string; name: string }[]>(
@@ -237,7 +93,6 @@ export default function EditorScreen() {
   const [content2, setContent2] = useState('')
   const [originalContent2, setOriginalContent2] = useState('')
   const [loading2, setLoading2] = useState(false)
-  const [editorReady2, setEditorReady2] = useState(false)
 
   // Menubar state
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
@@ -447,7 +302,6 @@ export default function EditorScreen() {
         }
       }
       setLoading(true)
-      setEditorReady(false)
       setCurrentPath(targetPath)
     } else {
       if (targetPath === currentPath2) return;
@@ -462,7 +316,6 @@ export default function EditorScreen() {
         }
       }
       setLoading2(true)
-      setEditorReady2(false)
       setCurrentPath2(targetPath)
     }
   }
@@ -514,71 +367,11 @@ export default function EditorScreen() {
     }
   }
 
-  // We always keep a single sentinel character in the hidden input.
-  // If text grows beyond 1 char -> user typed something. If it becomes empty -> backspace.
-  const SENTINEL = '|'
-  const [nativeBuffer, setNativeBuffer] = useState(SENTINEL)
-
-  const lastLoadedPathRef = useRef<string>('')
   const hasChanges = content !== originalContent
-
-  // Scroll Monaco to cursor when keyboard opens & blur input when keyboard hides
-  useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
-        // Tell Monaco to scroll to cursor after keyboard opens
-        setTimeout(() => {
-          webViewRef.current?.injectJavaScript(`
-            if (window.editor) { window.editor.revealPositionInCenter(window.editor.getPosition()); }
-            true;
-          `)
-        }, 150)
-      }
-    )
-    const hideSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        nativeInputRef.current?.blur()
-      }
-    )
-    return () => { showSub.remove(); hideSub.remove() }
-  }, [])
 
   useEffect(() => { if (id && currentPath) fetchFile(currentPath, 1) }, [id, currentPath])
   useEffect(() => { if (id && currentPath2) fetchFile(currentPath2, 2) }, [id, currentPath2])
   useEffect(() => { if (showFilePicker && fileTree.length === 0) fetchAllFiles() }, [showFilePicker])
-
-  useEffect(() => {
-    if (editorReady && webViewRef.current && content !== undefined && !loading) {
-      if (lastLoadedPathRef.current !== currentPath) {
-        lastLoadedPathRef.current = currentPath;
-        webViewRef.current.injectJavaScript(`
-          if (window.editor) {
-            window.editor.setValue(${JSON.stringify(content)});
-            monaco.editor.setModelLanguage(window.editor.getModel(), '${getLanguage(currentPath)}');
-            window.editor.updateOptions({ readOnly: false });
-          } true;
-        `);
-      }
-    }
-  }, [editorReady, content, loading, currentPath])
-
-  const lastLoadedPathRef2 = useRef<string>('')
-  useEffect(() => {
-    if (editorReady2 && webViewRef2.current && content2 !== undefined && !loading2 && currentPath2) {
-      if (lastLoadedPathRef2.current !== currentPath2) {
-        lastLoadedPathRef2.current = currentPath2;
-        webViewRef2.current.injectJavaScript(`
-          if (window.editor) {
-            window.editor.setValue(${JSON.stringify(content2)});
-            monaco.editor.setModelLanguage(window.editor.getModel(), '${getLanguage(currentPath2)}');
-            window.editor.updateOptions({ readOnly: false });
-          } true;
-        `);
-      }
-    }
-  }, [editorReady2, content2, loading2, currentPath2])
 
   async function fetchFile(filePath: string, pane: 1 | 2) {
     if (pane === 1) {
@@ -627,56 +420,19 @@ export default function EditorScreen() {
     finally {setSaving(false) }
   }
 
-  // When user taps on the WebView, we instantly open the native keyboard
-  const openKeyboard = useCallback(() => {
-    // Blur first to reset Android's internal focus state, then re-focus
-    nativeInputRef.current?.blur()
-    setTimeout(() => {
-      nativeInputRef.current?.focus()
-    }, 50)
-  }, [])
-
-  // When the native TextInput receives keystrokes, forward them into Monaco
-  const handleNativeInput = useCallback((text: string) => {
-    const activeRef = focusedPane === 1 ? webViewRef : webViewRef2
-    if (!activeRef.current) return
-
-    if (text.length > SENTINEL.length) {
-      // Character(s) added
-      const newChars = text.replace(SENTINEL, '')
-      const escaped = JSON.stringify(newChars)
-      activeRef.current.injectJavaScript(`
-        if (window.editor) {
-          window.editor.trigger('keyboard', 'type', { text: ${escaped} });
-        } true;
-      `)
-    } else if (text.length < SENTINEL.length) {
-      // Backspace pressed
-      activeRef.current.injectJavaScript(`
-        if (window.editor) {
-          window.editor.trigger('keyboard', 'deleteLeft');
-        } true;
-      `)
-    }
-    // Always reset to sentinel so next keystroke works cleanly
-    setNativeBuffer(SENTINEL)
-  }, [focusedPane])
-
-  // Handle Enter key
-  const handleSubmitEditing = useCallback(() => {
-    const activeRef = focusedPane === 1 ? webViewRef : webViewRef2
-    if (!activeRef.current) return
-    activeRef.current.injectJavaScript(`
-      if (window.editor) {
-        window.editor.trigger('keyboard', 'type', { text: '\n' });
-      } true;
-    `)
-    setNativeBuffer(SENTINEL)
-  }, [focusedPane])
-
   const activePath = focusedPane === 1 ? currentPath : (currentPath2 || currentPath)
   const fileName = activePath?.split('/').pop() || 'File'
   const activeHasChanges = focusedPane === 1 ? (content !== originalContent) : (content2 !== originalContent2)
+
+  const lines = useMemo(() => {
+    const count = content ? content.split('\n').length : 1
+    return Array.from({ length: count }, (_, i) => i + 1)
+  }, [content])
+
+  const lines2 = useMemo(() => {
+    const count = content2 ? content2.split('\n').length : 1
+    return Array.from({ length: count }, (_, i) => i + 1)
+  }, [content2])
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -698,13 +454,6 @@ export default function EditorScreen() {
           activeOpacity={0.7}
         >
           <Columns size={16} color={splitMode ? colors.primary : colors.textSecondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setShowAIPanel(p => !p)}
-          style={[styles.saveBtn, { marginRight: 8, backgroundColor: showAIPanel ? colors.primary + '20' : (isDark ? '#1C2128' : '#F6F8FA') }]}
-          activeOpacity={0.7}
-        >
-          <Sparkles size={16} color={showAIPanel ? colors.primary : colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.saveBtn, { backgroundColor: activeHasChanges ? colors.text : (isDark ? '#1C2128' : '#F6F8FA') }]}
@@ -781,17 +530,19 @@ export default function EditorScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <View style={styles.editorMainContainer}>
-          <View style={[styles.editorsContainer, showAIPanel && { width: '60%' }]}>
+          <View style={styles.editorsContainer}>
             <View style={splitMode ? styles.splitLayout : styles.singleLayout}>
               {/* Pane 1 (Primary) */}
               <TouchableOpacity 
                 activeOpacity={1}
-                onPress={() => setFocusedPane(1)}
+                onPress={() => {
+                  setFocusedPane(1)
+                  inputRef1.current?.focus()
+                }}
                 style={[
-                  styles.webViewContainer, 
+                  styles.paneContainer, 
                   splitMode && styles.splitPane, 
                   splitMode && focusedPane === 1 && { borderColor: colors.primary, borderWidth: 1.5 }
                 ]}
@@ -804,36 +555,77 @@ export default function EditorScreen() {
                   </View>
                 )}
                 
-                <WebView
-                  ref={webViewRef}
-                  source={{ html: getMonacoHtml(isDark, colors), baseUrl: 'https://cdnjs.cloudflare.com' }}
-                  originWhitelist={['*']}
-                  onMessage={(event) => {
-                    try {
-                      const msg = JSON.parse(event.nativeEvent.data)
-                      if (msg.type === 'EDITOR_READY') {
-                        setEditorReady(true)
-                      } else if (msg.type === 'CONTENT_CHANGE') {
-                        setContent(msg.content)
-                      } else if (msg.type === 'REQUEST_KEYBOARD') {
-                        setFocusedPane(1)
-                        openKeyboard()
-                      } else if (msg.type === 'SELECTION_CHANGE') {
-                        setSelectedText(msg.text || '')
-                      }
-                    } catch (e) { console.warn("Monaco event parse error", e) }
-                  }}
-                  style={{ backgroundColor: 'transparent', flex: 1 }}
-                  javaScriptEnabled={true}
-                  domStorageEnabled={true}
-                  androidLayerType="hardware"
-                />
+                <ScrollView 
+                  style={styles.editorScrollView} 
+                  contentContainerStyle={styles.editorScrollContent}
+                  keyboardShouldPersistTaps="always"
+                >
+                  <View style={styles.editorRow}>
+                    {/* Gutter */}
+                    <View style={[styles.gutter, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderRightColor: colors.border }]}>
+                      {lines.map((lineNum) => (
+                        <Text
+                          key={lineNum}
+                          style={[
+                            styles.gutterText,
+                            {
+                              color: colors.textSecondary,
+                              fontFamily: 'JetBrainsMono_400Regular',
+                              fontSize: 13,
+                              lineHeight: 20,
+                              includeFontPadding: false,
+                            }
+                          ]}
+                        >
+                          {lineNum}
+                        </Text>
+                      ))}
+                    </View>
+                    
+                    {/* TextInput in horizontal scroll */}
+                    <ScrollView 
+                      horizontal 
+                      style={styles.horizontalScroll}
+                      contentContainerStyle={styles.horizontalScrollContent}
+                      keyboardShouldPersistTaps="always"
+                    >
+                      <TextInput
+                        ref={inputRef1}
+                        multiline
+                        value={content}
+                        onChangeText={setContent}
+                        style={[
+                          styles.editorInput,
+                          {
+                            color: colors.text,
+                            fontFamily: 'JetBrainsMono_400Regular',
+                            fontSize: 13,
+                            lineHeight: 20,
+                            includeFontPadding: false,
+                          }
+                        ]}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        spellCheck={false}
+                        scrollEnabled={false}
+                        onSelectionChange={(e) => {
+                          const { start, end } = e.nativeEvent.selection
+                          if (start !== end && content) {
+                            setSelectedText(content.substring(start, end))
+                          } else {
+                            setSelectedText('')
+                          }
+                        }}
+                      />
+                    </ScrollView>
+                  </View>
+                </ScrollView>
 
-                {(loading || !editorReady) && (
+                {loading && (
                   <View style={[StyleSheet.absoluteFill, styles.loadingOverlay, { backgroundColor: colors.background }]}>
                     <ActivityIndicator color={colors.text} size="small" />
                     <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                      {loading ? "Opening file..." : "Booting IDE Engine..."}
+                      Opening file...
                     </Text>
                   </View>
                 )}
@@ -843,9 +635,12 @@ export default function EditorScreen() {
               {splitMode && currentPath2 && (
                 <TouchableOpacity 
                   activeOpacity={1}
-                  onPress={() => setFocusedPane(2)}
+                  onPress={() => {
+                    setFocusedPane(2)
+                    inputRef2.current?.focus()
+                  }}
                   style={[
-                    styles.webViewContainer, 
+                    styles.paneContainer, 
                     styles.splitPane, 
                     focusedPane === 2 && { borderColor: colors.primary, borderWidth: 1.5 },
                     { borderTopWidth: 1, borderTopColor: colors.border }
@@ -857,36 +652,77 @@ export default function EditorScreen() {
                     </Text>
                   </View>
 
-                  <WebView
-                    ref={webViewRef2}
-                    source={{ html: getMonacoHtml(isDark, colors), baseUrl: 'https://cdnjs.cloudflare.com' }}
-                    originWhitelist={['*']}
-                    onMessage={(event) => {
-                      try {
-                        const msg = JSON.parse(event.nativeEvent.data)
-                        if (msg.type === 'EDITOR_READY') {
-                          setEditorReady2(true)
-                        } else if (msg.type === 'CONTENT_CHANGE') {
-                          setContent2(msg.content)
-                        } else if (msg.type === 'REQUEST_KEYBOARD') {
-                          setFocusedPane(2)
-                          openKeyboard()
-                        } else if (msg.type === 'SELECTION_CHANGE') {
-                          setSelectedText(msg.text || '')
-                        }
-                      } catch (e) { console.warn("Monaco event parse error", e) }
-                    }}
-                    style={{ backgroundColor: 'transparent', flex: 1 }}
-                    javaScriptEnabled={true}
-                    domStorageEnabled={true}
-                    androidLayerType="hardware"
-                  />
+                  <ScrollView 
+                    style={styles.editorScrollView} 
+                    contentContainerStyle={styles.editorScrollContent}
+                    keyboardShouldPersistTaps="always"
+                  >
+                    <View style={styles.editorRow}>
+                      {/* Gutter */}
+                      <View style={[styles.gutter, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderRightColor: colors.border }]}>
+                        {lines2.map((lineNum) => (
+                          <Text
+                            key={lineNum}
+                            style={[
+                              styles.gutterText,
+                              {
+                                color: colors.textSecondary,
+                                fontFamily: 'JetBrainsMono_400Regular',
+                                fontSize: 13,
+                                lineHeight: 20,
+                                includeFontPadding: false,
+                              }
+                            ]}
+                          >
+                            {lineNum}
+                          </Text>
+                        ))}
+                      </View>
 
-                  {(loading2 || !editorReady2) && (
+                      {/* TextInput in horizontal scroll */}
+                      <ScrollView 
+                        horizontal 
+                        style={styles.horizontalScroll}
+                        contentContainerStyle={styles.horizontalScrollContent}
+                        keyboardShouldPersistTaps="always"
+                      >
+                        <TextInput
+                          ref={inputRef2}
+                          multiline
+                          value={content2}
+                          onChangeText={setContent2}
+                          style={[
+                            styles.editorInput,
+                            {
+                              color: colors.text,
+                              fontFamily: 'JetBrainsMono_400Regular',
+                              fontSize: 13,
+                              lineHeight: 20,
+                              includeFontPadding: false,
+                            }
+                          ]}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          spellCheck={false}
+                          scrollEnabled={false}
+                          onSelectionChange={(e) => {
+                            const { start, end } = e.nativeEvent.selection
+                            if (start !== end && content2) {
+                              setSelectedText(content2.substring(start, end))
+                            } else {
+                              setSelectedText('')
+                            }
+                          }}
+                        />
+                      </ScrollView>
+                    </View>
+                  </ScrollView>
+
+                  {loading2 && (
                     <View style={[StyleSheet.absoluteFill, styles.loadingOverlay, { backgroundColor: colors.background }]}>
                       <ActivityIndicator color={colors.text} size="small" />
                       <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                        {loading2 ? "Opening file..." : "Booting IDE Engine..."}
+                        Opening file...
                       </Text>
                     </View>
                   )}
@@ -894,95 +730,7 @@ export default function EditorScreen() {
               )}
             </View>
           </View>
-
-          {showAIPanel && (
-            <View style={[styles.sideAIPanel, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderLeftColor: colors.border }]}>
-              {/* Header */}
-              <View style={[styles.sideAIHeader, { borderBottomColor: colors.border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Sparkles size={14} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={2} />
-                  <Text style={[styles.sideAITitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                    AI Panel
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => setShowAIPanel(false)} style={styles.sideAICloseBtn}>
-                  <X size={14} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              {/* Chat Messages */}
-              <ScrollView 
-                style={styles.sideAIMessages}
-                contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
-                showsVerticalScrollIndicator={false}
-              >
-                {messages.length === 0 && !isStreaming && (
-                  <Text style={[styles.sideAIEmpty, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                    Ask AI anything about the code in this project.
-                  </Text>
-                )}
-                {messages.map((msg) => {
-                  const isUser = msg.role === 'user'
-                  return (
-                    <View key={msg.id} style={[styles.sideAIMsgRow, isUser ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]}>
-                      <View style={[
-                        styles.sideAIMsgBubble,
-                        isUser 
-                          ? { backgroundColor: isDark ? '#1C2128' : '#0E1116', borderBottomRightRadius: 2 } 
-                          : { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 2 }
-                      ]}>
-                        <Text style={[styles.sideAIMsgText, { color: isUser ? '#FFFFFF' : colors.text }]}>
-                          {msg.text}
-                        </Text>
-                      </View>
-                    </View>
-                  )
-                })}
-                {isStreaming && (
-                  <View style={[styles.sideAIMsgRow, { alignSelf: 'flex-start' }]}>
-                    <View style={[styles.sideAIMsgBubble, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 2 }]}>
-                      <Text style={[styles.sideAIMsgText, { color: colors.text }]}>
-                        {currentStreamText || 'Thinking...'}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </ScrollView>
-
-              {/* Chat Input */}
-              <View style={[styles.sideAIInputContainer, { borderTopColor: colors.border }]}>
-                <TextInput
-                  value={aiInput}
-                  onChangeText={setAiInput}
-                  placeholder="Ask AI..."
-                  placeholderTextColor={colors.textSecondary + '60'}
-                  style={[styles.sideAIInput, { color: colors.text, borderColor: colors.border, fontFamily: 'Inter_400Regular' }]}
-                  onSubmitEditing={async () => {
-                    const text = aiInput.trim()
-                    if (!text || isStreaming) return
-                    setAiInput('')
-                    await sendAIChatMessage(text, id as string)
-                  }}
-                  editable={!isStreaming}
-                />
-              </View>
-            </View>
-          )}
         </View>
-
-        {/* Hidden native TextInput that GUARANTEES keyboard popup on Android */}
-        <TextInput
-          ref={nativeInputRef}
-          style={styles.hiddenInput}
-          value={nativeBuffer}
-          onChangeText={handleNativeInput}
-          onSubmitEditing={handleSubmitEditing}
-          blurOnSubmit={false}
-          autoCapitalize="none"
-          autoCorrect={false}
-          spellCheck={false}
-          multiline={false}
-        />
       </KeyboardAvoidingView>
 
       {/* File Picker Modal */}
@@ -1106,14 +854,26 @@ const styles = StyleSheet.create({
   saveBtn: { width: 36, height: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   loadingOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 10 },
   loadingText: { fontSize: 13 },
-  webViewContainer: { flex: 1, position: 'relative' },
-  hiddenInput: {
-    position: 'absolute',
-    top: -100,
-    left: 0,
-    width: 1,
-    height: 1,
-    opacity: 0,
+  paneContainer: { flex: 1, position: 'relative' },
+  editorScrollView: { flex: 1 },
+  editorScrollContent: { flexGrow: 1 },
+  editorRow: { flexDirection: 'row', flex: 1 },
+  gutter: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'flex-end',
+    borderRightWidth: 1,
+    minWidth: 36,
+  },
+  gutterText: { textAlign: 'right' },
+  horizontalScroll: { flex: 1 },
+  horizontalScrollContent: { flexGrow: 1 },
+  editorInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    textAlignVertical: 'top',
+    minWidth: 2000,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { height: '70%', borderTopLeftRadius: 8, borderTopRightRadius: 8, paddingTop: 8 },
@@ -1239,63 +999,9 @@ const styles = StyleSheet.create({
   },
   editorMainContainer: {
     flex: 1,
-    flexDirection: 'row',
   },
   editorsContainer: {
     flex: 1,
     height: '100%',
-  },
-  sideAIPanel: {
-    width: '40%',
-    height: '100%',
-    borderLeftWidth: 1,
-  },
-  sideAIHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-  },
-  sideAITitle: {
-    fontSize: 13,
-  },
-  sideAICloseBtn: {
-    padding: 2,
-  },
-  sideAIMessages: {
-    flex: 1,
-  },
-  sideAIEmpty: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 32,
-    paddingHorizontal: 16,
-    opacity: 0.6,
-  },
-  sideAIMsgRow: {
-    marginVertical: 4,
-    maxWidth: '90%',
-  },
-  sideAIMsgBubble: {
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  sideAIMsgText: {
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  sideAIInputContainer: {
-    padding: 10,
-    borderTopWidth: 1,
-  },
-  sideAIInput: {
-    height: 36,
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    fontSize: 12,
   },
 })
