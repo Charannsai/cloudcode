@@ -521,124 +521,133 @@ export default function SettingsScreen() {
     const subscription = billingData?.subscription || { id: null, status: 'none' }
 
     return (
-      <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
-        <TouchableOpacity 
-          onPress={() => setCurrentSubScreen('main')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
-        >
-          <ArrowLeft size={16} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Settings</Text>
-        </TouchableOpacity>
-        <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, marginBottom: 20 }}>Billing & Usage</Text>
-        <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 18, marginBottom: 24, gap: 14 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: currentTier.name === 'free' ? 'rgba(107, 114, 128, 0.1)' : 'rgba(59, 130, 246, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
-                <Zap size={20} color={currentTier.name === 'free' ? '#9CA3AF' : '#3B82F6'} strokeWidth={2} />
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Unified SubHeader */}
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Billing & Usage</Text>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          {/* Plan Tier Card */}
+          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: currentTier.name === 'free' ? 'rgba(107, 114, 128, 0.1)' : 'rgba(59, 130, 246, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={20} color={currentTier.name === 'free' ? '#9CA3AF' : '#3B82F6'} strokeWidth={2} />
+                </View>
+                <View>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }}>{currentTier.displayName}</Text>
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
+                    {currentTier.name === 'free' ? '$0 / month' : currentTier.name === 'pro' ? '$25 / month' : '$99 / month'}
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }}>{currentTier.displayName}</Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
-                  {currentTier.name === 'free' ? '$0 / month' : currentTier.name === 'pro' ? '$25 / month' : '$99 / month'}
+              <View style={{ backgroundColor: currentTier.name === 'free' ? 'rgba(107, 114, 128, 0.12)' : 'rgba(59, 130, 246, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: currentTier.name === 'free' ? '#9CA3AF40' : '#3B82F640' }}>
+                <Text style={{ color: currentTier.name === 'free' ? '#9CA3AF' : '#3B82F6', fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>
+                  {subscription.status === 'active' ? 'ACTIVE' : 'FREE TIER'}
                 </Text>
               </View>
             </View>
-            <View style={{ backgroundColor: currentTier.name === 'free' ? 'rgba(107, 114, 128, 0.12)' : 'rgba(59, 130, 246, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: currentTier.name === 'free' ? '#9CA3AF40' : '#3B82F640' }}>
-              <Text style={{ color: currentTier.name === 'free' ? '#9CA3AF' : '#3B82F6', fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>
-                {subscription.status === 'active' ? 'ACTIVE' : 'FREE TIER'}
-              </Text>
-            </View>
+            {currentTier.name === 'free' && (
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  onPress={() => setUpgradeModal({ visible: true, tierName: 'pro' })}
+                  style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', height: 40 }}
+                >
+                  <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Pro</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
+                  style={{ flex: 1, borderWidth: 1, borderColor: colors.border, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', height: 40 }}
+                >
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Adv</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {currentTier.name === 'pro' && (
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
+                  style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', height: 40 }}
+                >
+                  <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Advanced</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-          {currentTier.name === 'free' && (
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                onPress={() => setUpgradeModal({ visible: true, tierName: 'pro' })}
-                style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Pro</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
-                style={{ flex: 1, borderWidth: 1, borderColor: colors.border, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Adv</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          {currentTier.name === 'pro' && (
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
-                style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Upgrade to Advanced</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-        <View style={{ marginBottom: 28 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <BarChart2 size={16} color={colors.textSecondary} />
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>CURRENT MONTH USAGE</Text>
-          </View>
-          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 16, gap: 16 }}>
-            {renderUsageRow('Compute (CPU Hours)', usage.cpu.usedHours, usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`, (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100, Cpu, '#8B5CF6')}
-            {renderUsageRow('Active RAM', usage.ram.usedMB + ' MB', usage.ram.limitMB + ' MB', (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100, HardDrive, '#3B82F6')}
-            {renderUsageRow('Disk Space', usage.disk.usedGB + ' GB', usage.disk.limitGB + ' GB', (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100, HardDrive, '#F59E0B')}
-            {renderUsageRow('Workspaces Created', usage.workspaces.used, usage.workspaces.limit, (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100, Server, '#EF4444')}
-            {renderUsageRow('AI Tokens Consumed', usage.aiTokens.used.toLocaleString(), usage.aiTokens.limit.toLocaleString(), (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100, Zap, '#10B981')}
-          </View>
-        </View>
-        {billingData?.usageHistory && billingData.usageHistory.length > 0 && (
-          <View style={{ marginBottom: 28 }}>
+
+          {/* Current Month Usage */}
+          <View style={{ marginTop: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <TrendingUp size={16} color={colors.textSecondary} />
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>USAGE HISTORY</Text>
+              <BarChart2 size={16} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>CURRENT MONTH USAGE</Text>
             </View>
-            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
-              {billingData.usageHistory.map((item: any, idx: number, arr: any[]) => (
-                <View key={item.month} style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>{item.month}</Text>
-                  <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
-                      {item.cpuHours} hrs CPU · {item.tokens.toLocaleString()} tokens
-                    </Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_400Regular' }}>
-                      {item.workspaces} workspace{item.workspaces > 1 ? 's' : ''}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 16 }}>
+              {renderUsageRow('Compute (CPU Hours)', usage.cpu.usedHours, usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`, (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100, Cpu, '#8B5CF6')}
+              {renderUsageRow('Active RAM', usage.ram.usedMB + ' MB', usage.ram.limitMB + ' MB', (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100, HardDrive, '#3B82F6')}
+              {renderUsageRow('Disk Space', usage.disk.usedGB + ' GB', usage.disk.limitGB + ' GB', (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100, HardDrive, '#F59E0B')}
+              {renderUsageRow('Workspaces Created', usage.workspaces.used, usage.workspaces.limit, (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100, Server, '#EF4444')}
+              {renderUsageRow('AI Tokens Consumed', usage.aiTokens.used.toLocaleString(), usage.aiTokens.limit.toLocaleString(), (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100, Zap, '#10B981')}
             </View>
           </View>
-        )}
-        {billingData?.billingHistory && billingData.billingHistory.length > 0 && (
-          <View style={{ marginBottom: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <History size={16} color={colors.textSecondary} />
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>BILLING HISTORY</Text>
-            </View>
-            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
-              {billingData.billingHistory.map((item: any, idx: number, arr: any[]) => (
-                <View key={item.invoiceId} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                  <View style={{ gap: 2 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>{item.plan}</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{item.date} · {item.invoiceId}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_400Regular', fontSize: 13 }}>{item.amount}</Text>
-                    <View style={{ backgroundColor: '#22c55e15', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                      <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PAID</Text>
+
+          {/* Usage History */}
+          {billingData?.usageHistory && billingData.usageHistory.length > 0 && (
+            <View style={{ marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <TrendingUp size={16} color={colors.textSecondary} />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>USAGE HISTORY</Text>
+              </View>
+              <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                {billingData.usageHistory.map((item: any, idx: number, arr: any[]) => (
+                  <View key={item.month} style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>{item.month}</Text>
+                    <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
+                        {item.cpuHours} hrs CPU · {item.tokens.toLocaleString()} tokens
+                      </Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_400Regular' }}>
+                        {item.workspaces} workspace{item.workspaces > 1 ? 's' : ''}
+                      </Text>
                     </View>
                   </View>
-                </View>
-              ))}
+                ))}
+              </View>
             </View>
-          </View>
-        )}
+          )}
+
+          {/* Billing History */}
+          {billingData?.billingHistory && billingData.billingHistory.length > 0 && (
+            <View style={{ marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <History size={16} color={colors.textSecondary} />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>BILLING HISTORY</Text>
+              </View>
+              <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                {billingData.billingHistory.map((item: any, idx: number, arr: any[]) => (
+                  <View key={item.invoiceId} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                    <View style={{ gap: 2 }}>
+                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>{item.plan}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{item.date} · {item.invoiceId}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_400Regular', fontSize: 13 }}>{item.amount}</Text>
+                      <View style={{ backgroundColor: '#22c55e15', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                        <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PAID</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
       </View>
     )
   }
@@ -918,186 +927,186 @@ export default function SettingsScreen() {
 
   const renderProfileView = () => {
     return (
-      <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
-        {/* Back navigation */}
-        <TouchableOpacity 
-          onPress={() => setCurrentSubScreen('main')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
-        >
-          <ArrowLeft size={16} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Settings</Text>
-        </TouchableOpacity>
-
-        {/* Title */}
-        <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, marginBottom: 20 }}>Edit Profile</Text>
-
-        <View style={{ alignItems: 'center', marginBottom: 24, gap: 10 }}>
-          {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: colors.primary }} />
-          ) : (
-            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? '#151922' : '#E5E7EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary }}>
-              <Text style={{ color: colors.text, fontSize: 32, fontFamily: 'Inter_600SemiBold' }}>
-                {user?.login?.[0]?.toUpperCase()}
-              </Text>
-            </View>
-          )}
-          <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_500Medium' }}>
-            GitHub Account: @{user?.login}
-          </Text>
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Unified SubHeader */}
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Edit Profile</Text>
         </View>
 
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 16, marginHorizontal: 0 }]}>
-          {/* Full Name */}
-          <View style={{ gap: 6 }}>
-            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Full Name</Text>
-            <TextInput
-              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Your Name"
-              placeholderTextColor={colors.textSecondary + '60'}
-              value={profileName}
-              onChangeText={setProfileName}
-            />
-          </View>
-
-          {/* Email (Locked placeholder) */}
-          <View style={{ gap: 6 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Public Email</Text>
-              <Lock size={12} color={colors.textSecondary} />
-            </View>
-            <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)' }]}>
-              <TextInput
-                style={[styles.textInput, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}
-                value={user?.email || 'no-email@github.com'}
-                editable={false}
-              />
-            </View>
-            <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
-              Your email is linked to your GitHub account and cannot be modified here.
+        <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          {/* Avatar Block */}
+          <View style={{ alignItems: 'center', marginBottom: 8, gap: 10 }}>
+            {user?.avatar_url ? (
+              <Image source={{ uri: user.avatar_url }} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: colors.primary }} />
+            ) : (
+              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? '#151922' : '#E5E7EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary }}>
+                <Text style={{ color: colors.text, fontSize: 32, fontFamily: 'Inter_600SemiBold' }}>
+                  {user?.login?.[0]?.toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_500Medium' }}>
+              GitHub Account: @{user?.login}
             </Text>
           </View>
 
-          {profileName.trim() !== initialProfileName && (
-            <TouchableOpacity 
-              onPress={handleSaveProfile} 
-              style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
-              disabled={savingProfile}
-              activeOpacity={0.8}
-            >
-              {savingProfile ? (
-                <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
+          {/* Configuration Fields Card */}
+          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 16, marginHorizontal: 0 }]}>
+            {/* Full Name */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Full Name</Text>
+              <TextInput
+                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                placeholder="Your Name"
+                placeholderTextColor={colors.textSecondary + '60'}
+                value={profileName}
+                onChangeText={setProfileName}
+              />
+            </View>
+
+            {/* Email (Locked placeholder) */}
+            <View style={{ gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Public Email</Text>
+                <Lock size={12} color={colors.textSecondary} />
+              </View>
+              <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                <TextInput
+                  style={[styles.textInput, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}
+                  value={user?.email || 'no-email@github.com'}
+                  editable={false}
+                />
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
+                Your email is linked to your GitHub account and cannot be modified here.
+              </Text>
+            </View>
+
+            {profileName.trim() !== initialProfileName && (
+              <TouchableOpacity 
+                onPress={handleSaveProfile} 
+                style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
+                disabled={savingProfile}
+                activeOpacity={0.8}
+              >
+                {savingProfile ? (
+                  <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
+                ) : (
+                  <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                    Save Profile Settings
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Session History */}
+          <View style={{ marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <History size={16} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SESSIONS</Text>
+            </View>
+            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+              {appSessions.length === 0 ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No active sessions recorded.</Text>
+                </View>
               ) : (
-                <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
-                  Save Profile Settings
-                </Text>
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Session History */}
-        <View style={{ marginTop: 24 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <History size={16} color={colors.textSecondary} />
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SESSIONS</Text>
-          </View>
-          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
-            {appSessions.length === 0 ? (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No active sessions recorded.</Text>
-              </View>
-            ) : (
-              appSessions.map((session, idx) => (
-                <View key={idx}>
-                  <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Laptop size={18} color={session.status === 'ACTIVE' ? colors.text : colors.textSecondary} style={{ flexShrink: 0 }} />
-                    <View style={{ flex: 1, marginLeft: 10, marginRight: session.status === 'ACTIVE' ? 12 : 0 }}>
-                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>
-                        {session.device} ({session.status === 'ACTIVE' ? 'Current Device' : 'Previous Session'})
-                      </Text>
-                      <Text style={{ color: colors.textSecondary, fontSize: 11 }} numberOfLines={1}>
-                        {new Date(session.timestamp).toLocaleDateString()} · {session.ip}
-                      </Text>
-                    </View>
-                    {session.status === 'ACTIVE' && (
-                      <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, flexShrink: 0 }}>
-                        <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>ACTIVE</Text>
+                appSessions.map((session, idx) => (
+                  <View key={idx}>
+                    <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Laptop size={18} color={session.status === 'ACTIVE' ? colors.text : colors.textSecondary} style={{ flexShrink: 0 }} />
+                      <View style={{ flex: 1, marginLeft: 10, marginRight: session.status === 'ACTIVE' ? 12 : 0 }}>
+                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>
+                          {session.device} ({session.status === 'ACTIVE' ? 'Current Device' : 'Previous Session'})
+                        </Text>
+                        <Text style={{ color: colors.textSecondary, fontSize: 11 }} numberOfLines={1}>
+                          {new Date(session.timestamp).toLocaleDateString()} · {session.ip}
+                        </Text>
                       </View>
-                    )}
+                      {session.status === 'ACTIVE' && (
+                        <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, flexShrink: 0 }}>
+                          <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>ACTIVE</Text>
+                        </View>
+                      )}
+                    </View>
+                    {idx !== appSessions.length - 1 && <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />}
                   </View>
-                  {idx !== appSessions.length - 1 && <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />}
-                </View>
-              ))
-            )}
+                ))
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* Recent Commits */}
-        <View style={{ marginTop: 24 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Clock size={16} color={colors.textSecondary} />
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT COMMITS FROM THIS APP</Text>
-          </View>
-          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
-            {appCommits.length === 0 ? (
-              <View style={{ padding: 24, alignItems: 'center', justifyContent: 'center' }}>
-                <GitCommit size={24} color={colors.textSecondary} style={{ marginBottom: 8 }} />
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No commits made from this app yet.</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, textAlign: 'center', paddingHorizontal: 20 }}>
-                  Commits you complete in workspace editor Git tabs will appear here.
-                </Text>
-              </View>
-            ) : (
-              appCommits.map((commit, idx) => (
-                <View key={commit.hash}>
-                  <View style={{ padding: 14, gap: 4 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13, flex: 1, marginRight: 8 }} numberOfLines={1}>
-                        {commit.projectName} [{commit.branch}]
-                      </Text>
-                      <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>
-                        {commit.hash}
+          {/* Recent Commits */}
+          <View style={{ marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Clock size={16} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT COMMITS FROM THIS APP</Text>
+            </View>
+            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+              {appCommits.length === 0 ? (
+                <View style={{ padding: 24, alignItems: 'center', justifyContent: 'center' }}>
+                  <GitCommit size={24} color={colors.textSecondary} style={{ marginBottom: 8 }} />
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No commits made from this app yet.</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, textAlign: 'center', paddingHorizontal: 20 }}>
+                    Commits you complete in workspace editor Git tabs will appear here.
+                  </Text>
+                </View>
+              ) : (
+                appCommits.map((commit, idx) => (
+                  <View key={commit.hash}>
+                    <View style={{ padding: 14, gap: 4 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13, flex: 1, marginRight: 8 }} numberOfLines={1}>
+                          {commit.projectName} [{commit.branch}]
+                        </Text>
+                        <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>
+                          {commit.hash}
+                        </Text>
+                      </View>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{commit.message}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>
+                        {new Date(commit.timestamp).toLocaleDateString()}
                       </Text>
                     </View>
-                    <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{commit.message}</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>
-                      {new Date(commit.timestamp).toLocaleDateString()}
-                    </Text>
+                    {idx !== appCommits.length - 1 && <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />}
                   </View>
-                  {idx !== appCommits.length - 1 && <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />}
-                </View>
-              ))
-            )}
+                ))
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* Delete Account */}
-        <TouchableOpacity 
-          onPress={handleDeleteAccountPrompt} 
-          style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            gap: 8, 
-            marginTop: 32, 
-            paddingVertical: 12, 
-            borderRadius: 10, 
-            borderWidth: 1, 
-            borderColor: '#F85149', 
-            backgroundColor: 'rgba(248, 81, 73, 0.06)' 
-          }}
-          disabled={deletingAccount}
-          activeOpacity={0.6}
-        >
-          {deletingAccount ? (
-            <ActivityIndicator color="#F85149" />
-          ) : (
-            <>
-              <Trash2 size={16} color="#F85149" strokeWidth={1.5} />
-              <Text style={{ color: '#F85149', fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Delete Account Permanently</Text>
-            </>
-          )}
-        </TouchableOpacity>
+          {/* Delete Account */}
+          <TouchableOpacity 
+            onPress={handleDeleteAccountPrompt} 
+            style={{ 
+              flexDirection: 'row', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: 8, 
+              marginTop: 16, 
+              paddingVertical: 12, 
+              borderRadius: 10, 
+              borderWidth: 1, 
+              borderColor: '#F85149', 
+              backgroundColor: 'rgba(248, 81, 73, 0.06)' 
+            }}
+            disabled={deletingAccount}
+            activeOpacity={0.6}
+          >
+            {deletingAccount ? (
+              <ActivityIndicator color="#F85149" />
+            ) : (
+              <>
+                <Trash2 size={16} color="#F85149" strokeWidth={1.5} />
+                <Text style={{ color: '#F85149', fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Delete Account Permanently</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     )
   }
