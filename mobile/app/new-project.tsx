@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { api } from '@/lib/api'
 import { useProjectsStore } from '@/store/projects'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -25,10 +25,11 @@ const TEMPLATES: { id: NodeType, label: string, icon: any, desc: string, group: 
 
 export default function NewProjectScreen() {
   const router = useRouter()
+  const localParams = useLocalSearchParams()
   const { colors } = useAppTheme()
   const { addProject } = useProjectsStore()
   
-  const [mode, setMode] = useState<CreationMode>('template')
+  const [mode, setMode] = useState<CreationMode>((localParams.initialMode as CreationMode) || 'template')
   const [name, setName] = useState('')
   const [type, setType] = useState<NodeType>('empty')
   const [githubUrl, setGithubUrl] = useState('')
