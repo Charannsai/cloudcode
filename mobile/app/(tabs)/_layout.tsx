@@ -1,69 +1,22 @@
 import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
-import { View, TouchableOpacity, StyleSheet, Text, Platform, LayoutChangeEvent, Keyboard } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, Keyboard, Platform } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
-import { BlurView } from 'expo-blur'
+import Svg, { Path } from 'react-native-svg'
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
-  withTiming,
-  Easing,
   useSharedValue,
   interpolate,
 } from 'react-native-reanimated'
-import { useState, useCallback, memo } from 'react'
 import { useUIStore } from '@/store/ui'
 
-const TAB_BAR_HEIGHT = 54
 const SPRING_CONFIG = {
   damping: 24,
   stiffness: 200,
   mass: 0.8,
 }
-
-const TabItem = memo(({ col, isFocused, activeColor, inactiveColor, isDark, onPress, onLayout }: any) => {
-  const scale = useSharedValue(isFocused ? 1.05 : 1)
-
-  useEffect(() => {
-    scale.value = withTiming(isFocused ? 1.08 : 1, {
-      duration: 100,
-      easing: Easing.bezier(0.16, 1, 0.3, 1),
-    })
-  }, [isFocused])
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }))
-
-  const Icon = col.icon as any
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={onPress}
-      style={styles.tabItem}
-      onLayout={onLayout}
-    >
-      <Animated.View style={[styles.tabItemContent, animStyle]}>
-        <Icon 
-          color={isFocused ? activeColor : inactiveColor} 
-          size={16} 
-          strokeWidth={isFocused ? 2.0 : 1.6}
-        />
-        <Text style={[
-          styles.tabLabel,
-          { 
-            color: isFocused ? (isDark ? '#FFFFFF' : '#0E1116') : inactiveColor,
-            marginTop: 2
-          }
-        ]}>
-          {col.name}
-        </Text>
-      </Animated.View>
-    </TouchableOpacity>
-  )
-})
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { isDark } = useAppTheme()
@@ -90,38 +43,25 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     isVisible.value = withSpring(tabBarVisible ? 1 : 0, SPRING_CONFIG)
   }, [tabBarVisible])
 
-  const [tabWidths, setTabWidths] = useState<number[]>(new Array(5).fill(0))
-  const [tabPositions, setTabPositions] = useState<number[]>(new Array(5).fill(0))
+  const getIndicatorPosition = (stateIndex: number) => {
+    if (stateIndex === 0) return 5.75
+    if (stateIndex === 1) return 63.25
+    if (stateIndex === 2) return 230.75
+    if (stateIndex === 3) return 288.25
+    return 5.75
+  }
 
-  const handleLayout = useCallback((index: number, event: LayoutChangeEvent) => {
-    const { x, width } = event.nativeEvent.layout
-    setTabWidths(prev => {
-      if (prev[index] === width) return prev
-      const next = [...prev]
-      next[index] = width
-      return next
-    })
-    setTabPositions(prev => {
-      if (prev[index] === x) return prev
-      const next = [...prev]
-      next[index] = x
-      return next
-    })
-  }, [])
+  const indicatorX = useSharedValue(getIndicatorPosition(state.index))
+
+  useEffect(() => {
+    indicatorX.value = withSpring(getIndicatorPosition(state.index), SPRING_CONFIG)
+  }, [state.index])
 
   const indicatorStyle = useAnimatedStyle(() => {
-    const stateIndex = state.index
-    const colIndex = stateIndex < 2 ? stateIndex : stateIndex + 1
-    const width = tabWidths[colIndex] || 0
-    const x = tabPositions[colIndex] || 0
-    
     return {
-      width: withTiming(width, { duration: 120, easing: Easing.bezier(0.16, 1, 0.3, 1) }),
-      transform: [
-        { translateX: withTiming(x, { duration: 120, easing: Easing.bezier(0.16, 1, 0.3, 1) }) },
-      ],
+      transform: [{ translateX: indicatorX.value }]
     }
-  }, [state.index, tabWidths, tabPositions])
+  })
 
   const wrapperStyle = useAnimatedStyle(() => {
     return {
@@ -132,7 +72,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     }
   })
 
-  // Symmetrical 5-column layout: Home, Work, FAB, AI, System
   const columns = [
     { type: 'route', routeIndex: 0, key: 'dashboard', name: 'Home', icon: LayoutDashboard },
     { type: 'route', routeIndex: 1, key: 'projects', name: 'Work', icon: FolderGit2 },
@@ -141,36 +80,27 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     { type: 'route', routeIndex: 3, key: 'settings', name: 'System', icon: SlidersHorizontal }
   ]
 
-  const indicatorBg = isDark 
-    ? 'rgba(210, 168, 255, 0.08)' 
-    : 'rgba(130, 80, 223, 0.06)'
-  const indicatorBorder = isDark
-    ? 'rgba(210, 168, 255, 0.15)'
-    : 'rgba(130, 80, 223, 0.1)'
+  const activeColor = isDark ? '#D2A8FF' : '#8250DF'
 
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
-      <BlurView
-        intensity={isDark ? 35 : 75}
-        tint={isDark ? 'dark' : 'light'}
-        style={[
-          styles.tabBarContainer,
-          { 
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-            backgroundColor: isDark ? 'rgba(21, 25, 34, 0.78)' : 'rgba(255, 255, 255, 0.85)',
-          }
-        ]}
-      >
+      <View style={styles.tabBarContainer}>
+        <Svg width={340} height={60} viewBox="0 0 340 60" style={styles.svgBg}>
+          <Path
+            d="M 30,0 L 90,0 C 110,0 120,18 130,18 C 140,18 145,10 153.4,5 A 30 30 0 0 1 186.6,5 C 195,10 200,18 210,18 C 220,18 230,0 250,0 L 310,0 A 30 30 0 0 1 340,30 A 30 30 0 0 1 310,60 L 250,60 C 230,60 220,42 210,42 C 200,42 195,50 186.6,55 A 30 30 0 0 1 153.4,55 C 145,50 140,42 130,42 C 120,42 110,60 90,60 L 30,60 A 30 30 0 0 1 0,30 A 30 30 0 0 1 30,0 Z"
+            fill={isDark ? '#151922' : '#0E1116'}
+            stroke={isDark ? '#21262D' : 'rgba(255, 255, 255, 0.15)'}
+            strokeWidth={1}
+          />
+        </Svg>
+
+        {/* Active Tab Background Circle Indicator */}
         <Animated.View 
           style={[
-            styles.indicator, 
-            { 
-              backgroundColor: indicatorBg,
-              borderColor: indicatorBorder,
-              borderWidth: 1,
-            },
+            styles.indicatorCircle,
+            { backgroundColor: activeColor },
             indicatorStyle
-          ]} 
+          ]}
         />
 
         {columns.map((col, index) => {
@@ -178,17 +108,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             return (
               <TouchableOpacity
                 key="fab"
-                onLayout={(e) => handleLayout(index, e)}
-                style={[
-                  styles.fabButton,
-                  { backgroundColor: isDark ? '#FFFFFF' : '#0E1116' }
-                ]}
+                style={[styles.tabItem, styles.fabItem]}
                 onPress={() => {
                   router.push('/new-project')
                 }}
                 activeOpacity={0.8}
               >
-                <Plus size={18} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
+                <Plus size={22} color={activeColor} strokeWidth={2.5} />
               </TouchableOpacity>
             )
           }
@@ -208,29 +134,46 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             }
           }
 
-          const activeColor = isDark ? '#D2A8FF' : '#8250DF'
-          const inactiveColor = isDark ? '#6E7681' : '#8C959F'
+          const Icon = col.icon as any
+          const activeIconColor = isDark ? '#0E1116' : '#FFFFFF'
+          const inactiveIconColor = isDark ? '#6E7681' : '#8C959F'
+
+          const getLeftOffset = (colIdx: number) => {
+            if (colIdx === 0) return 0
+            if (colIdx === 1) return 57.5
+            if (colIdx === 3) return 225
+            if (colIdx === 4) return 282.5
+            return 0
+          }
 
           return (
-            <TabItem
+            <TouchableOpacity
               key={route.key}
-              col={col}
-              isFocused={isFocused}
-              activeColor={activeColor}
-              inactiveColor={inactiveColor}
-              isDark={isDark}
+              style={[
+                styles.tabItem,
+                {
+                  left: getLeftOffset(index),
+                  width: 57.5,
+                }
+              ]}
               onPress={onPress}
-              onLayout={(e: any) => handleLayout(index, e)}
-            />
+              activeOpacity={0.7}
+            >
+              <Icon 
+                color={isFocused ? activeIconColor : inactiveIconColor} 
+                size={20} 
+                strokeWidth={isFocused ? 2.2 : 1.8}
+              />
+            </TouchableOpacity>
           )
         })}
-      </BlurView>
+      </View>
     </Animated.View>
   )
 }
 
 export default function TabsLayout() {
-  const { isDark, colors } = useAppTheme()
+  const { colors } = useAppTheme()
 
   return (
     <Tabs
@@ -250,36 +193,24 @@ export default function TabsLayout() {
         name="dashboard"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }: any) => (
-            <LayoutDashboard size={size || 18} color={color} strokeWidth={1.8} />
-          ),
         }}
       />
       <Tabs.Screen
         name="projects"
         options={{
           title: 'Work',
-          tabBarIcon: ({ color, size }: any) => (
-            <FolderGit2 size={size || 18} color={color} strokeWidth={1.8} />
-          ),
         }}
       />
       <Tabs.Screen
         name="ai"
         options={{
           title: 'AI',
-          tabBarIcon: ({ color, size }: any) => (
-            <Sparkles size={size || 18} color={color} strokeWidth={1.8} />
-          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'System',
-          tabBarIcon: ({ color, size }: any) => (
-            <SlidersHorizontal size={size || 18} color={color} strokeWidth={1.8} />
-          ),
         }}
       />
     </Tabs>
@@ -289,64 +220,51 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tabBarWrapper: {
     position: 'absolute',
-    bottom: 24,
-    left: 20,
-    right: 20,
+    bottom: Platform.OS === 'ios' ? 32 : 24,
+    left: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
   },
   tabBarContainer: {
-    flexDirection: 'row',
-    height: TAB_BAR_HEIGHT,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
-    width: '100%',
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-  },
-  tabItemContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 340,
+    height: 60,
     position: 'relative',
-    height: '100%',
-    paddingTop: 4,
   },
-  tabLabel: {
-    fontSize: 9,
-    fontFamily: 'Inter_500Medium',
-    letterSpacing: -0.1,
-  },
-  indicator: {
+  svgBg: {
     position: 'absolute',
-    height: 42,
-    top: 5,
-    borderRadius: 6,
-    zIndex: -1,
+    top: 0,
+    left: 0,
+    width: 340,
+    height: 60,
+    zIndex: 0,
   },
-  fabButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+  indicatorCircle: {
+    position: 'absolute',
+    top: 7,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    zIndex: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  tabItem: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    height: 60,
+  },
+  fabItem: {
+    left: 140,
+    width: 60,
   },
 })
+
