@@ -36,7 +36,7 @@ import Animated, {
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
   const scale = useSharedValue(1)
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 300 }) }]
+    transform: [{ scale: withTiming(scale.value, { duration: 85, easing: Easing.out(Easing.quad) }) }]
   }))
   return (
     <Pressable

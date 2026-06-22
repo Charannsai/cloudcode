@@ -40,12 +40,12 @@ import Animated, {
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
   const scale = useSharedValue(1)
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 300 }) }]
+    transform: [{ scale: withTiming(scale.value, { duration: 85, easing: Easing.out(Easing.quad) }) }]
   }))
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => { scale.value = 0.95 }}
+      onPressIn={() => { scale.value = 0.96 }}
       onPressOut={() => { scale.value = 1 }}
       style={style}
     >
@@ -101,13 +101,13 @@ export default function DashboardScreen() {
   useEffect(() => {
     if (profileMenuVisible) {
       setRenderMenu(true)
-      menuOpacity.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      menuScale.value = withTiming(1, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      menuTranslateY.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      menuOpacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
+      menuScale.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
+      menuTranslateY.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.quad) })
     } else {
-      menuOpacity.value = withTiming(0, { duration: 150, easing: Easing.linear })
-      menuScale.value = withTiming(0.95, { duration: 150, easing: Easing.linear })
-      menuTranslateY.value = withTiming(-10, { duration: 150, easing: Easing.linear }, (finished) => {
+      menuOpacity.value = withTiming(0, { duration: 100, easing: Easing.linear })
+      menuScale.value = withTiming(0.95, { duration: 100, easing: Easing.linear })
+      menuTranslateY.value = withTiming(-10, { duration: 100, easing: Easing.linear }, (finished) => {
         if (finished) {
           runOnJS(setRenderMenu)(false)
         }

@@ -10,13 +10,14 @@ import Animated, {
   withSpring, 
   useSharedValue,
   interpolate,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
 
-const SPRING_CONFIG = {
-  damping: 24,
-  stiffness: 200,
-  mass: 0.8,
+const TAB_ANIM_CONFIG = {
+  duration: 150,
+  easing: Easing.out(Easing.quad),
 }
 
 const WorkspaceTabIcon = ({ color, size, strokeWidth }: any) => {
@@ -69,11 +70,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
-      isVisible.value = withSpring(0, SPRING_CONFIG)
+      isVisible.value = withTiming(0, TAB_ANIM_CONFIG)
     })
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       if (tabBarVisible) {
-        isVisible.value = withSpring(1, SPRING_CONFIG)
+        isVisible.value = withTiming(1, TAB_ANIM_CONFIG)
       }
     })
     return () => {
@@ -83,7 +84,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   }, [tabBarVisible])
 
   useEffect(() => {
-    isVisible.value = withSpring(tabBarVisible ? 1 : 0, SPRING_CONFIG)
+    isVisible.value = withTiming(tabBarVisible ? 1 : 0, TAB_ANIM_CONFIG)
   }, [tabBarVisible])
 
   const getIndicatorPosition = (stateIndex: number) => {
@@ -97,7 +98,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const indicatorX = useSharedValue(getIndicatorPosition(state.index))
 
   useEffect(() => {
-    indicatorX.value = withSpring(getIndicatorPosition(state.index), SPRING_CONFIG)
+    indicatorX.value = withTiming(getIndicatorPosition(state.index), TAB_ANIM_CONFIG)
   }, [state.index])
 
   const indicatorStyle = useAnimatedStyle(() => {
@@ -110,7 +111,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     return {
       opacity: isVisible.value,
       transform: [
-        { translateY: interpolate(isVisible.value, [0, 1], [120, 0]) }
+        { translateY: interpolate(isVisible.value, [0, 1], [80, 0]) }
       ],
     }
   })

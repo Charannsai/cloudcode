@@ -91,17 +91,17 @@ export function ConfirmModal({
   useEffect(() => {
     if (visible) {
       setRenderModal(true)
-      opacity.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      scale.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      translateY.value = withTiming(0, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      opacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
+      scale.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
+      translateY.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.quad) })
     } else {
-      opacity.value = withTiming(0, { duration: 150, easing: Easing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
+      opacity.value = withTiming(0, { duration: 100, easing: Easing.linear }, (finished) => {
         if (finished) {
           runOnJS(setRenderModal)(false)
         }
       })
-      scale.value = withTiming(0.98, { duration: 150, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      translateY.value = withTiming(4, { duration: 150, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      scale.value = withTiming(0.98, { duration: 100, easing: Easing.linear })
+      translateY.value = withTiming(4, { duration: 100, easing: Easing.linear })
     }
   }, [visible])
 
