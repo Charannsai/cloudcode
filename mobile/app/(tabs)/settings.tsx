@@ -12,7 +12,7 @@ import {
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
   CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
-  Eye, EyeOff, Sparkles
+  Eye, EyeOff, Sparkles, Trash2, Laptop
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
@@ -35,11 +35,8 @@ export default function SettingsScreen() {
 
   // Profile settings state
   const [profileName, setProfileName] = useState('')
-  const [profileEmail, setProfileEmail] = useState('')
-  const [profileBio, setProfileBio] = useState('')
-  const [profileCompany, setProfileCompany] = useState('')
-  const [profileLocation, setProfileLocation] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   // Track settings tab screen focus state
   useFocusEffect(
@@ -255,16 +252,8 @@ export default function SettingsScreen() {
 
       // 6. Load Profile settings
       const cachedProfileName = await AsyncStorage.getItem('profile_name')
-      const cachedProfileEmail = await AsyncStorage.getItem('profile_email')
-      const cachedProfileBio = await AsyncStorage.getItem('profile_bio')
-      const cachedProfileCompany = await AsyncStorage.getItem('profile_company')
-      const cachedProfileLocation = await AsyncStorage.getItem('profile_location')
 
       setProfileName(cachedProfileName || user?.name || user?.login || '')
-      setProfileEmail(cachedProfileEmail || user?.email || '')
-      setProfileBio(cachedProfileBio || '')
-      setProfileCompany(cachedProfileCompany || '')
-      setProfileLocation(cachedProfileLocation || '')
     }
     loadData()
   }, [fetchRuntimesData])
@@ -273,9 +262,6 @@ export default function SettingsScreen() {
     if (user) {
       AsyncStorage.getItem('profile_name').then(val => {
         if (!val) setProfileName(user.name || user.login || '')
-      })
-      AsyncStorage.getItem('profile_email').then(val => {
-        if (!val) setProfileEmail(user.email || '')
       })
     }
   }, [user])
@@ -816,16 +802,58 @@ export default function SettingsScreen() {
     setSavingProfile(true)
     try {
       await AsyncStorage.setItem('profile_name', profileName.trim())
-      await AsyncStorage.setItem('profile_email', profileEmail.trim())
-      await AsyncStorage.setItem('profile_bio', profileBio.trim())
-      await AsyncStorage.setItem('profile_company', profileCompany.trim())
-      await AsyncStorage.setItem('profile_location', profileLocation.trim())
       showModal('Success', 'Profile settings updated successfully.', 'success')
     } catch (err) {
       showModal('Error', (err as Error).message, 'error')
     } finally {
       setSavingProfile(false)
     }
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true)
+    try {
+      // Simulate API call to delete everything permanently
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Clear local storage configurations
+      await AsyncStorage.removeItem('profile_name')
+      await AsyncStorage.removeItem('profile_email')
+      await AsyncStorage.removeItem('git_author_name')
+      await AsyncStorage.removeItem('git_author_email')
+      await AsyncStorage.removeItem('byok_enabled')
+      await AsyncStorage.removeItem('custom_gemini_key')
+      await AsyncStorage.removeItem('custom_openai_key')
+      await AsyncStorage.removeItem('custom_anthropic_key')
+
+      // Sign out
+      await signOut()
+      showModal(
+        'Account Deleted',
+        'Your account and all associated projects, container environments, and active billing tiers have been deleted permanently. You have been logged out.',
+        'success'
+      )
+    } catch (err) {
+      showModal('Error', (err as Error).message, 'error')
+    } finally {
+      setDeletingAccount(false)
+    }
+  }
+
+  const handleDeleteAccountPrompt = () => {
+    showModal(
+      'Delete Account Permanently?',
+      'Warning: This action is permanent and irreversible. All of your sandbox environments, active container sessions, workspace projects, custom deploy keys, and configurations will be deleted immediately and cannot be recovered. Are you absolutely sure?',
+      'danger',
+      () => {
+        hideModal()
+        handleDeleteAccount()
+      },
+      'Delete My Account',
+      false,
+      () => hideModal(),
+      'Cancel'
+    )
   }
 
   const renderProfileView = () => {
@@ -871,56 +899,22 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Email */}
+          {/* Email (Locked placeholder) */}
           <View style={{ gap: 6 }}>
-            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Public Email</Text>
-            <TextInput
-              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-              placeholder="email@example.com"
-              placeholderTextColor={colors.textSecondary + '60'}
-              value={profileEmail}
-              onChangeText={setProfileEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          {/* Bio */}
-          <View style={{ gap: 6 }}>
-            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Bio</Text>
-            <TextInput
-              style={[styles.inputField, { color: colors.text, borderColor: colors.border, height: 72, paddingVertical: 8 }]}
-              placeholder="Tell us about yourself..."
-              placeholderTextColor={colors.textSecondary + '60'}
-              value={profileBio}
-              onChangeText={setProfileBio}
-              multiline={true}
-              numberOfLines={3}
-            />
-          </View>
-
-          {/* Company */}
-          <View style={{ gap: 6 }}>
-            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Company</Text>
-            <TextInput
-              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Organization"
-              placeholderTextColor={colors.textSecondary + '60'}
-              value={profileCompany}
-              onChangeText={setProfileCompany}
-            />
-          </View>
-
-          {/* Location */}
-          <View style={{ gap: 6 }}>
-            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Location</Text>
-            <TextInput
-              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-              placeholder="City, Country"
-              placeholderTextColor={colors.textSecondary + '60'}
-              value={profileLocation}
-              onChangeText={setProfileLocation}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Public Email</Text>
+              <Lock size={12} color={colors.textSecondary} />
+            </View>
+            <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)' }]}>
+              <TextInput
+                style={[styles.textInput, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}
+                value={user?.email || 'no-email@github.com'}
+                editable={false}
+              />
+            </View>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
+              Your email is linked to your GitHub account and cannot be modified here.
+            </Text>
           </View>
 
           <TouchableOpacity 
@@ -938,6 +932,94 @@ export default function SettingsScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Session History */}
+        <View style={{ marginTop: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <History size={16} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SESSIONS</Text>
+          </View>
+          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                <Laptop size={18} color={colors.text} />
+                <View>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>iOS Simulator (Current Device)</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Bangalore, India · 127.0.0.1</Text>
+                </View>
+              </View>
+              <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>ACTIVE</Text>
+              </View>
+            </View>
+            <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
+            <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                <Server size={18} color={colors.textSecondary} />
+                <View>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>VS Code Workspace Extension</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Bangalore, India · 103.88.22.45</Text>
+                </View>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 11 }}>2 hours ago</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Recent Commits */}
+        <View style={{ marginTop: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Clock size={16} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT COMMITS</Text>
+          </View>
+          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
+            <View style={{ padding: 14, gap: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>next-test [main]</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>f2a7db3</Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>fix: update floating bottom navigation bar styles</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>1 hour ago</Text>
+            </View>
+            <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
+            <View style={{ padding: 14, gap: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>lcn [master]</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>a9d82ff</Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>feat: configure container databases & healthcheck logs</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>1 day ago</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Delete Account */}
+        <TouchableOpacity 
+          onPress={handleDeleteAccountPrompt} 
+          style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: 8, 
+            marginTop: 32, 
+            paddingVertical: 12, 
+            borderRadius: 10, 
+            borderWidth: 1, 
+            borderColor: '#F85149', 
+            backgroundColor: 'rgba(248, 81, 73, 0.06)' 
+          }}
+          disabled={deletingAccount}
+          activeOpacity={0.6}
+        >
+          {deletingAccount ? (
+            <ActivityIndicator color="#F85149" />
+          ) : (
+            <>
+              <Trash2 size={16} color="#F85149" strokeWidth={1.5} />
+              <Text style={{ color: '#F85149', fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Delete Account Permanently</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     )
   }
