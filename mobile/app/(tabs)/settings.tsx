@@ -1010,19 +1010,17 @@ export default function SettingsScreen() {
               appSessions.map((session, idx) => (
                 <View key={idx}>
                   <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', flex: 1, marginRight: 12 }}>
-                      <Laptop size={18} color={session.status === 'ACTIVE' ? colors.text : colors.textSecondary} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>
-                          {session.device} ({session.status === 'ACTIVE' ? 'Current Device' : 'Previous Session'})
-                        </Text>
-                        <Text style={{ color: colors.textSecondary, fontSize: 11 }} numberOfLines={1}>
-                          {new Date(session.timestamp).toLocaleDateString()} · {session.ip}
-                        </Text>
-                      </View>
+                    <Laptop size={18} color={session.status === 'ACTIVE' ? colors.text : colors.textSecondary} style={{ flexShrink: 0 }} />
+                    <View style={{ flex: 1, marginLeft: 10, marginRight: session.status === 'ACTIVE' ? 12 : 0 }}>
+                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>
+                        {session.device} ({session.status === 'ACTIVE' ? 'Current Device' : 'Previous Session'})
+                      </Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11 }} numberOfLines={1}>
+                        {new Date(session.timestamp).toLocaleDateString()} · {session.ip}
+                      </Text>
                     </View>
                     {session.status === 'ACTIVE' && (
-                      <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                      <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, flexShrink: 0 }}>
                         <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>ACTIVE</Text>
                       </View>
                     )}
