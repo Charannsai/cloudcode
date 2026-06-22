@@ -64,9 +64,28 @@ export default function DashboardScreen() {
   const { handleScroll } = useScrollVisibility()
   const router = useRouter()
   const { user, signOut } = useAuthStore()
-  const { setSettingsSubScreen } = useUIStore()
+  const { setSettingsSubScreen, setTabBarVisible } = useUIStore()
   const [profileName, setProfileName] = useState('')
   const [profileMenuVisible, setProfileMenuVisible] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
+
+  // Track dashboard screen focus state
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true)
+      return () => {
+        setIsFocused(false)
+        setTabBarVisible(true)
+      }
+    }, [setTabBarVisible])
+  )
+
+  // Hide tab bar dynamically when the profile menu modal is active
+  useEffect(() => {
+    if (isFocused) {
+      setTabBarVisible(!profileMenuVisible)
+    }
+  }, [profileMenuVisible, isFocused, setTabBarVisible])
   
   interface DiagnosticsData {
     cpuLoad: number
@@ -397,6 +416,7 @@ export default function DashboardScreen() {
     <Modal
       visible={profileMenuVisible}
       transparent={true}
+      statusBarTranslucent={true}
       animationType="fade"
       onRequestClose={() => setProfileMenuVisible(false)}
     >
