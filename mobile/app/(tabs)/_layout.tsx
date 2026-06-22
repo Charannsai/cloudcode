@@ -4,6 +4,7 @@ import { View, TouchableOpacity, StyleSheet, Keyboard, Platform } from 'react-na
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
 import { BlurView } from 'expo-blur'
+import Svg, { Path, Circle } from 'react-native-svg'
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
@@ -16,6 +17,34 @@ const SPRING_CONFIG = {
   damping: 24,
   stiffness: 200,
   mass: 0.8,
+}
+
+const WorkspaceTabIcon = ({ color, size, strokeWidth }: any) => {
+  return (
+    <Svg width={size || 20} height={size || 20} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 8C4 6.89543 4.89543 6 6 6H10L12 8H18C19.1046 8 20 8.89543 20 10V16C20 17.1046 19.1046 18 18 18H6C4.89543 18 4 17.1046 4 16V8Z"
+        stroke={color}
+        strokeWidth={strokeWidth || 1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M9 12L11 13.5L9 15"
+        stroke={color}
+        strokeWidth={strokeWidth || 1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Circle
+        cx="18"
+        cy="16"
+        r="1.5"
+        stroke={color}
+        strokeWidth={strokeWidth || 1.8}
+      />
+    </Svg>
+  )
 }
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -74,7 +103,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   const columns = [
     { type: 'route', routeIndex: 0, key: 'dashboard', icon: LayoutDashboard },
-    { type: 'route', routeIndex: 1, key: 'projects', icon: FolderGit2 },
+    { type: 'route', routeIndex: 1, key: 'projects', icon: WorkspaceTabIcon },
     { type: 'fab', key: 'fab' },
     { type: 'route', routeIndex: 2, key: 'ai', icon: Sparkles },
     { type: 'route', routeIndex: 3, key: 'settings', icon: SlidersHorizontal }
