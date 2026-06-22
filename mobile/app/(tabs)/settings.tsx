@@ -12,7 +12,7 @@ import {
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
   CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
-  Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit
+  Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit, Info
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
@@ -37,6 +37,7 @@ export default function SettingsScreen() {
   const [profileName, setProfileName] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [aboutTab, setAboutTab] = useState<'branding' | 'system'>('branding')
 
   // Client-side audit logs
   const [appCommits, setAppCommits] = useState<any[]>([])
@@ -1078,34 +1079,252 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          {/* Delete Account */}
-          <TouchableOpacity 
-            onPress={handleDeleteAccountPrompt} 
-            style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: 8, 
-              marginTop: 16, 
-              paddingVertical: 12, 
-              borderRadius: 10, 
-              borderWidth: 1, 
-              borderColor: '#F85149', 
-              backgroundColor: 'rgba(248, 81, 73, 0.06)' 
-            }}
-            disabled={deletingAccount}
-            activeOpacity={0.6}
-          >
-            {deletingAccount ? (
-              <ActivityIndicator color="#F85149" />
-            ) : (
-              <>
-                <Trash2 size={16} color="#F85149" strokeWidth={1.5} />
-                <Text style={{ color: '#F85149', fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Delete Account Permanently</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {/* Account Actions */}
+          <View style={{ marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Shield size={16} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACCOUNT ACTIONS</Text>
+            </View>
+            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, marginHorizontal: 0 }]}>
+              {/* Sign Out Row */}
+              <TouchableOpacity 
+                activeOpacity={0.7} 
+                onPress={handleSignOut}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 }}
+              >
+                <View style={{ 
+                  width: 32, 
+                  height: 32, 
+                  borderRadius: 16, 
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  marginRight: 12 
+                }}>
+                  <LogOut size={16} color={colors.textSecondary} strokeWidth={2} />
+                </View>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Sign Out</Text>
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
+                    Safely sign out of your account on this device
+                  </Text>
+                </View>
+                <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+              </TouchableOpacity>
+
+              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+
+              {/* Delete Account Row */}
+              <TouchableOpacity 
+                activeOpacity={0.7} 
+                onPress={handleDeleteAccountPrompt}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 }}
+                disabled={deletingAccount}
+              >
+                <View style={{ 
+                  width: 32, 
+                  height: 32, 
+                  borderRadius: 16, 
+                  backgroundColor: 'rgba(248, 81, 73, 0.08)', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  marginRight: 12 
+                }}>
+                  <Trash2 size={16} color="#F85149" strokeWidth={2} />
+                </View>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={{ color: '#F85149', fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Delete Account</Text>
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
+                    Permanently delete your account and erase all data
+                  </Text>
+                </View>
+                {deletingAccount ? (
+                  <ActivityIndicator size="small" color="#F85149" />
+                ) : (
+                  <ChevronRight size={16} color="#F85149" strokeWidth={1.5} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+      </View>
+    )
+  }
+
+  const renderAboutView = () => {
+    return (
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Unified SubHeader */}
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>About CloudCode</Text>
+        </View>
+
+        {/* Segmented Tab Selector */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 24, marginBottom: 12 }}>
+          <View style={{ 
+            flexDirection: 'row', 
+            flex: 1, 
+            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', 
+            borderRadius: 10, 
+            padding: 4,
+            borderWidth: 1,
+            borderColor: colors.border
+          }}>
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              onPress={() => setAboutTab('branding')}
+              style={{
+                flex: 1,
+                paddingVertical: 8,
+                alignItems: 'center',
+                borderRadius: 7,
+                backgroundColor: aboutTab === 'branding' ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: aboutTab === 'branding' ? 0.1 : 0,
+                shadowRadius: 2,
+                elevation: aboutTab === 'branding' ? 1 : 0,
+              }}
+            >
+              <Text style={{ 
+                color: aboutTab === 'branding' ? colors.text : colors.textSecondary, 
+                fontFamily: 'Inter_600SemiBold', 
+                fontSize: 13 
+              }}>
+                CloudCode
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              onPress={() => setAboutTab('system')}
+              style={{
+                flex: 1,
+                paddingVertical: 8,
+                alignItems: 'center',
+                borderRadius: 7,
+                backgroundColor: aboutTab === 'system' ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: aboutTab === 'system' ? 0.1 : 0,
+                shadowRadius: 2,
+                elevation: aboutTab === 'system' ? 1 : 0,
+              }}
+            >
+              <Text style={{ 
+                color: aboutTab === 'system' ? colors.text : colors.textSecondary, 
+                fontFamily: 'Inter_600SemiBold', 
+                fontSize: 13 
+              }}>
+                System Info
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {aboutTab === 'branding' ? (
+          <View style={{ gap: 20 }}>
+            {/* Logo and Mission */}
+            <View style={{ alignItems: 'center', marginVertical: 12, gap: 12 }}>
+              <Image 
+                source={require('../../assets/cloudcodelogo.png')} 
+                style={{ height: 48, width: 200, tintColor: colors.text }} 
+                resizeMode="contain" 
+              />
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_500Medium', textAlign: 'center', paddingHorizontal: 40, lineHeight: 18 }}>
+                The next-generation cloud IDE for developers. Build, test, and deploy code from anywhere in the world.
+              </Text>
+            </View>
+
+            {/* Core Capabilities */}
+            <View style={{ paddingHorizontal: 24, gap: 12 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>CORE CAPABILITIES</Text>
+              <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 14, marginHorizontal: 0 }]}>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <Cpu size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Instant Containers</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
+                      Provision full Linux sandboxes in seconds. Write, compile, and run your code with native performance.
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4 }} />
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <Sparkles size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>AI-Powered Coding</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
+                      Smart autocomplete, inline chat, and custom provider options (BYOK) for Gemini, ChatGPT, and Claude.
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4 }} />
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <Shield size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Secure Gateway</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
+                      All connection streams and file actions are fully encrypted via SSH & SSL using industrial AES-256 standards.
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={{ paddingHorizontal: 24, gap: 12 }}>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>DIAGNOSTICS & SYSTEM STATUS</Text>
+            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 0, marginHorizontal: 0 }]}>
+              
+              {/* App Version Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Info size={16} color={colors.textSecondary} />
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>App Version</Text>
+                </View>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12 }}>v1.0.0 (Production)</Text>
+              </View>
+              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+
+              {/* Runtime Engine Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Server size={16} color={colors.textSecondary} />
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>Runtime Engine</Text>
+                </View>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12 }}>v1.0.0-rc2</Text>
+              </View>
+              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+
+              {/* Cloud Gateway Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Wifi size={16} color={colors.textSecondary} />
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>Cloud Gateway</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3FB950' }} />
+                  <Text style={{ color: '#3FB950', fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Connected</Text>
+                </View>
+              </View>
+              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+
+              {/* Encryption Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Lock size={16} color={colors.textSecondary} />
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>Encryption Level</Text>
+                </View>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12 }}>AES-256-GCM</Text>
+              </View>
+
+            </View>
+          </View>
+        )}
       </View>
     )
   }
@@ -1499,6 +1718,29 @@ export default function SettingsScreen() {
     )
   }
 
+  if (currentSubScreen === 'about') {
+    return (
+      <ScrollView 
+        style={[styles.container, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {renderAboutView()}
+        <ConfirmModal
+          visible={modalConfig.visible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          type={modalConfig.type}
+          singleButton={modalConfig.singleButton}
+          onConfirm={modalConfig.onConfirm}
+          onCancel={modalConfig.onCancel}
+        />
+      </ScrollView>
+    )
+  }
+
   const renderSettingsRow = ({
     icon: IconComponent,
     iconColor,
@@ -1518,6 +1760,9 @@ export default function SettingsScreen() {
     onPress?: () => void
     showDivider?: boolean
   }) => {
+    const neutralIconBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'
+    const neutralIconColor = colors.textSecondary
+
     const content = (
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 }}>
         {/* Icon Wrapper */}
@@ -1525,12 +1770,12 @@ export default function SettingsScreen() {
           width: 32, 
           height: 32, 
           borderRadius: 16, 
-          backgroundColor: iconBg, 
+          backgroundColor: neutralIconBg, 
           alignItems: 'center', 
           justifyContent: 'center',
           marginRight: 12 
         }}>
-          <IconComponent size={16} color={iconColor} strokeWidth={2} />
+          <IconComponent size={16} color={neutralIconColor} strokeWidth={2} />
         </View>
 
         {/* Label & Subtitle */}
@@ -1656,15 +1901,7 @@ export default function SettingsScreen() {
             iconBg: 'rgba(139, 92, 246, 0.1)',
             label: 'AI API Keys (BYOK)',
             subtitle: byokMode ? 'Custom Keys Enabled' : 'Configure third-party LLM providers',
-            onPress: () => setCurrentSubScreen('aiKeys')
-          })}
-          {renderSettingsRow({
-            icon: LogOut,
-            iconColor: '#F85149',
-            iconBg: 'rgba(248, 81, 73, 0.08)',
-            label: 'Sign Out',
-            subtitle: 'Disconnect account from this device',
-            onPress: handleSignOut,
+            onPress: () => setCurrentSubScreen('aiKeys'),
             showDivider: false
           })}
         </View>
@@ -1701,31 +1938,15 @@ export default function SettingsScreen() {
             onPress: () => setCurrentSubScreen('dependencies'),
             showDivider: true
           })}
-
-          {/* Engine Status Details */}
-          <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.01)', paddingVertical: 14, paddingHorizontal: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Server size={14} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Runtime Engine</Text>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11.5 }}>v1.0.0</Text>
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Cpu size={14} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Cloud Gateway</Text>
-              </View>
-              <Text style={{ color: '#3FB950', fontFamily: 'JetBrainsMono_400Regular', fontSize: 11.5, fontWeight: 'bold' }}>Active</Text>
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Encryption</Text>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11.5 }}>AES-256</Text>
-            </View>
-          </View>
+          {renderSettingsRow({
+            icon: Info,
+            iconColor: colors.textSecondary,
+            iconBg: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+            label: 'About CloudCode',
+            subtitle: 'App version, diagnostics & details',
+            onPress: () => setCurrentSubScreen('about'),
+            showDivider: false
+          })}
         </View>
       </View>
 
