@@ -26,12 +26,12 @@ import { useUIStore } from '@/store/ui'
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
   const scale = useSharedValue(1)
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 300 }) }]
+    transform: [{ scale: withTiming(scale.value, { duration: 85, easing: Easing.out(Easing.quad) }) }]
   }))
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => { scale.value = 0.95 }}
+      onPressIn={() => { scale.value = 0.96 }}
       onPressOut={() => { scale.value = 1 }}
       style={style}
     >
@@ -118,13 +118,13 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (upgradeModal.visible) {
       setRenderUpgrade(true)
-      upgradeOpacity.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      upgradeScale.value = withTiming(1, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      upgradeTranslateY.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      upgradeOpacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
+      upgradeScale.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
+      upgradeTranslateY.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.quad) })
     } else {
-      upgradeOpacity.value = withTiming(0, { duration: 150, easing: Easing.linear })
-      upgradeScale.value = withTiming(0.95, { duration: 150, easing: Easing.linear })
-      upgradeTranslateY.value = withTiming(10, { duration: 150, easing: Easing.linear }, (finished) => {
+      upgradeOpacity.value = withTiming(0, { duration: 100, easing: Easing.linear })
+      upgradeScale.value = withTiming(0.95, { duration: 100, easing: Easing.linear })
+      upgradeTranslateY.value = withTiming(10, { duration: 100, easing: Easing.linear }, (finished) => {
         if (finished) {
           runOnJS(setRenderUpgrade)(false)
         }
@@ -2003,8 +2003,8 @@ export default function SettingsScreen() {
     {/* Overlays for subscreens */}
     {currentSubScreen === 'billing' && (
       <Animated.View 
-        entering={SlideInRight.springify().damping(22).stiffness(150)}
-        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
       >
         <ScrollView 
@@ -2039,8 +2039,8 @@ export default function SettingsScreen() {
 
     {currentSubScreen === 'gitSsh' && (
       <Animated.View 
-        entering={SlideInRight.springify().damping(22).stiffness(150)}
-        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
       >
         <ScrollView 
@@ -2074,8 +2074,8 @@ export default function SettingsScreen() {
 
     {currentSubScreen === 'aiKeys' && (
       <Animated.View 
-        entering={SlideInRight.springify().damping(22).stiffness(150)}
-        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
       >
         <ScrollView 
@@ -2101,8 +2101,8 @@ export default function SettingsScreen() {
 
     {currentSubScreen === 'dependencies' && (
       <Animated.View 
-        entering={SlideInRight.springify().damping(22).stiffness(150)}
-        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
       >
         <ScrollView 
@@ -2136,8 +2136,8 @@ export default function SettingsScreen() {
 
     {currentSubScreen === 'profile' && (
       <Animated.View 
-        entering={SlideInRight.springify().damping(22).stiffness(150)}
-        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
       >
         <ScrollView 
@@ -2173,8 +2173,8 @@ export default function SettingsScreen() {
 
     {currentSubScreen === 'about' && (
       <Animated.View 
-        entering={SlideInRight.springify().damping(22).stiffness(150)}
-        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
       >
         <ScrollView 
