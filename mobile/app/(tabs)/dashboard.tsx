@@ -128,15 +128,22 @@ export default function DashboardScreen() {
     ],
   }))
 
+  const closePopoverInstantly = () => {
+    setProfileMenuVisible(false)
+    setRenderMenu(false)
+    menuOpacity.value = 0
+    menuScale.value = 0.95
+    menuTranslateY.value = -10
+  }
+
   // Track dashboard screen focus state
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true)
       return () => {
         setIsFocused(false)
-        setTabBarVisible(true)
       }
-    }, [setTabBarVisible])
+    }, [])
   )
 
   // Hide tab bar dynamically when the profile menu modal or sign out modal is active
@@ -518,7 +525,7 @@ export default function DashboardScreen() {
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={() => {
-                setProfileMenuVisible(false)
+                closePopoverInstantly()
                 setSettingsSubScreen('profile')
                 router.push('/(tabs)/settings')
               }}
@@ -531,7 +538,7 @@ export default function DashboardScreen() {
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={() => {
-                setProfileMenuVisible(false)
+                closePopoverInstantly()
                 setSettingsSubScreen('main')
                 router.push('/(tabs)/settings')
               }}
@@ -544,7 +551,7 @@ export default function DashboardScreen() {
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={() => {
-                setProfileMenuVisible(false)
+                closePopoverInstantly()
                 setSettingsSubScreen('billing')
                 router.push('/(tabs)/settings')
               }}
