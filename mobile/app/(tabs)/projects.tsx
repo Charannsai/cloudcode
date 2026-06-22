@@ -22,7 +22,38 @@ import {
   Sparkles,
 } from 'lucide-react-native'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import Animated, { 
+  FadeInDown, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  useSharedValue, 
+  Easing,
+  interpolate
+} from 'react-native-reanimated'
+
+const PulseDot = ({ color }: { color: string }) => {
+  const opacity = useSharedValue(0.4)
+  
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
+  }, [])
+  
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: interpolate(opacity.value, [0.4, 1], [0.9, 1.3]) }]
+  }))
+  
+  return (
+    <View style={{ width: 14, height: 14, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View style={[{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }, animStyle]} />
+    </View>
+  )
+}
 
 const STATUS_COLOR: Record<string, string> = {
   ready: '#3FB950',
@@ -130,7 +161,11 @@ export default function ProjectsScreen() {
             <View style={styles.cardInfo}>
               <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>{p.name}</Text>
               <View style={styles.cardMeta}>
-                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                {p.status === 'running' || p.status === 'ready' ? (
+                  <PulseDot color={statusColor} />
+                ) : (
+                  <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                )}
                 <Text style={[styles.cardStatus, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
                   {p.status}
                 </Text>
@@ -156,22 +191,69 @@ export default function ProjectsScreen() {
   }
 
   const emptyState = (
-    <View style={styles.empty}>
-      <View style={[styles.emptyIcon, { backgroundColor: isDark ? '#1C2128' : '#F3F4F6', borderColor: colors.border }]}>
-        <Activity size={28} color={colors.textSecondary} strokeWidth={1.2} />
+    <View style={styles.landingContainer}>
+      <View style={styles.welcomeHero}>
+        <View style={[styles.artworkCircle, { borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', backgroundColor: isDark ? '#151922' : '#FFFFFF' }]}>
+          <View style={[styles.artworkInnerCircle, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+            <Terminal size={32} color={isDark ? '#F3F4F6' : '#0E1116'} strokeWidth={1.2} />
+          </View>
+        </View>
+        <Text style={[styles.welcomeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode</Text>
+        <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+          Open or provision a developer sandbox environment to get started.
+        </Text>
       </View>
-      <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>No Workspaces</Text>
-      <Text style={[styles.emptySub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-        Create your first workspace to start building.
-      </Text>
-      <TouchableOpacity 
-        style={[styles.emptyBtn, { backgroundColor: colors.text }]}
-        onPress={() => router.push('/new-project')}
-        activeOpacity={0.8}
-      >
-        <Plus size={16} color={colors.background} strokeWidth={2.5} />
-        <Text style={[styles.emptyBtnText, { color: colors.background, fontFamily: 'Inter_600SemiBold' }]}>New Workspace</Text>
-      </TouchableOpacity>
+
+      <View style={styles.startGroup}>
+        <Text style={[styles.startHeader, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>Start</Text>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push('/new-project')}
+          style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+        >
+          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+            <Plus size={16} color={colors.text} strokeWidth={2.5} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.welcomeActionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>New from Template...</Text>
+            <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Node, React, Next.js, FastAPI, Flask, Rust, Go</Text>
+          </View>
+          <ChevronRight size={14} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push({ pathname: '/new-project', params: { initialMode: 'clone' } })}
+          style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+        >
+          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+            <GitBranch size={16} color={colors.text} strokeWidth={1.8} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.welcomeActionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Clone Git Repository...</Text>
+            <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Clone a remote repository URL directly into a sandbox</Text>
+          </View>
+          <ChevronRight size={14} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => {
+            Alert.alert("Welcome Guide", "CloudCode lets you build web apps in the cloud. Access terminals, code editors, and live previews inside sandboxes.")
+          }}
+          style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+        >
+          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+            <Sparkles size={16} color={colors.text} strokeWidth={1.8} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.welcomeActionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Read Getting Started...</Text>
+            <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Learn how CloudCode sandbox containers work</Text>
+          </View>
+          <ChevronRight size={14} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
     </View>
   )
 
@@ -355,29 +437,82 @@ const styles = StyleSheet.create({
     gap: 10 
   },
   deleteBtn: { padding: 4 },
-  empty: {
-    paddingTop: 60,
+  landingContainer: {
+    paddingHorizontal: 8,
+    paddingTop: 40,
+    gap: 28,
+  },
+  welcomeHero: {
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
   },
-  emptyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
+  artworkCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  emptyTitle: { fontSize: 16, marginBottom: 4 },
-  emptySub: { fontSize: 13, opacity: 0.6, textAlign: 'center', maxWidth: 220, marginBottom: 20 },
-  emptyBtn: {
+  artworkInnerCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    letterSpacing: -0.8,
+  },
+  welcomeSubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 19,
+    paddingHorizontal: 20,
+  },
+  startGroup: {
+    gap: 10,
+  },
+  startHeader: {
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1.0,
+    marginBottom: 4,
+    paddingHorizontal: 4,
+  },
+  welcomeActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 6,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  emptyBtnText: { fontSize: 13 },
+  welcomeIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeActionTitle: {
+    fontSize: 13.5,
+  },
+  welcomeActionSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
 })
