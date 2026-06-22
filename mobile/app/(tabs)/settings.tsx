@@ -63,12 +63,13 @@ export default function SettingsScreen() {
     }, [setTabBarVisible])
   )
 
-  // Dynamically set tab bar visibility based on current subscreen
+  // Dynamically set tab bar visibility based on current subscreen and modal states
   useEffect(() => {
     if (isFocused) {
-      setTabBarVisible(currentSubScreen === 'main')
+      const isAnyModalVisible = showSignOutModal || modalConfig.visible || upgradeModal.visible
+      setTabBarVisible(isAnyModalVisible ? false : currentSubScreen === 'main')
     }
-  }, [currentSubScreen, isFocused, setTabBarVisible])
+  }, [currentSubScreen, isFocused, setTabBarVisible, showSignOutModal, modalConfig.visible, upgradeModal.visible])
 
   // Intercept Android hardware back press inside subscreens
   useEffect(() => {
@@ -424,6 +425,7 @@ export default function SettingsScreen() {
       <Modal
         visible={upgradeModal.visible}
         transparent={true}
+        statusBarTranslucent={true}
         animationType="none"
         onRequestClose={() => setUpgradeModal({ visible: false, tierName: null })}
       >

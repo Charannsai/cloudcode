@@ -126,7 +126,7 @@ export function ConfirmModal({
   const handleDismiss = onCancel || onConfirm
 
   return (
-    <Modal transparent visible={renderModal} animationType="none" onRequestClose={handleDismiss}>
+    <Modal transparent visible={renderModal} statusBarTranslucent={true} animationType="none" onRequestClose={handleDismiss}>
       <Animated.View style={[styles.overlay, backdropStyle]}>
         <BlurView
           intensity={isDark ? 15 : 10}
