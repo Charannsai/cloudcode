@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl, Image } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { BlurView } from 'expo-blur'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { cache } from '@/hooks/useCache'
+import { useAuthStore } from '@/store/auth'
 import { 
   Cpu, 
   Terminal,
@@ -27,8 +28,32 @@ import Animated, {
   withRepeat, 
   withTiming, 
   useSharedValue,
-  Easing
+  Easing,
+  interpolate
 } from 'react-native-reanimated'
+
+const PulseDot = ({ color }: { color: string }) => {
+  const opacity = useSharedValue(0.4)
+  
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
+  }, [])
+  
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: interpolate(opacity.value, [0.4, 1], [0.9, 1.3]) }]
+  }))
+  
+  return (
+    <View style={{ width: 14, height: 14, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View style={[{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }, animStyle]} />
+    </View>
+  )
+}
 
 const { width } = Dimensions.get('window')
 
@@ -36,6 +61,7 @@ export default function DashboardScreen() {
   const { colors, isDark } = useAppTheme()
   const { handleScroll } = useScrollVisibility()
   const router = useRouter()
+  const { user } = useAuthStore()
   
   interface DiagnosticsData {
     cpuLoad: number
