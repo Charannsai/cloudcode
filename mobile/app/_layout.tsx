@@ -97,7 +97,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ 
         headerShown: false, 
         contentStyle: { backgroundColor: colors.background },
-        animation: 'fade_from_bottom',
+        animation: 'slide_from_right',
       }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
