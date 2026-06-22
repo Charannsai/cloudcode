@@ -168,7 +168,7 @@ export default function ProjectsScreen() {
     const statusColor = STATUS_COLOR[p.status] || colors.textSecondary
 
     return (
-      <Animated.View entering={FadeInDown.delay(index * 60).duration(400)}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 20, 80)).duration(160)}>
         <PressableScale
           style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
           onPress={() => router.push(`/project/${p.id}`)}

@@ -268,7 +268,7 @@ export default function DashboardScreen() {
       }
     >
       {/* Premium Header */}
-      <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.header}>
+      <Animated.View entering={FadeInDown.duration(160)} style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.greeting, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
             Welcome back,
@@ -297,7 +297,7 @@ export default function DashboardScreen() {
       </Animated.View>
 
       {/* Your Workspaces Carousel */}
-      <Animated.View entering={FadeInDown.delay(200).duration(500)} style={styles.section}>
+      <Animated.View entering={FadeInDown.delay(30).duration(160)} style={styles.section}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>RECENT WORKSPACES</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/projects')}>
@@ -319,7 +319,7 @@ export default function DashboardScreen() {
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 24 }}>
             {projects.map((project, idx) => (
-              <Animated.View key={project.id} entering={FadeInRight.delay(200 + idx * 100)}>
+              <Animated.View key={project.id} entering={FadeInRight.delay(40 + idx * 40).duration(180)}>
                 <PressableScale 
                   style={[styles.projectCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}
                   onPress={() => router.push(`/project/${project.id}`)}
@@ -357,7 +357,7 @@ export default function DashboardScreen() {
       </Animated.View>
 
       {/* Glassmorphic Quick Actions */}
-      <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.section}>
+      <Animated.View entering={FadeInDown.delay(60).duration(160)} style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', marginBottom: 16 }]}>QUICK TOOLS</Text>
         <View style={styles.actionsRow}>
           <PressableScale 
@@ -392,7 +392,7 @@ export default function DashboardScreen() {
       </Animated.View>
 
       {/* System Diagnostics */}
-      <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.section}>
+      <Animated.View entering={FadeInDown.delay(90).duration(160)} style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', marginBottom: 16 }]}>SYSTEM DIAGNOSTICS</Text>
         <View style={[styles.diagContainer, { backgroundColor: isDark ? '#0D1117' : '#FFFFFF', borderColor: colors.border }]}>
           
