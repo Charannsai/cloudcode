@@ -4,7 +4,7 @@ import {
   TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler, Pressable
 } from 'react-native'
 import Animated, { 
-  FadeInRight, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing 
+  FadeInRight, FadeInDown, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing 
 } from 'react-native-reanimated'
 import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
@@ -1759,9 +1759,10 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Control Center</Text>
-      </View>
+        <Animated.View entering={FadeInDown.duration(160)} style={{ flex: 1 }}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Control Center</Text>
+          </View>
 
       <View style={{ paddingHorizontal: 24, gap: 16 }}>
         {/* 1. Profile Hero Card */}
@@ -2007,6 +2008,7 @@ export default function SettingsScreen() {
         onConfirm={modalConfig.onConfirm}
         onCancel={modalConfig.onCancel}
       />
+      </Animated.View>
     </ScrollView>
 
     {/* Overlays for subscreens */}
