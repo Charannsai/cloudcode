@@ -7,9 +7,10 @@ import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { cache } from '@/hooks/useCache'
 import { useAuthStore } from '@/store/auth'
+import { useUIStore } from '@/store/ui'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { 
   Cpu, 
-  Terminal,
   Sparkles,
   GitCommit,
   Plus,
@@ -18,7 +19,8 @@ import {
   Database,
   ShieldCheck,
   ChevronRight,
-  Activity
+  Activity,
+  Key
 } from 'lucide-react-native'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import Animated, { 
@@ -62,6 +64,8 @@ export default function DashboardScreen() {
   const { handleScroll } = useScrollVisibility()
   const router = useRouter()
   const { user } = useAuthStore()
+  const { setSettingsSubScreen } = useUIStore()
+  const [profileName, setProfileName] = useState('')
   
   interface DiagnosticsData {
     cpuLoad: number
@@ -148,6 +152,10 @@ export default function DashboardScreen() {
       fetchProjects(true)
       fetchDiagnostics()
 
+      AsyncStorage.getItem('profile_name').then(val => {
+        if (val) setProfileName(val)
+      })
+
       const interval = setInterval(() => {
         fetchProjects(true)
         fetchDiagnostics()
@@ -186,11 +194,18 @@ export default function DashboardScreen() {
             Welcome back,
           </Text>
           <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-            {user?.login || 'Developer'}
+            {profileName || user?.name || user?.login || 'Developer'}
           </Text>
         </View>
         {/* User Avatar */}
-        <View style={[styles.avatarWrapper, { borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#E5E7EB' }]}>
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          onPress={() => {
+            setSettingsSubScreen('profile')
+            router.push('/(tabs)/settings')
+          }}
+          style={[styles.avatarWrapper, { borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#E5E7EB' }]}
+        >
           {user?.avatar_url ? (
             <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
           ) : (
@@ -198,7 +213,7 @@ export default function DashboardScreen() {
               {(user?.login || 'D').substring(0, 1).toUpperCase()}
             </Text>
           )}
-        </View>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* Your Workspaces Carousel */}
@@ -267,25 +282,28 @@ export default function DashboardScreen() {
         <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', marginBottom: 16 }]}>QUICK TOOLS</Text>
         <View style={styles.actionsRow}>
           <TouchableOpacity 
-            style={{ flex: 1, borderRadius: 20, overflow: 'hidden' }}
-            onPress={() => router.push('/(tabs)/projects')}
+            style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
+            onPress={() => {
+              setSettingsSubScreen('gitSsh')
+              router.push('/(tabs)/settings')
+            }}
             activeOpacity={0.8}
           >
-            <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: colors.border }]}>
               <View style={[styles.glassIconBg, { backgroundColor: 'rgba(88, 166, 255, 0.15)' }]}>
-                <Terminal size={22} color="#58A6FF" strokeWidth={2} />
+                <Key size={22} color="#58A6FF" strokeWidth={2} />
               </View>
-              <Text style={[styles.glassTitle, { color: colors.text }]}>Terminal</Text>
-              <Text style={[styles.glassSub, { color: colors.textSecondary }]}>Manage environments</Text>
+              <Text style={[styles.glassTitle, { color: colors.text }]}>SSH Keys</Text>
+              <Text style={[styles.glassSub, { color: colors.textSecondary }]}>Manage deploy keys</Text>
             </BlurView>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={{ flex: 1, borderRadius: 20, overflow: 'hidden' }}
+            style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
             onPress={() => router.push('/(tabs)/ai')}
             activeOpacity={0.8}
           >
-            <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: colors.border }]}>
               <View style={[styles.glassIconBg, { backgroundColor: 'rgba(210, 168, 255, 0.15)' }]}>
                 <Sparkles size={22} color="#D2A8FF" strokeWidth={2} />
               </View>
@@ -469,7 +487,7 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: 12 },
   glassCard: {
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     height: 110,
     justifyContent: 'center',
