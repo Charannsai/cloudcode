@@ -1153,7 +1153,7 @@ export default function SettingsScreen() {
 
   const renderAboutView = () => {
     return (
-      <View style={{ gap: 20, paddingBottom: 40 }}>
+      <View style={{ gap: 24, paddingBottom: 40 }}>
         {/* Unified SubHeader */}
         <View style={styles.subHeader}>
           <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
@@ -1163,13 +1163,13 @@ export default function SettingsScreen() {
         </View>
 
         {/* Segmented Tab Selector */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: 24, marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', paddingHorizontal: 24, marginBottom: 8 }}>
           <View style={{ 
             flexDirection: 'row', 
             flex: 1, 
-            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', 
-            borderRadius: 10, 
-            padding: 4,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', 
+            borderRadius: 8, 
+            padding: 3,
             borderWidth: 1,
             borderColor: colors.border
           }}>
@@ -1178,21 +1178,16 @@ export default function SettingsScreen() {
               onPress={() => setAboutTab('branding')}
               style={{
                 flex: 1,
-                paddingVertical: 8,
+                paddingVertical: 7,
                 alignItems: 'center',
-                borderRadius: 7,
+                borderRadius: 6,
                 backgroundColor: aboutTab === 'branding' ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: aboutTab === 'branding' ? 0.1 : 0,
-                shadowRadius: 2,
-                elevation: aboutTab === 'branding' ? 1 : 0,
               }}
             >
               <Text style={{ 
                 color: aboutTab === 'branding' ? colors.text : colors.textSecondary, 
                 fontFamily: 'Inter_600SemiBold', 
-                fontSize: 13 
+                fontSize: 13.5
               }}>
                 CloudCode
               </Text>
@@ -1203,21 +1198,16 @@ export default function SettingsScreen() {
               onPress={() => setAboutTab('system')}
               style={{
                 flex: 1,
-                paddingVertical: 8,
+                paddingVertical: 7,
                 alignItems: 'center',
-                borderRadius: 7,
+                borderRadius: 6,
                 backgroundColor: aboutTab === 'system' ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: aboutTab === 'system' ? 0.1 : 0,
-                shadowRadius: 2,
-                elevation: aboutTab === 'system' ? 1 : 0,
               }}
             >
               <Text style={{ 
                 color: aboutTab === 'system' ? colors.text : colors.textSecondary, 
                 fontFamily: 'Inter_600SemiBold', 
-                fontSize: 13 
+                fontSize: 13.5
               }}>
                 System Info
               </Text>
@@ -1226,49 +1216,78 @@ export default function SettingsScreen() {
         </View>
 
         {aboutTab === 'branding' ? (
-          <View style={{ gap: 20 }}>
-            {/* Logo and Mission */}
-            <View style={{ alignItems: 'center', marginVertical: 12, gap: 12 }}>
+          <View style={{ gap: 28 }}>
+            {/* Impressive Logo display */}
+            <View style={{ alignItems: 'center', paddingVertical: 24, gap: 14 }}>
               <Image 
                 source={require('../../assets/cloudcodelogo.png')} 
-                style={{ height: 48, width: 200, tintColor: colors.text }} 
+                style={{ height: 60, width: 250, tintColor: colors.text }} 
                 resizeMode="contain" 
               />
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_500Medium', textAlign: 'center', paddingHorizontal: 40, lineHeight: 18 }}>
-                The next-generation cloud IDE for developers. Build, test, and deploy code from anywhere in the world.
-              </Text>
+              <View style={{ gap: 6, alignItems: 'center' }}>
+                <Text style={{ 
+                  color: colors.primary, 
+                  fontFamily: 'JetBrainsMono_400Regular', 
+                  fontSize: 11, 
+                  letterSpacing: 3, 
+                  textTransform: 'uppercase' 
+                }}>
+                  Developer Platform
+                </Text>
+                <Text style={{ 
+                  color: colors.textSecondary, 
+                  fontSize: 13, 
+                  fontFamily: 'Inter_500Medium', 
+                  textAlign: 'center', 
+                  paddingHorizontal: 48, 
+                  lineHeight: 20,
+                  marginTop: 4
+                }}>
+                  The next-generation cloud IDE. Provision Linux sandboxes, run compilers, and write code instantly from anywhere.
+                </Text>
+              </View>
+              <View style={{ 
+                height: 1, 
+                backgroundColor: colors.border, 
+                width: 80, 
+                opacity: 0.5, 
+                marginTop: 12 
+              }} />
             </View>
 
-            {/* Core Capabilities */}
-            <View style={{ paddingHorizontal: 24, gap: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>CORE CAPABILITIES</Text>
-              <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 14, marginHorizontal: 0 }]}>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <Cpu size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
+            {/* Core Capabilities - flat cardless layout */}
+            <View style={{ paddingHorizontal: 28, gap: 20 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_700Bold', fontSize: 11.5, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                Core System Specs
+              </Text>
+              
+              <View style={{ gap: 24 }}>
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  <Cpu size={20} color={colors.text} style={{ marginTop: 2 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Instant Containers</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
-                      Provision full Linux sandboxes in seconds. Write, compile, and run your code with native performance.
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5 }}>Linux Containers</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12.5, marginTop: 4, lineHeight: 18 }}>
+                      Isolated sandbox runtimes equipped with full root terminal access, high-speed RAM allocation, and local compiler toolchains.
                     </Text>
                   </View>
                 </View>
-                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4 }} />
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <Sparkles size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
+
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  <Sparkles size={20} color={colors.text} style={{ marginTop: 2 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>AI-Powered Coding</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
-                      Smart autocomplete, inline chat, and custom provider options (BYOK) for Gemini, ChatGPT, and Claude.
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5 }}>LLM Intelligence</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12.5, marginTop: 4, lineHeight: 18 }}>
+                      Bring Your Own Key integration for Gemini, GPT, and Claude models. High-efficiency code explanations and auto-completion.
                     </Text>
                   </View>
                 </View>
-                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4 }} />
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <Shield size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
+
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  <Shield size={20} color={colors.text} style={{ marginTop: 2 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Secure Gateway</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2, lineHeight: 16 }}>
-                      All connection streams and file actions are fully encrypted via SSH & SSL using industrial AES-256 standards.
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5 }}>Secure Gateway</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12.5, marginTop: 4, lineHeight: 18 }}>
+                      All data transactions flow through an end-to-end encrypted SSL tunnel using industrial-strength AES-256 cipher standards.
                     </Text>
                   </View>
                 </View>
@@ -1276,52 +1295,61 @@ export default function SettingsScreen() {
             </View>
           </View>
         ) : (
-          <View style={{ paddingHorizontal: 24, gap: 12 }}>
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>DIAGNOSTICS & SYSTEM STATUS</Text>
-            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 0, marginHorizontal: 0 }]}>
-              
+          <View style={{ paddingHorizontal: 28, gap: 24 }}>
+            {/* Impressive small header in diagnostics tab */}
+            <View style={{ alignItems: 'center', paddingVertical: 12, gap: 8 }}>
+              <Image 
+                source={require('../../assets/cloudcodelogo.png')} 
+                style={{ height: 28, width: 120, tintColor: colors.text, opacity: 0.8 }} 
+                resizeMode="contain" 
+              />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, letterSpacing: 2 }}>
+                SYSTEM DIAGNOSTICS
+              </Text>
+            </View>
+
+            <View style={{ gap: 4 }}>
               {/* App Version Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Info size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>App Version</Text>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>App Version</Text>
                 </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12 }}>v1.0.0 (Production)</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12.5 }}>v1.0.0 (Prod)</Text>
               </View>
-              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
 
               {/* Runtime Engine Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Server size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>Runtime Engine</Text>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>Runtime Engine</Text>
                 </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12 }}>v1.0.0-rc2</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12.5 }}>v1.0.0-rc2</Text>
               </View>
-              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
 
               {/* Cloud Gateway Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Wifi size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>Cloud Gateway</Text>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>Cloud Gateway</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3FB950' }} />
-                  <Text style={{ color: '#3FB950', fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Connected</Text>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3FB950' }} />
+                  <Text style={{ color: '#3FB950', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Connected</Text>
                 </View>
               </View>
-              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
 
               {/* Encryption Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingHorizontal: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Lock size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>Encryption Level</Text>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>Encryption Level</Text>
                 </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12 }}>AES-256-GCM</Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12.5 }}>AES-256-GCM</Text>
               </View>
-
             </View>
           </View>
         )}
