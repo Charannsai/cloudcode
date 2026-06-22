@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { 
   View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, 
-  TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler
+  TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler, Pressable
 } from 'react-native'
+import Animated, { 
+  FadeInRight, useSharedValue, useAnimatedStyle, withSpring 
+} from 'react-native-reanimated'
 import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import * as Linking from 'expo-linking'
@@ -19,6 +22,25 @@ import { api } from '@/lib/api'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useUIStore } from '@/store/ui'
+
+function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
+  const scale = useSharedValue(1)
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 300 }) }]
+  }))
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => { scale.value = 0.95 }}
+      onPressOut={() => { scale.value = 1 }}
+      style={style}
+    >
+      <Animated.View style={animatedStyle}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  )
+}
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuthStore()
@@ -821,33 +843,35 @@ export default function SettingsScreen() {
 
   if (currentSubScreen === 'billing') {
     return (
-      <ScrollView 
-        style={[styles.container, { backgroundColor: colors.background }]} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={loadingBilling}
-            onRefresh={() => fetchBillingStatus(false)}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loadingBilling}
+              onRefresh={() => fetchBillingStatus(false)}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {renderBillingView()}
+          {renderUpgradeModal()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
           />
-        }
-      >
-        {renderBillingView()}
-        {renderUpgradeModal()}
-        <ConfirmModal
-          visible={modalConfig.visible}
-          title={modalConfig.title}
-          message={modalConfig.message}
-          confirmText={modalConfig.confirmText}
-          cancelText={modalConfig.cancelText}
-          type={modalConfig.type}
-          singleButton={modalConfig.singleButton}
-          onConfirm={modalConfig.onConfirm}
-          onCancel={modalConfig.onCancel}
-        />
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     )
   }
 
@@ -1537,24 +1561,26 @@ export default function SettingsScreen() {
 
   if (currentSubScreen === 'aiKeys') {
     return (
-      <ScrollView 
-        style={[styles.container, { backgroundColor: colors.background }]} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {renderAiKeysView()}
-        <ConfirmModal
-          visible={modalConfig.visible}
-          title={modalConfig.title}
-          message={modalConfig.message}
-          confirmText={modalConfig.confirmText}
-          cancelText={modalConfig.cancelText}
-          type={modalConfig.type}
-          singleButton={modalConfig.singleButton}
-          onConfirm={modalConfig.onConfirm}
-          onCancel={modalConfig.onCancel}
-        />
-      </ScrollView>
+      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderAiKeysView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
     )
   }
 
@@ -1667,119 +1693,127 @@ export default function SettingsScreen() {
 
   if (currentSubScreen === 'dependencies') {
     return (
-      <ScrollView 
-        style={[styles.container, { backgroundColor: colors.background }]} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={loadingRuntimes}
-            onRefresh={() => fetchRuntimesData(false)}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loadingRuntimes}
+              onRefresh={() => fetchRuntimesData(false)}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {renderDependenciesView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
           />
-        }
-      >
-        {renderDependenciesView()}
-        <ConfirmModal
-          visible={modalConfig.visible}
-          title={modalConfig.title}
-          message={modalConfig.message}
-          confirmText={modalConfig.confirmText}
-          cancelText={modalConfig.cancelText}
-          type={modalConfig.type}
-          singleButton={modalConfig.singleButton}
-          onConfirm={modalConfig.onConfirm}
-          onCancel={modalConfig.onCancel}
-        />
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     )
   }
 
   if (currentSubScreen === 'gitSsh') {
     return (
-      <ScrollView 
-        style={[styles.container, { backgroundColor: colors.background }]} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={loadingSsh}
-            onRefresh={() => fetchGitSshData(false)}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loadingSsh}
+              onRefresh={() => fetchGitSshData(false)}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {renderGitSshView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
           />
-        }
-      >
-        {renderGitSshView()}
-        <ConfirmModal
-          visible={modalConfig.visible}
-          title={modalConfig.title}
-          message={modalConfig.message}
-          confirmText={modalConfig.confirmText}
-          cancelText={modalConfig.cancelText}
-          type={modalConfig.type}
-          singleButton={modalConfig.singleButton}
-          onConfirm={modalConfig.onConfirm}
-          onCancel={modalConfig.onCancel}
-        />
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     )
   }
 
   if (currentSubScreen === 'profile') {
     return (
-      <ScrollView 
-        style={[styles.container, { backgroundColor: colors.background }]} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {renderProfileView()}
-        <ConfirmModal
-          visible={showSignOutModal}
-          title="Sign Out"
-          message="Are you sure you want to sign out?"
-          confirmText="Sign Out"
-          cancelText="Cancel"
-          type="logout"
-          onConfirm={confirmSignOut}
-          onCancel={() => setShowSignOutModal(false)}
-        />
-        <ConfirmModal
-          visible={modalConfig.visible}
-          title={modalConfig.title}
-          message={modalConfig.message}
-          confirmText={modalConfig.confirmText}
-          cancelText={modalConfig.cancelText}
-          type={modalConfig.type}
-          singleButton={modalConfig.singleButton}
-          onConfirm={modalConfig.onConfirm}
-          onCancel={modalConfig.onCancel}
-        />
-      </ScrollView>
+      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderProfileView()}
+          <ConfirmModal
+            visible={showSignOutModal}
+            title="Sign Out"
+            message="Are you sure you want to sign out?"
+            confirmText="Sign Out"
+            cancelText="Cancel"
+            type="logout"
+            onConfirm={confirmSignOut}
+            onCancel={() => setShowSignOutModal(false)}
+          />
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
     )
   }
 
   if (currentSubScreen === 'about') {
     return (
-      <ScrollView 
-        style={[styles.container, { backgroundColor: colors.background }]} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {renderAboutView()}
-        <ConfirmModal
-          visible={modalConfig.visible}
-          title={modalConfig.title}
-          message={modalConfig.message}
-          confirmText={modalConfig.confirmText}
-          cancelText={modalConfig.cancelText}
-          type={modalConfig.type}
-          singleButton={modalConfig.singleButton}
-          onConfirm={modalConfig.onConfirm}
-          onCancel={modalConfig.onCancel}
-        />
-      </ScrollView>
+      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderAboutView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
     )
   }
 
@@ -1858,139 +1892,250 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.scrollContent}
     >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Settings</Text>
+        <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Control Center</Text>
       </View>
 
-      {/* Profile Card Banner */}
-      <TouchableOpacity 
-        activeOpacity={0.7}
-        onPress={() => setCurrentSubScreen('profile')}
-        style={{
-          marginHorizontal: 24,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: isDark ? '#151922' : '#FFFFFF',
-          padding: 16,
-          marginBottom: 24,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1, marginRight: 8 }}>
-          {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={{ width: 48, height: 48, borderRadius: 24 }} />
-          ) : (
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: colors.text, fontSize: 20, fontFamily: 'Inter_600SemiBold' }}>
-                {user?.login?.[0]?.toUpperCase()}
-              </Text>
+      <View style={{ paddingHorizontal: 24, gap: 16 }}>
+        {/* 1. Profile Hero Card */}
+        <PressableScale onPress={() => setCurrentSubScreen('profile')}>
+          <View style={{
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: isDark ? '#151922' : '#FFFFFF',
+            padding: 18,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1, marginRight: 8 }}>
+              {user?.avatar_url ? (
+                <Image source={{ uri: user.avatar_url }} style={{ width: 52, height: 52, borderRadius: 26 }} />
+              ) : (
+                <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: colors.text, fontSize: 22, fontFamily: 'Inter_600SemiBold' }}>
+                    {user?.login?.[0]?.toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16.5 }} numberOfLines={1}>
+                  {profileName || user?.name || user?.login}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                  <Github size={12} color={colors.textSecondary} strokeWidth={1.5} />
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
+                    GitHub @{user?.login}
+                  </Text>
+                </View>
+              </View>
             </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }} numberOfLines={1}>
-              {profileName || user?.name || user?.login}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
-              <Github size={12} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
-                GitHub Connected
-              </Text>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
             </View>
           </View>
-        </View>
-        <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
-      </TouchableOpacity>
+        </PressableScale>
 
-      {/* Account & Integrations Group Card */}
-      <View style={{ marginBottom: 24 }}>
-        <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 1, marginHorizontal: 24, marginBottom: 8, color: colors.textSecondary }}>
-          ACCOUNT & INTEGRATION
-        </Text>
-        <View style={{ marginHorizontal: 24, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#FFFFFF', overflow: 'hidden' }}>
-          {renderSettingsRow({
-            icon: CreditCard,
-            iconColor: '#3B82F6',
-            iconBg: 'rgba(59, 130, 246, 0.1)',
-            label: 'Billing & Usage',
-            subtitle: billingData ? `${billingData.tier.displayName} · Active` : 'Manage plan & usage analytics',
-            rightElement: (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                {billingData?.tier.name && billingData?.tier.name !== 'free' && (
-                  <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                    <Text style={{ color: '#22C55E', fontSize: 9, fontFamily: 'Inter_700Bold' }}>
-                      {billingData.tier.name.toUpperCase()}
-                    </Text>
-                  </View>
-                )}
+        {/* 2. Billing & Plan Tile (Wide Highlight) */}
+        <PressableScale onPress={() => setCurrentSubScreen('billing')}>
+          <View style={{
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: isDark ? '#151922' : '#FFFFFF',
+            padding: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <View style={{ flex: 1, marginRight: 16 }}>
+              <Text style={{ fontSize: 10.5, fontFamily: 'Inter_700Bold', color: colors.textSecondary, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
+                Membership Plan
+              </Text>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>
+                {billingData ? billingData.tier.displayName : 'Free Tier'}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 3 }}>
+                Manage plan billing & active container usage limit
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {billingData?.tier.name && billingData?.tier.name !== 'free' && (
+                <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                  <Text style={{ color: '#22C55E', fontSize: 10, fontFamily: 'Inter_700Bold' }}>
+                    {billingData.tier.name.toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
                 <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
               </View>
-            ),
-            onPress: () => setCurrentSubScreen('billing')
-          })}
-          {renderSettingsRow({
-            icon: Key,
-            iconColor: '#22C55E',
-            iconBg: 'rgba(34, 197, 94, 0.1)',
-            label: 'Git & SSH Keys',
-            subtitle: gitName ? `${gitName} · Configured` : 'Configure credentials & deploy keys',
-            onPress: () => setCurrentSubScreen('gitSsh')
-          })}
-          {renderSettingsRow({
-            icon: Sparkles,
-            iconColor: '#8B5CF6',
-            iconBg: 'rgba(139, 92, 246, 0.1)',
-            label: 'AI API Keys (BYOK)',
-            subtitle: byokMode ? 'Custom Keys Enabled' : 'Configure third-party LLM providers',
-            onPress: () => setCurrentSubScreen('aiKeys'),
-            showDivider: false
-          })}
+            </View>
+          </View>
+        </PressableScale>
+
+        {/* 3. Grid Rows */}
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          {/* Git & Credentials */}
+          <PressableScale onPress={() => setCurrentSubScreen('gitSsh')} style={{ flex: 1 }}>
+            <View style={{
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              padding: 16,
+              height: 116,
+              justifyContent: 'space-between',
+            }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+                <Key size={16} color={colors.textSecondary} strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>Git & SSH</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>SSH Keys & Info</Text>
+              </View>
+            </View>
+          </PressableScale>
+
+          {/* AI Providers BYOK */}
+          <PressableScale onPress={() => setCurrentSubScreen('aiKeys')} style={{ flex: 1 }}>
+            <View style={{
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              padding: 16,
+              height: 116,
+              justifyContent: 'space-between',
+            }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+                <Sparkles size={16} color={colors.textSecondary} strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>AI Models</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>BYOK settings</Text>
+              </View>
+            </View>
+          </PressableScale>
         </View>
+
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          {/* System Runtimes */}
+          <PressableScale onPress={() => setCurrentSubScreen('dependencies')} style={{ flex: 1 }}>
+            <View style={{
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              padding: 16,
+              height: 116,
+              justifyContent: 'space-between',
+            }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+                <Server size={16} color={colors.textSecondary} strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>Runtimes</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>Verify compilers</Text>
+              </View>
+            </View>
+          </PressableScale>
+
+          {/* Theme appearance toggle */}
+          <PressableScale onPress={toggleTheme} style={{ flex: 1 }}>
+            <View style={{
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              padding: 16,
+              height: 116,
+              justifyContent: 'space-between',
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+                  <ThemeIcon size={16} color={colors.textSecondary} strokeWidth={2} />
+                </View>
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: colors.border, true: colors.text }}
+                  thumbColor={colors.background}
+                />
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>Dark Mode</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>{isDark ? 'Active' : 'Disabled'}</Text>
+              </View>
+            </View>
+          </PressableScale>
+        </View>
+
+        {/* 4. About Banner (Wide) */}
+        <PressableScale onPress={() => setCurrentSubScreen('about')}>
+          <View style={{
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: isDark ? '#151922' : '#FFFFFF',
+            padding: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 4
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 8 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+                <Info size={16} color={colors.textSecondary} strokeWidth={2} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>About CloudCode</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2 }} numberOfLines={1}>
+                  Diagnostics, encryption, platform details & app specs
+                </Text>
+              </View>
+            </View>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+            </View>
+          </View>
+        </PressableScale>
       </View>
 
-      {/* Preferences & System Group Card */}
-      <View style={{ marginBottom: 24 }}>
-        <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 1, marginHorizontal: 24, marginBottom: 8, color: colors.textSecondary }}>
-          PREFERENCES & SYSTEM
+      <View style={styles.footerContainer}>
+        <Image
+          source={require('../../assets/cloudcodelogo.png')}
+          style={[styles.footerLogo, { tintColor: colors.text }]}
+          resizeMode="contain"
+        />
+        <Text style={[styles.footerText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+          v1.0.0
         </Text>
-        <View style={{ marginHorizontal: 24, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#FFFFFF', overflow: 'hidden' }}>
-          {renderSettingsRow({
-            icon: ThemeIcon,
-            iconColor: isDark ? '#FBBF24' : '#D97706',
-            iconBg: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(217, 119, 6, 0.1)',
-            label: 'Dark Mode',
-            subtitle: 'Toggle dark interface appearance',
-            rightElement: (
-              <Switch
-                value={isDark}
-                onValueChange={toggleTheme}
-                trackColor={{ false: colors.border, true: colors.text }}
-                thumbColor={colors.background}
-              />
-            ),
-            showDivider: true
-          })}
-          {renderSettingsRow({
-            icon: Server,
-            iconColor: '#EC4899',
-            iconBg: 'rgba(236, 72, 153, 0.1)',
-            label: 'System Runtimes',
-            subtitle: 'Verify compilers (Node, Python, Go, Rust)',
-            onPress: () => setCurrentSubScreen('dependencies'),
-            showDivider: true
-          })}
-          {renderSettingsRow({
-            icon: Info,
-            iconColor: colors.textSecondary,
-            iconBg: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-            label: 'About CloudCode',
-            subtitle: 'App version, diagnostics & details',
-            onPress: () => setCurrentSubScreen('about'),
-            showDivider: false
-          })}
-        </View>
       </View>
+
+      <ConfirmModal
+        visible={showSignOutModal}
+        title="Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        type="logout"
+        onConfirm={confirmSignOut}
+        onCancel={() => setShowSignOutModal(false)}
+      />
+
+      <ConfirmModal
+        visible={modalConfig.visible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        type={modalConfig.type}
+        singleButton={modalConfig.singleButton}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={modalConfig.onCancel}
+      />
+    </ScrollView>
 
       <View style={styles.footerContainer}>
         <Image
