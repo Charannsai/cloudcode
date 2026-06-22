@@ -3,7 +3,7 @@ import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Keyboard, Platform } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
-import Svg, { Path } from 'react-native-svg'
+import { BlurView } from 'expo-blur'
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
@@ -44,11 +44,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   }, [tabBarVisible])
 
   const getIndicatorPosition = (stateIndex: number) => {
-    if (stateIndex === 0) return 9.75
-    if (stateIndex === 1) return 67.25
-    if (stateIndex === 2) return 234.75
-    if (stateIndex === 3) return 292.25
-    return 9.75
+    if (stateIndex === 0) return 7
+    if (stateIndex === 1) return 69
+    if (stateIndex === 2) return 193
+    if (stateIndex === 3) return 255
+    return 7
   }
 
   const indicatorX = useSharedValue(getIndicatorPosition(state.index))
@@ -73,39 +73,39 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   })
 
   const columns = [
-    { type: 'route', routeIndex: 0, key: 'dashboard', name: 'Home', icon: LayoutDashboard },
-    { type: 'route', routeIndex: 1, key: 'projects', name: 'Work', icon: FolderGit2 },
+    { type: 'route', routeIndex: 0, key: 'dashboard', icon: LayoutDashboard },
+    { type: 'route', routeIndex: 1, key: 'projects', icon: FolderGit2 },
     { type: 'fab', key: 'fab' },
-    { type: 'route', routeIndex: 2, key: 'ai', name: 'AI', icon: Sparkles },
-    { type: 'route', routeIndex: 3, key: 'settings', name: 'System', icon: SlidersHorizontal }
+    { type: 'route', routeIndex: 2, key: 'ai', icon: Sparkles },
+    { type: 'route', routeIndex: 3, key: 'settings', icon: SlidersHorizontal }
   ]
 
-  const activeCircleBg = '#FFFFFF'
-  const activeIconColor = '#0D0E12'
-  const inactiveIconColor = '#7C8491'
-  const tabBarBg = '#0D0E12'
-  const strokeColor = isDark ? '#21262D' : 'rgba(255, 255, 255, 0.12)'
+  const activeColor = isDark ? '#D2A8FF' : '#8250DF'
+  const inactiveColor = isDark ? '#6E7681' : '#8C959F'
 
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
-      <View style={styles.tabBarContainer}>
-        <Svg width={340} height={50} viewBox="0 0 340 50" style={styles.svgBg}>
-          <Path
-            d="M 25,0 L 90,0 C 105,0 115,15 125,15 C 135,15 142,8 156.4,4 A 25 25 0 0 1 183.6,4 C 198,8 205,15 215,15 C 225,15 235,0 250,0 L 315,0 A 25 25 0 0 1 340,25 A 25 25 0 0 1 315,50 L 250,50 C 235,50 225,35 215,35 C 205,35 198,42 183.6,46 A 25 25 0 0 1 156.4,46 C 142,42 135,35 125,35 C 115,35 105,50 90,50 L 25,50 A 25 25 0 0 1 0,25 A 25 25 0 0 1 25,0 Z"
-            fill={tabBarBg}
-            stroke={strokeColor}
-            strokeWidth={1}
-          />
-        </Svg>
-
-        {/* Active Tab Background Circle Indicator */}
+      <BlurView
+        intensity={isDark ? 35 : 75}
+        tint={isDark ? 'dark' : 'light'}
+        style={[
+          styles.tabBarContainer,
+          { 
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            backgroundColor: isDark ? 'rgba(21, 25, 34, 0.72)' : 'rgba(255, 255, 255, 0.85)',
+          }
+        ]}
+      >
+        {/* Animated Slide Pill Behind active tab + Glowing active Dot */}
         <Animated.View 
           style={[
             styles.indicatorCircle,
-            { backgroundColor: activeCircleBg },
+            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)' },
             indicatorStyle
           ]}
-        />
+        >
+          <View style={[styles.indicatorDot, { backgroundColor: activeColor }]} />
+        </Animated.View>
 
         {columns.map((col, index) => {
           if (col.type === 'fab') {
@@ -118,8 +118,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 }}
                 activeOpacity={0.8}
               >
-                <View style={styles.fabButton}>
-                  <Plus size={18} color="#0D0E12" strokeWidth={2.5} />
+                <View style={[styles.fabButton, { backgroundColor: activeColor }]}>
+                  <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
               </TouchableOpacity>
             )
@@ -144,9 +144,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
           const getLeftOffset = (colIdx: number) => {
             if (colIdx === 0) return 0
-            if (colIdx === 1) return 57.5
-            if (colIdx === 3) return 225
-            if (colIdx === 4) return 282.5
+            if (colIdx === 1) return 62
+            if (colIdx === 3) return 186
+            if (colIdx === 4) return 248
             return 0
           }
 
@@ -157,21 +157,21 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 styles.tabItem,
                 {
                   left: getLeftOffset(index),
-                  width: 57.5,
+                  width: 62,
                 }
               ]}
               onPress={onPress}
               activeOpacity={0.7}
             >
               <Icon 
-                color={isFocused ? activeIconColor : inactiveIconColor} 
+                color={isFocused ? activeColor : inactiveColor} 
                 size={20} 
                 strokeWidth={isFocused ? 2.2 : 1.8}
               />
             </TouchableOpacity>
           )
         })}
-      </View>
+      </BlurView>
     </Animated.View>
   )
 }
@@ -232,30 +232,36 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   tabBarContainer: {
-    width: 340,
-    height: 50,
+    flexDirection: 'row',
+    width: 310,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
     position: 'relative',
-  },
-  svgBg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 340,
-    height: 50,
-    zIndex: 0,
+    alignItems: 'center',
   },
   indicatorCircle: {
     position: 'absolute',
-    top: 6,
-    width: 38,
+    top: 9,
+    width: 48,
     height: 38,
     borderRadius: 19,
     zIndex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  indicatorDot: {
+    position: 'absolute',
+    bottom: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   tabItem: {
     position: 'absolute',
@@ -264,17 +270,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
-    height: 50,
+    height: 56,
   },
   fabItem: {
-    left: 140,
-    width: 60,
+    left: 124,
+    width: 62,
   },
   fabButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
