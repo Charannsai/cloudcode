@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Keyboard, Platform } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { LayoutDashboard, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
+import { FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
 import { BlurView } from 'expo-blur'
 import Svg, { Path, Circle } from 'react-native-svg'
 import Animated, { 
@@ -39,6 +39,34 @@ const WorkspaceTabIcon = ({ color, size, strokeWidth }: any) => {
       <Circle
         cx="18"
         cy="16"
+        r="1.5"
+        stroke={color}
+        strokeWidth={strokeWidth || 1.8}
+      />
+    </Svg>
+  )
+}
+
+const HomeTabIcon = ({ color, size, strokeWidth }: any) => {
+  return (
+    <Svg width={size || 20} height={size || 20} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M8 4.5C6.067 4.5 4.5 6.067 4.5 8 4.5 9.933 5.5 10.5 5.5 12 5.5 13.5 4.5 14.067 4.5 16 4.5 17.933 6.067 19.5 8 19.5 9.933 19.5 10.5 18.5 12 18.5 13.5 18.5 14.067 19.5 16 19.5 17.933 19.5 19.5 17.933 19.5 16 19.5 14.067 18.5 13.5 18.5 12 18.5 10.5 19.5 9.933 19.5 8 19.5 6.067 17.933 4.5 16 4.5 14.067 4.5 13.5 5.5 12 5.5 10.5 5.5 9.933 4.5 8 4.5"
+        stroke={color}
+        strokeWidth={strokeWidth || 1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Circle
+        cx="18.5"
+        cy="5.5"
+        r="1.5"
+        stroke={color}
+        strokeWidth={strokeWidth || 1.8}
+      />
+      <Circle
+        cx="5.5"
+        cy="18.5"
         r="1.5"
         stroke={color}
         strokeWidth={strokeWidth || 1.8}
@@ -102,7 +130,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   })
 
   const columns = [
-    { type: 'route', routeIndex: 0, key: 'dashboard', icon: LayoutDashboard },
+    { type: 'route', routeIndex: 0, key: 'dashboard', icon: HomeTabIcon },
     { type: 'route', routeIndex: 1, key: 'projects', icon: WorkspaceTabIcon },
     { type: 'fab', key: 'fab' },
     { type: 'route', routeIndex: 2, key: 'ai', icon: Sparkles },
