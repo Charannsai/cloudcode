@@ -181,8 +181,23 @@ export default function DashboardScreen() {
     >
       {/* Premium Header */}
       <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Overview</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.greeting, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+            Welcome back,
+          </Text>
+          <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+            {user?.login || 'Developer'}
+          </Text>
+        </View>
+        {/* User Avatar */}
+        <View style={[styles.avatarWrapper, { borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#E5E7EB' }]}>
+          {user?.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+          ) : (
+            <Text style={[styles.avatarInitial, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+              {(user?.login || 'D').substring(0, 1).toUpperCase()}
+            </Text>
+          )}
         </View>
       </Animated.View>
 
@@ -223,7 +238,12 @@ export default function DashboardScreen() {
                         <Box size={18} color="#3FB950" />
                       )}
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: project.status === 'running' ? 'rgba(63, 185, 80, 0.15)' : 'rgba(101, 109, 118, 0.15)' }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: project.status === 'running' ? 'rgba(63, 185, 80, 0.12)' : 'rgba(101, 109, 118, 0.12)', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                      {project.status === 'running' ? (
+                        <PulseDot color="#3FB950" />
+                      ) : (
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: 0.6 }} />
+                      )}
                       <Text style={[styles.statusText, { color: project.status === 'running' ? '#3FB950' : colors.textSecondary }]}>
                         {project.status === 'running' ? 'Running' : 'Sleeping'}
                       </Text>
@@ -293,26 +313,52 @@ export default function DashboardScreen() {
           
           <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.diagRow}>
-            <View style={styles.diagIconGroup}>
-              <Cpu size={18} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={[styles.diagLabel, { color: colors.text }]}>Global CPU Load</Text>
+          <View style={styles.diagRowContainer}>
+            <View style={styles.diagRow}>
+              <View style={styles.diagIconGroup}>
+                <Cpu size={18} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={[styles.diagLabel, { color: colors.text }]}>Global CPU Load</Text>
+              </View>
+              <Text style={[styles.diagValue, { color: colors.text }]}>
+                {diagnostics ? `${diagnostics.cpuLoad}%` : '4%'}
+              </Text>
             </View>
-            <Text style={[styles.diagValue, { color: colors.textSecondary }]}>
-              {diagnostics ? `${diagnostics.cpuLoad}%` : '4%'}
-            </Text>
+            <View style={[styles.meterTrack, { backgroundColor: isDark ? '#1C2128' : '#E5E7EB' }]}>
+              <View 
+                style={[
+                  styles.meterFill, 
+                  { 
+                    width: `${diagnostics ? Math.min(diagnostics.cpuLoad, 100) : 4}%`,
+                    backgroundColor: diagnostics && diagnostics.cpuLoad > 80 ? '#F85149' : diagnostics && diagnostics.cpuLoad > 50 ? '#D97706' : '#3FB950'
+                  }
+                ]} 
+              />
+            </View>
           </View>
 
           <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.diagRow}>
-            <View style={styles.diagIconGroup}>
-              <Database size={18} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={[styles.diagLabel, { color: colors.text }]}>VPS Memory Usage</Text>
+          <View style={styles.diagRowContainer}>
+            <View style={styles.diagRow}>
+              <View style={styles.diagIconGroup}>
+                <Database size={18} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={[styles.diagLabel, { color: colors.text }]}>VPS Memory Usage</Text>
+              </View>
+              <Text style={[styles.diagValue, { color: colors.text }]}>
+                {diagnostics ? `${diagnostics.memoryUsage}%` : '18%'}
+              </Text>
             </View>
-            <Text style={[styles.diagValue, { color: colors.textSecondary }]}>
-              {diagnostics ? `${diagnostics.memoryUsage}%` : '18%'}
-            </Text>
+            <View style={[styles.meterTrack, { backgroundColor: isDark ? '#1C2128' : '#E5E7EB' }]}>
+              <View 
+                style={[
+                  styles.meterFill, 
+                  { 
+                    width: `${diagnostics ? Math.min(diagnostics.memoryUsage, 100) : 18}%`,
+                    backgroundColor: diagnostics && diagnostics.memoryUsage > 80 ? '#F85149' : diagnostics && diagnostics.memoryUsage > 50 ? '#D97706' : '#3FB950'
+                  }
+                ]} 
+              />
+            </View>
           </View>
 
           <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
@@ -473,5 +519,35 @@ const styles = StyleSheet.create({
     height: 1,
     width: '100%',
     opacity: 0.5,
-  }
+  },
+  avatarWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarInitial: {
+    fontSize: 18,
+  },
+  diagRowContainer: {
+    paddingVertical: 2,
+  },
+  meterTrack: {
+    height: 5,
+    borderRadius: 2.5,
+    marginHorizontal: 12,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  meterFill: {
+    height: '100%',
+    borderRadius: 2.5,
+  },
 })
