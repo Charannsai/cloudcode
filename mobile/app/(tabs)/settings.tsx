@@ -1732,6 +1732,16 @@ export default function SettingsScreen() {
       >
         {renderProfileView()}
         <ConfirmModal
+          visible={showSignOutModal}
+          title="Sign Out"
+          message="Are you sure you want to sign out?"
+          confirmText="Sign Out"
+          cancelText="Cancel"
+          type="logout"
+          onConfirm={confirmSignOut}
+          onCancel={() => setShowSignOutModal(false)}
+        />
+        <ConfirmModal
           visible={modalConfig.visible}
           title={modalConfig.title}
           message={modalConfig.message}
