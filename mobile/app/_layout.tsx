@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
+import { recordAppSession } from '@/lib/appAudit'
 import * as SplashScreen from 'expo-splash-screen'
 import FloatingMic from '@/components/FloatingMic'
 import { 
@@ -78,6 +79,13 @@ export default function RootLayout() {
       router.replace('/')
     }
   }, [user, loading, fontsLoaded, segments, router])
+
+  // Record session audit log when user authenticates
+  useEffect(() => {
+    if (user) {
+      recordAppSession()
+    }
+  }, [user])
 
   if (!fontsLoaded && !fontError) {
     return null
