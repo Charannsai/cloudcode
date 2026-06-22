@@ -12,7 +12,7 @@ import {
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
   CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
-  Eye, EyeOff, Sparkles, Trash2, Laptop
+  Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
@@ -37,6 +37,10 @@ export default function SettingsScreen() {
   const [profileName, setProfileName] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+
+  // Client-side audit logs
+  const [appCommits, setAppCommits] = useState<any[]>([])
+  const [appSessions, setAppSessions] = useState<any[]>([])
 
   // Track settings tab screen focus state
   useFocusEffect(
@@ -188,6 +192,17 @@ export default function SettingsScreen() {
     }
   }
 
+  const loadLocalAuditLogs = useCallback(async () => {
+    try {
+      const commitsJson = await AsyncStorage.getItem('app_commit_history')
+      const sessionsJson = await AsyncStorage.getItem('app_sessions_history')
+      setAppCommits(commitsJson ? JSON.parse(commitsJson) : [])
+      setAppSessions(sessionsJson ? JSON.parse(sessionsJson) : [])
+    } catch (err) {
+      console.warn('Failed to load local audit logs:', err)
+    }
+  }, [])
+
   // Auto-refresh stats in background when settings tab gets focused, and poll periodically
   useFocusEffect(
     useCallback(() => {
@@ -197,10 +212,13 @@ export default function SettingsScreen() {
         fetchGitSshData(true)
       } else if (currentSubScreen === 'dependencies') {
         fetchRuntimesData(true)
+      } else if (currentSubScreen === 'profile') {
+        loadLocalAuditLogs()
       } else {
         fetchBillingStatus(true)
         fetchGitSshData(true)
         fetchRuntimesData(true)
+        loadLocalAuditLogs()
       }
 
       const interval = setInterval(() => {
@@ -254,9 +272,10 @@ export default function SettingsScreen() {
       const cachedProfileName = await AsyncStorage.getItem('profile_name')
 
       setProfileName(cachedProfileName || user?.name || user?.login || '')
+      loadLocalAuditLogs()
     }
     loadData()
-  }, [fetchRuntimesData])
+  }, [fetchRuntimesData, loadLocalAuditLogs])
 
   useEffect(() => {
     if (user) {
@@ -940,29 +959,35 @@ export default function SettingsScreen() {
             <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SESSIONS</Text>
           </View>
           <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
-            <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-                <Laptop size={18} color={colors.text} />
-                <View>
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>iOS Simulator (Current Device)</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Bangalore, India · 127.0.0.1</Text>
+            {appSessions.length === 0 ? (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No active sessions recorded.</Text>
+              </View>
+            ) : (
+              appSessions.map((session, idx) => (
+                <View key={idx}>
+                  <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                      <Laptop size={18} color={session.status === 'ACTIVE' ? colors.text : colors.textSecondary} />
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>
+                          {session.device} ({session.status === 'ACTIVE' ? 'Current Device' : 'Previous Session'})
+                        </Text>
+                        <Text style={{ color: colors.textSecondary, fontSize: 11 }} numberOfLines={1}>
+                          {new Date(session.timestamp).toLocaleDateString()} · {session.ip}
+                        </Text>
+                      </View>
+                    </View>
+                    {session.status === 'ACTIVE' && (
+                      <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                        <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>ACTIVE</Text>
+                      </View>
+                    )}
+                  </View>
+                  {idx !== appSessions.length - 1 && <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />}
                 </View>
-              </View>
-              <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>ACTIVE</Text>
-              </View>
-            </View>
-            <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
-            <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-                <Server size={18} color={colors.textSecondary} />
-                <View>
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13 }}>VS Code Workspace Extension</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Bangalore, India · 103.88.22.45</Text>
-                </View>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 11 }}>2 hours ago</Text>
-            </View>
+              ))
+            )}
           </View>
         </View>
 
@@ -970,26 +995,38 @@ export default function SettingsScreen() {
         <View style={{ marginTop: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Clock size={16} color={colors.textSecondary} />
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT COMMITS</Text>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT COMMITS FROM THIS APP</Text>
           </View>
           <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
-            <View style={{ padding: 14, gap: 4 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>next-test [main]</Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>f2a7db3</Text>
+            {appCommits.length === 0 ? (
+              <View style={{ padding: 24, alignItems: 'center', justifyContent: 'center' }}>
+                <GitCommit size={24} color={colors.textSecondary} style={{ marginBottom: 8 }} />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No commits made from this app yet.</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, textAlign: 'center', paddingHorizontal: 20 }}>
+                  Commits you complete in workspace editor Git tabs will appear here.
+                </Text>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>fix: update floating bottom navigation bar styles</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>1 hour ago</Text>
-            </View>
-            <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
-            <View style={{ padding: 14, gap: 4 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>lcn [master]</Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>a9d82ff</Text>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>feat: configure container databases & healthcheck logs</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>1 day ago</Text>
-            </View>
+            ) : (
+              appCommits.map((commit, idx) => (
+                <View key={commit.hash}>
+                  <View style={{ padding: 14, gap: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13, flex: 1, marginRight: 8 }} numberOfLines={1}>
+                        {commit.projectName} [{commit.branch}]
+                      </Text>
+                      <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }}>
+                        {commit.hash}
+                      </Text>
+                    </View>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{commit.message}</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, marginTop: 2 }}>
+                      {new Date(commit.timestamp).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  {idx !== appCommits.length - 1 && <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />}
+                </View>
+              ))
+            )}
           </View>
         </View>
 
