@@ -654,163 +654,162 @@ export default function SettingsScreen() {
 
   function renderGitSshView() {
     return (
-      <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
-        {/* Back navigation */}
-        <TouchableOpacity 
-          onPress={() => setCurrentSubScreen('main')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
-        >
-          <ArrowLeft size={16} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Settings</Text>
-        </TouchableOpacity>
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Unified SubHeader */}
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Git & SSH Keys</Text>
+        </View>
 
-        {/* Title */}
-        <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, marginBottom: 20 }}>Git & SSH Keys</Text>
-
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 16, marginHorizontal: 0 }]}>
-          
-          {/* Author info */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Git Author Credentials</Text>
-            <TextInput
-              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Author Name (e.g. John Doe)"
-              placeholderTextColor={colors.textSecondary + '60'}
-              value={gitName}
-              onChangeText={setGitName}
-              autoCapitalize="words"
-            />
-            <TextInput
-              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
-              placeholder="Author Email"
-              placeholderTextColor={colors.textSecondary + '60'}
-              value={gitEmail}
-              onChangeText={setGitEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            {(gitName.trim() !== initialGitName || gitEmail.trim() !== initialGitEmail) && (
-              <TouchableOpacity 
-                onPress={handleSaveConfig} 
-                style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-                disabled={loadingConfig}
-                activeOpacity={0.8}
-              >
-                {loadingConfig ? (
-                  <ActivityIndicator color={isDark ? '#000' : '#fff'} />
-                ) : (
-                  <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
-                    Save Author Info
-                  </Text>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
-
-          {/* SSH Keys */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>SSH Deploy Keys</Text>
+        <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          {/* Author credentials & SSH Keys Card */}
+          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 18, marginHorizontal: 0 }]}>
             
-            {loadingSsh ? (
-              <ActivityIndicator color={colors.textSecondary} style={{ marginVertical: 8 }} />
-            ) : hasSshKey && sshPublicKey ? (
-              <View style={{ gap: 12 }}>
-                <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.08)' : '#e6ffec', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.2)' : '#3FB950', gap: 12 }}>
-                  <Text style={{ color: isDark ? '#3FB950' : '#1a7f37', fontFamily: 'Inter_700Bold', fontSize: 13 }}>SSH Key Generated</Text>
-                  
-                  <View style={{ gap: 4 }}>
-                    <Text style={{ color: colors.text, fontSize: 12 }}>1. Copy your public key:</Text>
-                    <TouchableOpacity 
-                      onPress={() => { 
-                        Clipboard.setStringAsync(sshPublicKey); 
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                      style={{ backgroundColor: copied ? (isDark ? 'rgba(63, 185, 80, 0.15)' : '#e6ffec') : 'rgba(0,0,0,0.03)', padding: 10, borderRadius: 6, borderWidth: 1, borderColor: copied ? '#3FB950' : colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, flex: 1 }} numberOfLines={1}>{sshPublicKey}</Text>
-                      <Text style={{ color: copied ? '#3FB950' : colors.primary, fontSize: 11, fontFamily: 'Inter_700Bold', marginLeft: 8 }}>{copied ? 'COPIED ✓' : 'COPY'}</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={{ gap: 6 }}>
-                    <Text style={{ color: colors.text, fontSize: 12 }}>2. Add key to GitHub settings:</Text>
-                    <TouchableOpacity 
-                      onPress={() => Linking.openURL('https://github.com/settings/ssh/new')}
-                      style={{ alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, backgroundColor: colors.primary, borderRadius: 6 }}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={{ color: isDark ? '#000' : '#fff', fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>Open GitHub Settings ↗</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
+            {/* Author info */}
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Git Author Credentials</Text>
+              <TextInput
+                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                placeholder="Author Name (e.g. John Doe)"
+                placeholderTextColor={colors.textSecondary + '60'}
+                value={gitName}
+                onChangeText={setGitName}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+                placeholder="Author Email"
+                placeholderTextColor={colors.textSecondary + '60'}
+                value={gitEmail}
+                onChangeText={setGitEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {(gitName.trim() !== initialGitName || gitEmail.trim() !== initialGitEmail) && (
                 <TouchableOpacity 
-                  onPress={promptGenerateSsh} 
-                  style={[styles.secondaryBtn, { borderColor: colors.border }]}
-                  disabled={generatingSsh}
+                  onPress={handleSaveConfig} 
+                  style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 4 }]}
+                  disabled={loadingConfig}
                   activeOpacity={0.8}
                 >
-                  {generatingSsh ? (
-                    <ActivityIndicator color={colors.text} />
-                  ) : (
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Regenerate SSH Key</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={{ gap: 8 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 18 }}>
-                  Generate an SSH key pair to push commits and pull changes securely without typing credentials.
-                </Text>
-                <TouchableOpacity 
-                  onPress={promptGenerateSsh} 
-                  style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-                  disabled={generatingSsh}
-                  activeOpacity={0.8}
-                >
-                  {generatingSsh ? (
+                  {loadingConfig ? (
                     <ActivityIndicator color={isDark ? '#000' : '#fff'} />
                   ) : (
                     <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
-                      Generate SSH Key
+                      Save Author Info
                     </Text>
                   )}
                 </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
+              )}
+            </View>
 
-        {/* SSH Generation History */}
-        {sshHistory && sshHistory.length > 0 && (
-          <View style={{ marginTop: 24 }}>
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5, marginBottom: 12 }}>SSH GENERATION HISTORY</Text>
-            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 14, overflow: 'hidden' }}>
-              {sshHistory.map((item: any, idx: number, arr: any[]) => (
-                <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                  <View style={{ gap: 2, flex: 1, marginRight: 16 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>SSH Key Pair</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{new Date(item.timestamp).toLocaleString()}</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }} numberOfLines={1}>{item.publicKey}</Text>
+            <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5, marginVertical: 4 }} />
+
+            {/* SSH Keys */}
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>SSH Deploy Keys</Text>
+              
+              {loadingSsh ? (
+                <ActivityIndicator color={colors.textSecondary} style={{ marginVertical: 8 }} />
+              ) : hasSshKey && sshPublicKey ? (
+                <View style={{ gap: 12 }}>
+                  <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.08)' : '#e6ffec', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.2)' : '#3FB950', gap: 12 }}>
+                    <Text style={{ color: isDark ? '#3FB950' : '#1a7f37', fontFamily: 'Inter_700Bold', fontSize: 13 }}>SSH Key Generated</Text>
+                    
+                    <View style={{ gap: 4 }}>
+                      <Text style={{ color: colors.text, fontSize: 12 }}>1. Copy your public key:</Text>
+                      <TouchableOpacity 
+                        onPress={() => { 
+                          Clipboard.setStringAsync(sshPublicKey); 
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        style={{ backgroundColor: copied ? (isDark ? 'rgba(63, 185, 80, 0.15)' : '#e6ffec') : 'rgba(0,0,0,0.03)', padding: 10, borderRadius: 6, borderWidth: 1, borderColor: copied ? '#3FB950' : colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, flex: 1 }} numberOfLines={1}>{sshPublicKey}</Text>
+                        <Text style={{ color: copied ? '#3FB950' : colors.primary, fontSize: 11, fontFamily: 'Inter_700Bold', marginLeft: 8 }}>{copied ? 'COPIED ✓' : 'COPY'}</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={{ gap: 6 }}>
+                      <Text style={{ color: colors.text, fontSize: 12 }}>2. Add key to GitHub settings:</Text>
+                      <TouchableOpacity 
+                        onPress={() => Linking.openURL('https://github.com/settings/ssh/new')}
+                        style={{ alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, backgroundColor: colors.primary, borderRadius: 6 }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={{ color: isDark ? '#000' : '#fff', fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>Open GitHub Settings ↗</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
+
                   <TouchableOpacity 
-                    onPress={() => {
-                      Clipboard.setStringAsync(item.publicKey)
-                      showModal('Copied', 'SSH public key copied to clipboard.', 'success')
-                    }}
-                    style={{ borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }}
+                    onPress={promptGenerateSsh} 
+                    style={[styles.secondaryBtn, { borderColor: colors.border, marginTop: 4 }]}
+                    disabled={generatingSsh}
+                    activeOpacity={0.8}
                   >
-                    <Text style={{ color: colors.primary, fontSize: 11, fontFamily: 'Inter_700Bold' }}>COPY</Text>
+                    {generatingSsh ? (
+                      <ActivityIndicator color={colors.text} />
+                    ) : (
+                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Regenerate SSH Key</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
-              ))}
+              ) : (
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 18 }}>
+                    Generate an SSH key pair to push commits and pull changes securely without typing credentials.
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={promptGenerateSsh} 
+                    style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 4 }]}
+                    disabled={generatingSsh}
+                    activeOpacity={0.8}
+                  >
+                    {generatingSsh ? (
+                      <ActivityIndicator color={isDark ? '#000' : '#fff'} />
+                    ) : (
+                      <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
+                        Generate SSH Key
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
-        )}
+
+          {/* SSH Generation History */}
+          {sshHistory && sshHistory.length > 0 && (
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5, marginBottom: 12 }}>SSH GENERATION HISTORY</Text>
+              <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                {sshHistory.map((item: any, idx: number, arr: any[]) => (
+                  <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                    <View style={{ gap: 2, flex: 1, marginRight: 16 }}>
+                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>SSH Key Pair</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{new Date(item.timestamp).toLocaleString()}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }} numberOfLines={1}>{item.publicKey}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => {
+                        Clipboard.setStringAsync(item.publicKey)
+                        showModal('Copied', 'SSH public key copied to clipboard.', 'success')
+                      }}
+                      style={{ borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: colors.primary, fontSize: 11, fontFamily: 'Inter_700Bold' }}>COPY</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
       </View>
     )
   }
@@ -1113,175 +1112,173 @@ export default function SettingsScreen() {
 
   const renderAiKeysView = () => {
     return (
-      <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
-        {/* Back navigation */}
-        <TouchableOpacity 
-          onPress={() => setCurrentSubScreen('main')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
-        >
-          <ArrowLeft size={16} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Settings</Text>
-        </TouchableOpacity>
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Unified SubHeader */}
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>AI Providers</Text>
+        </View>
 
-        {/* Title */}
-        <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, marginBottom: 20 }}>AI Providers</Text>
-
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 16, marginHorizontal: 0 }]}>
-          {/* Toggle BYOK */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, paddingRight: 8 }}>
-              <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(14, 17, 22, 0.05)', alignItems: 'center', justifyContent: 'center' }}>
-                <Zap size={18} color={colors.text} strokeWidth={1.5} />
+        <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 16, marginHorizontal: 0 }]}>
+            {/* Toggle BYOK */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, paddingRight: 8 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(243, 244, 246, 0.1)' : 'rgba(14, 17, 22, 0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={18} color={colors.text} strokeWidth={1.5} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Bring Your Own Key (BYOK)</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+                    Route AI requests directly to your own custom API keys instead of hosted defaults.
+                  </Text>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Bring Your Own Key (BYOK)</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
-                  Route AI requests directly to your own custom API keys instead of hosted defaults.
-                </Text>
-              </View>
+              <Switch
+                value={byokMode}
+                onValueChange={setByokMode}
+                trackColor={{ false: colors.border, true: colors.text }}
+                thumbColor={colors.background}
+              />
             </View>
-            <Switch
-              value={byokMode}
-              onValueChange={setByokMode}
-              trackColor={{ false: colors.border, true: colors.text }}
-              thumbColor={colors.background}
-            />
+
+            {byokMode && (
+              <>
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5, marginVertical: 4 }} />
+
+                <View style={{ gap: 16 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>API KEYS CONFIGURATION</Text>
+                  
+                  {/* Gemini API Key */}
+                  <View style={{ gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Sparkles size={14} color="#8B5CF6" />
+                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Gemini API Key</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>*Required</Text>
+                    </View>
+                    <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                      <TextInput
+                        value={customGeminiKey}
+                        onChangeText={setCustomGeminiKey}
+                        secureTextEntry={!showGeminiKey}
+                        placeholder="Enter Gemini API Key..."
+                        placeholderTextColor={colors.textSecondary + '70'}
+                        style={[styles.textInput, { color: colors.text }]}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        autoCorrect={false}
+                      />
+                      {customGeminiKey.length > 0 && (
+                        <TouchableOpacity 
+                          onPress={() => setShowGeminiKey(!showGeminiKey)}
+                          style={styles.eyeBtn}
+                          activeOpacity={0.7}
+                        >
+                          {showGeminiKey ? (
+                            <EyeOff size={16} color={colors.textSecondary} />
+                          ) : (
+                            <Eye size={16} color={colors.textSecondary} />
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* OpenAI API Key */}
+                  <View style={{ gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Cpu size={14} color="#10B981" />
+                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>OpenAI API Key</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
+                    </View>
+                    <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                      <TextInput
+                        value={customOpenaiKey}
+                        onChangeText={setCustomOpenaiKey}
+                        secureTextEntry={!showOpenaiKey}
+                        placeholder="Enter OpenAI API Key..."
+                        placeholderTextColor={colors.textSecondary + '70'}
+                        style={[styles.textInput, { color: colors.text }]}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        autoCorrect={false}
+                      />
+                      {customOpenaiKey.length > 0 && (
+                        <TouchableOpacity 
+                          onPress={() => setShowOpenaiKey(!showOpenaiKey)}
+                          style={styles.eyeBtn}
+                          activeOpacity={0.7}
+                        >
+                          {showOpenaiKey ? (
+                            <EyeOff size={16} color={colors.textSecondary} />
+                          ) : (
+                            <Eye size={16} color={colors.textSecondary} />
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Anthropic API Key */}
+                  <View style={{ gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Shield size={14} color="#D97706" />
+                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Anthropic API Key</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
+                    </View>
+                    <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                      <TextInput
+                        value={customAnthropicKey}
+                        onChangeText={setCustomAnthropicKey}
+                        secureTextEntry={!showAnthropicKey}
+                        placeholder="Enter Anthropic API Key..."
+                        placeholderTextColor={colors.textSecondary + '70'}
+                        style={[styles.textInput, { color: colors.text }]}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        autoCorrect={false}
+                      />
+                      {customAnthropicKey.length > 0 && (
+                        <TouchableOpacity 
+                          onPress={() => setShowAnthropicKey(!showAnthropicKey)}
+                          style={styles.eyeBtn}
+                          activeOpacity={0.7}
+                        >
+                          {showAnthropicKey ? (
+                            <EyeOff size={16} color={colors.textSecondary} />
+                          ) : (
+                            <Eye size={16} color={colors.textSecondary} />
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              </>
+            )}
+
+            {(byokMode !== initialByokMode ||
+              customGeminiKey.trim() !== initialGeminiKey ||
+              customOpenaiKey.trim() !== initialOpenaiKey ||
+              customAnthropicKey.trim() !== initialAnthropicKey) && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
+                onPress={handleSaveAiKeys}
+                disabled={savingAiKeys}
+              >
+                {savingAiKeys ? (
+                  <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
+                ) : (
+                  <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                    Save AI Key Settings
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
-
-          {byokMode && (
-            <>
-              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
-
-              <View style={{ gap: 16 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>API KEYS CONFIGURATION</Text>
-                
-                {/* Gemini API Key */}
-                <View style={{ gap: 6 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Sparkles size={14} color="#8B5CF6" />
-                    <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Gemini API Key</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>*Required</Text>
-                  </View>
-                  <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
-                    <TextInput
-                      value={customGeminiKey}
-                      onChangeText={setCustomGeminiKey}
-                      secureTextEntry={!showGeminiKey}
-                      placeholder="Enter Gemini API Key..."
-                      placeholderTextColor={colors.textSecondary + '70'}
-                      style={[styles.textInput, { color: colors.text }]}
-                      autoCapitalize="none"
-                      autoComplete="off"
-                      autoCorrect={false}
-                    />
-                    {customGeminiKey.length > 0 && (
-                      <TouchableOpacity 
-                        onPress={() => setShowGeminiKey(!showGeminiKey)}
-                        style={styles.eyeBtn}
-                        activeOpacity={0.7}
-                      >
-                        {showGeminiKey ? (
-                          <EyeOff size={16} color={colors.textSecondary} />
-                        ) : (
-                          <Eye size={16} color={colors.textSecondary} />
-                        )}
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-
-                {/* OpenAI API Key */}
-                <View style={{ gap: 6 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Cpu size={14} color="#10B981" />
-                    <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>OpenAI API Key</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
-                  </View>
-                  <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
-                    <TextInput
-                      value={customOpenaiKey}
-                      onChangeText={setCustomOpenaiKey}
-                      secureTextEntry={!showOpenaiKey}
-                      placeholder="Enter OpenAI API Key..."
-                      placeholderTextColor={colors.textSecondary + '70'}
-                      style={[styles.textInput, { color: colors.text }]}
-                      autoCapitalize="none"
-                      autoComplete="off"
-                      autoCorrect={false}
-                    />
-                    {customOpenaiKey.length > 0 && (
-                      <TouchableOpacity 
-                        onPress={() => setShowOpenaiKey(!showOpenaiKey)}
-                        style={styles.eyeBtn}
-                        activeOpacity={0.7}
-                      >
-                        {showOpenaiKey ? (
-                          <EyeOff size={16} color={colors.textSecondary} />
-                        ) : (
-                          <Eye size={16} color={colors.textSecondary} />
-                        )}
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-
-                {/* Anthropic API Key */}
-                <View style={{ gap: 6 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Shield size={14} color="#D97706" />
-                    <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Anthropic API Key</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
-                  </View>
-                  <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
-                    <TextInput
-                      value={customAnthropicKey}
-                      onChangeText={setCustomAnthropicKey}
-                      secureTextEntry={!showAnthropicKey}
-                      placeholder="Enter Anthropic API Key..."
-                      placeholderTextColor={colors.textSecondary + '70'}
-                      style={[styles.textInput, { color: colors.text }]}
-                      autoCapitalize="none"
-                      autoComplete="off"
-                      autoCorrect={false}
-                    />
-                    {customAnthropicKey.length > 0 && (
-                      <TouchableOpacity 
-                        onPress={() => setShowAnthropicKey(!showAnthropicKey)}
-                        style={styles.eyeBtn}
-                        activeOpacity={0.7}
-                      >
-                        {showAnthropicKey ? (
-                          <EyeOff size={16} color={colors.textSecondary} />
-                        ) : (
-                          <Eye size={16} color={colors.textSecondary} />
-                        )}
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              </View>
-            </>
-          )}
-
-          {(byokMode !== initialByokMode ||
-            customGeminiKey.trim() !== initialGeminiKey ||
-            customOpenaiKey.trim() !== initialOpenaiKey ||
-            customAnthropicKey.trim() !== initialAnthropicKey) && (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
-              onPress={handleSaveAiKeys}
-              disabled={savingAiKeys}
-            >
-              {savingAiKeys ? (
-                <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
-              ) : (
-                <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
-                  Save AI Key Settings
-                </Text>
-              )}
-            </TouchableOpacity>
-          )}
         </View>
       </View>
     )
@@ -1334,9 +1331,10 @@ export default function SettingsScreen() {
     )
 
     return (
-      <View style={{ gap: 20 }}>
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Unified SubHeader */}
         <View style={styles.subHeader}>
-          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
             <ArrowLeft size={18} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>System Runtimes</Text>
@@ -1347,7 +1345,7 @@ export default function SettingsScreen() {
           onChangeText={setRuntimesSearch}
           placeholder="Search runtimes, compilers..."
           placeholderTextColor={colors.textSecondary + '70'}
-          style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+          style={[styles.inputField, { color: colors.text, borderColor: colors.border, marginHorizontal: 24 }]}
         />
 
         <View style={{ gap: 12 }}>
@@ -1368,7 +1366,7 @@ export default function SettingsScreen() {
                       backgroundColor: isDark ? '#151922' : '#FFFFFF', 
                       borderColor: colors.border,
                       borderWidth: 1,
-                      borderRadius: 14,
+                      borderRadius: 16,
                       padding: 16,
                       flexDirection: 'row',
                       alignItems: 'center',
