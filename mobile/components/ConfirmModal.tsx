@@ -91,17 +91,17 @@ export function ConfirmModal({
   useEffect(() => {
     if (visible) {
       setRenderModal(true)
-      opacity.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      scale.value = withTiming(1, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-      translateY.value = withTiming(0, { duration: 75, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      opacity.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      scale.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      translateY.value = withTiming(0, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      opacity.value = withTiming(0, { duration: 60, easing: Easing.linear }, (finished) => {
+      opacity.value = withTiming(0, { duration: 150, easing: Easing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderModal)(false)
         }
       })
-      scale.value = withTiming(0.98, { duration: 60, easing: Easing.linear })
-      translateY.value = withTiming(4, { duration: 60, easing: Easing.linear })
+      scale.value = withTiming(0.98, { duration: 150, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      translateY.value = withTiming(4, { duration: 150, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     }
   }, [visible])
 

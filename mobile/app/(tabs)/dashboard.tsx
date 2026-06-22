@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl, Image, Modal, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl, Image, Modal, Alert, Pressable } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { BlurView } from 'expo-blur'
@@ -30,10 +30,31 @@ import Animated, {
   useAnimatedStyle, 
   withRepeat, 
   withTiming, 
+  withSpring,
   useSharedValue,
   Easing,
-  interpolate
+  interpolate,
+  runOnJS
 } from 'react-native-reanimated'
+
+function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
+  const scale = useSharedValue(1)
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 300 }) }]
+  }))
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => { scale.value = 0.95 }}
+      onPressOut={() => { scale.value = 1 }}
+      style={style}
+    >
+      <Animated.View style={animatedStyle}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  )
+}
 
 const PulseDot = ({ color }: { color: string }) => {
   const opacity = useSharedValue(0.4)
@@ -70,6 +91,41 @@ export default function DashboardScreen() {
   const [profileMenuVisible, setProfileMenuVisible] = useState(false)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
+
+  // Reanimated states for Profile popover menu
+  const [renderMenu, setRenderMenu] = useState(false)
+  const menuOpacity = useSharedValue(0)
+  const menuScale = useSharedValue(0.95)
+  const menuTranslateY = useSharedValue(-10)
+
+  useEffect(() => {
+    if (profileMenuVisible) {
+      setRenderMenu(true)
+      menuOpacity.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      menuScale.value = withTiming(1, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      menuTranslateY.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+    } else {
+      menuOpacity.value = withTiming(0, { duration: 150, easing: Easing.linear })
+      menuScale.value = withTiming(0.95, { duration: 150, easing: Easing.linear })
+      menuTranslateY.value = withTiming(-10, { duration: 150, easing: Easing.linear }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderMenu)(false)
+        }
+      })
+    }
+  }, [profileMenuVisible])
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: menuOpacity.value,
+  }))
+
+  const menuCardAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: menuOpacity.value,
+    transform: [
+      { scale: menuScale.value },
+      { translateY: menuTranslateY.value }
+    ],
+  }))
 
   // Track dashboard screen focus state
   useFocusEffect(
@@ -221,8 +277,7 @@ export default function DashboardScreen() {
           </Text>
         </View>
         {/* User Avatar */}
-        <TouchableOpacity 
-          activeOpacity={0.7}
+        <PressableScale 
           onPress={() => setProfileMenuVisible(true)}
           style={[styles.avatarWrapper, { borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#E5E7EB' }]}
         >
@@ -233,7 +288,7 @@ export default function DashboardScreen() {
               {(user?.login || 'D').substring(0, 1).toUpperCase()}
             </Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
       </Animated.View>
 
       {/* Your Workspaces Carousel */}
@@ -260,10 +315,9 @@ export default function DashboardScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 24 }}>
             {projects.map((project, idx) => (
               <Animated.View key={project.id} entering={FadeInRight.delay(200 + idx * 100)}>
-                <TouchableOpacity 
+                <PressableScale 
                   style={[styles.projectCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}
                   onPress={() => router.push(`/project/${project.id}`)}
-                  activeOpacity={0.8}
                 >
                   <View style={styles.projectHeader}>
                     <View style={[styles.projectIcon, { backgroundColor: isDark ? '#21262D' : '#E5E7EB' }]}>
@@ -290,7 +344,7 @@ export default function DashboardScreen() {
                   <Text style={[styles.projectType, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
                     {project.type === 'react' ? 'React App' : project.type === 'node' ? 'Node.js Server' : 'Empty Project'}
                   </Text>
-                </TouchableOpacity>
+                </PressableScale>
               </Animated.View>
             ))}
           </ScrollView>
@@ -301,13 +355,12 @@ export default function DashboardScreen() {
       <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', marginBottom: 16 }]}>QUICK TOOLS</Text>
         <View style={styles.actionsRow}>
-          <TouchableOpacity 
+          <PressableScale 
             style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
             onPress={() => {
               setSettingsSubScreen('gitSsh')
               router.push('/(tabs)/settings')
             }}
-            activeOpacity={0.8}
           >
             <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: colors.border }]}>
               <View style={[styles.glassIconBg, { backgroundColor: 'rgba(88, 166, 255, 0.15)' }]}>
@@ -316,12 +369,11 @@ export default function DashboardScreen() {
               <Text style={[styles.glassTitle, { color: colors.text }]}>SSH Keys</Text>
               <Text style={[styles.glassSub, { color: colors.textSecondary }]}>Manage deploy keys</Text>
             </BlurView>
-          </TouchableOpacity>
+          </PressableScale>
 
-          <TouchableOpacity 
+          <PressableScale 
             style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
             onPress={() => router.push('/(tabs)/ai')}
-            activeOpacity={0.8}
           >
             <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: colors.border }]}>
               <View style={[styles.glassIconBg, { backgroundColor: 'rgba(210, 168, 255, 0.15)' }]}>
@@ -330,7 +382,7 @@ export default function DashboardScreen() {
               <Text style={[styles.glassTitle, { color: colors.text }]}>Copilot</Text>
               <Text style={[styles.glassSub, { color: colors.textSecondary }]}>Ask AI assistant</Text>
             </BlurView>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </Animated.View>
 
@@ -416,18 +468,20 @@ export default function DashboardScreen() {
     </ScrollView>
 
     <Modal
-      visible={profileMenuVisible}
+      visible={renderMenu}
       transparent={true}
       statusBarTranslucent={true}
-      animationType="fade"
+      animationType="none"
       onRequestClose={() => setProfileMenuVisible(false)}
     >
-      <TouchableOpacity 
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={() => setProfileMenuVisible(false)}
-      >
-        <View style={[styles.menuCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+      <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 110, paddingHorizontal: 20 }}>
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)' }, backdropAnimatedStyle]} />
+        <TouchableOpacity 
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => setProfileMenuVisible(false)}
+        />
+        <Animated.View style={[styles.menuCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }, menuCardAnimatedStyle]}>
           {/* Header User Profile Info */}
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
             {user?.avatar_url ? (
@@ -505,8 +559,8 @@ export default function DashboardScreen() {
               <Text style={[styles.menuItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Sign Out</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </TouchableOpacity>
+        </Animated.View>
+      </View>
     </Modal>
 
     <ConfirmModal
