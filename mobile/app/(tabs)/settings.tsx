@@ -33,6 +33,14 @@ export default function SettingsScreen() {
   const [showOpenaiKey, setShowOpenaiKey] = useState(false)
   const [showAnthropicKey, setShowAnthropicKey] = useState(false)
 
+  // Profile settings state
+  const [profileName, setProfileName] = useState('')
+  const [profileEmail, setProfileEmail] = useState('')
+  const [profileBio, setProfileBio] = useState('')
+  const [profileCompany, setProfileCompany] = useState('')
+  const [profileLocation, setProfileLocation] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+
   // Track settings tab screen focus state
   useFocusEffect(
     useCallback(() => {
@@ -244,9 +252,33 @@ export default function SettingsScreen() {
       if (cachedGemini) setCustomGeminiKey(cachedGemini)
       if (cachedOpenai) setCustomOpenaiKey(cachedOpenai)
       if (cachedAnthropic) setCustomAnthropicKey(cachedAnthropic)
+
+      // 6. Load Profile settings
+      const cachedProfileName = await AsyncStorage.getItem('profile_name')
+      const cachedProfileEmail = await AsyncStorage.getItem('profile_email')
+      const cachedProfileBio = await AsyncStorage.getItem('profile_bio')
+      const cachedProfileCompany = await AsyncStorage.getItem('profile_company')
+      const cachedProfileLocation = await AsyncStorage.getItem('profile_location')
+
+      setProfileName(cachedProfileName || user?.name || user?.login || '')
+      setProfileEmail(cachedProfileEmail || user?.email || '')
+      setProfileBio(cachedProfileBio || '')
+      setProfileCompany(cachedProfileCompany || '')
+      setProfileLocation(cachedProfileLocation || '')
     }
     loadData()
   }, [fetchRuntimesData])
+
+  useEffect(() => {
+    if (user) {
+      AsyncStorage.getItem('profile_name').then(val => {
+        if (!val) setProfileName(user.name || user.login || '')
+      })
+      AsyncStorage.getItem('profile_email').then(val => {
+        if (!val) setProfileEmail(user.email || '')
+      })
+    }
+  }, [user])
 
   const handleSaveConfig = async () => {
     if (!gitName.trim() || !gitEmail.trim()) {
@@ -780,6 +812,136 @@ export default function SettingsScreen() {
     }
   }
 
+  const handleSaveProfile = async () => {
+    setSavingProfile(true)
+    try {
+      await AsyncStorage.setItem('profile_name', profileName.trim())
+      await AsyncStorage.setItem('profile_email', profileEmail.trim())
+      await AsyncStorage.setItem('profile_bio', profileBio.trim())
+      await AsyncStorage.setItem('profile_company', profileCompany.trim())
+      await AsyncStorage.setItem('profile_location', profileLocation.trim())
+      showModal('Success', 'Profile settings updated successfully.', 'success')
+    } catch (err) {
+      showModal('Error', (err as Error).message, 'error')
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  const renderProfileView = () => {
+    return (
+      <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
+        {/* Back navigation */}
+        <TouchableOpacity 
+          onPress={() => setCurrentSubScreen('main')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
+        >
+          <ArrowLeft size={16} color={colors.primary} />
+          <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Settings</Text>
+        </TouchableOpacity>
+
+        {/* Title */}
+        <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, marginBottom: 20 }}>Edit Profile</Text>
+
+        <View style={{ alignItems: 'center', marginBottom: 24, gap: 10 }}>
+          {user?.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: colors.primary }} />
+          ) : (
+            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? '#151922' : '#E5E7EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary }}>
+              <Text style={{ color: colors.text, fontSize: 32, fontFamily: 'Inter_600SemiBold' }}>
+                {user?.login?.[0]?.toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_500Medium' }}>
+            GitHub Account: @{user?.login}
+          </Text>
+        </View>
+
+        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 16, gap: 16, marginHorizontal: 0 }]}>
+          {/* Full Name */}
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Full Name</Text>
+            <TextInput
+              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+              placeholder="Your Name"
+              placeholderTextColor={colors.textSecondary + '60'}
+              value={profileName}
+              onChangeText={setProfileName}
+            />
+          </View>
+
+          {/* Email */}
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Public Email</Text>
+            <TextInput
+              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+              placeholder="email@example.com"
+              placeholderTextColor={colors.textSecondary + '60'}
+              value={profileEmail}
+              onChangeText={setProfileEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Bio */}
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Bio</Text>
+            <TextInput
+              style={[styles.inputField, { color: colors.text, borderColor: colors.border, height: 72, paddingVertical: 8 }]}
+              placeholder="Tell us about yourself..."
+              placeholderTextColor={colors.textSecondary + '60'}
+              value={profileBio}
+              onChangeText={setProfileBio}
+              multiline={true}
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Company */}
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Company</Text>
+            <TextInput
+              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+              placeholder="Organization"
+              placeholderTextColor={colors.textSecondary + '60'}
+              value={profileCompany}
+              onChangeText={setProfileCompany}
+            />
+          </View>
+
+          {/* Location */}
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Location</Text>
+            <TextInput
+              style={[styles.inputField, { color: colors.text, borderColor: colors.border }]}
+              placeholder="City, Country"
+              placeholderTextColor={colors.textSecondary + '60'}
+              value={profileLocation}
+              onChangeText={setProfileLocation}
+            />
+          </View>
+
+          <TouchableOpacity 
+            onPress={handleSaveProfile} 
+            style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
+            disabled={savingProfile}
+            activeOpacity={0.8}
+          >
+            {savingProfile ? (
+              <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
+            ) : (
+              <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                Save Profile Settings
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  }
+
   const renderAiKeysView = () => {
     return (
       <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 }}>
@@ -1142,6 +1304,29 @@ export default function SettingsScreen() {
     )
   }
 
+  if (currentSubScreen === 'profile') {
+    return (
+      <ScrollView 
+        style={[styles.container, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {renderProfileView()}
+        <ConfirmModal
+          visible={modalConfig.visible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          type={modalConfig.type}
+          singleButton={modalConfig.singleButton}
+          onConfirm={modalConfig.onConfirm}
+          onCancel={modalConfig.onCancel}
+        />
+      </ScrollView>
+    )
+  }
+
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]} 
@@ -1153,7 +1338,11 @@ export default function SettingsScreen() {
       </View>
 
       {/* Profile */}
-      <View style={[styles.profileCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+      <TouchableOpacity 
+        activeOpacity={0.7}
+        onPress={() => setCurrentSubScreen('profile')}
+        style={[styles.profileCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+      >
         <View style={styles.profileRow}>
           {user?.avatar_url ? (
             <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
@@ -1166,7 +1355,7 @@ export default function SettingsScreen() {
           )}
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-              {user?.name || user?.login}
+              {profileName || user?.name || user?.login}
             </Text>
             <View style={styles.profileBadgeRow}>
               <Github size={11} color={colors.textSecondary} strokeWidth={1.5} />
@@ -1177,7 +1366,7 @@ export default function SettingsScreen() {
           </View>
           <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Preferences */}
       <View style={styles.section}>
