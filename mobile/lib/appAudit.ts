@@ -57,9 +57,9 @@ export async function recordAppSession() {
     const list: AppSessionRecord[] = existing ? JSON.parse(existing) : []
     
     // Mark previous sessions as inactive/previous
-    const updatedList = list.map(item => ({
+    const updatedList: AppSessionRecord[] = list.map(item => ({
       ...item,
-      status: 'PREVIOUS' as const
+      status: 'PREVIOUS'
     }))
     
     const deviceName = Platform.OS === 'ios' ? 'iOS Simulator' : 'Android Client'

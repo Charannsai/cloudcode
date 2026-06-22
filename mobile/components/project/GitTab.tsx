@@ -14,6 +14,7 @@ import {
 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { recordAppCommit } from '@/lib/appAudit'
 
 interface Props {
   projectId: string
@@ -262,6 +263,21 @@ export default function GitTab({ projectId, isActive }: Props) {
     setCommitting(true)
     try {
       await api.git.commit(projectId, commitMessage.trim())
+      
+      // Track commit audit log locally in the app
+      try {
+        let projectName = 'Workspace'
+        try {
+          const proj = await api.projects.get(projectId)
+          if (proj && proj.name) projectName = proj.name
+        } catch (_) {}
+        const shortHash = Math.random().toString(16).substring(2, 9)
+        const branchName = status?.branch || 'main'
+        await recordAppCommit(projectId, projectName, branchName, commitMessage.trim(), shortHash)
+      } catch (auditErr) {
+        console.warn('Failed to audit log app commit:', auditErr)
+      }
+
       setCommitMessage('')
       fetchStatus(true)
     } catch (err) {
