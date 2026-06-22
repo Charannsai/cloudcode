@@ -19,7 +19,7 @@ const SPRING_CONFIG = {
 }
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
-  const { isDark } = useAppTheme()
+  const { isDark, colors } = useAppTheme()
   const router = useRouter()
   const { tabBarVisible } = useUIStore()
   const isVisible = useSharedValue(1)
@@ -80,8 +80,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     { type: 'route', routeIndex: 3, key: 'settings', icon: SlidersHorizontal }
   ]
 
-  const activeColor = isDark ? '#D2A8FF' : '#8250DF'
-  const inactiveColor = isDark ? '#6E7681' : '#8C959F'
+  const activeColor = colors.tabBarActive
+  const inactiveColor = colors.tabBarInactive
 
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
@@ -119,7 +119,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 activeOpacity={0.8}
               >
                 <View style={[styles.fabButton, { backgroundColor: activeColor }]}>
-                  <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
+                  <Plus size={18} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
                 </View>
               </TouchableOpacity>
             )
