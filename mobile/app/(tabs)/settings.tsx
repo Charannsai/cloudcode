@@ -1010,9 +1010,9 @@ export default function SettingsScreen() {
               appSessions.map((session, idx) => (
                 <View key={idx}>
                   <View style={{ flexDirection: 'row', padding: 14, alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', flex: 1, marginRight: 12 }}>
                       <Laptop size={18} color={session.status === 'ACTIVE' ? colors.text : colors.textSecondary} />
-                      <View style={{ flex: 1, marginRight: 8 }}>
+                      <View style={{ flex: 1 }}>
                         <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>
                           {session.device} ({session.status === 'ACTIVE' ? 'Current Device' : 'Previous Session'})
                         </Text>
