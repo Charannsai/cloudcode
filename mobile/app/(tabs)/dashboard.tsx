@@ -23,6 +23,7 @@ import {
   Key
 } from 'lucide-react-native'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
+import { ConfirmModal } from '@/components/ConfirmModal'
 import Animated, { 
   FadeInDown, 
   FadeInRight,
@@ -67,6 +68,7 @@ export default function DashboardScreen() {
   const { setSettingsSubScreen, setTabBarVisible } = useUIStore()
   const [profileName, setProfileName] = useState('')
   const [profileMenuVisible, setProfileMenuVisible] = useState(false)
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
 
   // Track dashboard screen focus state
@@ -80,12 +82,12 @@ export default function DashboardScreen() {
     }, [setTabBarVisible])
   )
 
-  // Hide tab bar dynamically when the profile menu modal is active
+  // Hide tab bar dynamically when the profile menu modal or sign out modal is active
   useEffect(() => {
     if (isFocused) {
-      setTabBarVisible(!profileMenuVisible)
+      setTabBarVisible(!profileMenuVisible && !showSignOutModal)
     }
-  }, [profileMenuVisible, isFocused, setTabBarVisible])
+  }, [profileMenuVisible, showSignOutModal, isFocused, setTabBarVisible])
   
   interface DiagnosticsData {
     cpuLoad: number
@@ -496,14 +498,7 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
               onPress={() => {
                 setProfileMenuVisible(false)
-                Alert.alert(
-                  'Sign Out',
-                  'Are you sure you want to sign out of this device?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Sign Out', style: 'destructive', onPress: () => signOut() }
-                  ]
-                )
+                setShowSignOutModal(true)
               }}
               style={styles.menuItem}
             >
@@ -513,6 +508,20 @@ export default function DashboardScreen() {
         </View>
       </TouchableOpacity>
     </Modal>
+
+    <ConfirmModal
+      visible={showSignOutModal}
+      title="Sign Out"
+      message="Are you sure you want to sign out?"
+      confirmText="Sign Out"
+      cancelText="Cancel"
+      type="logout"
+      onConfirm={() => {
+        setShowSignOutModal(false)
+        signOut()
+      }}
+      onCancel={() => setShowSignOutModal(false)}
+    />
   </>
 )
 }
