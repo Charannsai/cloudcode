@@ -42,6 +42,15 @@ export default function SettingsScreen() {
   const [appCommits, setAppCommits] = useState<any[]>([])
   const [appSessions, setAppSessions] = useState<any[]>([])
 
+  // Change tracking states
+  const [initialProfileName, setInitialProfileName] = useState('')
+  const [initialGitName, setInitialGitName] = useState('')
+  const [initialGitEmail, setInitialGitEmail] = useState('')
+  const [initialByokMode, setInitialByokMode] = useState(false)
+  const [initialGeminiKey, setInitialGeminiKey] = useState('')
+  const [initialOpenaiKey, setInitialOpenaiKey] = useState('')
+  const [initialAnthropicKey, setInitialAnthropicKey] = useState('')
+
   // Track settings tab screen focus state
   useFocusEffect(
     useCallback(() => {
@@ -245,8 +254,14 @@ export default function SettingsScreen() {
       // 1. Load Git author info from cache
       const cachedName = await AsyncStorage.getItem('git_author_name')
       const cachedEmail = await AsyncStorage.getItem('git_author_email')
-      if (cachedName) setGitName(cachedName)
-      if (cachedEmail) setGitEmail(cachedEmail)
+      if (cachedName) {
+        setGitName(cachedName)
+        setInitialGitName(cachedName)
+      }
+      if (cachedEmail) {
+        setGitEmail(cachedEmail)
+        setInitialGitEmail(cachedEmail)
+      }
 
       // 2. Load SSH key status
       fetchGitSshData(false)
@@ -263,15 +278,28 @@ export default function SettingsScreen() {
       const cachedOpenai = await AsyncStorage.getItem('custom_openai_key')
       const cachedAnthropic = await AsyncStorage.getItem('custom_anthropic_key')
 
-      if (cachedByok) setByokMode(cachedByok === 'true')
-      if (cachedGemini) setCustomGeminiKey(cachedGemini)
-      if (cachedOpenai) setCustomOpenaiKey(cachedOpenai)
-      if (cachedAnthropic) setCustomAnthropicKey(cachedAnthropic)
+      if (cachedByok) {
+        setByokMode(cachedByok === 'true')
+        setInitialByokMode(cachedByok === 'true')
+      }
+      if (cachedGemini) {
+        setCustomGeminiKey(cachedGemini)
+        setInitialGeminiKey(cachedGemini)
+      }
+      if (cachedOpenai) {
+        setCustomOpenaiKey(cachedOpenai)
+        setInitialOpenaiKey(cachedOpenai)
+      }
+      if (cachedAnthropic) {
+        setCustomAnthropicKey(cachedAnthropic)
+        setInitialAnthropicKey(cachedAnthropic)
+      }
 
       // 6. Load Profile settings
       const cachedProfileName = await AsyncStorage.getItem('profile_name')
-
-      setProfileName(cachedProfileName || user?.name || user?.login || '')
+      const initialName = cachedProfileName || user?.name || user?.login || ''
+      setProfileName(initialName)
+      setInitialProfileName(initialName)
       loadLocalAuditLogs()
     }
     loadData()
@@ -280,7 +308,11 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (user) {
       AsyncStorage.getItem('profile_name').then(val => {
-        if (!val) setProfileName(user.name || user.login || '')
+        if (!val) {
+          const initialName = user.name || user.login || ''
+          setProfileName(initialName)
+          setInitialProfileName(initialName)
+        }
       })
     }
   }, [user])
@@ -294,6 +326,8 @@ export default function SettingsScreen() {
     try {
       await AsyncStorage.setItem('git_author_name', gitName.trim())
       await AsyncStorage.setItem('git_author_email', gitEmail.trim())
+      setInitialGitName(gitName.trim())
+      setInitialGitEmail(gitEmail.trim())
       showModal('Success', 'Git credentials saved globally.', 'success')
     } catch (err) {
       showModal('Error', (err as Error).message, 'error')
@@ -646,20 +680,22 @@ export default function SettingsScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
             />
-            <TouchableOpacity 
-              onPress={handleSaveConfig} 
-              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-              disabled={loadingConfig}
-              activeOpacity={0.8}
-            >
-              {loadingConfig ? (
-                <ActivityIndicator color={isDark ? '#000' : '#fff'} />
-              ) : (
-                <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
-                  Save Author Info
-                </Text>
-              )}
-            </TouchableOpacity>
+            {(gitName.trim() !== initialGitName || gitEmail.trim() !== initialGitEmail) && (
+              <TouchableOpacity 
+                onPress={handleSaveConfig} 
+                style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+                disabled={loadingConfig}
+                activeOpacity={0.8}
+              >
+                {loadingConfig ? (
+                  <ActivityIndicator color={isDark ? '#000' : '#fff'} />
+                ) : (
+                  <Text style={[styles.primaryBtnText, { color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold' }]}>
+                    Save Author Info
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
@@ -809,6 +845,10 @@ export default function SettingsScreen() {
       await AsyncStorage.setItem('custom_gemini_key', customGeminiKey.trim())
       await AsyncStorage.setItem('custom_openai_key', customOpenaiKey.trim())
       await AsyncStorage.setItem('custom_anthropic_key', customAnthropicKey.trim())
+      setInitialByokMode(byokMode)
+      setInitialGeminiKey(customGeminiKey.trim())
+      setInitialOpenaiKey(customOpenaiKey.trim())
+      setInitialAnthropicKey(customAnthropicKey.trim())
       showModal('Success', 'AI Key and Provider settings saved successfully.', 'success')
     } catch (err) {
       showModal('Error', (err as Error).message, 'error')
@@ -821,6 +861,7 @@ export default function SettingsScreen() {
     setSavingProfile(true)
     try {
       await AsyncStorage.setItem('profile_name', profileName.trim())
+      setInitialProfileName(profileName.trim())
       showModal('Success', 'Profile settings updated successfully.', 'success')
     } catch (err) {
       showModal('Error', (err as Error).message, 'error')
@@ -936,20 +977,22 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity 
-            onPress={handleSaveProfile} 
-            style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
-            disabled={savingProfile}
-            activeOpacity={0.8}
-          >
-            {savingProfile ? (
-              <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
-            ) : (
-              <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
-                Save Profile Settings
-              </Text>
-            )}
-          </TouchableOpacity>
+          {profileName.trim() !== initialProfileName && (
+            <TouchableOpacity 
+              onPress={handleSaveProfile} 
+              style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
+              disabled={savingProfile}
+              activeOpacity={0.8}
+            >
+              {savingProfile ? (
+                <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
+              ) : (
+                <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                  Save Profile Settings
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Session History */}
@@ -1213,20 +1256,25 @@ export default function SettingsScreen() {
             </>
           )}
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
-            onPress={handleSaveAiKeys}
-            disabled={savingAiKeys}
-          >
-            {savingAiKeys ? (
-              <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
-            ) : (
-              <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
-                Save AI Key Settings
-              </Text>
-            )}
-          </TouchableOpacity>
+          {(byokMode !== initialByokMode ||
+            customGeminiKey.trim() !== initialGeminiKey ||
+            customOpenaiKey.trim() !== initialOpenaiKey ||
+            customAnthropicKey.trim() !== initialAnthropicKey) && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
+              onPress={handleSaveAiKeys}
+              disabled={savingAiKeys}
+            >
+              {savingAiKeys ? (
+                <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} size="small" />
+              ) : (
+                <Text style={[styles.primaryBtnText, { color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                  Save AI Key Settings
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     )
