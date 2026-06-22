@@ -4,7 +4,7 @@ import {
   TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler, Pressable
 } from 'react-native'
 import Animated, { 
-  FadeInRight, useSharedValue, useAnimatedStyle, withSpring 
+  FadeInRight, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing 
 } from 'react-native-reanimated'
 import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
@@ -108,6 +108,41 @@ export default function SettingsScreen() {
     visible: false,
     tierName: null,
   })
+
+  // Reanimated states for settings upgrade modal
+  const [renderUpgrade, setRenderUpgrade] = useState(false)
+  const upgradeOpacity = useSharedValue(0)
+  const upgradeScale = useSharedValue(0.95)
+  const upgradeTranslateY = useSharedValue(10)
+
+  useEffect(() => {
+    if (upgradeModal.visible) {
+      setRenderUpgrade(true)
+      upgradeOpacity.value = withTiming(1, { duration: 200, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      upgradeScale.value = withTiming(1, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      upgradeTranslateY.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+    } else {
+      upgradeOpacity.value = withTiming(0, { duration: 150, easing: Easing.linear })
+      upgradeScale.value = withTiming(0.95, { duration: 150, easing: Easing.linear })
+      upgradeTranslateY.value = withTiming(10, { duration: 150, easing: Easing.linear }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderUpgrade)(false)
+        }
+      })
+    }
+  }, [upgradeModal.visible])
+
+  const upgradeBackdropStyle = useAnimatedStyle(() => ({
+    opacity: upgradeOpacity.value,
+  }))
+
+  const upgradeCardStyle = useAnimatedStyle(() => ({
+    opacity: upgradeOpacity.value,
+    transform: [
+      { scale: upgradeScale.value },
+      { translateY: upgradeTranslateY.value }
+    ],
+  }))
 
   // Custom Modal Alert State
   const [modalConfig, setModalConfig] = useState<{
@@ -447,14 +482,20 @@ export default function SettingsScreen() {
   function renderUpgradeModal() {
     return (
       <Modal
-        visible={upgradeModal.visible}
+        visible={renderUpgrade}
         transparent={true}
         statusBarTranslucent={true}
         animationType="none"
         onRequestClose={() => setUpgradeModal({ visible: false, tierName: null })}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: isDark ? '#0F141C' : '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, width: '100%', maxWidth: 320, gap: 12 }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }, upgradeBackdropStyle]} />
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setUpgradeModal({ visible: false, tierName: null })}
+          />
+          <Animated.View style={[{ backgroundColor: isDark ? '#0F141C' : '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, width: '100%', maxWidth: 320, gap: 12 }, upgradeCardStyle]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }}>
                 {upgradeModal.tierName === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Advanced'}
@@ -519,9 +560,11 @@ export default function SettingsScreen() {
             >
               <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_700Bold', fontSize: 14 }}>Subscribe Now</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
+    )
+  }
     )
   }
 
