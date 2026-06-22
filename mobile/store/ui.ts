@@ -3,8 +3,8 @@ import { create } from 'zustand'
 interface UIState {
   tabBarVisible: boolean
   setTabBarVisible: (visible: boolean) => void
-  settingsSubScreen: 'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys'
-  setSettingsSubScreen: (screen: 'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys') => void
+  settingsSubScreen: 'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys' | 'profile'
+  setSettingsSubScreen: (screen: 'main' | 'billing' | 'gitSsh' | 'dependencies' | 'aiKeys' | 'profile') => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
