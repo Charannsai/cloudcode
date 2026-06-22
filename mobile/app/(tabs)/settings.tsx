@@ -81,9 +81,8 @@ export default function SettingsScreen() {
       setIsFocused(true)
       return () => {
         setIsFocused(false)
-        setTabBarVisible(true)
       }
-    }, [setTabBarVisible])
+    }, [])
   )
 
 
@@ -1759,7 +1758,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Animated.View entering={FadeInDown.duration(160)} style={{ flex: 1 }}>
+        <Animated.View entering={currentSubScreen === 'main' ? FadeInDown.duration(160) : undefined} style={{ flex: 1 }}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Control Center</Text>
           </View>
