@@ -565,8 +565,6 @@ export default function SettingsScreen() {
       </Modal>
     )
   }
-    )
-  }
 
   function renderBillingView() {
     if (loadingBilling) {
@@ -884,39 +882,7 @@ export default function SettingsScreen() {
     )
   }
 
-  if (currentSubScreen === 'billing') {
-    return (
-      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
-        <ScrollView 
-          style={[styles.container, { backgroundColor: colors.background }]} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={loadingBilling}
-              onRefresh={() => fetchBillingStatus(false)}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-        >
-          {renderBillingView()}
-          {renderUpgradeModal()}
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
-        </ScrollView>
-      </Animated.View>
-    )
-  }
+
 
   const handleSaveAiKeys = async () => {
     setSavingAiKeys(true)
@@ -1602,30 +1568,7 @@ export default function SettingsScreen() {
     )
   }
 
-  if (currentSubScreen === 'aiKeys') {
-    return (
-      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
-        <ScrollView 
-          style={[styles.container, { backgroundColor: colors.background }]} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {renderAiKeysView()}
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
-        </ScrollView>
-      </Animated.View>
-    )
-  }
+
 
   const handleInstallRuntime = async (runtimeKey: string, runtimeName: string) => {
     setUpdatingRuntimes(prev => ({ ...prev, [runtimeKey]: true }))
@@ -1734,131 +1677,7 @@ export default function SettingsScreen() {
     )
   }
 
-  if (currentSubScreen === 'dependencies') {
-    return (
-      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
-        <ScrollView 
-          style={[styles.container, { backgroundColor: colors.background }]} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={loadingRuntimes}
-              onRefresh={() => fetchRuntimesData(false)}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-        >
-          {renderDependenciesView()}
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
-        </ScrollView>
-      </Animated.View>
-    )
-  }
 
-  if (currentSubScreen === 'gitSsh') {
-    return (
-      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
-        <ScrollView 
-          style={[styles.container, { backgroundColor: colors.background }]} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={loadingSsh}
-              onRefresh={() => fetchGitSshData(false)}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-        >
-          {renderGitSshView()}
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
-        </ScrollView>
-      </Animated.View>
-    )
-  }
-
-  if (currentSubScreen === 'profile') {
-    return (
-      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
-        <ScrollView 
-          style={[styles.container, { backgroundColor: colors.background }]} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {renderProfileView()}
-          <ConfirmModal
-            visible={showSignOutModal}
-            title="Sign Out"
-            message="Are you sure you want to sign out?"
-            confirmText="Sign Out"
-            cancelText="Cancel"
-            type="logout"
-            onConfirm={confirmSignOut}
-            onCancel={() => setShowSignOutModal(false)}
-          />
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
-        </ScrollView>
-      </Animated.View>
-    )
-  }
-
-  if (currentSubScreen === 'about') {
-    return (
-      <Animated.View entering={FadeInRight.springify().damping(22).stiffness(150)} style={{ flex: 1 }}>
-        <ScrollView 
-          style={[styles.container, { backgroundColor: colors.background }]} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {renderAboutView()}
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
-        </ScrollView>
-      </Animated.View>
-    )
-  }
 
   const renderSettingsRow = ({
     icon: IconComponent,
@@ -1929,11 +1748,12 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: colors.background }]} 
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scrollContent}
-    >
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Control Center</Text>
       </View>
@@ -2180,40 +2000,204 @@ export default function SettingsScreen() {
       />
     </ScrollView>
 
-      <View style={styles.footerContainer}>
-        <Image
-          source={require('../../assets/cloudcodelogo.png')}
-          style={[styles.footerLogo, { tintColor: colors.text }]}
-          resizeMode="contain"
-        />
-        <Text style={[styles.footerText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-          v1.0.0
-        </Text>
-      </View>
+    {/* Overlays for subscreens */}
+    {currentSubScreen === 'billing' && (
+      <Animated.View 
+        entering={SlideInRight.springify().damping(22).stiffness(150)}
+        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loadingBilling}
+              onRefresh={() => fetchBillingStatus(false)}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {renderBillingView()}
+          {renderUpgradeModal()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
 
-      <ConfirmModal
-        visible={showSignOutModal}
-        title="Sign Out"
-        message="Are you sure you want to sign out?"
-        confirmText="Sign Out"
-        cancelText="Cancel"
-        type="logout"
-        onConfirm={confirmSignOut}
-        onCancel={() => setShowSignOutModal(false)}
-      />
+    {currentSubScreen === 'gitSsh' && (
+      <Animated.View 
+        entering={SlideInRight.springify().damping(22).stiffness(150)}
+        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loadingSsh}
+              onRefresh={() => fetchGitSshData(false)}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {renderGitSshView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
 
-      <ConfirmModal
-        visible={modalConfig.visible}
-        title={modalConfig.title}
-        message={modalConfig.message}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-        type={modalConfig.type}
-        singleButton={modalConfig.singleButton}
-        onConfirm={modalConfig.onConfirm}
-        onCancel={modalConfig.onCancel}
-      />
-    </ScrollView>
+    {currentSubScreen === 'aiKeys' && (
+      <Animated.View 
+        entering={SlideInRight.springify().damping(22).stiffness(150)}
+        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderAiKeysView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
+
+    {currentSubScreen === 'dependencies' && (
+      <Animated.View 
+        entering={SlideInRight.springify().damping(22).stiffness(150)}
+        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loadingRuntimes}
+              onRefresh={() => fetchRuntimesData(false)}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {renderDependenciesView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
+
+    {currentSubScreen === 'profile' && (
+      <Animated.View 
+        entering={SlideInRight.springify().damping(22).stiffness(150)}
+        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderProfileView()}
+          <ConfirmModal
+            visible={showSignOutModal}
+            title="Sign Out"
+            message="Are you sure you want to sign out?"
+            confirmText="Sign Out"
+            cancelText="Cancel"
+            type="logout"
+            onConfirm={confirmSignOut}
+            onCancel={() => setShowSignOutModal(false)}
+          />
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
+
+    {currentSubScreen === 'about' && (
+      <Animated.View 
+        entering={SlideInRight.springify().damping(22).stiffness(150)}
+        exiting={SlideOutRight.springify().damping(22).stiffness(150)}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderAboutView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
+  </View>
   )
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, Alert, ScrollView,
+  RefreshControl, Alert, ScrollView, Pressable,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
@@ -27,10 +27,30 @@ import Animated, {
   useAnimatedStyle, 
   withRepeat, 
   withTiming, 
+  withSpring,
   useSharedValue, 
   Easing,
   interpolate
 } from 'react-native-reanimated'
+
+function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
+  const scale = useSharedValue(1)
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 300 }) }]
+  }))
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => { scale.value = 0.96 }}
+      onPressOut={() => { scale.value = 1 }}
+      style={style}
+    >
+      <Animated.View style={animatedStyle}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  )
+}
 
 const PulseDot = ({ color }: { color: string }) => {
   const opacity = useSharedValue(0.4)
@@ -149,10 +169,9 @@ export default function ProjectsScreen() {
 
     return (
       <Animated.View entering={FadeInDown.delay(index * 60).duration(400)}>
-        <TouchableOpacity
+        <PressableScale
           style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
           onPress={() => router.push(`/project/${p.id}`)}
-          activeOpacity={0.7}
         >
           <View style={styles.cardMain}>
             <View style={[styles.iconBox, { backgroundColor: colors.background }]}>
@@ -185,7 +204,7 @@ export default function ProjectsScreen() {
               <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
             </View>
           </View>
-        </TouchableOpacity>
+        </PressableScale>
       </Animated.View>
     )
   }
@@ -207,8 +226,7 @@ export default function ProjectsScreen() {
       <View style={styles.startGroup}>
         <Text style={[styles.startHeader, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>Start</Text>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <PressableScale
           onPress={() => router.push('/new-project')}
           style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
         >
@@ -220,10 +238,9 @@ export default function ProjectsScreen() {
             <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Node, React, Next.js, FastAPI, Flask, Rust, Go</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </PressableScale>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <PressableScale
           onPress={() => router.push({ pathname: '/new-project', params: { initialMode: 'clone' } })}
           style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
         >
@@ -235,10 +252,9 @@ export default function ProjectsScreen() {
             <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Clone a remote repository URL directly into a sandbox</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </PressableScale>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <PressableScale
           onPress={() => {
             Alert.alert("Welcome Guide", "CloudCode lets you build web apps in the cloud. Access terminals, code editors, and live previews inside sandboxes.")
           }}
@@ -252,7 +268,7 @@ export default function ProjectsScreen() {
             <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Learn how CloudCode sandbox containers work</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </View>
   )
@@ -283,8 +299,7 @@ export default function ProjectsScreen() {
         </View>
 
         {/* CTA 1: Create New Workspace */}
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <PressableScale
           onPress={() => router.push('/new-project')}
           style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
         >
@@ -296,11 +311,10 @@ export default function ProjectsScreen() {
             <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Initialize a blank container or clone from repository template.</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </PressableScale>
 
         {/* CTA 2: Open Latest Workspace */}
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <PressableScale
           onPress={handleOpenWorkspace}
           style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
         >
@@ -312,11 +326,10 @@ export default function ProjectsScreen() {
             <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Connect to your latest workspace terminal, file tree, and preview.</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </PressableScale>
 
         {/* CTA 3: Ask AI to Build */}
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <PressableScale
           onPress={handleAskAIToBuild}
           style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
         >
@@ -328,7 +341,7 @@ export default function ProjectsScreen() {
             <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Instruct the AI Assistant to provision and build a workspace application.</Text>
           </View>
           <ChevronRight size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     )
   }
