@@ -324,38 +324,54 @@ export default function DashboardScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Create your first project to get started</Text>
           </View>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 24 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: 24 }}>
             {projects.map((project, idx) => (
               <Animated.View key={project.id} entering={FadeInRight.delay(40 + idx * 40).duration(180)}>
                 <PressableScale 
-                  style={[styles.projectCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}
+                  style={[
+                    styles.projectCard, 
+                    { 
+                      backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+                      borderWidth: 0,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: isDark ? 0.2 : 0.04,
+                      shadowRadius: 4,
+                      elevation: 1,
+                      overflow: 'hidden',
+                      position: 'relative'
+                    }
+                  ]}
                   onPress={() => router.push(`/project/${project.id}`)}
                 >
-                  <View style={styles.projectHeader}>
-                    <View style={[styles.projectIcon, { backgroundColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-                      {project.type === 'react' ? (
-                        <Activity size={18} color="#58A6FF" />
-                      ) : (
-                        <Box size={18} color="#3FB950" />
-                      )}
+                  {/* Left accent strip for run status */}
+                  <View 
+                    style={{ 
+                      position: 'absolute', 
+                      left: 0, 
+                      top: 0, 
+                      bottom: 0, 
+                      width: 3.5, 
+                      backgroundColor: project.status === 'running' ? '#3FB950' : '#8B929A' 
+                    }} 
+                  />
+                  <View style={{ paddingLeft: 6, flex: 1, justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_600SemiBold', fontSize: 13.5 }} numberOfLines={1}>
+                        {project.name}
+                      </Text>
+                      {project.status === 'running' && <PulseDot color="#3FB950" />}
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: project.status === 'running' ? 'rgba(63, 185, 80, 0.12)' : 'rgba(101, 109, 118, 0.12)', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-                      {project.status === 'running' ? (
-                        <PulseDot color="#3FB950" />
-                      ) : (
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: 0.6 }} />
-                      )}
-                      <Text style={[styles.statusText, { color: project.status === 'running' ? '#3FB950' : colors.textSecondary }]}>
-                        {project.status === 'running' ? 'Running' : 'Sleeping'}
+                    
+                    <View style={{ gap: 2 }}>
+                      <Text style={{ color: colors.textTertiary || colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 10 }}>
+                        TYPE: {project.type.toUpperCase()}
+                      </Text>
+                      <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 10.5 }}>
+                        {project.status === 'running' ? 'Active now' : 'Idle container'}
                       </Text>
                     </View>
                   </View>
-                  <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_700Bold' }]} numberOfLines={1}>
-                    {project.name}
-                  </Text>
-                  <Text style={[styles.projectType, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                    {project.type === 'react' ? 'React App' : project.type === 'node' ? 'Node.js Server' : 'Empty Project'}
-                  </Text>
                 </PressableScale>
               </Animated.View>
             ))}
@@ -366,34 +382,72 @@ export default function DashboardScreen() {
       {/* Glassmorphic Quick Actions */}
       <Animated.View entering={FadeInDown.delay(60).duration(160)} style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', marginBottom: 16 }]}>QUICK TOOLS</Text>
-        <View style={styles.actionsRow}>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          {/* SSH Keys Pill */}
           <PressableScale 
-            style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
+            style={{ 
+              flex: 1, 
+              flexDirection: 'row', 
+              alignItems: 'center', 
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+              borderWidth: 0,
+              gap: 12
+            }}
             onPress={() => {
               setSettingsSubScreen('gitSsh')
               router.push('/(tabs)/settings')
             }}
           >
-            <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: colors.border }]}>
-              <View style={[styles.glassIconBg, { backgroundColor: 'rgba(88, 166, 255, 0.15)' }]}>
-                <Key size={22} color="#58A6FF" strokeWidth={2} />
-              </View>
-              <Text style={[styles.glassTitle, { color: colors.text }]}>SSH Keys</Text>
-              <Text style={[styles.glassSub, { color: colors.textSecondary }]}>Manage deploy keys</Text>
-            </BlurView>
+            <View style={{ 
+              width: 34, 
+              height: 34, 
+              borderRadius: 17, 
+              backgroundColor: 'rgba(88, 166, 255, 0.12)', 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}>
+              <Key size={16} color="#58A6FF" strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>SSH Keys</Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 10.5, marginTop: 1 }}>Deploy keys</Text>
+            </View>
+            <ChevronRight size={14} color={colors.textSecondary} strokeWidth={1.5} />
           </PressableScale>
 
+          {/* Copilot Pill */}
           <PressableScale 
-            style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
+            style={{ 
+              flex: 1, 
+              flexDirection: 'row', 
+              alignItems: 'center', 
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+              borderWidth: 0,
+              gap: 12
+            }}
             onPress={() => router.push('/(tabs)/ai')}
           >
-            <BlurView intensity={isDark ? 20 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.glassCard, { borderColor: colors.border }]}>
-              <View style={[styles.glassIconBg, { backgroundColor: 'rgba(210, 168, 255, 0.15)' }]}>
-                <Sparkles size={22} color="#D2A8FF" strokeWidth={2} />
-              </View>
-              <Text style={[styles.glassTitle, { color: colors.text }]}>Copilot</Text>
-              <Text style={[styles.glassSub, { color: colors.textSecondary }]}>Ask AI assistant</Text>
-            </BlurView>
+            <View style={{ 
+              width: 34, 
+              height: 34, 
+              borderRadius: 17, 
+              backgroundColor: 'rgba(210, 168, 255, 0.12)', 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}>
+              <Sparkles size={16} color="#D2A8FF" strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Copilot</Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 10.5, marginTop: 1 }}>Ask AI</Text>
+            </View>
+            <ChevronRight size={14} color={colors.textSecondary} strokeWidth={1.5} />
           </PressableScale>
         </View>
       </Animated.View>
@@ -401,78 +455,82 @@ export default function DashboardScreen() {
       {/* System Diagnostics */}
       <Animated.View entering={FadeInDown.delay(90).duration(160)} style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', marginBottom: 16 }]}>SYSTEM DIAGNOSTICS</Text>
-        <View style={[styles.diagContainer, { backgroundColor: isDark ? '#0D1117' : '#FFFFFF', borderColor: colors.border }]}>
+        <View style={{ borderWidth: 0, paddingHorizontal: 4 }}>
           
-          <View style={styles.diagRow}>
-            <View style={styles.diagIconGroup}>
-              <Wifi size={18} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={[styles.diagLabel, { color: colors.text }]}>Network Routing</Text>
+          {/* Row 1: Network Routing */}
+          <View style={{ paddingVertical: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Wifi size={15} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={{ fontSize: 13, fontFamily: 'Inter_500Medium', color: colors.text }}>Network Routing</Text>
+              </View>
+              <Text style={{ fontSize: 12.5, fontFamily: 'JetBrainsMono_600SemiBold', color: '#3FB950' }}>
+                optimal ({latency !== null ? `${latency}ms` : '12ms'})
+              </Text>
             </View>
-            <Text style={[styles.diagValue, { color: '#3FB950' }]}>
-              Optimal ({latency !== null ? `${latency}ms` : '12ms'})
-            </Text>
           </View>
           
-          <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
+          <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
 
-          <View style={styles.diagRowContainer}>
-            <View style={styles.diagRow}>
-              <View style={styles.diagIconGroup}>
-                <Cpu size={18} color={colors.textSecondary} strokeWidth={2} />
-                <Text style={[styles.diagLabel, { color: colors.text }]}>Global CPU Load</Text>
+          {/* Row 2: CPU Load */}
+          <View style={{ paddingVertical: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Cpu size={15} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={{ fontSize: 13, fontFamily: 'Inter_500Medium', color: colors.text }}>Global CPU Load</Text>
               </View>
-              <Text style={[styles.diagValue, { color: colors.text }]}>
+              <Text style={{ fontSize: 12.5, fontFamily: 'JetBrainsMono_600SemiBold', color: colors.text }}>
                 {diagnostics ? `${diagnostics.cpuLoad}%` : '4%'}
               </Text>
             </View>
-            <View style={[styles.meterTrack, { backgroundColor: isDark ? '#1C2128' : '#E5E7EB' }]}>
+            <View style={{ height: 2.5, borderRadius: 1.25, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', marginTop: 8, overflow: 'hidden' }}>
               <View 
-                style={[
-                  styles.meterFill, 
-                  { 
-                    width: `${diagnostics ? Math.min(diagnostics.cpuLoad, 100) : 4}%`,
-                    backgroundColor: diagnostics && diagnostics.cpuLoad > 80 ? '#F85149' : diagnostics && diagnostics.cpuLoad > 50 ? '#D97706' : '#3FB950'
-                  }
-                ]} 
+                style={{ 
+                  height: '100%', 
+                  width: `${diagnostics ? Math.min(diagnostics.cpuLoad, 100) : 4}%`,
+                  backgroundColor: diagnostics && diagnostics.cpuLoad > 80 ? '#F85149' : diagnostics && diagnostics.cpuLoad > 50 ? '#D97706' : '#3FB950'
+                }} 
               />
             </View>
           </View>
 
-          <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
+          <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
 
-          <View style={styles.diagRowContainer}>
-            <View style={styles.diagRow}>
-              <View style={styles.diagIconGroup}>
-                <Database size={18} color={colors.textSecondary} strokeWidth={2} />
-                <Text style={[styles.diagLabel, { color: colors.text }]}>VPS Memory Usage</Text>
+          {/* Row 3: Memory Usage */}
+          <View style={{ paddingVertical: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Database size={15} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={{ fontSize: 13, fontFamily: 'Inter_500Medium', color: colors.text }}>VPS Memory Usage</Text>
               </View>
-              <Text style={[styles.diagValue, { color: colors.text }]}>
+              <Text style={{ fontSize: 12.5, fontFamily: 'JetBrainsMono_600SemiBold', color: colors.text }}>
                 {diagnostics ? `${diagnostics.memoryUsage}%` : '18%'}
               </Text>
             </View>
-            <View style={[styles.meterTrack, { backgroundColor: isDark ? '#1C2128' : '#E5E7EB' }]}>
+            <View style={{ height: 2.5, borderRadius: 1.25, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', marginTop: 8, overflow: 'hidden' }}>
               <View 
-                style={[
-                  styles.meterFill, 
-                  { 
-                    width: `${diagnostics ? Math.min(diagnostics.memoryUsage, 100) : 18}%`,
-                    backgroundColor: diagnostics && diagnostics.memoryUsage > 80 ? '#F85149' : diagnostics && diagnostics.memoryUsage > 50 ? '#D97706' : '#3FB950'
-                  }
-                ]} 
+                style={{ 
+                  height: '100%', 
+                  width: `${diagnostics ? Math.min(diagnostics.memoryUsage, 100) : 18}%`,
+                  backgroundColor: diagnostics && diagnostics.memoryUsage > 80 ? '#F85149' : diagnostics && diagnostics.memoryUsage > 50 ? '#D97706' : '#3FB950'
+                }} 
               />
             </View>
           </View>
 
-          <View style={[styles.diagDivider, { backgroundColor: colors.border }]} />
+          <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
 
-          <View style={styles.diagRow}>
-            <View style={styles.diagIconGroup}>
-              <Box size={18} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={[styles.diagLabel, { color: colors.text }]}>Active Workspaces</Text>
+          {/* Row 4: Active Workspaces */}
+          <View style={{ paddingVertical: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Box size={15} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={{ fontSize: 13, fontFamily: 'Inter_500Medium', color: colors.text }}>Active Workspaces</Text>
+              </View>
+              <Text style={{ fontSize: 12.5, fontFamily: 'JetBrainsMono_600SemiBold', color: colors.textSecondary }}>
+                {diagnostics ? `${diagnostics.runningContainers} running` : '0 running'}
+              </Text>
             </View>
-            <Text style={[styles.diagValue, { color: colors.textSecondary }]}>
-              {diagnostics ? `${diagnostics.runningContainers} running` : '1 running'}
-            </Text>
           </View>
 
         </View>

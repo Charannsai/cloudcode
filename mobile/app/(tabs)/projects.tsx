@@ -112,9 +112,9 @@ export default function ProjectsScreen() {
   const showSkeletonState = showSkeleton && projects.length === 0
 
   const ProjectSkeleton = () => (
-    <View style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, opacity: 0.6 }]}>
+    <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border, opacity: 0.4, paddingVertical: 14, paddingHorizontal: 4 }}>
       <View style={styles.cardMain}>
-        <View style={[styles.iconBox, { backgroundColor: isDark ? '#1C2128' : '#F3F4F6', width: 36, height: 36, borderRadius: 10 }]} />
+        <View style={[styles.iconBox, { backgroundColor: isDark ? '#1C2128' : '#E5E7EB', width: 30, height: 30, borderRadius: 4 }]} />
         <View style={styles.cardInfo}>
           <View style={{ backgroundColor: isDark ? '#1C2128' : '#E5E7EB', height: 14, width: '60%', borderRadius: 4 }} />
           <View style={[styles.cardMeta, { marginTop: 8 }]}>
@@ -170,25 +170,41 @@ export default function ProjectsScreen() {
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index * 20, 80)).duration(160)}>
         <PressableScale
-          style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+          style={{
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            paddingVertical: 14,
+            paddingHorizontal: 4,
+            backgroundColor: 'transparent',
+          }}
           onPress={() => router.push(`/project/${p.id}`)}
         >
           <View style={styles.cardMain}>
-            <View style={[styles.iconBox, { backgroundColor: colors.background }]}>
-              <Icon size={16} color={colors.text} strokeWidth={1.8} />
+            <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
+              <Icon size={15} color={colors.textSecondary} strokeWidth={1.8} />
             </View>
             <View style={styles.cardInfo}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>{p.name}</Text>
-              <View style={styles.cardMeta}>
-                {p.status === 'running' || p.status === 'ready' ? (
-                  <PulseDot color={statusColor} />
-                ) : (
-                  <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                )}
-                <Text style={[styles.cardStatus, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {p.status}
-                </Text>
-                <Text style={[styles.cardType, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+              <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_600SemiBold', fontSize: 14.5 }}>{p.name}</Text>
+              <View style={[styles.cardMeta, { marginTop: 4 }]}>
+                {/* Glowing Monospace status pill */}
+                <View style={{
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 4,
+                  backgroundColor: isDark ? `${statusColor}18` : `${statusColor}0E`,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4
+                }}>
+                  <Text style={{ fontFamily: 'JetBrainsMono_600SemiBold', fontSize: 10, color: statusColor, textTransform: 'lowercase' }}>
+                    [{p.status}]
+                  </Text>
+                </View>
+                
+                {/* Status pulse if running */}
+                {p.status === 'running' && <PulseDot color={statusColor} />}
+                
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginLeft: 2 }}>
                   · {p.type === 'node' ? 'Node.js' : p.type === 'react' ? 'React' : 'Blank'}
                 </Text>
               </View>
@@ -199,9 +215,9 @@ export default function ProjectsScreen() {
                 style={styles.deleteBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Trash2 size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                <Trash2 size={13} color={colors.textSecondary} strokeWidth={1.5} />
               </TouchableOpacity>
-              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+              <ChevronRight size={15} color={colors.textSecondary} strokeWidth={1.5} />
             </View>
           </View>
         </PressableScale>
@@ -228,9 +244,22 @@ export default function ProjectsScreen() {
 
         <PressableScale
           onPress={() => router.push('/new-project')}
-          style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+          style={{ 
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 12,
+            gap: 14,
+            backgroundColor: 'transparent', 
+            borderWidth: 0,
+            borderLeftWidth: 2, 
+            borderLeftColor: '#3FB950', 
+            borderRadius: 0,
+            paddingLeft: 12,
+            paddingVertical: 12,
+            marginBottom: 10
+          }}
         >
-          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
             <Plus size={16} color={colors.text} strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
@@ -242,9 +271,22 @@ export default function ProjectsScreen() {
 
         <PressableScale
           onPress={() => router.push({ pathname: '/new-project', params: { initialMode: 'clone' } })}
-          style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+          style={{ 
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 12,
+            gap: 14,
+            backgroundColor: 'transparent', 
+            borderWidth: 0,
+            borderLeftWidth: 2, 
+            borderLeftColor: '#58A6FF', 
+            borderRadius: 0,
+            paddingLeft: 12,
+            paddingVertical: 12,
+            marginBottom: 10
+          }}
         >
-          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
             <GitBranch size={16} color={colors.text} strokeWidth={1.8} />
           </View>
           <View style={{ flex: 1 }}>
@@ -258,9 +300,22 @@ export default function ProjectsScreen() {
           onPress={() => {
             Alert.alert("Welcome Guide", "CloudCode lets you build web apps in the cloud. Access terminals, code editors, and live previews inside sandboxes.")
           }}
-          style={[styles.welcomeActionBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+          style={{ 
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 12,
+            gap: 14,
+            backgroundColor: 'transparent', 
+            borderWidth: 0,
+            borderLeftWidth: 2, 
+            borderLeftColor: '#D2A8FF', 
+            borderRadius: 0,
+            paddingLeft: 12,
+            paddingVertical: 12,
+            marginBottom: 10
+          }}
         >
-          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
             <Sparkles size={16} color={colors.text} strokeWidth={1.8} />
           </View>
           <View style={{ flex: 1 }}>
@@ -301,9 +356,19 @@ export default function ProjectsScreen() {
         {/* CTA 1: Create New Workspace */}
         <PressableScale
           onPress={() => router.push('/new-project')}
-          style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
+          style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            gap: 12, 
+            paddingVertical: 12, 
+            paddingHorizontal: 4, 
+            borderLeftWidth: 2, 
+            borderLeftColor: activeColor, 
+            paddingLeft: 12,
+            marginBottom: 10,
+          }}
         >
-          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
             <Plus size={14} color={activeColor} strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
@@ -316,9 +381,19 @@ export default function ProjectsScreen() {
         {/* CTA 2: Open Latest Workspace */}
         <PressableScale
           onPress={handleOpenWorkspace}
-          style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
+          style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            gap: 12, 
+            paddingVertical: 12, 
+            paddingHorizontal: 4, 
+            borderLeftWidth: 2, 
+            borderLeftColor: activeColor, 
+            paddingLeft: 12,
+            marginBottom: 10,
+          }}
         >
-          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
             <Terminal size={14} color={activeColor} />
           </View>
           <View style={{ flex: 1 }}>
@@ -331,9 +406,19 @@ export default function ProjectsScreen() {
         {/* CTA 3: Ask AI to Build */}
         <PressableScale
           onPress={handleAskAIToBuild}
-          style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, padding: 12 }]}
+          style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            gap: 12, 
+            paddingVertical: 12, 
+            paddingHorizontal: 4, 
+            borderLeftWidth: 2, 
+            borderLeftColor: activeColor, 
+            paddingLeft: 12,
+            marginBottom: 10,
+          }}
         >
-          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? '#1C2128' : '#F6F8FA', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={14} color={activeColor} />
           </View>
           <View style={{ flex: 1 }}>
