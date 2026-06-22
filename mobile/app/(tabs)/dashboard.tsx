@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl, Image } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl, Image, Modal, Alert } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { BlurView } from 'expo-blur'
@@ -63,9 +63,10 @@ export default function DashboardScreen() {
   const { colors, isDark } = useAppTheme()
   const { handleScroll } = useScrollVisibility()
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, signOut } = useAuthStore()
   const { setSettingsSubScreen } = useUIStore()
   const [profileName, setProfileName] = useState('')
+  const [profileMenuVisible, setProfileMenuVisible] = useState(false)
   
   interface DiagnosticsData {
     cpuLoad: number
@@ -170,8 +171,9 @@ export default function DashboardScreen() {
 
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: colors.background }]}
+    <>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       onScroll={handleScroll}
       scrollEventThrottle={16}
@@ -200,10 +202,7 @@ export default function DashboardScreen() {
         {/* User Avatar */}
         <TouchableOpacity 
           activeOpacity={0.7}
-          onPress={() => {
-            setSettingsSubScreen('profile')
-            router.push('/(tabs)/settings')
-          }}
+          onPress={() => setProfileMenuVisible(true)}
           style={[styles.avatarWrapper, { borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#E5E7EB' }]}
         >
           {user?.avatar_url ? (
@@ -394,7 +393,108 @@ export default function DashboardScreen() {
         </View>
       </Animated.View>
     </ScrollView>
-  )
+
+    <Modal
+      visible={profileMenuVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setProfileMenuVisible(false)}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setProfileMenuVisible(false)}
+      >
+        <View style={[styles.menuCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
+          {/* Header User Profile Info */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
+            {user?.avatar_url ? (
+              <Image source={{ uri: user.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+            ) : (
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'Inter_600SemiBold' }}>
+                  {(user?.login || 'D').substring(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }} numberOfLines={1}>
+                {profileName || user?.name || user?.login}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }} numberOfLines={1}>
+                @{user?.login}
+              </Text>
+            </View>
+          </View>
+
+          {/* Menu Items */}
+          <View style={{ padding: 6 }}>
+            {/* Go to Profile */}
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => {
+                setProfileMenuVisible(false)
+                setSettingsSubScreen('profile')
+                router.push('/(tabs)/settings')
+              }}
+              style={styles.menuItem}
+            >
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Go to Profile</Text>
+            </TouchableOpacity>
+
+            {/* Settings */}
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => {
+                setProfileMenuVisible(false)
+                setSettingsSubScreen('main')
+                router.push('/(tabs)/settings')
+              }}
+              style={styles.menuItem}
+            >
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Settings</Text>
+            </TouchableOpacity>
+
+            {/* Billing */}
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => {
+                setProfileMenuVisible(false)
+                setSettingsSubScreen('billing')
+                router.push('/(tabs)/settings')
+              }}
+              style={styles.menuItem}
+            >
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Billing & Usage</Text>
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4, opacity: 0.5 }} />
+
+            {/* Sign Out */}
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => {
+                setProfileMenuVisible(false)
+                Alert.alert(
+                  'Sign Out',
+                  'Are you sure you want to sign out of this device?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Sign Out', style: 'destructive', onPress: () => signOut() }
+                  ]
+                )
+              }}
+              style={styles.menuItem}
+            >
+              <Text style={[styles.menuItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  </>
+)
 }
 
 const styles = StyleSheet.create({
@@ -567,5 +667,32 @@ const styles = StyleSheet.create({
   meterFill: {
     height: '100%',
     borderRadius: 2.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 110,
+    paddingHorizontal: 20,
+  },
+  menuCard: {
+    width: 220,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  menuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  menuItemText: {
+    fontSize: 13.5,
+    fontFamily: 'Inter_500Medium',
   },
 })
