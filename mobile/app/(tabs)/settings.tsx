@@ -1492,6 +1492,71 @@ export default function SettingsScreen() {
     )
   }
 
+  const renderSettingsRow = ({
+    icon: IconComponent,
+    iconColor,
+    iconBg,
+    label,
+    subtitle,
+    rightElement,
+    onPress,
+    showDivider = true,
+  }: {
+    icon: any
+    iconColor: string
+    iconBg: string
+    label: string
+    subtitle?: string
+    rightElement?: React.ReactNode
+    onPress?: () => void
+    showDivider?: boolean
+  }) => {
+    const content = (
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 }}>
+        {/* Icon Wrapper */}
+        <View style={{ 
+          width: 32, 
+          height: 32, 
+          borderRadius: 16, 
+          backgroundColor: iconBg, 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          marginRight: 12 
+        }}>
+          <IconComponent size={16} color={iconColor} strokeWidth={2} />
+        </View>
+
+        {/* Label & Subtitle */}
+        <View style={{ flex: 1, marginRight: 8 }}>
+          <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>{label}</Text>
+          {subtitle && (
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>{subtitle}</Text>
+          )}
+        </View>
+
+        {/* Right Suffix */}
+        {rightElement ? rightElement : (
+          onPress && <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
+        )}
+      </View>
+    )
+
+    return (
+      <View key={label}>
+        {onPress ? (
+          <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+            {content}
+          </TouchableOpacity>
+        ) : (
+          content
+        )}
+        {showDivider && (
+          <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.4, marginHorizontal: 16 }} />
+        )}
+      </View>
+    )
+  }
+
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]} 
@@ -1502,203 +1567,160 @@ export default function SettingsScreen() {
         <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Settings</Text>
       </View>
 
-      {/* Profile */}
+      {/* Profile Card Banner */}
       <TouchableOpacity 
         activeOpacity={0.7}
         onPress={() => setCurrentSubScreen('profile')}
-        style={[styles.profileCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
+        style={{
+          marginHorizontal: 24,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: isDark ? '#151922' : '#FFFFFF',
+          padding: 16,
+          marginBottom: 24,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
       >
-        <View style={styles.profileRow}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1, marginRight: 8 }}>
           {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+            <Image source={{ uri: user.avatar_url }} style={{ width: 48, height: 48, borderRadius: 24 }} />
           ) : (
-            <View style={[styles.avatarFallback, { backgroundColor: colors.background }]}>
-              <Text style={[styles.avatarText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: colors.text, fontSize: 20, fontFamily: 'Inter_600SemiBold' }}>
                 {user?.login?.[0]?.toUpperCase()}
               </Text>
             </View>
           )}
-          <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }} numberOfLines={1}>
               {profileName || user?.name || user?.login}
             </Text>
-            <View style={styles.profileBadgeRow}>
-              <Github size={11} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text style={[styles.profileSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                GitHub · Authenticated
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+              <Github size={12} color={colors.textSecondary} strokeWidth={1.5} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
+                GitHub Connected
               </Text>
             </View>
           </View>
-          <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
         </View>
+        <ChevronRight size={18} color={colors.textSecondary} strokeWidth={1.5} />
       </TouchableOpacity>
 
-      {/* Preferences */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>PREFERENCES</Text>
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          <View style={[styles.row, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
-                <ThemeIcon size={16} color={colors.text} strokeWidth={1.5} />
+      {/* Account & Integrations Group Card */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 1, marginHorizontal: 24, marginBottom: 8, color: colors.textSecondary }}>
+          ACCOUNT & INTEGRATION
+        </Text>
+        <View style={{ marginHorizontal: 24, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#FFFFFF', overflow: 'hidden' }}>
+          {renderSettingsRow({
+            icon: CreditCard,
+            iconColor: '#3B82F6',
+            iconBg: 'rgba(59, 130, 246, 0.1)',
+            label: 'Billing & Usage',
+            subtitle: billingData ? `${billingData.tier.displayName} · Active` : 'Manage plan & usage analytics',
+            rightElement: (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {billingData?.tier.name && billingData?.tier.name !== 'free' && (
+                  <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                    <Text style={{ color: '#22C55E', fontSize: 9, fontFamily: 'Inter_700Bold' }}>
+                      {billingData.tier.name.toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+                <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
               </View>
-              <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Dark Mode</Text>
+            ),
+            onPress: () => setCurrentSubScreen('billing')
+          })}
+          {renderSettingsRow({
+            icon: Key,
+            iconColor: '#22C55E',
+            iconBg: 'rgba(34, 197, 94, 0.1)',
+            label: 'Git & SSH Keys',
+            subtitle: gitName ? `${gitName} · Configured` : 'Configure credentials & deploy keys',
+            onPress: () => setCurrentSubScreen('gitSsh')
+          })}
+          {renderSettingsRow({
+            icon: Sparkles,
+            iconColor: '#8B5CF6',
+            iconBg: 'rgba(139, 92, 246, 0.1)',
+            label: 'AI API Keys (BYOK)',
+            subtitle: byokMode ? 'Custom Keys Enabled' : 'Configure third-party LLM providers',
+            onPress: () => setCurrentSubScreen('aiKeys')
+          })}
+          {renderSettingsRow({
+            icon: LogOut,
+            iconColor: '#F85149',
+            iconBg: 'rgba(248, 81, 73, 0.08)',
+            label: 'Sign Out',
+            subtitle: 'Disconnect account from this device',
+            onPress: handleSignOut,
+            showDivider: false
+          })}
+        </View>
+      </View>
+
+      {/* Preferences & System Group Card */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 1, marginHorizontal: 24, marginBottom: 8, color: colors.textSecondary }}>
+          PREFERENCES & SYSTEM
+        </Text>
+        <View style={{ marginHorizontal: 24, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#FFFFFF', overflow: 'hidden' }}>
+          {renderSettingsRow({
+            icon: ThemeIcon,
+            iconColor: isDark ? '#FBBF24' : '#D97706',
+            iconBg: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(217, 119, 6, 0.1)',
+            label: 'Dark Mode',
+            subtitle: 'Toggle dark interface appearance',
+            rightElement: (
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: colors.border, true: colors.text }}
+                thumbColor={colors.background}
+              />
+            ),
+            showDivider: true
+          })}
+          {renderSettingsRow({
+            icon: Server,
+            iconColor: '#EC4899',
+            iconBg: 'rgba(236, 72, 153, 0.1)',
+            label: 'System Runtimes',
+            subtitle: 'Verify compilers (Node, Python, Go, Rust)',
+            onPress: () => setCurrentSubScreen('dependencies'),
+            showDivider: true
+          })}
+
+          {/* Engine Status Details */}
+          <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.01)', paddingVertical: 14, paddingHorizontal: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Server size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Runtime Engine</Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11.5 }}>v1.0.0</Text>
             </View>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: colors.border, true: colors.text }}
-              thumbColor={colors.background}
-            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Cpu size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Cloud Gateway</Text>
+              </View>
+              <Text style={{ color: '#3FB950', fontFamily: 'JetBrainsMono_400Regular', fontSize: 11.5, fontWeight: 'bold' }}>Active</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12 }}>Encryption</Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11.5 }}>AES-256</Text>
+            </View>
           </View>
-          <TouchableOpacity 
-            activeOpacity={0.7} 
-            onPress={() => setCurrentSubScreen('aiKeys')}
-            style={[styles.row]}
-          >
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
-                <Key size={16} color={colors.text} strokeWidth={1.5} />
-              </View>
-              <View>
-                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>AI API Keys (BYOK)</Text>
-              </View>
-            </View>
-            <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
-          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Billing & Subscription */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>BILLING & SUBSCRIPTION</Text>
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          <TouchableOpacity 
-            activeOpacity={0.7} 
-            onPress={() => setCurrentSubScreen('billing')}
-            style={[styles.row]}
-          >
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
-                <CreditCard size={16} color={colors.text} strokeWidth={1.5} />
-              </View>
-              <View>
-                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Billing & Usage</Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
-                  {billingData ? `${billingData.tier.displayName} · Active` : 'Manage plan & usage analytics'}
-                </Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {billingData?.tier.name && billingData?.tier.name !== 'free' && (
-                <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                  <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>
-                    {billingData.tier.name.toUpperCase()}
-                  </Text>
-                </View>
-              )}
-              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Git & SSH Configuration */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>GIT & SSH</Text>
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          <TouchableOpacity 
-            activeOpacity={0.7} 
-            onPress={() => setCurrentSubScreen('gitSsh')}
-            style={[styles.row]}
-          >
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
-                <Key size={16} color={colors.text} strokeWidth={1.5} />
-              </View>
-              <View>
-                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Git & SSH Keys</Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
-                  {gitName ? `${gitName} · Configured` : 'Configure credentials & deploy keys'}
-                </Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Runtimes & Modules */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>DEPENDENCIES & RUNTIMES</Text>
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          <TouchableOpacity 
-            activeOpacity={0.7} 
-            onPress={() => setCurrentSubScreen('dependencies')}
-            style={[styles.row]}
-          >
-            <View style={styles.rowLeft}>
-              <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
-                <Server size={16} color={colors.text} strokeWidth={1.5} />
-              </View>
-              <View>
-                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>System Runtimes</Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
-                  Verify Node, Git, Python, GCC, Go, Rust compilers
-                </Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* System Status */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>SYSTEM STATUS</Text>
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}>
-          {[
-            { label: 'Runtime Engine', value: 'v1.0.0', icon: Server },
-            { label: 'Cloud Gateway', value: 'Active', icon: Cpu, valueColor: '#3FB950' },
-            { label: 'Encryption', value: 'AES-256', icon: Lock },
-          ].map((item, idx, arr) => (
-            <View 
-              key={item.label} 
-              style={[
-                styles.row,
-                idx < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
-              ]}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.rowIcon, { backgroundColor: colors.background }]}>
-                  <item.icon size={16} color={colors.text} strokeWidth={1.5} />
-                </View>
-                <Text style={[styles.rowLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>{item.label}</Text>
-              </View>
-              <Text style={[styles.rowValue, { 
-                color: item.valueColor || colors.textSecondary, 
-                fontFamily: 'JetBrainsMono_400Regular' 
-              }]}>
-                {item.value}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* Sign Out */}
-      <TouchableOpacity 
-        style={[styles.signOutBtn, { borderColor: colors.border }]}
-        onPress={handleSignOut}
-        activeOpacity={0.6}
-      >
-        <LogOut size={16} color={'#F85149'} strokeWidth={1.5} />
-        <Text style={[styles.signOutText, { color: '#F85149', fontFamily: 'Inter_500Medium' }]}>Sign Out</Text>
-      </TouchableOpacity>
 
       <View style={styles.footerContainer}>
         <Image
@@ -1748,7 +1770,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, letterSpacing: -0.8 },
   profileCard: {
     marginHorizontal: 24,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 16,
     marginBottom: 28,
@@ -1777,7 +1799,7 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     marginHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -1789,9 +1811,9 @@ const styles = StyleSheet.create({
   },
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1804,8 +1826,8 @@ const styles = StyleSheet.create({
     gap: 8,
     marginHorizontal: 24,
     marginTop: 16,
-    paddingVertical: 10,
-    borderRadius: 6,
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
   signOutText: { fontSize: 14 },
@@ -1825,29 +1847,29 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   inputField: {
-    height: 36,
+    height: 42,
     borderWidth: 1,
-    borderRadius: 6,
+    borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 13,
     fontFamily: 'Inter_400Regular',
     marginBottom: 4,
   },
   primaryBtn: {
-    height: 36,
-    borderRadius: 6,
+    height: 42,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
   },
   primaryBtnText: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '600',
   },
   secondaryBtn: {
-    height: 36,
+    height: 42,
     borderWidth: 1,
-    borderRadius: 6,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
@@ -1855,21 +1877,21 @@ const styles = StyleSheet.create({
   subHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     paddingHorizontal: 24,
     paddingTop: 54,
-    paddingBottom: 12,
+    paddingBottom: 16,
   },
   backBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   subTitle: {
-    fontSize: 18,
-    letterSpacing: -0.3,
+    fontSize: 20,
+    letterSpacing: -0.4,
   },
   dependencyCard: {
     marginHorizontal: 24,
@@ -1878,9 +1900,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 6,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    height: 36,
+    height: 42,
     marginBottom: 4,
   },
   textInput: {
