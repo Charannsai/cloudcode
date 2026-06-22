@@ -91,6 +91,7 @@ export default function DashboardScreen() {
   const [profileMenuVisible, setProfileMenuVisible] = useState(false)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
 
   // Reanimated states for Profile popover menu
   const [renderMenu, setRenderMenu] = useState(false)
@@ -281,11 +282,15 @@ export default function DashboardScreen() {
           onPress={() => setProfileMenuVisible(true)}
           style={[styles.avatarWrapper, { borderColor: colors.border, backgroundColor: isDark ? '#151922' : '#E5E7EB' }]}
         >
-          {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+          {user?.avatar_url && !avatarLoadError ? (
+            <Image 
+              source={{ uri: user.avatar_url }} 
+              style={{ width: 42, height: 42, borderRadius: 21 }} 
+              onError={() => setAvatarLoadError(true)}
+            />
           ) : (
             <Text style={[styles.avatarInitial, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-              {(user?.login || 'D').substring(0, 1).toUpperCase()}
+              {(profileName || user?.name || user?.login || 'C').substring(0, 1).toUpperCase()}
             </Text>
           )}
         </PressableScale>
@@ -484,12 +489,16 @@ export default function DashboardScreen() {
         <Animated.View style={[styles.menuCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }, menuCardAnimatedStyle]}>
           {/* Header User Profile Info */}
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 12 }}>
-            {user?.avatar_url ? (
-              <Image source={{ uri: user.avatar_url }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+            {user?.avatar_url && !avatarLoadError ? (
+              <Image 
+                source={{ uri: user.avatar_url }} 
+                style={{ width: 40, height: 40, borderRadius: 20 }} 
+                onError={() => setAvatarLoadError(true)}
+              />
             ) : (
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'Inter_600SemiBold' }}>
-                  {(user?.login || 'D').substring(0, 1).toUpperCase()}
+                  {(profileName || user?.name || user?.login || 'C').substring(0, 1).toUpperCase()}
                 </Text>
               </View>
             )}

@@ -49,6 +49,7 @@ export default function SettingsScreen() {
 
   const { setTabBarVisible, settingsSubScreen: currentSubScreen, setSettingsSubScreen: setCurrentSubScreen } = useUIStore()
   const [isFocused, setIsFocused] = useState(false)
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
 
   // Visibility toggles for BYOK keys
   const [showGeminiKey, setShowGeminiKey] = useState(false)
@@ -976,12 +977,16 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
           {/* Avatar Block */}
           <View style={{ alignItems: 'center', marginBottom: 8, gap: 10 }}>
-            {user?.avatar_url ? (
-              <Image source={{ uri: user.avatar_url }} style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: colors.primary }} />
+            {user?.avatar_url && !avatarLoadError ? (
+              <Image 
+                source={{ uri: user.avatar_url }} 
+                style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: colors.primary }} 
+                onError={() => setAvatarLoadError(true)}
+              />
             ) : (
               <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? '#151922' : '#E5E7EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary }}>
                 <Text style={{ color: colors.text, fontSize: 32, fontFamily: 'Inter_600SemiBold' }}>
-                  {user?.login?.[0]?.toUpperCase()}
+                  {(profileName || user?.name || user?.login || 'C').substring(0, 1).toUpperCase()}
                 </Text>
               </View>
             )}
@@ -1772,12 +1777,16 @@ export default function SettingsScreen() {
             justifyContent: 'space-between',
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1, marginRight: 8 }}>
-              {user?.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={{ width: 52, height: 52, borderRadius: 26 }} />
+              {user?.avatar_url && !avatarLoadError ? (
+                <Image 
+                  source={{ uri: user.avatar_url }} 
+                  style={{ width: 52, height: 52, borderRadius: 26 }} 
+                  onError={() => setAvatarLoadError(true)}
+                />
               ) : (
                 <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: colors.text, fontSize: 22, fontFamily: 'Inter_600SemiBold' }}>
-                    {user?.login?.[0]?.toUpperCase()}
+                    {(profileName || user?.name || user?.login || 'C').substring(0, 1).toUpperCase()}
                   </Text>
                 </View>
               )}
