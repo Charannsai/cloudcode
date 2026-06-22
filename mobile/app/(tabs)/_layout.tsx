@@ -118,7 +118,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 }}
                 activeOpacity={0.8}
               >
-                <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
+                <View style={styles.fabButton}>
+                  <Plus size={18} color="#0D0E12" strokeWidth={2.5} />
+                </View>
               </TouchableOpacity>
             )
           }
@@ -267,6 +269,19 @@ const styles = StyleSheet.create({
   fabItem: {
     left: 140,
     width: 60,
+  },
+  fabButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
 })
 
