@@ -418,7 +418,7 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
   try {
     const exitCode = await execInContainer(
       containerId,
-      ['sh', '-c', "pgrep -f 'node /usr/local/bin/[s]idecar.js'"],
+      ['pgrep', '-f', '/usr/local/bin/sidecar.js'],
       () => {}
     )
     isRunning = (exitCode === 0)
@@ -442,7 +442,7 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
   try {
     const exitCode = await execInContainer(
       containerId,
-      ['sh', '-c', "pgrep -f 'node /usr/local/bin/[s]idecar.js'"],
+      ['pgrep', '-f', '/usr/local/bin/sidecar.js'],
       () => {}
     )
     started = (exitCode === 0)
