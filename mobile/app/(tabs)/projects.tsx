@@ -25,7 +25,7 @@ import {
 } from 'lucide-react-native'
 import { TextInput } from 'react-native'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 import { ProjectIcon, detectProjectTech, getTechColors } from '@/components/ProjectIcon'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import Animated, { 
@@ -89,12 +89,13 @@ export default function ProjectsScreen() {
   const [showSkeleton, setShowSkeleton] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'idle'>('all')
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
   const [activeProjectForMenu, setActiveProjectForMenu] = useState<Project | null>(null)
   const [isRenameMode, setIsRenameMode] = useState(false)
   const [newName, setNewName] = useState('')
   const [isRenaming, setIsRenaming] = useState(false)
+  const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null)
 
   const handleRenameSubmit = async () => {
     if (!activeProjectForMenu || !newName.trim()) return
@@ -105,6 +106,7 @@ export default function ProjectsScreen() {
       setActiveProjectForMenu(null)
       setIsRenameMode(false)
       setNewName('')
+      setMenuPosition(null)
     } catch (err) {
       Alert.alert('Failed to Rename', (err as Error).message)
     } finally {
@@ -198,7 +200,14 @@ export default function ProjectsScreen() {
                 <ProjectIcon type={p.type} name={p.name} githubUrl={p.github_url} size={18} isDark={isDark} />
               </View>
               <TouchableOpacity 
-                onPress={() => setActiveProjectForMenu(p)} 
+                onPress={(e) => {
+                  setActiveProjectForMenu(p)
+                  setNewName(p.name)
+                  setMenuPosition({
+                    x: e.nativeEvent.pageX,
+                    y: e.nativeEvent.pageY,
+                  })
+                }} 
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={{ padding: 4 }}
               >
@@ -272,7 +281,14 @@ export default function ProjectsScreen() {
           {/* Actions */}
           <View style={styles.projectActions}>
             <TouchableOpacity 
-              onPress={() => setActiveProjectForMenu(p)} 
+              onPress={(e) => {
+                setActiveProjectForMenu(p)
+                setNewName(p.name)
+                setMenuPosition({
+                  x: e.nativeEvent.pageX,
+                  y: e.nativeEvent.pageY,
+                })
+              }} 
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={{ padding: 6, marginRight: -4 }}
             >
@@ -598,19 +614,20 @@ export default function ProjectsScreen() {
         onCancel={() => setProjectToDelete(null)}
       />
 
-      {/* Project Actions Sheet / Modal */}
+      {/* Project Actions Popover Modal */}
       <Modal
-        visible={activeProjectForMenu !== null}
+        visible={activeProjectForMenu !== null && menuPosition !== null}
         transparent={true}
-        animationType="fade"
+        animationType="none"
         statusBarTranslucent={true}
         onRequestClose={() => {
           setActiveProjectForMenu(null)
           setIsRenameMode(false)
           setNewName('')
+          setMenuPosition(null)
         }}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.popoverBackdrop}>
           <TouchableOpacity 
             style={StyleSheet.absoluteFill} 
             activeOpacity={1} 
@@ -618,71 +635,72 @@ export default function ProjectsScreen() {
               setActiveProjectForMenu(null)
               setIsRenameMode(false)
               setNewName('')
+              setMenuPosition(null)
             }}
           />
           <Animated.View 
-            entering={FadeInDown.duration(200)}
-            style={[styles.menuSheet, { backgroundColor: cardBg, borderColor: cardBorder }]}
+            entering={FadeInDown.duration(120)}
+            style={[
+              styles.popoverMenu, 
+              { 
+                backgroundColor: cardBg, 
+                borderColor: cardBorder,
+                top: menuPosition ? Math.min(menuPosition.y - 10, SCREEN_HEIGHT - 220) : 100,
+                right: 20,
+              }
+            ]}
           >
             {isRenameMode ? (
-              <View style={{ padding: 18 }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16, marginBottom: 12 }}>
+              <View style={{ padding: 10, width: 200 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13, marginBottom: 8 }}>
                   Rename Workspace
                 </Text>
-                <View style={[styles.searchBar, { backgroundColor: subtleBg, borderColor: cardBorder, marginBottom: 16, paddingHorizontal: 12 }]}>
+                <View style={[styles.searchBar, { backgroundColor: subtleBg, borderColor: cardBorder, marginBottom: 10, height: 32, paddingHorizontal: 8 }]}>
                   <TextInput
                     value={newName}
                     onChangeText={setNewName}
                     placeholder="Workspace Name"
                     placeholderTextColor={colors.textSecondary + '80'}
-                    style={{ flex: 1, fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.text, padding: 0 }}
+                    style={{ flex: 1, fontSize: 12, fontFamily: 'Inter_400Regular', color: colors.text, padding: 0 }}
                     autoFocus
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
                 </View>
-                <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'flex-end' }}>
+                <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'flex-end' }}>
                   <TouchableOpacity 
                     onPress={() => { setIsRenameMode(false); setNewName('') }}
-                    style={[styles.modalButton, { backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: cardBorder }]}
+                    style={[styles.popoverButton, { backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: cardBorder }]}
                   >
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Cancel</Text>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={handleRenameSubmit}
                     disabled={isRenaming || !newName.trim()}
-                    style={[styles.modalButton, { backgroundColor: isDark ? '#F3F4F6' : '#0E1116', opacity: isRenaming || !newName.trim() ? 0.6 : 1 }]}
+                    style={[styles.popoverButton, { backgroundColor: isDark ? '#F3F4F6' : '#0E1116', opacity: isRenaming || !newName.trim() ? 0.6 : 1 }]}
                   >
-                    <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
-                      {isRenaming ? 'Saving...' : 'Save'}
+                    <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>
+                      {isRenaming ? '...' : 'Save'}
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
-              <View style={{ padding: 6 }}>
-                <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: cardBorder + '80', marginBottom: 6 }}>
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }} numberOfLines={1}>
-                    {activeProjectForMenu?.name}
-                  </Text>
-                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2, textTransform: 'capitalize' }}>
-                    {activeProjectForMenu ? detectProjectTech(activeProjectForMenu.type, activeProjectForMenu.name, activeProjectForMenu.github_url) : ''} · {activeProjectForMenu?.status || 'idle'}
-                  </Text>
-                </View>
-
+              <View style={{ padding: 4 }}>
                 <TouchableOpacity 
                   activeOpacity={0.7}
                   onPress={() => {
                     if (activeProjectForMenu) {
                       const id = activeProjectForMenu.id
                       setActiveProjectForMenu(null)
+                      setMenuPosition(null)
                       router.push(`/project/${id}`)
                     }
                   }}
-                  style={styles.sheetItem}
+                  style={styles.popoverItem}
                 >
-                  <Terminal size={16} color={colors.textSecondary} strokeWidth={1.8} />
-                  <Text style={[styles.sheetItemText, { color: colors.text }]}>Open Workspace</Text>
+                  <Terminal size={13} color={colors.textSecondary} strokeWidth={2} />
+                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Open</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
@@ -693,13 +711,13 @@ export default function ProjectsScreen() {
                       setIsRenameMode(true)
                     }
                   }}
-                  style={styles.sheetItem}
+                  style={styles.popoverItem}
                 >
-                  <Sparkles size={16} color={colors.textSecondary} strokeWidth={1.8} />
-                  <Text style={[styles.sheetItemText, { color: colors.text }]}>Rename Workspace</Text>
+                  <Sparkles size={13} color={colors.textSecondary} strokeWidth={2} />
+                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Rename</Text>
                 </TouchableOpacity>
 
-                <View style={{ height: 1, backgroundColor: cardBorder, marginVertical: 4, opacity: 0.5 }} />
+                <View style={{ height: 1, backgroundColor: cardBorder, marginVertical: 3, opacity: 0.5 }} />
 
                 <TouchableOpacity 
                   activeOpacity={0.7}
@@ -707,13 +725,14 @@ export default function ProjectsScreen() {
                     if (activeProjectForMenu) {
                       const { id, name } = activeProjectForMenu
                       setActiveProjectForMenu(null)
+                      setMenuPosition(null)
                       handleDelete(id, name)
                     }
                   }}
-                  style={styles.sheetItem}
+                  style={styles.popoverItem}
                 >
-                  <Trash2 size={16} color="#F85149" strokeWidth={1.8} />
-                  <Text style={[styles.sheetItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete Workspace</Text>
+                  <Trash2 size={13} color="#F85149" strokeWidth={2} />
+                  <Text style={[styles.popoverItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -842,39 +861,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalBackdrop: {
+  popoverBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'transparent',
   },
-  menuSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  popoverMenu: {
+    position: 'absolute',
+    borderRadius: 12,
     borderWidth: 1,
-    borderBottomWidth: 0,
-    paddingBottom: 34,
-    paddingTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+    minWidth: 130,
   },
-  sheetItem: {
+  popoverItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 12,
-    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 8,
+    borderRadius: 8,
   },
-  sheetItemText: {
-    fontSize: 14,
+  popoverItemText: {
+    fontSize: 13,
     fontFamily: 'Inter_500Medium',
   },
-  modalButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
+  popoverButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 80,
+    minWidth: 54,
   },
 })
