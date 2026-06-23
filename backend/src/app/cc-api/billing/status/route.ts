@@ -74,25 +74,62 @@ export async function GET(req: NextRequest) {
     }
     const diskUsedGB = Number((totalBytesUsed / (1024 * 1024 * 1024)).toFixed(3))
 
-    // 4. Calculate CPU hours from sessions
+    // 4. Calculate CPU hours from sessions with self-healing for dangling sessions
     const { data: sessions } = await supabaseAdmin
       .from('sessions')
-      .select('started_at, ended_at')
+      .select('project_id, started_at, ended_at')
       .eq('user_github_id', user.id)
 
     let totalCpuSeconds = 0
     if (sessions) {
+      const projectStatusMap = new Map<string, string>()
+      if (userProjects) {
+        for (const p of userProjects) {
+          projectStatusMap.set(p.id, p.status)
+        }
+      }
+
       for (const s of sessions) {
         const start = new Date(s.started_at).getTime()
-        const end = s.ended_at ? new Date(s.ended_at).getTime() : Date.now()
-        totalCpuSeconds += (end - start) / 1000
+        let end: number
+        
+        if (s.ended_at) {
+          end = new Date(s.ended_at).getTime()
+        } else {
+          // It is an open session. Check if the project is actually running right now.
+          const status = projectStatusMap.get(s.project_id)
+          const isRunning = status === 'running' || status === 'ready'
+          
+          if (isRunning) {
+            end = Date.now()
+          } else {
+            // The project is NOT running, so this is a dangling session from a server restart or crash!
+            // We heal it by capping the session at 1 hour (standard idle timeout) or less.
+            const oneHourInMs = 60 * 60 * 1000
+            const elapsed = Date.now() - start
+            const sessionDuration = Math.min(elapsed, oneHourInMs)
+            end = start + sessionDuration
+
+            // Self-healing: permanently close this dangling session in Supabase in the background
+            supabaseAdmin
+              .from('sessions')
+              .update({ ended_at: new Date(end).toISOString() })
+              .eq('project_id', s.project_id)
+              .is('ended_at', null)
+              .then(() => {
+                console.log(`[Compute Session] Healed dangling session for project ${s.project_id}`)
+              })
+              .catch(err => {
+                console.error(`[Compute Session] Failed to heal dangling session:`, err)
+              })
+          }
+        }
+        
+        totalCpuSeconds += Math.max(0, (end - start) / 1000)
       }
     }
-    // Convert to hours (add a base of 0.2 hours if they have projects so it's not starting blank)
-    const cpuUsedHours = Math.max(
-      workspacesCount > 0 ? 0.2 : 0, 
-      Number((totalCpuSeconds / 3600).toFixed(2))
-    )
+    // Convert to hours exactly
+    const cpuUsedHours = Number((totalCpuSeconds / 3600).toFixed(2))
 
     // 5. Fetch actual AI token usage from DB
     const aiTokensUsed = dbUser?.ai_tokens_used || 0

@@ -4,7 +4,7 @@ import {
   TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler, Pressable
 } from 'react-native'
 import Animated, { 
-  FadeInRight, FadeInDown, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing 
+  FadeInRight, FadeInDown, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing, withRepeat 
 } from 'react-native-reanimated'
 import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
@@ -15,7 +15,7 @@ import {
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
   CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
-  Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit, Info
+  Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit, Info, Database
 } from 'lucide-react-native'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'

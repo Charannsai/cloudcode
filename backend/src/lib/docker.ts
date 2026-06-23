@@ -120,6 +120,7 @@ export async function createContainer(projectId: string, userTier?: TierName): P
 
   await container.start()
   const info = await container.inspect()
+  await recordSessionStart(info.Id, projectId)
 
   // Configure git directory access & automatic init
   try {
@@ -169,6 +170,7 @@ export async function execInContainer(
     if (info.State.Status !== 'running') {
       console.log(`[execInContainer] Container ${containerId} is stopped. Auto-waking...`)
       await container.start()
+      await recordSessionStart(containerId)
       // Brief sleep to ensure services are warm
       await new Promise(r => setTimeout(r, 1000))
     }
@@ -220,6 +222,7 @@ export async function execDetachedInContainer(
     if (info.State.Status !== 'running') {
       console.log(`[execDetachedInContainer] Container ${containerId} is stopped. Auto-waking...`)
       await container.start()
+      await recordSessionStart(containerId)
       await new Promise(r => setTimeout(r, 1000))
     }
   } catch (inspectErr) {
@@ -250,7 +253,8 @@ export async function destroyContainer(containerId: string): Promise<void> {
   const container = docker.getContainer(containerId)
   try {
     await container.stop({ t: 5 })
-  } catch {
+    await recordSessionEnd(containerId)
+  } catch (e) {
     // Already stopped
   }
   await container.remove({ force: true })
@@ -264,7 +268,8 @@ export async function stopContainer(containerId: string): Promise<void> {
   const container = docker.getContainer(containerId)
   try {
     await container.stop({ t: 5 })
-  } catch {
+    await recordSessionEnd(containerId)
+  } catch (e) {
     // Already stopped
   }
 }
@@ -277,6 +282,7 @@ export async function startContainer(containerId: string): Promise<string> {
   const container = docker.getContainer(containerId)
   try {
     await container.start()
+    await recordSessionStart(containerId)
 
     // Configure system git configuration system-wide on startup
     try {
@@ -512,6 +518,71 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
     console.error(`[Sidecar] ERROR: Sidecar failed to start in container ${containerId}. Log content:\n${logContent}`)
   } else {
     console.log(`[Sidecar] Sidecar proxy agent started in container ${containerId}`)
+  }
+}
+
+export async function recordSessionStart(containerId: string, projectId?: string) {
+  try {
+    const { supabaseAdmin } = await import('./supabase')
+    let project
+    if (projectId) {
+      const { data } = await supabaseAdmin
+        .from('projects')
+        .select('id, user_github_id')
+        .eq('id', projectId)
+        .single()
+      project = data
+    } else {
+      const { data } = await supabaseAdmin
+        .from('projects')
+        .select('id, user_github_id')
+        .eq('container_id', containerId)
+        .single()
+      project = data
+    }
+    
+    if (project) {
+      // First close any dangling sessions to avoid overlapping open sessions
+      await supabaseAdmin
+        .from('sessions')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('project_id', project.id)
+        .is('ended_at', null)
+
+      // Start new session
+      await supabaseAdmin
+        .from('sessions')
+        .insert({
+          project_id: project.id,
+          user_github_id: project.user_github_id,
+          started_at: new Date().toISOString()
+        })
+      console.log(`[Compute Session] Started session for project ${project.id}`)
+    }
+  } catch (err) {
+    console.error('[Compute Session] Failed to record session start:', err)
+  }
+}
+
+export async function recordSessionEnd(containerId: string) {
+  try {
+    const { supabaseAdmin } = await import('./supabase')
+    const { data: project } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('container_id', containerId)
+      .single()
+    
+    if (project) {
+      await supabaseAdmin
+        .from('sessions')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('project_id', project.id)
+        .is('ended_at', null)
+      console.log(`[Compute Session] Ended session for project ${project.id}`)
+    }
+  } catch (err) {
+    console.error('[Compute Session] Failed to record session end:', err)
   }
 }
 
