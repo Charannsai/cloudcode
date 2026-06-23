@@ -52,6 +52,26 @@ export default function SettingsScreen() {
   const [showPlansList, setShowPlansList] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState<'1h' | '24h' | '3d' | '7d'>('24h')
 
+  const plansHeight = useSharedValue(0)
+  const plansOpacity = useSharedValue(0)
+  const chevronRotation = useSharedValue(0)
+
+  useEffect(() => {
+    plansHeight.value = withTiming(showPlansList ? 260 : 0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
+    plansOpacity.value = withTiming(showPlansList ? 1 : 0, { duration: 200 })
+    chevronRotation.value = withTiming(showPlansList ? 180 : 0, { duration: 200 })
+  }, [showPlansList])
+
+  const plansAnimatedStyle = useAnimatedStyle(() => ({
+    height: plansHeight.value,
+    opacity: plansOpacity.value,
+    overflow: 'hidden'
+  }))
+
+  const chevronAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.value}deg` }]
+  }))
+
   // Pulsing animation for Billing Skeleton UI
   const skeletonOpacity = useSharedValue(0.35)
   useEffect(() => {
@@ -1355,47 +1375,42 @@ export default function SettingsScreen() {
                   {showPlansList ? 'Hide membership plans' : 'Show all membership plans'}
                 </Text>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold' }}>
-                {showPlansList ? '▲' : '▼'}
-              </Text>
-            </TouchableOpacity>
-
-            {showPlansList && (
-              <Animated.View
-                entering={FadeInDown.duration(180)}
-                exiting={FadeOutUp.duration(120)}
-              >
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false}
-                  decelerationRate="fast"
-                  snapToInterval={292} // Card width 280 + gap 12
-                  snapToAlignment="start"
-                  contentContainerStyle={{ gap: 12, paddingBottom: 6, paddingTop: 4 }}
-                >
-                  {renderPlanCard(
-                    'free',
-                    'Free Plan',
-                    '$0 / month',
-                    currentTier.name === 'free'
-                  )}
-
-                  {renderPlanCard(
-                    'pro',
-                    'Pro Developer',
-                    '$25 / month',
-                    currentTier.name === 'pro'
-                  )}
-
-                  {renderPlanCard(
-                    'advanced',
-                    'Advanced Team',
-                    '$99 / month',
-                    currentTier.name === 'advanced'
-                  )}
-                </ScrollView>
+              <Animated.View style={chevronAnimatedStyle}>
+                <ChevronDown size={15} color={colors.textSecondary} />
               </Animated.View>
-            )}
+            </TouchableOpacity>
+ 
+            <Animated.View style={plansAnimatedStyle}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                snapToInterval={292} // Card width 280 + gap 12
+                snapToAlignment="start"
+                contentContainerStyle={{ gap: 12, paddingBottom: 6, paddingTop: 4 }}
+              >
+                {renderPlanCard(
+                  'free',
+                  'Free Plan',
+                  '$0 / month',
+                  currentTier.name === 'free'
+                )}
+
+                {renderPlanCard(
+                  'pro',
+                  'Pro Developer',
+                  '$25 / month',
+                  currentTier.name === 'pro'
+                )}
+
+                {renderPlanCard(
+                  'advanced',
+                  'Advanced Team',
+                  '$99 / month',
+                  currentTier.name === 'advanced'
+                )}
+              </ScrollView>
+            </Animated.View>
           </View>
 
           {/* Clean Unified Metrics Grid Dashboard */}
@@ -1413,7 +1428,7 @@ export default function SettingsScreen() {
                 usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`,
                 (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100,
                 Cpu,
-                '#4C1D95',
+                '#334155',
                 usage.cpu.usedHours
               )}
               {renderMetricCard(
@@ -1423,7 +1438,7 @@ export default function SettingsScreen() {
                 `${usage.ram.limitMB} MB`,
                 (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100,
                 HardDrive,
-                '#334155',
+                '#475569',
                 usage.ram.usedMB
               )}
               {renderMetricCard(
@@ -1433,7 +1448,7 @@ export default function SettingsScreen() {
                 `${usage.workspaces.limit}`,
                 (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100,
                 Server,
-                '#5B21B6',
+                '#1E293B',
                 usage.workspaces.used,
                 usage.workspaces.limit
               )}
@@ -1444,7 +1459,7 @@ export default function SettingsScreen() {
                 `${usage.disk.limitGB} GB`,
                 (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100,
                 Database,
-                '#1E293B',
+                '#334155',
                 usage.disk.usedGB
               )}
               {renderMetricCard(
@@ -1454,7 +1469,7 @@ export default function SettingsScreen() {
                 usage.aiTokens.limit.toLocaleString(),
                 (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100,
                 Sparkles,
-                '#6D28D9',
+                '#475569',
                 usage.aiTokens.used
               )}
               {renderMetricCard(
@@ -1464,7 +1479,7 @@ export default function SettingsScreen() {
                 currentTier.name === 'free' ? '15 Mbps Cap' : 'Uncapped',
                 currentTier.name === 'free' ? (12 / 15) * 100 : 50,
                 Wifi,
-                '#334155',
+                '#64748B',
                 usage.workspaces.used > 0 ? 12 : 0
               )}
               {renderMetricCard(
@@ -1474,7 +1489,7 @@ export default function SettingsScreen() {
                 currentTier.name === 'free' ? '25 req/min' : currentTier.name === 'pro' ? '500 req/min' : 'Uncapped',
                 currentTier.name === 'free' ? ((usage.workspaces.used * 4) / 25) * 100 : currentTier.name === 'pro' ? ((usage.workspaces.used * 4) / 500) * 100 : 0,
                 Shield,
-                '#5B21B6',
+                '#1E293B',
                 usage.workspaces.used > 0 ? usage.workspaces.used * 4 : 0
               )}
             </View>
@@ -1555,7 +1570,7 @@ export default function SettingsScreen() {
 
     // Set configuration based on sub-tab
     let title = ''
-    let color = '#8B5CF6'
+    let color = '#334155'
     let Icon = Cpu
     let percent = 0
     let valueStr = ''
@@ -1565,49 +1580,49 @@ export default function SettingsScreen() {
 
     if (isCompute) {
       title = 'Compute Session Analytics'
-      color = '#8B5CF6'
+      color = '#334155'
       Icon = Cpu
       percent = (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100
       valueStr = `${usage.cpu.usedHours} hrs`
       limitStr = usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`
     } else if (isRam) {
       title = 'Memory (RAM) Footprint'
-      color = '#8B5CF6'
+      color = '#475569'
       Icon = HardDrive
       percent = (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100
       valueStr = `${usage.ram.usedMB} MB`
       limitStr = `${usage.ram.limitMB} MB`
     } else if (isDisk) {
       title = 'SSD Disk Storage Space'
-      color = '#8B5CF6'
+      color = '#334155'
       Icon = Database
       percent = (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100
       valueStr = `${usage.disk.usedGB} GB`
       limitStr = `${usage.disk.limitGB} GB`
     } else if (isWorkspaces) {
       title = 'Workspaces Sandbox Nodes'
-      color = '#8B5CF6'
+      color = '#1E293B'
       Icon = Server
       percent = (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100
       valueStr = `${usage.workspaces.used}`
       limitStr = `${usage.workspaces.limit}`
     } else if (isAi) {
       title = 'Hosted Premium AI Tokens'
-      color = '#8B5CF6'
+      color = '#475569'
       Icon = Sparkles
       percent = (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100
       valueStr = usage.aiTokens.used.toLocaleString()
       limitStr = usage.aiTokens.limit.toLocaleString()
     } else if (isNetwork) {
       title = 'Network Bandwidth Speed'
-      color = '#8B5CF6'
+      color = '#64748B'
       Icon = Wifi
       percent = currentTier.name === 'free' ? (12 / 15) * 100 : 50
       valueStr = usage.workspaces.used > 0 ? (currentTier.name === 'free' ? '12 Mbps' : '380 Mbps') : '0 Mbps'
       limitStr = currentTier.name === 'free' ? '15 Mbps Cap' : 'Uncapped'
     } else if (isApi) {
       title = 'API Rate Limitations'
-      color = '#8B5CF6'
+      color = '#1E293B'
       Icon = Shield
       percent = currentTier.name === 'free' ? ((usage.workspaces.used * 4) / 25) * 100 : currentTier.name === 'pro' ? ((usage.workspaces.used * 4) / 500) * 100 : 0
       valueStr = usage.workspaces.used > 0 ? `${usage.workspaces.used * 4} req/min` : '0 req/min'
