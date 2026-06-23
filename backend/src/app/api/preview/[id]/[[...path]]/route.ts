@@ -280,10 +280,13 @@ export async function GET(req: NextRequest, { params }: Params) {
 
       // Resolve the host port mapped to the sidecar port 9999
       const sidecarHostPort = project.port?.toString() || '9999'
+      const containerIp = await getContainerIp(project.container_id)
 
-      // Route all traffic through the host's loopback on the mapped sidecar port.
-      // This is firewall-safe (bypasses direct container IP blocks).
-      const targetUrl = `http://127.0.0.1:${sidecarHostPort}${subPath}${search}`
+      // Route traffic directly to the container's bridge IP to bypass host loopback mapping issues.
+      // Falls back to 127.0.0.1 loopback mapped port if container IP is unavailable.
+      const targetUrl = containerIp
+        ? `http://${containerIp}:${SIDECAR_PORT}${subPath}${search}`
+        : `http://127.0.0.1:${sidecarHostPort}${subPath}${search}`
 
       const headersToForward: Record<string, string> = {
         'Host': `localhost:${targetPort}`,
