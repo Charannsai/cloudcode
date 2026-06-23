@@ -8,6 +8,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import { recordAppSession } from '@/lib/appAudit'
 import * as SplashScreen from 'expo-splash-screen'
 import FloatingMic from '@/components/FloatingMic'
+import LimitExceededModal from '@/components/LimitExceededModal'
 import { 
   useFonts, 
   Inter_400Regular, 
@@ -110,6 +111,7 @@ export default function RootLayout() {
       Floating Voice Assistant
     */}
       <FloatingMic />
+      <LimitExceededModal />
     </View>
   )
 }

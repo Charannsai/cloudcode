@@ -584,6 +584,7 @@ export default function AIScreen() {
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'openai' | 'anthropic'>('gemini')
   const [modelModalVisible, setModelModalVisible] = useState(false)
   const [userTier, setUserTier] = useState<string>('free')
+  const [byokTokensUsed, setByokTokensUsed] = useState(0)
 
   const [menuVisible, setMenuVisible] = useState(false)
   const [historyModalVisible, setHistoryModalVisible] = useState(false)
@@ -719,6 +720,9 @@ export default function AIScreen() {
           if (data?.tier?.name) {
             setUserTier(data.tier.name)
           }
+          if (data?.usage?.byokTokens) {
+            setByokTokensUsed(data.usage.byokTokens.used)
+          }
         })
         .catch(err => console.warn('Failed to load user tier config:', err))
 
@@ -811,6 +815,28 @@ export default function AIScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* BYOK Stats Banner */}
+      {byokEnabled && (
+        <View style={{ 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : '#e6ffec', 
+          paddingVertical: 8, 
+          paddingHorizontal: 16, 
+          borderBottomWidth: 1, 
+          borderBottomColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#10B98130' 
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Shield size={12} color="#10B981" />
+            <Text style={{ color: isDark ? '#10B981' : '#059669', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>BYOK Session Active</Text>
+          </View>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular' }}>
+            BYOK Stats: <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_600SemiBold' }}>{byokTokensUsed.toLocaleString()}</Text> tokens
+          </Text>
+        </View>
+      )}
 
       {/* Switcher removed */}
 

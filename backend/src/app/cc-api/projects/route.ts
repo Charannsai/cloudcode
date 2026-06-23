@@ -10,6 +10,8 @@ const CreateProjectSchema = z.object({
   type: z.enum(['node', 'react', 'empty', 'flask', 'fastapi', 'rust', 'gin', 'nextjs']),
 })
 
+import { getTierConfig } from '@/lib/tiers'
+
 // GET /api/projects — list user's projects
 export async function GET(req: NextRequest) {
   const user = getUserFromRequest(req)
@@ -64,6 +66,32 @@ export async function POST(req: NextRequest) {
   const { name, type } = parsed.data
 
   try {
+    // Fetch user's current tier
+    const { data: dbUser } = await supabaseAdmin
+      .from('users')
+      .select('tier')
+      .eq('github_id', user.id)
+      .single()
+
+    const tierName = dbUser?.tier || 'free'
+    const tier = getTierConfig(tierName)
+
+    // Enforce workspace limit
+    if (tier.container.maxWorkspaces > 0) {
+      const { count, error: countErr } = await supabaseAdmin
+        .from('projects')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_github_id', user.id)
+
+      if (countErr) {
+        return errorResponse(countErr.message, 500)
+      }
+
+      if (count !== null && count >= tier.container.maxWorkspaces) {
+        return errorResponse('LIMIT_EXCEEDED: You have reached the maximum number of workspaces allowed for your plan. Please upgrade to create more.', 403)
+      }
+    }
+
     const project = await createProjectInternal(user.id, name, type)
     return successResponse(project, 201)
   } catch (dbError: any) {
