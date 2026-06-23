@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     // 2. Fetch projects for workspaces & RAM calculation
     const { data: userProjects } = await supabaseAdmin
       .from('projects')
-      .select('id, status')
+      .select('id, name, status')
       .eq('user_github_id', user.id)
 
     const workspacesCount = userProjects?.length || 0
