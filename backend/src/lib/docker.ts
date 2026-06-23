@@ -203,6 +203,47 @@ export async function execInContainer(
 }
 
 /**
+ * Execute a command inside a running container in detached mode (fire and forget).
+ * This prevents Docker from killing the process when the execution session ends.
+ */
+export async function execDetachedInContainer(
+  containerId: string,
+  command: string[],
+  user?: string,
+  env?: string[]
+): Promise<void> {
+  const container = docker.getContainer(containerId)
+
+  // Fail-safe: Auto-wake container if it is stopped
+  try {
+    const info = await container.inspect()
+    if (info.State.Status !== 'running') {
+      console.log(`[execDetachedInContainer] Container ${containerId} is stopped. Auto-waking...`)
+      await container.start()
+      await new Promise(r => setTimeout(r, 1000))
+    }
+  } catch (inspectErr) {
+    console.warn(`[execDetachedInContainer] Failed to inspect/start container ${containerId}:`, inspectErr)
+  }
+
+  const exec = await container.exec({
+    Cmd: command,
+    AttachStdout: false,
+    AttachStderr: false,
+    Tty: false,
+    ...(user ? { User: user } : {}),
+    ...(env ? { Env: env } : {}),
+  })
+
+  await new Promise<void>((resolve, reject) => {
+    exec.start({ hijack: false }, (err) => {
+      if (err) return reject(err)
+      resolve()
+    })
+  })
+}
+
+/**
  * Stop and remove a container.
  */
 export async function destroyContainer(containerId: string): Promise<void> {
@@ -430,9 +471,10 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
 
   console.log(`[Sidecar] Starting sidecar proxy agent in container ${containerId}...`)
 
-  // Start the sidecar in the background. It will listen on 0.0.0.0:9999.
-  const startCmd = `nohup node /usr/local/bin/sidecar.js > /tmp/sidecar.log 2>&1 &`
-  await execInContainer(containerId, ['sh', '-c', startCmd], () => {})
+  // Start the sidecar in the background as a detached process.
+  // This is firewall-safe and ensures the process stays alive.
+  const startCmd = `node /usr/local/bin/sidecar.js > /tmp/sidecar.log 2>&1`
+  await execDetachedInContainer(containerId, ['sh', '-c', startCmd])
 
   // Brief pause to let the sidecar bind the port
   await new Promise(r => setTimeout(r, 500))
