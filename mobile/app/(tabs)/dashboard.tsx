@@ -315,16 +315,19 @@ export default function DashboardScreen() {
               <ChevronRight size={14} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
             </TouchableOpacity>
           </View>
-
           {showSkeletonState ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
               {[0,1].map(i => (
-                <View key={i} style={[styles.wsCard, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
-                  <View style={{ marginTop: 14 }}>
-                    <View style={{ width: 100, height: 14, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
-                    <View style={{ width: 60, height: 10, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB', marginTop: 6 }} />
+                <View key={i} style={[styles.wsCard, { backgroundColor: subtleBg, borderColor: cardBorder, opacity: 0.6 }]}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                    <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
+                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
                   </View>
+                  <View style={{ marginTop: 12, width: '100%' }}>
+                    <View style={{ width: '80%', height: 12, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
+                    <View style={{ width: '50%', height: 8, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB', marginTop: 6 }} />
+                  </View>
+                  <View style={{ width: 40, height: 10, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB', marginTop: 8 }} />
                 </View>
               ))}
             </ScrollView>
@@ -354,52 +357,66 @@ export default function DashboardScreen() {
                       style={[styles.wsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
                       onPress={() => router.push(`/project/${project.id}`)}
                     >
-                      {/* Icon */}
-                      <View style={{
-                        width: 46, height: 46, borderRadius: 12,
-                        backgroundColor: techColors.bg,
-                        alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <ProjectIcon type={project.type} name={project.name} githubUrl={project.github_url} size={24} isDark={isDark} />
+                      {/* Top Row: Icon + Pulse Indicator */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <View style={{
+                          width: 36, height: 36, borderRadius: 10,
+                          backgroundColor: techColors.bg,
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <ProjectIcon type={project.type} name={project.name} githubUrl={project.github_url} size={20} isDark={isDark} />
+                        </View>
+                        
+                        {isRunning ? (
+                          <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: isDark ? 'rgba(63,185,80,0.15)' : 'rgba(34,197,94,0.1)',
+                            paddingHorizontal: 6,
+                            paddingVertical: 3,
+                            borderRadius: 6,
+                          }}>
+                            <PulseDot color="#3FB950" />
+                          </View>
+                        ) : (
+                          <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            paddingHorizontal: 6,
+                            paddingVertical: 3,
+                            borderRadius: 6,
+                          }}>
+                            <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textSecondary, opacity: 0.5 }} />
+                          </View>
+                        )}
                       </View>
-
-                      {/* Name + Tech column */}
-                      <View style={{ flex: 1, justifyContent: 'center' }}>
-                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5, letterSpacing: -0.2 }} numberOfLines={1}>
+ 
+                      {/* Content: Name + Tech */}
+                      <View style={{ marginTop: 12, width: '100%', flex: 1, justifyContent: 'center' }}>
+                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: -0.2 }} numberOfLines={1}>
                           {project.name}
                         </Text>
-                        <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11.5, marginTop: 2, textTransform: 'capitalize' }}>
+                        <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2, textTransform: 'capitalize' }} numberOfLines={1}>
                           {tech}
                         </Text>
                       </View>
-
-                      {/* Status badge */}
-                      <View style={{ 
-                        flexDirection: 'row', 
-                        alignItems: 'center', 
-                        gap: 5,
-                        backgroundColor: isRunning ? (isDark ? 'rgba(63,185,80,0.12)' : 'rgba(34,197,94,0.08)') : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                      }}>
-                        {isRunning ? (
-                          <>
-                            <PulseDot color="#3FB950" />
-                            <Text style={{ color: isDark ? '#3FB950' : '#16A34A', fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>Active</Text>
-                          </>
-                        ) : (
-                          <>
-                            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: 0.5 }} />
-                            <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_500Medium' }}>Idle</Text>
-                          </>
-                        )}
+ 
+                      {/* Footer: Text-based status */}
+                      <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ 
+                          fontSize: 10.5, 
+                          fontFamily: 'Inter_600SemiBold', 
+                          color: isRunning ? (isDark ? '#3FB950' : '#16A34A') : colors.textSecondary 
+                        }}>
+                          {isRunning ? 'Active' : 'Idle'}
+                        </Text>
                       </View>
                     </PressableScale>
                   </Animated.View>
                 )
               })}
-
+ 
               {/* Add new card */}
               <PressableScale
                 style={[styles.wsCard, { 
@@ -408,13 +425,22 @@ export default function DashboardScreen() {
                   borderStyle: 'dashed', 
                   alignItems: 'center', 
                   justifyContent: 'center',
-                  flexDirection: 'row',
+                  flexDirection: 'column',
                   gap: 8
                 }]}
                 onPress={() => router.push('/new-project')}
               >
-                <Plus size={16} color={colors.textSecondary} strokeWidth={2} />
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Create Workspace</Text>
+                <View style={{
+                  width: 32, height: 32, borderRadius: 16,
+                  backgroundColor: isDark ? '#21262D' : '#F6F8FA',
+                  alignItems: 'center', justifyContent: 'center',
+                  borderWidth: 1, borderColor: cardBorder, borderStyle: 'dashed',
+                }}>
+                  <Plus size={16} color={colors.textSecondary} strokeWidth={2} />
+                </View>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, textAlign: 'center' }}>
+                  Create Workspace
+                </Text>
               </PressableScale>
             </ScrollView>
           )}
@@ -723,14 +749,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   wsCard: {
-    width: SCREEN_WIDTH * 0.76,
-    height: 92,
+    width: 140,
+    height: 128,
     borderRadius: 16,
     borderWidth: 1,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    padding: 12,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
   emptyCard: {
     borderRadius: 16,
