@@ -3,8 +3,8 @@ import { create } from 'zustand'
 interface UIState {
   tabBarVisible: boolean
   setTabBarVisible: (visible: boolean) => void
-  settingsSubScreen: 'main' | 'billing' | 'billing-detail' | 'gitSsh' | 'dependencies' | 'aiKeys' | 'profile' | 'about'
-  setSettingsSubScreen: (screen: 'main' | 'billing' | 'billing-detail' | 'gitSsh' | 'dependencies' | 'aiKeys' | 'profile' | 'about') => void
+  settingsSubScreen: 'main' | 'billing' | 'billing-detail' | 'byok-detail' | 'gitSsh' | 'dependencies' | 'aiKeys' | 'profile' | 'about'
+  setSettingsSubScreen: (screen: 'main' | 'billing' | 'billing-detail' | 'byok-detail' | 'gitSsh' | 'dependencies' | 'aiKeys' | 'profile' | 'about') => void
   
   // Limit Exceeded Modal state
   limitModalVisible: boolean
