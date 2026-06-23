@@ -649,138 +649,148 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
         </View>
       ) : null}
 
-      {/* DevTools Bottom Drawer (Visible only when toggled on from three-dots menu) */}
-      {showDevTools && url && (
-        <View style={[styles.devToolsContainer, { borderTopColor: colors.border, height: 260 }]}>
-          <View style={[styles.devToolsHeader, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Terminal size={13} color={colors.text} />
-              <Text style={[styles.devToolsTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                Developer Tools
-              </Text>
-            </View>
-            
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>
-                Logs: {consoleLogs.length} | Net: {networkLogs.length}
-              </Text>
-              <TouchableOpacity onPress={() => setShowDevTools(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <X size={14} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
-            {/* Tab Bar */}
-            <View style={[styles.devTabBar, { borderBottomColor: colors.border }]}>
-              {(['console', 'network', 'dom'] as const).map((tab) => (
-                <TouchableOpacity
-                  key={tab}
-                  onPress={() => {
-                    setActiveDevTab(tab)
-                    if (tab === 'dom' && webViewRef.current) {
-                      webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
-                    }
-                  }}
-                  style={[
-                    styles.devTabItem,
-                    activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
-                  ]}
-                >
-                  <Text style={[
-                    styles.devTabText,
-                    { 
-                      color: activeDevTab === tab ? colors.primary : colors.textSecondary,
-                      fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
-                    }
-                  ]}>
-                    {tab.toUpperCase()}
+      {/* DevTools Bottom Drawer (Always present in hierarchy when url is active, height-toggled for smooth layout updates) */}
+      {url ? (
+        <View style={[styles.devToolsContainer, { borderTopColor: colors.border, height: showDevTools ? 260 : 0, borderTopWidth: showDevTools ? 1 : 0 }]}>
+          {showDevTools && (
+            <>
+              <View style={[styles.devToolsHeader, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Terminal size={13} color={colors.text} />
+                  <Text style={[styles.devToolsTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                    Developer Tools
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                </View>
+                
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>
+                    Logs: {consoleLogs.length} | Net: {networkLogs.length}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                      setShowDevTools(false)
+                    }} 
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <X size={14} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-            {/* Tab Content */}
-            <View style={{ flex: 1 }}>
-              {activeDevTab === 'console' && (
-                <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
-                  {consoleLogs.length === 0 ? (
-                    <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
-                      No console logs captured yet.
-                    </Text>
-                  ) : (
-                    consoleLogs.map((log, idx) => (
-                      <Text 
-                        key={idx} 
-                        style={{
-                          fontFamily: 'JetBrainsMono_400Regular',
-                          fontSize: 10.5,
-                          color: log.type === 'error' ? '#FF7B72' : log.type === 'warn' ? '#F2C078' : colors.text,
-                          borderBottomWidth: 0.5,
-                          borderBottomColor: colors.border + '30',
-                          paddingVertical: 3
-                        }}
-                      >
-                        [{log.type.toUpperCase()}] {log.data}
+              <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
+                {/* Tab Bar */}
+                <View style={[styles.devTabBar, { borderBottomColor: colors.border }]}>
+                  {(['console', 'network', 'dom'] as const).map((tab) => (
+                    <TouchableOpacity
+                      key={tab}
+                      onPress={() => {
+                        setActiveDevTab(tab)
+                        if (tab === 'dom' && webViewRef.current) {
+                          webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
+                        }
+                      }}
+                      style={[
+                        styles.devTabItem,
+                        activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                      ]}
+                    >
+                      <Text style={[
+                        styles.devTabText,
+                        { 
+                          color: activeDevTab === tab ? colors.primary : colors.textSecondary,
+                          fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
+                        }
+                      ]}>
+                        {tab.toUpperCase()}
                       </Text>
-                    ))
-                  )}
-                </ScrollView>
-              )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
 
-              {activeDevTab === 'network' && (
-                <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
-                  {networkLogs.length === 0 ? (
-                    <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
-                      No network requests intercepted.
-                    </Text>
-                  ) : (
-                    networkLogs.map((log, idx) => (
-                      <View 
-                        key={idx} 
-                        style={{
-                          flexDirection: 'row',
-                          justifyContent: 'space-between',
-                          borderBottomWidth: 0.5,
-                          borderBottomColor: colors.border + '30',
-                          paddingVertical: 4,
-                        }}
-                      >
-                        <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.text, flex: 1, marginRight: 8 }} numberOfLines={1}>
-                          {log.method} {log.url}
+                {/* Tab Content */}
+                <View style={{ flex: 1 }}>
+                  {activeDevTab === 'console' && (
+                    <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
+                      {consoleLogs.length === 0 ? (
+                        <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                          No console logs captured yet.
                         </Text>
-                        <View style={{ flexDirection: 'row', gap: 8 }}>
-                          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: log.status === 'Failed' || Number(log.status) >= 400 ? '#FF7B72' : '#3FB950' }}>
-                            Status: {log.status}
+                      ) : (
+                        consoleLogs.map((log, idx) => (
+                          <Text 
+                            key={idx} 
+                            style={{
+                              fontFamily: 'JetBrainsMono_400Regular',
+                              fontSize: 10.5,
+                              color: log.type === 'error' ? '#FF7B72' : log.type === 'warn' ? '#F2C078' : colors.text,
+                              borderBottomWidth: 0.5,
+                              borderBottomColor: colors.border + '30',
+                              paddingVertical: 3
+                            }}
+                          >
+                            [{log.type.toUpperCase()}] {log.data}
                           </Text>
-                          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
-                            {log.duration}ms
+                        ))
+                      )}
+                    </ScrollView>
+                  )}
+
+                  {activeDevTab === 'network' && (
+                    <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
+                      {networkLogs.length === 0 ? (
+                        <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                          No network requests intercepted.
+                        </Text>
+                      ) : (
+                        networkLogs.map((log, idx) => (
+                          <View 
+                            key={idx} 
+                            style={{
+                              flexDirection: 'row',
+                              justifyContent: 'space-between',
+                              borderBottomWidth: 0.5,
+                              borderBottomColor: colors.border + '30',
+                              paddingVertical: 4,
+                            }}
+                          >
+                            <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.text, flex: 1, marginRight: 8 }} numberOfLines={1}>
+                              {log.method} {log.url}
+                            </Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                              <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: log.status === 'Failed' || Number(log.status) >= 400 ? '#FF7B72' : '#3FB950' }}>
+                                Status: {log.status}
+                              </Text>
+                              <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
+                                {log.duration}ms
+                              </Text>
+                            </View>
+                          </View>
+                        ))
+                      )}
+                    </ScrollView>
+                  )}
+
+                  {activeDevTab === 'dom' && (
+                    <ScrollView contentContainerStyle={{ padding: 10 }}>
+                      {domTree ? (
+                        <DOMInspectorNode node={domTree} depth={0} />
+                      ) : (
+                        <View style={{ alignItems: 'center', marginTop: 20, gap: 8 }}>
+                          <ActivityIndicator size="small" color={colors.primary} />
+                          <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                            Reading DOM structure...
                           </Text>
                         </View>
-                      </View>
-                    ))
+                      )}
+                    </ScrollView>
                   )}
-                </ScrollView>
-              )}
-
-              {activeDevTab === 'dom' && (
-                <ScrollView contentContainerStyle={{ padding: 10 }}>
-                  {domTree ? (
-                    <DOMInspectorNode node={domTree} depth={0} />
-                  ) : (
-                    <View style={{ alignItems: 'center', marginTop: 20, gap: 8 }}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                        Reading DOM structure...
-                      </Text>
-                    </View>
-                  )}
-                </ScrollView>
-              )}
-            </View>
-          </View>
+                </View>
+              </View>
+            </>
+          )}
         </View>
-      )}
+      ) : null}
 
       {/* Chrome-Style Three-Dots Dropdown Menu Overlay */}
       {showMenu && (
@@ -862,13 +872,15 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             {/* General Actions */}
             <TouchableOpacity
               style={styles.menuItem}
+              disabled={!url}
               onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
                 setShowDevTools(d => !d)
                 toggleMenu(false)
               }}
             >
-              <Terminal size={14} color={colors.textSecondary} />
-              <Text style={[styles.menuItemText, { color: colors.text }]}>
+              <Terminal size={14} color={url ? colors.textSecondary : colors.textTertiary} />
+              <Text style={[styles.menuItemText, { color: url ? colors.text : colors.textTertiary }]}>
                 {showDevTools ? 'Hide Developer Tools' : 'Open Developer Tools'}
               </Text>
             </TouchableOpacity>
