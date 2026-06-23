@@ -29,22 +29,22 @@ let activeAbort: (() => void) | null = null
 
 export const api = {
   projects: {
-    list: () => apiFetch<Project[]>('/api/projects'),
-    get: (id: string) => apiFetch<Project>(`/api/projects/${id}`),
+    list: () => apiFetch<Project[]>('/cc-api/projects'),
+    get: (id: string) => apiFetch<Project>(`/cc-api/projects/${id}`),
     create: (name: string, type: 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs') =>
-      apiFetch<Project>('/api/projects', {
+      apiFetch<Project>('/cc-api/projects', {
         method: 'POST',
         body: JSON.stringify({ name, type }),
       }),
     import: (name: string, githubUrl: string) =>
-      apiFetch<Project>('/api/projects/import', {
+      apiFetch<Project>('/cc-api/projects/import', {
         method: 'POST',
         body: JSON.stringify({ name, githubUrl }),
       }),
     delete: (id: string) =>
-      apiFetch<{ deleted: boolean }>(`/api/projects/${id}`, { method: 'DELETE' }),
+      apiFetch<{ deleted: boolean }>(`/cc-api/projects/${id}`, { method: 'DELETE' }),
     rename: (id: string, name: string) =>
-      apiFetch<Project>(`/api/projects/${id}`, {
+      apiFetch<Project>(`/cc-api/projects/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ name }),
       }),
@@ -52,29 +52,29 @@ export const api = {
 
   files: {
     list: (projectId: string) =>
-      apiFetch<FileNode[]>(`/api/projects/${projectId}/files`),
+      apiFetch<FileNode[]>(`/cc-api/projects/${projectId}/files`),
     read: (projectId: string, filePath: string) =>
       apiFetch<{ path: string; content: string }>(
-        `/api/projects/${projectId}/files/content?path=${encodeURIComponent(filePath)}`
+        `/cc-api/projects/${projectId}/files/content?path=${encodeURIComponent(filePath)}`
       ),
     write: (projectId: string, filePath: string, content: string) =>
       apiFetch<{ saved: boolean; path: string }>(
-        `/api/projects/${projectId}/files/content`,
+        `/cc-api/projects/${projectId}/files/content`,
         { method: 'PUT', body: JSON.stringify({ path: filePath, content }) }
       ),
     create: (projectId: string, filePath: string, type: 'file' | 'directory') =>
       apiFetch<{ created: boolean; path: string; type: 'file' | 'directory' }>(
-        `/api/projects/${projectId}/files`,
+        `/cc-api/projects/${projectId}/files`,
         { method: 'POST', body: JSON.stringify({ path: filePath, type }) }
       ),
     delete: (projectId: string, filePath: string) =>
       apiFetch<{ deleted: boolean; path: string }>(
-        `/api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`,
+        `/cc-api/projects/${projectId}/files?path=${encodeURIComponent(filePath)}`,
         { method: 'DELETE' }
       ),
     rename: (projectId: string, oldPath: string, newPath: string) =>
       apiFetch<{ renamed: boolean; oldPath: string; newPath: string }>(
-        `/api/projects/${projectId}/files`,
+        `/cc-api/projects/${projectId}/files`,
         { method: 'PATCH', body: JSON.stringify({ oldPath, newPath }) }
       ),
   },
@@ -88,64 +88,64 @@ export const api = {
         branch: string
         ahead: number
         behind: number
-      }>(`/api/projects/${projectId}/git/status`),
+      }>(`/cc-api/projects/${projectId}/git/status`),
 
     diff: (projectId: string, file?: string, staged?: boolean) => {
       const params = new URLSearchParams()
       if (file) params.set('file', file)
       if (staged) params.set('staged', 'true')
-      return apiFetch<{ diff: string }>(`/api/projects/${projectId}/git/diff?${params}`)
+      return apiFetch<{ diff: string }>(`/cc-api/projects/${projectId}/git/diff?${params}`)
     },
 
     stage: (projectId: string, files: string[]) =>
-      apiFetch<{ output: string }>(`/api/projects/${projectId}/git/stage`, {
+      apiFetch<{ output: string }>(`/cc-api/projects/${projectId}/git/stage`, {
         method: 'POST',
         body: JSON.stringify({ files, action: 'stage' }),
       }),
 
     unstage: (projectId: string, files: string[]) =>
-      apiFetch<{ output: string }>(`/api/projects/${projectId}/git/stage`, {
+      apiFetch<{ output: string }>(`/cc-api/projects/${projectId}/git/stage`, {
         method: 'POST',
         body: JSON.stringify({ files, action: 'unstage' }),
       }),
 
     commit: (projectId: string, message: string) =>
-      apiFetch<{ output: string }>(`/api/projects/${projectId}/git/commit`, {
+      apiFetch<{ output: string }>(`/cc-api/projects/${projectId}/git/commit`, {
         method: 'POST',
         body: JSON.stringify({ message }),
       }),
 
     sync: (projectId: string, action: 'push' | 'pull', remote?: string, branch?: string) =>
-      apiFetch<{ output: string }>(`/api/projects/${projectId}/git/sync`, {
+      apiFetch<{ output: string }>(`/cc-api/projects/${projectId}/git/sync`, {
         method: 'POST',
         body: JSON.stringify({ action, remote, branch }),
       }),
 
     branches: (projectId: string) =>
-      apiFetch<{ branches: string[]; current: string }>(`/api/projects/${projectId}/git/branches`),
+      apiFetch<{ branches: string[]; current: string }>(`/cc-api/projects/${projectId}/git/branches`),
 
     checkout: (projectId: string, branch: string, create?: boolean) =>
-      apiFetch<{ output: string }>(`/api/projects/${projectId}/git/branches`, {
+      apiFetch<{ output: string }>(`/cc-api/projects/${projectId}/git/branches`, {
         method: 'POST',
         body: JSON.stringify({ branch, create }),
       }),
 
     ssh: {
       get: (projectId: string) =>
-        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>(`/api/projects/${projectId}/git/ssh`),
+        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>(`/cc-api/projects/${projectId}/git/ssh`),
       generate: (projectId: string) =>
-        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>(`/api/projects/${projectId}/git/ssh`, { method: 'POST' }),
+        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>(`/cc-api/projects/${projectId}/git/ssh`, { method: 'POST' }),
       globalGet: () =>
-        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>('/api/user/git/ssh'),
+        apiFetch<{ hasKey: boolean; publicKey: string | null; history: { timestamp: string; publicKey: string }[] }>('/cc-api/user/git/ssh'),
       globalGenerate: () =>
-        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>('/api/user/git/ssh', { method: 'POST' }),
+        apiFetch<{ hasKey: boolean; publicKey: string; history: { timestamp: string; publicKey: string }[] }>('/cc-api/user/git/ssh', { method: 'POST' }),
     },
 
     config: {
       get: (projectId: string) =>
-        apiFetch<{ name: string | null; email: string | null }>(`/api/projects/${projectId}/git/config`),
+        apiFetch<{ name: string | null; email: string | null }>(`/cc-api/projects/${projectId}/git/config`),
       set: (projectId: string, name: string, email: string) =>
-        apiFetch<{ saved: boolean }>(`/api/projects/${projectId}/git/config`, {
+        apiFetch<{ saved: boolean }>(`/cc-api/projects/${projectId}/git/config`, {
           method: 'POST',
           body: JSON.stringify({ name, email }),
         }),
@@ -153,12 +153,12 @@ export const api = {
     log: (projectId: string, count?: number) => {
       const params = new URLSearchParams()
       if (count) params.set('count', count.toString())
-      return apiFetch<{ log: string }>(`/api/projects/${projectId}/git/log?${params}`)
+      return apiFetch<{ log: string }>(`/cc-api/projects/${projectId}/git/log?${params}`)
     },
     conflicts: (projectId: string) =>
-      apiFetch<{ conflicts: string[] }>(`/api/projects/${projectId}/git/conflicts`),
+      apiFetch<{ conflicts: string[] }>(`/cc-api/projects/${projectId}/git/conflicts`),
     resolve: (projectId: string, file: string, strategy: 'ours' | 'theirs') =>
-      apiFetch<{ success: boolean; output: string }>(`/api/projects/${projectId}/git/resolve`, {
+      apiFetch<{ success: boolean; output: string }>(`/cc-api/projects/${projectId}/git/resolve`, {
         method: 'POST',
         body: JSON.stringify({ file, strategy }),
       }),
@@ -175,10 +175,10 @@ export const api = {
           ai: { monthlyTokens: number; premiumModels: boolean; byokSupported: boolean }
         }
         upgrades: { name: string; displayName: string; price: { monthly: number; yearly: number }; container: any; ai: any }[]
-      }>('/api/billing/status'),
+      }>('/cc-api/billing/status'),
 
     checkout: (planType: string, returnUrl: string) =>
-      apiFetch<{ checkoutUrl: string; sessionId: string }>('/api/billing/checkout', {
+      apiFetch<{ checkoutUrl: string; sessionId: string }>('/cc-api/billing/checkout', {
         method: 'POST',
         body: JSON.stringify({ planType, returnUrl }),
       }),
@@ -186,9 +186,9 @@ export const api = {
 
   system: {
     runtimes: () =>
-      apiFetch<{ runtimes: { name: string; version: string; key: string }[] }>('/api/system/runtimes'),
+      apiFetch<{ runtimes: { name: string; version: string; key: string }[] }>('/cc-api/system/runtimes'),
     installRuntime: (runtime: string) =>
-      apiFetch<{ success: boolean; message: string }>('/api/system/runtimes', {
+      apiFetch<{ success: boolean; message: string }>('/cc-api/system/runtimes', {
         method: 'POST',
         body: JSON.stringify({ runtime }),
       }),
@@ -200,12 +200,12 @@ export const api = {
         platform: string
         uptime: number
         timestamp: number
-      }>('/api/system/diagnostics'),
+      }>('/cc-api/system/diagnostics'),
   },
 
   terminal: {
     kill: (projectId: string, terminalId: string) =>
-      apiFetch<{ killed: boolean }>(`/api/projects/${projectId}/terminal/kill`, {
+      apiFetch<{ killed: boolean }>(`/cc-api/projects/${projectId}/terminal/kill`, {
         method: 'POST',
         body: JSON.stringify({ terminalId }),
       }),
@@ -218,7 +218,7 @@ export const api = {
       }
     },
     approve: (approvalId: string, action: 'approve' | 'reject') =>
-      apiFetch<{ success: boolean }>('/api/ai/approve', {
+      apiFetch<{ success: boolean }>('/cc-api/ai/approve', {
         method: 'POST',
         body: JSON.stringify({ approvalId, action }),
       }),
@@ -236,7 +236,7 @@ export const api = {
       const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
 
       return new Promise<void>((resolve, reject) => {
-        const es = new EventSource(`${API_URL}/api/ai/chat`, {
+        const es = new EventSource(`${API_URL}/cc-api/ai/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

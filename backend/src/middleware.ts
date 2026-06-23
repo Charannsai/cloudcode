@@ -5,14 +5,14 @@ export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone()
   const { pathname } = url
   
-  // 1. Never intercept internal API or Dashboard routes
-  if (pathname.startsWith('/api') || pathname.startsWith('/projects') || pathname === '/') {
+  // 1. Never intercept CloudCode platform routes (cc-api), preview proxy, or Next.js internals
+  if (pathname.startsWith('/cc-api') || pathname.startsWith('/api/preview') || pathname === '/') {
     return NextResponse.next()
   }
 
-  // 2. Identify requests that should be proxied to a container
-  // This includes any request that isn't for our main app,
-  // typically assets (/logo.png, /_next/static, etc.)
+  // 2. Identify requests that should be proxied to a container.
+  // With namespace isolation, ANY request (including /api/..., /static/..., etc.)
+  // that has a preview context should be forwarded to the container.
   let projectId = req.cookies.get('preview_project_id')?.value
   
   if (!projectId) {
@@ -24,7 +24,6 @@ export function middleware(req: NextRequest) {
   }
   
   if (projectId) {
-    // Check if the referer is telling us this is from a preview page
     const referer = req.headers.get('referer') || ''
     const isFromPreview = referer.includes('/api/preview/') || pathname.startsWith('/_next/') || pathname.includes('.')
     
@@ -39,7 +38,7 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Capture everything except root, dashboard, and public/api assets
-    '/((?!api|projects|favicon.ico|$).*)',
+    // Capture everything except cc-api, preview proxy, and public assets
+    '/((?!cc-api|api/preview|favicon.ico|$).*)',
   ],
 }

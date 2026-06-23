@@ -18,7 +18,7 @@ const startServer = async () => {
   const { supabaseAdmin } = await import('./lib/supabase')
   const { default: Docker } = await import('dockerode')
   const { recordActivity, isIdle, getTrackedProjects } = await import('./lib/activityTracker')
-  const { stopContainer, ensureLocalhostBridge } = await import('./lib/docker')
+  const { stopContainer, ensureSidecarRunning } = await import('./lib/docker')
   const { getTierConfig } = await import('./lib/tiers')
 
   const app = next({ dev, hostname, port })
@@ -35,8 +35,11 @@ const startServer = async () => {
       let parsedUrl = parse(req.url!, true)
       const pathname = parsedUrl.pathname || ''
 
-      // Custom proxy rewrite: if request has the preview_project_id cookie set, and it is an absolute asset
-      // load (not Next.js files, not API calls, not standard routes), rewrite it to the preview proxy!
+      // Universal preview proxy rewrite:
+      // - /cc-api/* routes are CloudCode platform endpoints — never proxy these
+      // - /api/preview/* is the preview proxy handler itself — let Next.js handle it
+      // - /_next/* are Next.js internal assets — never proxy these
+      // - Everything else (including user /api/* routes) gets proxied to the container
       const cookies = req.headers.cookie || ''
       const projectIdCookie = cookies.match(/preview_project_id=([^;]+)/)?.[1]
 
@@ -47,20 +50,17 @@ const startServer = async () => {
         refererProjectId = match[1]
       }
 
-      const activeProjectId = projectIdCookie || refererProjectId
-
       // If the Referer header indicates this request originated from a preview,
-      // we MUST rewrite it (including /_next, /static, and favicon.ico) so that
-      // Next.js and Vite sub-resources are served from the container.
-      if (refererProjectId && !pathname.startsWith('/api')) {
+      // we MUST rewrite it (including /_next, /static, /api, and favicon.ico) so that
+      // ALL sub-resources are served from the container — not the CloudCode backend.
+      if (refererProjectId && !pathname.startsWith('/cc-api') && !pathname.startsWith('/api/preview')) {
         req.url = `/api/preview/${refererProjectId}${req.url}`
         parsedUrl = parse(req.url, true)
       } else if (
         projectIdCookie &&
-        !pathname.startsWith('/_next') &&
-        !pathname.startsWith('/api') &&
-        !pathname.startsWith('/static') &&
-        pathname !== '/favicon.ico'
+        !pathname.startsWith('/cc-api') &&
+        !pathname.startsWith('/api/preview') &&
+        !pathname.startsWith('/_next')
       ) {
         req.url = `/api/preview/${projectIdCookie}${req.url}`
         parsedUrl = parse(req.url, true)
@@ -81,21 +81,16 @@ const startServer = async () => {
   httpServer.on('upgrade', (request, socket, head) => {
     const { pathname } = parse(request.url || '', true)
 
-    if (pathname?.startsWith('/api/terminal/')) {
+    if (pathname?.startsWith('/cc-api/terminal/')) {
+      // CloudCode platform terminal WebSocket — handle directly
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request)
       })
-    } else if (
-      pathname?.startsWith('/_next/webpack-hmr') || 
-      pathname?.startsWith('/api/preview/') || 
-      pathname?.startsWith('/__vite') ||      // Vite HMR WebSocket
-      pathname?.startsWith('/__webpack') ||   // Webpack alternate HMR
-      pathname === '/ws' ||                    // Common WS endpoint
-      pathname === '/'
-    ) {
-      handleWebSocketProxy(request, socket, head)
     } else {
-      socket.destroy()
+      // Universal WebSocket proxy: forward ALL other upgrades to the container.
+      // This covers Vite HMR, Webpack HMR, Socket.io, custom WS endpoints,
+      // and any framework-specific WebSocket paths.
+      handleWebSocketProxy(request, socket, head)
     }
   })
 
@@ -144,33 +139,28 @@ const startServer = async () => {
         return
       }
 
+      // Resolve internal port from cookies, referer, or DB default
+      let internalPort = '3000'
       if (!port) {
         const referer = request.headers.referer || ''
+        const iportMatch = referer.match(/[\?&]iport=(\d+)/)
         const portMatch = referer.match(/[\?&]port=(\d+)/)
-        if (portMatch) {
-          port = portMatch[1]
+        if (iportMatch) {
+          internalPort = iportMatch[1]
+        } else if (portMatch) {
+          internalPort = portMatch[1]
         }
+      } else {
+        internalPort = port
       }
-      const finalPort = port || project?.port || '3000'
 
-      // Resolve finalPort (which might be the mapped host port) to the internal container port
-      let internalPort = finalPort.toString()
-      const portSettings = info.NetworkSettings?.Ports
-      if (portSettings) {
-        for (const [containerPortKey, bindings] of Object.entries(portSettings)) {
-          const hostPort = (bindings as any)?.[0]?.HostPort
-          if (hostPort === finalPort.toString()) {
-            internalPort = containerPortKey.split('/')[0]
-            break
-          }
-        }
-      }
-      
-      // Ensure localhost bridge is running for WebSockets/HMR on this port
-      await ensureLocalhostBridge(project.container_id, containerIp, internalPort)
+      // Ensure the sidecar is running inside the container
+      await ensureSidecarRunning(project.container_id)
 
+      // Route WebSocket through the sidecar on port 9999 with X-Target-Port header
+      const SIDECAR_PORT = 9999
       const { default: WebSocket, WebSocketServer } = await import('ws')
-      const targetUrl = `ws://${containerIp}:${internalPort}${pathname}${search || ''}`
+      const targetUrl = `ws://${containerIp}:${SIDECAR_PORT}${pathname}${search || ''}`
       
       const targetWs = new WebSocket(targetUrl, {
         headers: {
@@ -179,6 +169,7 @@ const startServer = async () => {
           Origin: `http://localhost:${internalPort}`,
           'X-Forwarded-Host': `localhost:${internalPort}`,
           'X-Forwarded-Proto': 'http',
+          'X-Target-Port': internalPort,
         },
         origin: `http://localhost:${internalPort}`
       })

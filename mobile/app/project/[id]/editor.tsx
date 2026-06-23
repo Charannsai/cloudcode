@@ -189,7 +189,7 @@ export default function EditorScreen() {
                 Alert.alert('Authentication required', 'Please log in again.')
                 return
               }
-              const wsUrl = `${WS_URL}/api/terminal/${id}?token=${encodeURIComponent(token)}&terminalId=main`
+              const wsUrl = `${WS_URL}/cc-api/terminal/${id}?token=${encodeURIComponent(token)}&terminalId=main`
               const ws = new WebSocket(wsUrl)
               ws.onopen = () => {
                 ws.send(JSON.stringify({ type: 'input', data: cmd + '\n' }))

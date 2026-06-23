@@ -1077,7 +1077,7 @@ export default function WelcomeScreen() {
     setSigningIn(true)
     try {
       const redirectUri = Linking.createURL('/auth')
-      const authUrl = `${API_URL}/api/auth/github?redirect_uri=${encodeURIComponent(redirectUri)}`
+      const authUrl = `${API_URL}/cc-api/auth/github?redirect_uri=${encodeURIComponent(redirectUri)}`
       
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,
@@ -1103,7 +1103,7 @@ export default function WelcomeScreen() {
     setSigningIn(true)
     try {
       const redirectUri = Linking.createURL('/auth')
-      const authUrl = `${API_URL}/api/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`
+      const authUrl = `${API_URL}/cc-api/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`
       
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, verifyToken, errorResponse } from '@/lib/auth'
 import { recordActivity } from '@/lib/activityTracker'
-import { ensureContainerRunning, ensureLocalhostBridge } from '@/lib/docker'
+import { ensureContainerRunning, ensureSidecarRunning } from '@/lib/docker'
 import Docker from 'dockerode'
 
 const docker = new Docker({
@@ -11,74 +11,24 @@ const docker = new Docker({
 
 type Params = { params: Promise<{ id: string; path?: string[] }> }
 
-const STANDARD_INTERNAL_PORTS = ['3000', '5000', '5173', '8000', '8080']
+const SIDECAR_PORT = 9999
 
-async function resolveTarget(
-  containerId: string,
-  clientPort: number | string,
-  internalPortHint?: string | null
-): Promise<{ containerIp: string; internalPort: string }> {
-  const container = docker.getContainer(containerId)
-  const info = await container.inspect()
-
-  // Get container IP from the bridge network
-  const networks = (info.NetworkSettings as any).Networks
-  const firstNetwork = networks ? Object.values(networks)[0] as any : null
-  const containerIp = firstNetwork?.IPAddress
-  
-  if (!containerIp) {
-    throw new Error('Container IP not found. Is it running?')
+/**
+ * Get the container's bridge network IP address.
+ */
+async function getContainerIp(containerId: string): Promise<string | null> {
+  try {
+    const container = docker.getContainer(containerId)
+    const info = await container.inspect()
+    const networks = (info.NetworkSettings as any).Networks
+    const firstNetwork = networks ? Object.values(networks)[0] as any : null
+    return firstNetwork?.IPAddress || null
+  } catch {
+    return null
   }
-
-  // Priority 1: If caller passed an explicit internal port hint (via ?iport=), use it directly.
-  // This is the preferred path — no reverse-mapping needed.
-  if (internalPortHint && STANDARD_INTERNAL_PORTS.includes(internalPortHint)) {
-    return { containerIp, internalPort: internalPortHint }
-  }
-
-  // Priority 2: If clientPort itself IS a standard internal port, use it directly.
-  const clientStr = clientPort.toString()
-  if (STANDARD_INTERNAL_PORTS.includes(clientStr)) {
-    return { containerIp, internalPort: clientStr }
-  }
-
-  // Priority 3: Reverse-lookup host port → internal port from current bindings.
-  let internalPort = clientStr
-  const portSettings = info.NetworkSettings?.Ports
-  if (portSettings) {
-    for (const [containerPortKey, bindings] of Object.entries(portSettings)) {
-      const hostPort = (bindings as any)?.[0]?.HostPort
-      if (hostPort === clientStr) {
-        internalPort = containerPortKey.split('/')[0]
-        return { containerIp, internalPort }
-      }
-    }
-  }
-
-  // Priority 4: Host port didn't match (likely stale after restart).
-  // Scan standard ports to find one with an active listener inside the container.
-  console.warn(`[Proxy] Port ${clientPort} not matched in host bindings. Scanning for active listener...`)
-  for (const candidatePort of STANDARD_INTERNAL_PORTS) {
-    const hexPort = parseInt(candidatePort, 10).toString(16).toUpperCase().padStart(4, '0')
-    const checkCmd = `(cat /proc/net/tcp 2>/dev/null | grep -i -E "(0100007F|00000000):${hexPort} .* 0A") || (cat /proc/net/tcp6 2>/dev/null | grep -i -E "(00000000000000000000000001000000|00000000000000000000000000000000):${hexPort} .* 0A")`
-    let found = false
-    try {
-      const exitCode = await (await import('@/lib/docker')).execInContainer(
-        containerId,
-        ['sh', '-c', checkCmd],
-        () => { found = true }
-      )
-      if (exitCode === 0 && found) {
-        console.log(`[Proxy] Found active listener on internal port ${candidatePort}`)
-        return { containerIp, internalPort: candidatePort }
-      }
-    } catch {}
-  }
-
-  // Final fallback
-  console.warn(`[Proxy] No active listener found. Falling back to port 3000.`)
-  return { containerIp, internalPort: '3000' }
 }
+
+
 
 /**
  * Return a custom HTML error page that displays cleanly in browsers,
@@ -319,31 +269,41 @@ export async function GET(req: NextRequest, { params }: Params) {
   const maxAttempts = 4
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const { containerIp, internalPort } = await resolveTarget(project.container_id, port, queryInternalPort)
-      
-      // Dynamically bridge local/localhost ports if needed
-      await ensureLocalhostBridge(project.container_id, containerIp, internalPort)
+      const targetPort = queryInternalPort || port?.toString() || '3000'
 
-      const targetUrl = `http://${containerIp}:${internalPort}${subPath}${search}`
+      // Ensure the sidecar proxy agent is running inside the container
+      await ensureSidecarRunning(project.container_id)
+
+      const containerIp = await getContainerIp(project.container_id)
+      if (!containerIp) {
+        throw new Error('Container IP not found. Is it running?')
+      }
+
+      // Route ALL traffic through the sidecar on port 9999 with X-Target-Port header.
+      // The sidecar runs inside the container and can reach localhost-bound servers.
+      const targetUrl = `http://${containerIp}:${SIDECAR_PORT}${subPath}${search}`
 
       const headersToForward: Record<string, string> = {
-        'Host': `localhost:${internalPort}`,
+        'Host': `localhost:${targetPort}`,
         'Accept': req.headers.get('accept') || '*/*',
         'User-Agent': req.headers.get('user-agent') || 'CloudCodeProxy/1.0',
         'Accept-Encoding': 'identity', // Strongly request uncompressed
       }
 
       if (req.headers.get('origin')) {
-        headersToForward['Origin'] = `http://localhost:${internalPort}`
+        headersToForward['Origin'] = `http://localhost:${targetPort}`
       }
       if (req.headers.get('referer')) {
-        headersToForward['Referer'] = `http://localhost:${internalPort}${subPath}`
+        headersToForward['Referer'] = `http://localhost:${targetPort}${subPath}`
       }
 
       const cookieHeader = req.headers.get('cookie')
       if (cookieHeader) {
         headersToForward['Cookie'] = cookieHeader
       }
+
+      // Add the target port header for the sidecar to forward to
+      headersToForward['X-Target-Port'] = targetPort
 
       const response = await fetch(targetUrl, {
         headers: headersToForward,
