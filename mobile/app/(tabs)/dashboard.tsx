@@ -446,57 +446,7 @@ export default function DashboardScreen() {
           )}
         </Animated.View>
 
-        {/* Quick Actions - Premium 3-Column Grid */}
-        <Animated.View entering={FadeInDown.delay(100).duration(200)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 12 }]}>Quick Actions</Text>
-          
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {/* New Workspace */}
-            <PressableScale 
-              onPress={() => router.push('/new-project')}
-              style={{ flex: 1 }}
-            >
-              <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(63,185,80,0.12)' : 'rgba(34,197,94,0.08)' }]}>
-                  <Zap size={16} color={isDark ? '#3FB950' : '#22C55E'} strokeWidth={2.5} />
-                </View>
-                <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
-                  New Workspace
-                </Text>
-              </View>
-            </PressableScale>
 
-            {/* AI Copilot */}
-            <PressableScale 
-              onPress={() => router.push('/(tabs)/ai')}
-              style={{ flex: 1 }}
-            >
-              <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(210,168,255,0.12)' : 'rgba(139,92,246,0.08)' }]}>
-                  <Sparkles size={16} color={isDark ? '#D2A8FF' : '#8B5CF6'} strokeWidth={2} />
-                </View>
-                <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
-                  AI Copilot
-                </Text>
-              </View>
-            </PressableScale>
-
-            {/* SSH Keys */}
-            <PressableScale 
-              onPress={() => { setSettingsSubScreen('gitSsh'); router.push('/(tabs)/settings') }}
-              style={{ flex: 1 }}
-            >
-              <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(88,166,255,0.12)' : 'rgba(59,130,246,0.08)' }]}>
-                  <Key size={16} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
-                </View>
-                <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
-                  SSH Keys
-                </Text>
-              </View>
-            </PressableScale>
-          </View>
-        </Animated.View>
 
         {/* System Diagnostics */}
         <Animated.View entering={FadeInDown.delay(150).duration(200)} style={styles.section}>

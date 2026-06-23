@@ -397,75 +397,6 @@ export default function ProjectsScreen() {
     </View>
   )
 
-  const QuickActionsWidget = () => {
-    const handleAskAIToBuild = () => {
-      useAIStore.setState({ pendingPrompt: "Help me design and build a new workspace application..." })
-      router.push('/(tabs)/ai')
-    }
-
-    const handleOpenWorkspace = () => {
-      if (projects.length > 0) {
-        router.push(`/project/${projects[0].id}`)
-      } else {
-        Alert.alert("No Workspaces", "Please create a workspace first.")
-      }
-    }
-
-    return (
-      <View style={{ marginTop: 24, paddingBottom: 60 }}>
-        <Text style={{ fontSize: 16, fontFamily: 'Inter_600SemiBold', color: colors.text, letterSpacing: -0.3, marginBottom: 12 }}>
-          Quick Actions
-        </Text>
-        
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          {/* New Workspace */}
-          <PressableScale 
-            onPress={() => router.push('/new-project')}
-            style={{ flex: 1 }}
-          >
-            <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-              <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(63,185,80,0.12)' : 'rgba(34,197,94,0.08)' }]}>
-                <Plus size={16} color={isDark ? '#3FB950' : '#22C55E'} strokeWidth={2.5} />
-              </View>
-              <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
-                New Workspace
-              </Text>
-            </View>
-          </PressableScale>
-
-          {/* Open Latest */}
-          <PressableScale 
-            onPress={handleOpenWorkspace}
-            style={{ flex: 1 }}
-          >
-            <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-              <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(88,166,255,0.12)' : 'rgba(59,130,246,0.08)' }]}>
-                <Terminal size={16} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
-              </View>
-              <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
-                Open Latest
-              </Text>
-            </View>
-          </PressableScale>
-
-          {/* Ask AI to Build */}
-          <PressableScale 
-            onPress={handleAskAIToBuild}
-            style={{ flex: 1 }}
-          >
-            <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-              <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(210,168,255,0.12)' : 'rgba(139,92,246,0.08)' }]}>
-                <Sparkles size={16} color={isDark ? '#D2A8FF' : '#8B5CF6'} strokeWidth={2} />
-              </View>
-              <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
-                Ask AI to Build
-              </Text>
-            </View>
-          </PressableScale>
-        </View>
-      </View>
-    )
-  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -603,7 +534,7 @@ export default function ProjectsScreen() {
               </View>
             ) : emptyState
           )}
-          ListFooterComponent={filteredProjects.length > 0 ? <QuickActionsWidget /> : null}
+          ListFooterComponent={null}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
