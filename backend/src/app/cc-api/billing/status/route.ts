@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
     // 4. Calculate CPU hours from sessions with self-healing for dangling sessions
     const { data: sessions } = await supabaseAdmin
       .from('sessions')
-      .select('project_id, started_at, ended_at')
+      .select('id, project_id, started_at, ended_at')
       .eq('user_github_id', user.id)
 
     let totalCpuSeconds = 0
