@@ -1202,41 +1202,19 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                   </View>
                   <Text style={[styles.lockedTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Developer Tools Locked</Text>
                   <Text style={[styles.lockedDesc, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                    {userTier === 'pro' 
-                      ? 'Advanced Developer Tools (Console logs, Network inspector, and DOM tree explorer) are restricted to the Advanced tier.'
-                      : 'Advanced Developer Tools (Console logs, Network inspector, and DOM tree explorer) are restricted to Pro and Advanced tiers.'
-                    }
+                    Developer Tools (Console logs, Network inspector, and DOM tree explorer) are restricted to the Advanced tier. Please upgrade your plan to unlock.
                   </Text>
 
                   {isUpgrading ? (
                     <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 12 }} />
                   ) : (
                     <View style={styles.upgradeActionsRow}>
-                      {userTier === 'free' && (
-                        <TouchableOpacity
-                          onPress={() => handleUpgrade('pro')}
-                          style={[styles.upgradeBtn, { backgroundColor: colors.primary }]}
-                          activeOpacity={0.8}
-                        >
-                          <Text style={[styles.upgradeBtnText, { color: isDark ? '#000' : '#fff' }]}>Upgrade to Pro</Text>
-                        </TouchableOpacity>
-                      )}
                       <TouchableOpacity
                         onPress={() => handleUpgrade('advanced')}
-                        style={[
-                          styles.upgradeBtn, 
-                          userTier === 'pro' 
-                            ? { backgroundColor: colors.primary } 
-                            : { borderWidth: 1, borderColor: colors.border, backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }
-                        ]}
+                        style={[styles.upgradeBtn, { backgroundColor: colors.primary }]}
                         activeOpacity={0.8}
                       >
-                        <Text style={[
-                          styles.upgradeBtnText, 
-                          userTier === 'pro' 
-                            ? { color: isDark ? '#000' : '#fff' } 
-                            : { color: colors.text }
-                        ]}>
+                        <Text style={[styles.upgradeBtnText, { color: isDark ? '#000' : '#fff' }]}>
                           Upgrade to Advanced
                         </Text>
                       </TouchableOpacity>
