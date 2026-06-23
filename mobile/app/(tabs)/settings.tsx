@@ -178,7 +178,7 @@ export default function SettingsScreen() {
     isActive: boolean
   ) {
     const isDarkTheme = isDark
-    const tierColor = tierKey === 'free' ? '#9CA3AF' : tierKey === 'pro' ? '#A855F7' : '#C084FC'
+    const tierColor = tierKey === 'free' ? '#64748B' : tierKey === 'pro' ? '#475569' : '#1E293B'
     const isLoading = loadingCheckoutTier === tierKey
 
     const specs = {
@@ -221,13 +221,13 @@ export default function SettingsScreen() {
           width: 280,
           backgroundColor: isDarkTheme ? '#121620' : '#FFFFFF',
           borderWidth: isActive ? 2 : 1,
-          borderColor: isActive ? '#8B5CF6' : (isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
+          borderColor: isActive ? (isDarkTheme ? '#E2E8F0' : '#334155') : (isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
           borderRadius: 20,
           padding: 16,
           gap: 12,
-          shadowColor: isActive ? '#8B5CF6' : 'transparent',
+          shadowColor: isActive ? (isDarkTheme ? '#FFFFFF' : '#000000') : 'transparent',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isActive ? 0.12 : 0,
+          shadowOpacity: isActive ? 0.08 : 0,
           shadowRadius: 6,
           elevation: isActive ? 3 : 0,
         }}
@@ -260,8 +260,8 @@ export default function SettingsScreen() {
           </View>
 
           {isActive ? (
-            <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)' }}>
-              <Text style={{ color: '#8B5CF6', fontSize: 9, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
+            <View style={{ backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ color: colors.text, fontSize: 9, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
             </View>
           ) : (
             tierKey !== 'free' && (
@@ -270,7 +270,7 @@ export default function SettingsScreen() {
                 disabled={loadingCheckoutTier !== null}
                 onPress={() => handleUpgradeTierDirect(tierKey as 'pro' | 'advanced')}
                 style={{
-                  backgroundColor: '#8B5CF6',
+                  backgroundColor: isDarkTheme ? '#FFFFFF' : '#1E293B',
                   paddingHorizontal: 12,
                   paddingVertical: 5,
                   borderRadius: 6,
@@ -294,15 +294,15 @@ export default function SettingsScreen() {
         {/* Hardware core capsules */}
         <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'space-between' }}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
-            <Cpu size={12} color="#8B5CF6" />
+            <Cpu size={12} color="#64748B" />
             <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.cpu}</Text>
           </View>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
-            <HardDrive size={12} color="#8B5CF6" />
+            <HardDrive size={12} color="#64748B" />
             <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ram}</Text>
           </View>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
-            <Database size={12} color="#8B5CF6" />
+            <Database size={12} color="#64748B" />
             <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ssd}</Text>
           </View>
         </View>
@@ -313,35 +313,35 @@ export default function SettingsScreen() {
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Server size={14} color="#8B5CF6" />
+              <Server size={14} color="#64748B" />
               <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Workspaces</Text>
             </View>
             <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.workspaces}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Sparkles size={14} color="#8B5CF6" />
+              <Sparkles size={14} color="#64748B" />
               <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Monthly AI Tokens</Text>
             </View>
             <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.tokens}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Wifi size={14} color="#8B5CF6" />
+              <Wifi size={14} color="#64748B" />
               <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Network Bandwidth</Text>
             </View>
             <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.network}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Shield size={14} color="#8B5CF6" />
+              <Shield size={14} color="#64748B" />
               <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>API Requests</Text>
             </View>
             <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.api}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Clock size={14} color="#8B5CF6" />
+              <Clock size={14} color="#64748B" />
               <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Inactivity Sleep</Text>
             </View>
             <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.timeout}</Text>
@@ -1206,17 +1206,16 @@ export default function SettingsScreen() {
           <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Billing & Usage</Text>
         </View>
 
-        <View style={{ paddingHorizontal: 24, gap: 20 }}>
-          {/* Active Subscription Summary Card */}
+        <View style={{ paddingHorizontal: 24, gap: 20           {/* Active Subscription Summary Card */}
           <View style={{ 
             backgroundColor: isDark ? '#111622' : '#FFFFFF',
             borderRadius: 20, 
             padding: 18, 
             borderWidth: 1.5, 
-            borderColor: '#8B5CF6', 
-            shadowColor: '#8B5CF6',
+            borderColor: isDark ? '#334155' : '#475569', 
+            shadowColor: isDark ? '#000000' : 'rgba(0,0,0,0.1)',
             shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: isDark ? 0.2 : 0.08,
+            shadowOpacity: isDark ? 0.35 : 0.08,
             shadowRadius: 12,
             elevation: 4,
             gap: 14
@@ -1232,42 +1231,42 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <View style={{ 
-                backgroundColor: 'rgba(139, 92, 246, 0.12)', 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', 
                 paddingHorizontal: 10, 
                 paddingVertical: 4, 
                 borderRadius: 8, 
                 borderWidth: 1, 
-                borderColor: 'rgba(139, 92, 246, 0.3)' 
+                borderColor: colors.border 
               }}>
-                <Text style={{ color: '#8B5CF6', fontSize: 10.5, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
+                <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
               </View>
             </View>
 
             {/* Spec capsules row */}
             <View style={{ flexDirection: 'row', gap: 6 }}>
               <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
-                <Cpu size={14} color="#8B5CF6" />
+                <Cpu size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '0.5 Core' : currentTier.name === 'pro' ? '4 Cores' : '8 Cores'}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>vCPU</Text>
               </View>
               <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
-                <HardDrive size={14} color="#8B5CF6" />
+                <HardDrive size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '512 MB' : currentTier.name === 'pro' ? '8 GB' : '32 GB'}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>RAM</Text>
               </View>
               <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
-                <Database size={14} color="#8B5CF6" />
+                <Database size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '5 GB' : currentTier.name === 'pro' ? '50 GB' : '200 GB'}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>SSD</Text>
               </View>
               <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
-                <Server size={14} color="#8B5CF6" />
+                <Server size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '3 Max' : currentTier.name === 'pro' ? '20 Max' : 'Unlimited'}
                 </Text>
@@ -1304,14 +1303,14 @@ export default function SettingsScreen() {
                 disabled={loadingCheckoutTier !== null}
                 onPress={() => handleUpgradeTierDirect('pro')}
                 style={{
-                  backgroundColor: '#8B5CF6',
+                  backgroundColor: isDark ? '#FFFFFF' : '#1E293B',
                   paddingVertical: 12,
                   borderRadius: 12,
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  shadowColor: '#8B5CF6',
+                  shadowColor: isDark ? '#000000' : 'rgba(0,0,0,0.2)',
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.25,
                   shadowRadius: 6,
@@ -1319,6 +1318,19 @@ export default function SettingsScreen() {
                   marginTop: 2
                 }}
               >
+                {loadingCheckoutTier === 'pro' ? (
+                  <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
+                ) : (
+                  <>
+                    <Zap size={14} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={2.5} />
+                    <Text style={{ color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }}>
+                      Upgrade to Pro Developer · $25/mo
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>    >
                 {loadingCheckoutTier === 'pro' ? (
                   <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
                 ) : (
