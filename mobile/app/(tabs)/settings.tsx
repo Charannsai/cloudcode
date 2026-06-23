@@ -1204,6 +1204,132 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          {/* Active Subscription Summary Card */}
+          <View style={{ 
+            backgroundColor: isDark ? '#111622' : '#FFFFFF',
+            borderRadius: 20, 
+            padding: 18, 
+            borderWidth: 1.5, 
+            borderColor: '#8B5CF6', 
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: isDark ? 0.2 : 0.08,
+            shadowRadius: 12,
+            elevation: 4,
+            gap: 14
+          }}>
+            {/* Header info */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View>
+                <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                  ACTIVE PLAN
+                </Text>
+                <Text style={{ color: colors.text, fontSize: 20, fontFamily: 'Inter_800ExtraBold', marginTop: 2 }}>
+                  {currentTier.displayName}
+                </Text>
+              </View>
+              <View style={{ 
+                backgroundColor: 'rgba(139, 92, 246, 0.12)', 
+                paddingHorizontal: 10, 
+                paddingVertical: 4, 
+                borderRadius: 8, 
+                borderWidth: 1, 
+                borderColor: 'rgba(139, 92, 246, 0.3)' 
+              }}>
+                <Text style={{ color: '#8B5CF6', fontSize: 10.5, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
+              </View>
+            </View>
+
+            {/* Spec capsules row */}
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+                <Cpu size={14} color="#8B5CF6" />
+                <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
+                  {currentTier.name === 'free' ? '0.5 Core' : currentTier.name === 'pro' ? '4 Cores' : '8 Cores'}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>vCPU</Text>
+              </View>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+                <HardDrive size={14} color="#8B5CF6" />
+                <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
+                  {currentTier.name === 'free' ? '512 MB' : currentTier.name === 'pro' ? '8 GB' : '32 GB'}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>RAM</Text>
+              </View>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+                <Database size={14} color="#8B5CF6" />
+                <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
+                  {currentTier.name === 'free' ? '5 GB' : currentTier.name === 'pro' ? '50 GB' : '200 GB'}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>SSD</Text>
+              </View>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+                <Server size={14} color="#8B5CF6" />
+                <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
+                  {currentTier.name === 'free' ? '3 Max' : currentTier.name === 'pro' ? '20 Max' : 'Unlimited'}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>Nodes</Text>
+              </View>
+            </View>
+
+            {/* Extra active limitations or info */}
+            <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', padding: 10, borderRadius: 10, gap: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_500Medium' }}>Monthly AI Tokens:</Text>
+                <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>
+                  {currentTier.name === 'free' ? '50,000' : currentTier.name === 'pro' ? '5,000,000' : 'Unlimited'}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_500Medium' }}>Network Cap / API Limit:</Text>
+                <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>
+                  {currentTier.name === 'free' ? '15 Mbps / 25 rpm' : currentTier.name === 'pro' ? 'Uncapped / 500 rpm' : 'Uncapped / Unlimited'}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_500Medium' }}>Inactivity Timeout Sleep:</Text>
+                <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>
+                  {currentTier.name === 'free' ? '10 mins' : currentTier.name === 'pro' ? '60 mins' : 'Always-On (Never sleeps)'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Quick Upgrade Button if user is on Free Tier */}
+            {currentTier.name === 'free' && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                disabled={loadingCheckoutTier !== null}
+                onPress={() => handleUpgradeTierDirect('pro')}
+                style={{
+                  backgroundColor: '#8B5CF6',
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  shadowColor: '#8B5CF6',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 6,
+                  elevation: 2,
+                  marginTop: 2
+                }}
+              >
+                {loadingCheckoutTier === 'pro' ? (
+                  <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
+                ) : (
+                  <>
+                    <Zap size={14} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={2.5} />
+                    <Text style={{ color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }}>
+                      Upgrade to Pro Developer · $25/mo
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
           {/* Plans Comparison Horizontal Swiper Section */}
           <View style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
