@@ -1330,19 +1330,6 @@ export default function SettingsScreen() {
                 )}
               </TouchableOpacity>
             )}
-          </View>    >
-                {loadingCheckoutTier === 'pro' ? (
-                  <ActivityIndicator size="small" color={isDark ? '#000000' : '#FFFFFF'} />
-                ) : (
-                  <>
-                    <Zap size={14} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={2.5} />
-                    <Text style={{ color: isDark ? '#000000' : '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 13 }}>
-                      Upgrade to Pro Developer · $25/mo
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
           </View>
 
           {/* Plans Comparison Horizontal Swiper Section */}
