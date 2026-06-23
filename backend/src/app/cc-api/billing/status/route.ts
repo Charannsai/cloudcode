@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { TIERS, getTierConfig, type TierName } from '@/lib/tiers'
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { docker } from '@/lib/docker'
 
 // Helper to recursively calculate directory size in bytes
 async function getDirSize(dirPath: string): Promise<number> {
@@ -54,12 +55,60 @@ export async function GET(req: NextRequest) {
     // 2. Fetch projects for workspaces & RAM calculation
     const { data: userProjects } = await supabaseAdmin
       .from('projects')
-      .select('id, name, status')
+      .select('id, name, status, container_id')
       .eq('user_github_id', user.id)
 
     const workspacesCount = userProjects?.length || 0
-    const runningProjects = userProjects?.filter(p => p.status === 'running' || p.status === 'ready') || []
-    
+    const runningProjects: any[] = []
+
+    try {
+      const runningContainersList = await docker.listContainers({ all: true })
+      const runningIdsMap = new Map(
+        runningContainersList.map(c => [c.Id, c.State])
+      )
+
+      if (userProjects) {
+        for (const project of userProjects) {
+          let isLive = false
+          if (project.container_id) {
+            const state = runningIdsMap.get(project.container_id)
+            if (state === 'running') {
+              isLive = true
+            } else if (project.status === 'running' || project.status === 'ready') {
+              // Stale status in DB (container is stopped or deleted). Sync to 'stopped'.
+              Promise.resolve(
+                supabaseAdmin
+                  .from('projects')
+                  .update({ status: 'stopped' })
+                  .eq('id', project.id)
+              ).then(() => console.log(`[Billing Sync] Synced project ${project.id} status to stopped`))
+              .catch(console.error)
+              project.status = 'stopped'
+            }
+          } else if (project.status === 'running' || project.status === 'ready') {
+            // Missing container ID completely. Sync status.
+            Promise.resolve(
+              supabaseAdmin
+                .from('projects')
+                .update({ status: 'stopped' })
+                .eq('id', project.id)
+            ).then(() => console.log(`[Billing Sync] Synced project ${project.id} with null container to stopped`))
+            .catch(console.error)
+            project.status = 'stopped'
+          }
+
+          if (isLive) {
+            runningProjects.push(project)
+          }
+        }
+      }
+    } catch (dockerErr) {
+      console.warn('[Billing Status] Failed to query Docker daemon. Falling back to DB status.', dockerErr)
+      if (userProjects) {
+        runningProjects.push(...userProjects.filter(p => p.status === 'running' || p.status === 'ready'))
+      }
+    }
+
     // Calculate RAM usage (approximated based on active containers, e.g. 128MB base per container)
     const ramUsedMB = runningProjects.length * 128
 
