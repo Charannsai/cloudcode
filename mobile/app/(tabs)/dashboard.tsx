@@ -7,6 +7,7 @@ import { Project } from '@/types'
 import { cache } from '@/hooks/useCache'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
+import { useProjectsStore } from '@/store/projects'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { 
   Cpu, 
@@ -169,20 +170,9 @@ export default function DashboardScreen() {
   const [diagnostics, setDiagnostics] = useState<DiagnosticsData | null>(null)
   const [latency, setLatency] = useState<number | null>(null)
   
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
+  const { projects: allProjects, loading, fetchProjects } = useProjectsStore()
+  const projects = allProjects.slice(0, 5)
   const [showSkeleton, setShowSkeleton] = useState(false)
-
-  // Load cached projects on startup
-  useEffect(() => {
-    async function loadCached() {
-      const cached = await cache.get<Project[]>('cached_projects')
-      if (cached) {
-        setProjects(cached.slice(0, 5))
-      }
-    }
-    loadCached()
-  }, [])
 
   useEffect(() => {
     let t: any
@@ -207,20 +197,6 @@ export default function DashboardScreen() {
       setLatency(endTime - startTime)
     } catch (e) {
       console.warn('Failed to fetch diagnostics', e)
-    }
-  }, [])
-
-  const fetchProjects = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true)
-    try {
-      const data = await api.projects.list()
-      const sorted = data.slice(0, 5)
-      setProjects(sorted)
-      await cache.set('cached_projects', data)
-    } catch (error) {
-      console.warn('Failed to fetch projects', error)
-    } finally {
-      setLoading(false)
     }
   }, [])
 

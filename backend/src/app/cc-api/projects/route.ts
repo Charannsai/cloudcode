@@ -37,9 +37,27 @@ export async function GET(req: NextRequest) {
         const dockerState = runningIdsMap.get(project.container_id)
         if (dockerState === 'running') {
           liveStatus = 'running'
-        } else if (dockerState === 'exited' || dockerState === 'paused') {
+        } else {
           liveStatus = 'stopped'
+          if (project.status === 'running' || project.status === 'ready') {
+            Promise.resolve(
+              supabaseAdmin
+                .from('projects')
+                .update({ status: 'stopped' })
+                .eq('id', project.id)
+            ).then(() => console.log(`[Project list Sync] Synced project ${project.id} status to stopped`))
+            .catch(console.error)
+          }
         }
+      } else if (project.status === 'running' || project.status === 'ready') {
+        liveStatus = 'stopped'
+        Promise.resolve(
+          supabaseAdmin
+            .from('projects')
+            .update({ status: 'stopped' })
+            .eq('id', project.id)
+        ).then(() => console.log(`[Project list Sync] Synced project ${project.id} with null container to stopped`))
+        .catch(console.error)
       }
       return {
         ...project,
