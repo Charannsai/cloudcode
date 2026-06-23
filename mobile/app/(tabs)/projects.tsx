@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, Alert, ScrollView, Pressable, Modal,
+  RefreshControl, Alert, ScrollView, Pressable, Modal, Dimensions,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
@@ -20,8 +20,12 @@ import {
   Search,
   X,
   MoreVertical,
+  List,
+  Grid,
 } from 'lucide-react-native'
 import { TextInput } from 'react-native'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 import { ProjectIcon, detectProjectTech, getTechColors } from '@/components/ProjectIcon'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import Animated, { 
@@ -85,6 +89,7 @@ export default function ProjectsScreen() {
   const [showSkeleton, setShowSkeleton] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'idle'>('all')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
 
   const [activeProjectForMenu, setActiveProjectForMenu] = useState<Project | null>(null)
   const [isRenameMode, setIsRenameMode] = useState(false)
@@ -177,6 +182,59 @@ export default function ProjectsScreen() {
     const techColors = getTechColors(tech, isDark)
     const isRunning = p.status === 'running'
 
+    if (viewMode === 'grid') {
+      return (
+        <Animated.View 
+          entering={FadeInDown.delay(Math.min(index * 25, 100)).duration(180)}
+          style={{ width: (SCREEN_WIDTH - 40 - 10) / 2 }}
+        >
+          <PressableScale
+            style={[styles.projectGridCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
+            onPress={() => router.push(`/project/${p.id}`)}
+          >
+            {/* Header: Icon + Menu Button */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <View style={[styles.projectGridIcon, { backgroundColor: techColors.bg }]}>
+                <ProjectIcon type={p.type} name={p.name} githubUrl={p.github_url} size={18} isDark={isDark} />
+              </View>
+              <TouchableOpacity 
+                onPress={() => setActiveProjectForMenu(p)} 
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{ padding: 4 }}
+              >
+                <MoreVertical size={16} color={colors.textSecondary} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Name */}
+            <View style={{ marginTop: 16, width: '100%' }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }} numberOfLines={1}>
+                {p.name}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11.5, marginTop: 2, textTransform: 'capitalize' }} numberOfLines={1}>
+                {tech}
+              </Text>
+            </View>
+
+            {/* Status Footer */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 14, width: '100%' }}>
+              {isRunning ? (
+                <>
+                  <PulseDot color="#3FB950" />
+                  <Text style={{ color: isDark ? '#3FB950' : '#16A34A', fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>Active</Text>
+                </>
+              ) : (
+                <>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: 0.4 }} />
+                  <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_500Medium' }}>Idle</Text>
+                </>
+              )}
+            </View>
+          </PressableScale>
+        </Animated.View>
+      )
+    }
+
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index * 25, 100)).duration(180)}>
         <PressableScale
@@ -216,9 +274,9 @@ export default function ProjectsScreen() {
             <TouchableOpacity 
               onPress={() => setActiveProjectForMenu(p)} 
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={{ padding: 6 }}
+              style={{ padding: 6, marginRight: -4 }}
             >
-              <MoreVertical size={16} color={colors.textSecondary} strokeWidth={2} />
+              <MoreVertical size={18} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
         </PressableScale>
@@ -226,16 +284,30 @@ export default function ProjectsScreen() {
     )
   }
 
-  const ProjectSkeleton = () => (
-    <View style={[styles.projectRow, { backgroundColor: cardBg, borderColor: cardBorder, opacity: 0.5 }]}>
-      <View style={[styles.projectIcon, { backgroundColor: subtleBg }]} />
-      <View style={styles.projectInfo}>
-        <View style={{ backgroundColor: subtleBg, height: 14, width: '65%', borderRadius: 4 }} />
-        <View style={{ backgroundColor: subtleBg, height: 10, width: '35%', borderRadius: 4, marginTop: 6 }} />
+  const ProjectSkeleton = () => {
+    if (viewMode === 'grid') {
+      return (
+        <View style={[styles.projectGridCard, { backgroundColor: cardBg, borderColor: cardBorder, opacity: 0.5, width: (SCREEN_WIDTH - 40 - 10) / 2 }]}>
+          <View style={[styles.projectGridIcon, { backgroundColor: subtleBg }]} />
+          <View style={{ marginTop: 16, width: '100%' }}>
+            <View style={{ backgroundColor: subtleBg, height: 12, width: '70%', borderRadius: 4 }} />
+            <View style={{ backgroundColor: subtleBg, height: 9, width: '45%', borderRadius: 4, marginTop: 6 }} />
+          </View>
+          <View style={{ backgroundColor: subtleBg, height: 8, width: '30%', borderRadius: 4, marginTop: 14 }} />
+        </View>
+      )
+    }
+    return (
+      <View style={[styles.projectRow, { backgroundColor: cardBg, borderColor: cardBorder, opacity: 0.5 }]}>
+        <View style={[styles.projectIcon, { backgroundColor: subtleBg }]} />
+        <View style={styles.projectInfo}>
+          <View style={{ backgroundColor: subtleBg, height: 14, width: '65%', borderRadius: 4 }} />
+          <View style={{ backgroundColor: subtleBg, height: 10, width: '35%', borderRadius: 4, marginTop: 6 }} />
+        </View>
+        <MoreVertical size={16} color={cardBorder} strokeWidth={1.5} />
       </View>
-      <ChevronRight size={16} color={cardBorder} strokeWidth={1.5} />
-    </View>
-  )
+    )
+  }
 
   const emptyState = (
     <View style={styles.emptyContainer}>
@@ -415,9 +487,9 @@ export default function ProjectsScreen() {
         </View>
       </View>
 
-      {/* Filter pills */}
-      <View style={{ paddingHorizontal: 20, marginBottom: 14 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      {/* Filter pills and Layout Switch */}
+      <View style={{ paddingHorizontal: 20, marginBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ flex: 1 }}>
           {(['all', 'running', 'idle'] as const).map(f => {
             const isActive = statusFilter === f
             return (
@@ -447,20 +519,56 @@ export default function ProjectsScreen() {
             )
           })}
         </ScrollView>
+
+        {/* Layout Switcher */}
+        <View style={{ flexDirection: 'row', gap: 4, backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderRadius: 8, padding: 2, borderWidth: 1, borderColor: cardBorder }}>
+          <TouchableOpacity
+            onPress={() => setViewMode('list')}
+            style={{
+              padding: 6,
+              borderRadius: 6,
+              backgroundColor: viewMode === 'list' ? (isDark ? '#30363D' : '#FFFFFF') : 'transparent',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: viewMode === 'list' ? 0.1 : 0,
+              shadowRadius: 1,
+            }}
+          >
+            <List size={16} color={viewMode === 'list' ? colors.text : colors.textSecondary} strokeWidth={2} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setViewMode('grid')}
+            style={{
+              padding: 6,
+              borderRadius: 6,
+              backgroundColor: viewMode === 'grid' ? (isDark ? '#30363D' : '#FFFFFF') : 'transparent',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: viewMode === 'grid' ? 0.1 : 0,
+              shadowRadius: 1,
+            }}
+          >
+            <Grid size={16} color={viewMode === 'grid' ? colors.text : colors.textSecondary} strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {showSkeletonState ? (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={[{ paddingHorizontal: 20, paddingBottom: 140 }, viewMode === 'grid' && { flexDirection: 'row', flexWrap: 'wrap', gap: 10 }]} showsVerticalScrollIndicator={false}>
+          <ProjectSkeleton />
           <ProjectSkeleton />
           <ProjectSkeleton />
           <ProjectSkeleton />
         </ScrollView>
       ) : (
         <FlatList
+          key={viewMode}
+          numColumns={viewMode === 'grid' ? 2 : 1}
           data={filteredProjects}
           renderItem={renderProject}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          columnWrapperStyle={viewMode === 'grid' ? { justifyContent: 'space-between', marginBottom: 10 } : null}
           ListEmptyComponent={loading ? null : (
             searchQuery !== '' ? (
               <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center' }}>
@@ -719,6 +827,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     marginTop: 8,
     textAlign: 'center',
+  },
+  projectGridCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    alignItems: 'flex-start',
+    height: 136,
+  },
+  projectGridIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalBackdrop: {
     flex: 1,
