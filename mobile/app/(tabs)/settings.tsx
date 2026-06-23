@@ -12,7 +12,7 @@ import * as Linking from 'expo-linking'
 import { useAuthStore } from '@/store/auth'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { 
-  Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight,
+  Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight, ChevronDown,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
   CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
   Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit, Info, Database
