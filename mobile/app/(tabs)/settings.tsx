@@ -1589,12 +1589,21 @@ export default function SettingsScreen() {
       const history = getComputeHistoryData()
       if (!history.hasData) {
         return (
-          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 12 }}>
-            <Clock size={32} color="#8B5CF6" style={{ opacity: 0.8 }} />
-            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>No Compute Activity</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 11.5, textAlign: 'center', lineHeight: 16 }}>
-              No compute usage logs were recorded during the selected period. Start or edit a project workspace to track usage.
-            </Text>
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
+              <Clock size={22} color="#8B5CF6" />
+            </View>
+            <View style={{ alignItems: 'center', gap: 4 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>No Compute Activity</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 12 }}>
+                No compute usage logs were recorded during this period. Start or edit a project workspace to begin tracking runtime hours.
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, width: '100%', justifyContent: 'center', height: 20, alignItems: 'flex-end', marginTop: 8 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={{ flex: 1, height: 4, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)', borderRadius: 2 }} />
+              ))}
+            </View>
           </View>
         )
       }
@@ -1745,12 +1754,21 @@ export default function SettingsScreen() {
       const history = getTokenHistoryData()
       if (!history.hasData) {
         return (
-          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 12 }}>
-            <Sparkles size={32} color="#8B5CF6" style={{ opacity: 0.8 }} />
-            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>No AI Tokens Used</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 11.5, textAlign: 'center', lineHeight: 16 }}>
-              No AI queries or tokens were processed in this timeline. Interact with the chat assistant or run inline prompt commands to use AI quota.
-            </Text>
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={22} color="#8B5CF6" />
+            </View>
+            <View style={{ alignItems: 'center', gap: 4 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>No AI Tokens Used</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 12 }}>
+                No AI queries or tokens were processed in this timeline. Interact with the chat assistant or run inline prompt commands to use AI quota.
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, width: '100%', justifyContent: 'center', height: 20, alignItems: 'flex-end', marginTop: 8 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={{ flex: 1, height: 4, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)', borderRadius: 2 }} />
+              ))}
+            </View>
           </View>
         )
       }
@@ -2089,12 +2107,21 @@ export default function SettingsScreen() {
       const history = getByokTokenHistoryData()
       if (!history.hasData) {
         return (
-          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 12 }}>
-            <Sparkles size={32} color="#8B5CF6" style={{ opacity: 0.8 }} />
-            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>No BYOK Tokens Used</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 11.5, textAlign: 'center', lineHeight: 16 }}>
-              No BYOK API request tokens have been consumed during this period.
-            </Text>
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={22} color="#8B5CF6" />
+            </View>
+            <View style={{ alignItems: 'center', gap: 4 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>No BYOK Tokens Used</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 12 }}>
+                No BYOK API request tokens have been consumed during this period. Route your custom keys to track usage.
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, width: '100%', justifyContent: 'center', height: 20, alignItems: 'flex-end', marginTop: 8 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={{ flex: 1, height: 4, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)', borderRadius: 2 }} />
+              ))}
+            </View>
           </View>
         )
       }
