@@ -349,8 +349,6 @@ export default function SettingsScreen() {
       </View>
     )
   }
-    )
-  }
 
   const getComputeHistoryData = () => {
     const sessions = billingData?.sessions || []
