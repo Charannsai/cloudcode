@@ -294,12 +294,13 @@ export async function ensureContainerRunning(projectId: string): Promise<boolean
     return true
   }
 
-  // Check if SSH volume is bound to /home/coder/.ssh
+  // Check if SSH volume and sidecar script are bound correctly
   const binds = info.HostConfig?.Binds || []
   const hasSshBind = binds.some((b: string) => b.endsWith(':/home/coder/.ssh'))
+  const hasSidecarBind = binds.some((b: string) => b.endsWith(':/usr/local/bin/sidecar.js:ro') || b.endsWith(':/usr/local/bin/sidecar.js'))
 
-  if (!hasSshBind) {
-    console.log(`[Self-Healing] Container ${project.container_id} is missing SSH volume bind. Recreating...`)
+  if (!hasSshBind || !hasSidecarBind) {
+    console.log(`[Self-Healing] Container ${project.container_id} is missing volume binds (SSH: ${hasSshBind}, Sidecar: ${hasSidecarBind}). Recreating...`)
     try {
       await destroyContainer(project.container_id)
     } catch (e) {}
@@ -312,7 +313,7 @@ export async function ensureContainerRunning(projectId: string): Promise<boolean
         port: newInfo.port ? parseInt(newInfo.port, 10) : null
       })
       .eq('id', projectId)
-    console.log(`[Self-Healing] Successfully recreated container ${newInfo.containerId} with SSH volume bind.`)
+    console.log(`[Self-Healing] Successfully recreated container ${newInfo.containerId} with SSH and sidecar volume binds.`)
     return true
   }
 
@@ -415,11 +416,12 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
   // Check if sidecar is already running
   let isRunning = false
   try {
-    await execInContainer(
+    const exitCode = await execInContainer(
       containerId,
-      ['sh', '-c', `pgrep -f 'node /usr/local/bin/sidecar.js' > /dev/null 2>&1`],
-      () => { isRunning = true }
+      ['sh', '-c', "pgrep -f 'node /usr/local/bin/sidecar.js'"],
+      () => {}
     )
+    isRunning = (exitCode === 0)
   } catch {}
 
   if (isRunning) {
