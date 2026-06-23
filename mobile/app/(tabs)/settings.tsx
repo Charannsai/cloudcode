@@ -148,6 +148,222 @@ export default function SettingsScreen() {
     visible: false,
     tierName: null,
   })
+  const [loadingCheckoutTier, setLoadingCheckoutTier] = useState<'pro' | 'advanced' | null>(null)
+
+  const handleUpgradeTierDirect = async (tierName: 'pro' | 'advanced') => {
+    setLoadingCheckoutTier(tierName)
+    try {
+      const returnUrl = Linking.createURL('/billing/success')
+      const planType = tierName === 'pro' ? 'pro_monthly' : 'advanced_monthly'
+      const { checkoutUrl } = await api.billing.checkout(planType, returnUrl)
+      if (checkoutUrl) {
+        await WebBrowser.openBrowserAsync(checkoutUrl)
+      }
+    } catch (err: any) {
+      showModal(
+        'Upgrade Error',
+        err.message || 'Failed to initialize payment session.',
+        'error'
+      )
+    } finally {
+      setLoadingCheckoutTier(null)
+    }
+  }
+
+  function renderPlanCard(
+    tierKey: 'free' | 'pro' | 'advanced',
+    title: string,
+    priceStr: string,
+    features: string[],
+    isActive: boolean
+  ) {
+    const isDarkTheme = isDark
+    const tierColor = tierKey === 'free' ? '#9CA3AF' : tierKey === 'pro' ? '#A855F7' : '#C084FC'
+    const isLoading = loadingCheckoutTier === tierKey
+
+    return (
+      <View 
+        key={tierKey}
+        style={{
+          backgroundColor: isDarkTheme ? '#121620' : '#FFFFFF',
+          borderWidth: isActive ? 2 : 1,
+          borderColor: isActive ? '#8B5CF6' : (isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
+          borderRadius: 20,
+          padding: 18,
+          gap: 12,
+          shadowColor: isActive ? '#8B5CF6' : 'transparent',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isActive ? 0.15 : 0,
+          shadowRadius: 8,
+          elevation: isActive ? 3 : 0,
+        }}
+      >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View 
+              style={{ 
+                width: 36, 
+                height: 36, 
+                borderRadius: 10, 
+                backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: isDarkTheme ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+              }}
+            >
+              <Zap size={18} color={tierColor} strokeWidth={2.5} />
+            </View>
+            <View>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }}>
+                {title}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12, marginTop: 1 }}>
+                {priceStr}
+              </Text>
+            </View>
+          </View>
+
+          {isActive ? (
+            <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)' }}>
+              <Text style={{ color: '#8B5CF6', fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
+            </View>
+          ) : (
+            tierKey !== 'free' && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                disabled={loadingCheckoutTier !== null}
+                onPress={() => handleUpgradeTierDirect(tierKey as 'pro' | 'advanced')}
+                style={{
+                  backgroundColor: '#8B5CF6',
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color={isDarkTheme ? '#000' : '#fff'} />
+                ) : (
+                  <Text style={{ color: isDarkTheme ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>
+                    Upgrade
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )
+          )}
+        </View>
+
+        <View style={{ height: 1, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', marginVertical: 2 }} />
+
+        <View style={{ gap: 6 }}>
+          {features.map((feat, idx) => (
+            <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Check size={12} color="#8B5CF6" strokeWidth={2.5} />
+              <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_400Regular' }}>
+                {feat}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    )
+  }
+
+  const getComputeHistoryData = () => {
+    const sessions = billingData?.sessions || []
+    const nowMs = Date.now()
+    let intervals: { start: number; end: number; label: string }[] = []
+
+    if (timelineFilter === '1h') {
+      for (let i = 5; i >= 0; i--) {
+        const end = nowMs - i * 10 * 60 * 1000
+        const start = end - 10 * 60 * 1000
+        const dateObj = new Date(end)
+        const label = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
+        intervals.push({ start, end, label })
+      }
+    } else if (timelineFilter === '24h') {
+      for (let i = 5; i >= 0; i--) {
+        const end = nowMs - i * 4 * 60 * 60 * 1000
+        const start = end - 4 * 60 * 60 * 1000
+        const dateObj = new Date(end)
+        const label = `${String(dateObj.getHours()).padStart(2, '0')}:00`
+        intervals.push({ start, end, label })
+      }
+    } else if (timelineFilter === '3d') {
+      for (let i = 2; i >= 0; i--) {
+        const end = nowMs - i * 24 * 60 * 60 * 1000
+        const start = end - 24 * 60 * 60 * 1000
+        const dateObj = new Date(end)
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const label = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : `${months[dateObj.getMonth()]} ${dateObj.getDate()}`
+        intervals.push({ start, end, label })
+      }
+    } else if (timelineFilter === '7d') {
+      for (let i = 6; i >= 0; i--) {
+        const end = nowMs - i * 24 * 60 * 60 * 1000
+        const start = end - 24 * 60 * 60 * 1000
+        const dateObj = new Date(end)
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const label = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : `${months[dateObj.getMonth()]} ${dateObj.getDate()}`
+        intervals.push({ start, end, label })
+      }
+    }
+
+    let values = intervals.map(interval => {
+      let totalMinutes = 0
+      for (const s of sessions) {
+        const sStart = new Date(s.startedAt).getTime()
+        const sEnd = s.endedAt ? new Date(s.endedAt).getTime() : nowMs
+        const overlap = Math.max(0, Math.min(sEnd, interval.end) - Math.max(sStart, interval.start))
+        totalMinutes += overlap / 60000
+      }
+      return totalMinutes
+    })
+
+    const totalConsumed = values.reduce((sum, v) => sum + v, 0)
+
+    return {
+      intervals,
+      values,
+      hasData: totalConsumed > 0,
+      totalConsumedMinutes: totalConsumed
+    }
+  }
+
+  const getTokenHistoryData = () => {
+    const computeData = getComputeHistoryData()
+    const aiUsed = billingData?.usage?.aiTokens?.used || 0
+
+    if (aiUsed === 0) {
+      return {
+        intervals: computeData.intervals,
+        values: computeData.intervals.map(() => 0),
+        hasData: false,
+        totalTokens: 0
+      }
+    }
+
+    let values
+    if (computeData.hasData) {
+      values = computeData.values.map(val => {
+        const pct = val / (computeData.totalConsumedMinutes || 1)
+        return Math.round(pct * aiUsed)
+      })
+    } else {
+      values = computeData.intervals.map(() => Math.round(aiUsed / computeData.intervals.length))
+    }
+
+    return {
+      intervals: computeData.intervals,
+      values,
+      hasData: true,
+      totalTokens: aiUsed
+    }
+  }
 
   // Reanimated states for settings upgrade modal
   const [renderUpgrade, setRenderUpgrade] = useState(false)
@@ -603,8 +819,9 @@ export default function SettingsScreen() {
     )
   }
 
-  function renderMiniBarGraph(percent: number, activeColor: string) {
-    const heights = [25, 45, 60, 35, Math.max(10, percent * 0.7)]
+  function renderMiniBarGraph(percent: number, activeColor: string, usedRaw?: number) {
+    const isZero = usedRaw === 0 || percent === 0
+    const heights = isZero ? [6, 6, 6, 6, 6, 6] : [25, 45, 60, 35, Math.max(10, percent * 0.7)]
     return (
       <View style={{ flexDirection: 'row', gap: 4, height: 26, alignItems: 'flex-end', marginTop: 10 }}>
         {heights.map((h, i) => (
@@ -612,12 +829,12 @@ export default function SettingsScreen() {
             key={i} 
             style={{ 
               flex: 1, 
-              height: `${h}%`, 
-              backgroundColor: i === 4 ? activeColor : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'), 
+              height: isZero ? 4 : `${h}%`, 
+              backgroundColor: isZero ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)') : (i === heights.length - 1 ? activeColor : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)')), 
               borderRadius: 2,
-              shadowColor: i === 4 ? activeColor : 'transparent',
+              shadowColor: (!isZero && i === heights.length - 1) ? activeColor : 'transparent',
               shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: i === 4 ? 0.5 : 0,
+              shadowOpacity: (!isZero && i === heights.length - 1) ? 0.5 : 0,
               shadowRadius: 2,
             }} 
           />
@@ -682,8 +899,9 @@ export default function SettingsScreen() {
     )
   }
 
-  function renderMiniSparkline(percent: number, activeColor: string) {
-    const tokenActivity = [10, 40, 25, 75, 45, 60, 30, Math.max(15, percent * 0.7)]
+  function renderMiniSparkline(percent: number, activeColor: string, usedRaw?: number) {
+    const isZero = usedRaw === 0 || percent === 0
+    const tokenActivity = isZero ? [6, 6, 6, 6, 6, 6, 6, 6] : [10, 40, 25, 75, 45, 60, 30, Math.max(15, percent * 0.7)]
     return (
       <View style={{ flexDirection: 'row', gap: 2, height: 26, alignItems: 'flex-end', marginTop: 10 }}>
         {tokenActivity.map((val, i) => (
@@ -691,9 +909,9 @@ export default function SettingsScreen() {
             key={i} 
             style={{ 
               flex: 1, 
-              height: `${val}%`, 
-              backgroundColor: activeColor, 
-              opacity: 0.3 + (i * 0.1),
+              height: isZero ? 4 : `${val}%`, 
+              backgroundColor: isZero ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)') : activeColor, 
+              opacity: isZero ? 1 : 0.3 + (i * 0.1),
               borderTopLeftRadius: 1.5,
               borderTopRightRadius: 1.5
             }} 
@@ -715,6 +933,8 @@ export default function SettingsScreen() {
     limitRaw?: number
   ) {
     const displayPercent = isNaN(percent) ? 0 : Math.min(percent, 100)
+    const cardWidth = type === 'compute' ? '100%' : (type === 'ram' || type === 'workspaces') ? '48%' : type === 'disk' ? '56%' : '40%'
+    const cardHeight = type === 'compute' ? 160 : (type === 'ram' || type === 'workspaces') ? 135 : 125
     
     return (
       <TouchableOpacity 
@@ -726,13 +946,13 @@ export default function SettingsScreen() {
           fetchProjects(true)
         }}
         style={{ 
-          width: '48.2%', 
+          width: cardWidth, 
           backgroundColor: isDark ? '#111622' : '#FFFFFF', 
           borderWidth: 1, 
           borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', 
           borderRadius: 16, 
           padding: 14,
-          height: 145,
+          height: cardHeight,
           justifyContent: 'space-between',
           // Creative subtle card glow in dark mode
           shadowColor: isDark ? color : 'transparent',
@@ -772,11 +992,11 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {type === 'compute' && renderMiniBarGraph(displayPercent, color)}
+        {type === 'compute' && renderMiniBarGraph(displayPercent, color, usedRaw)}
         {type === 'ram' && renderMiniRadialGauge(displayPercent, color)}
         {type === 'disk' && renderMiniStackBar(displayPercent, color)}
         {type === 'workspaces' && renderMiniNodeGrid(usedRaw || 0, limitRaw || 3, color)}
-        {type === 'ai' && renderMiniSparkline(displayPercent, color)}
+        {type === 'ai' && renderMiniSparkline(displayPercent, color, usedRaw)}
       </TouchableOpacity>
     )
   }
@@ -864,9 +1084,6 @@ export default function SettingsScreen() {
     const currentTier = billingData?.tier || { name: 'free', displayName: 'Free Plan', price: { monthly: 0, yearly: 0 } }
     const subscription = billingData?.subscription || { id: null, status: 'none' }
 
-    // Colors for the tier cards
-    const tierColor = currentTier.name === 'free' ? '#9CA3AF' : currentTier.name === 'pro' ? '#3B82F6' : '#A855F7'
-
     return (
       <View style={{ gap: 20, paddingBottom: 40 }}>
         {/* Unified SubHeader */}
@@ -878,94 +1095,58 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
-          {/* Premium Plan Tier Card */}
-          <View 
-            style={{ 
-              backgroundColor: isDark ? '#121620' : '#FFFFFF', 
-              borderWidth: 1.5, 
-              borderColor: isDark ? `${tierColor}40` : `${tierColor}20`, 
-              borderRadius: 20, 
-              padding: 20, 
-              gap: 16,
-              // Glow effect
-              shadowColor: tierColor,
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.12,
-              shadowRadius: 10,
-              elevation: 4,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View 
-                  style={{ 
-                    width: 44, 
-                    height: 44, 
-                    borderRadius: 12, 
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    borderWidth: 1,
-                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
-                  }}
-                >
-                  <Zap size={22} color={tierColor} strokeWidth={2.5} />
-                </View>
-                <View>
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 17, letterSpacing: -0.2 }}>
-                    {currentTier.displayName}
-                  </Text>
-                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13, marginTop: 1 }}>
-                    {currentTier.name === 'free' ? '$0 / month' : currentTier.name === 'pro' ? '$25 / month' : '$99 / month'}
-                  </Text>
-                </View>
-              </View>
-              
-              <View 
-                style={{ 
-                  backgroundColor: isDark ? `${tierColor}20` : `${tierColor}12`, 
-                  paddingHorizontal: 12, 
-                  paddingVertical: 5, 
-                  borderRadius: 8, 
-                  borderWidth: 1, 
-                  borderColor: isDark ? `${tierColor}40` : `${tierColor}30` 
-                }}
-              >
-                <Text style={{ color: tierColor, fontSize: 10.5, fontFamily: 'Inter_700Bold', letterSpacing: 0.8 }}>
-                  {subscription.status === 'active' ? 'ACTIVE' : 'FREE TIER'}
-                </Text>
-              </View>
+          {/* Plans Comparison Section */}
+          <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <Shield size={16} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>MEMBERSHIP PLANS & TIERS</Text>
             </View>
 
-            {currentTier.name === 'free' && (
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-                <TouchableOpacity 
-                  activeOpacity={0.85}
-                  onPress={() => setUpgradeModal({ visible: true, tierName: 'pro' })}
-                  style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 11, borderRadius: 10, alignItems: 'center', justifyContent: 'center', height: 42 }}
-                >
-                  <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Upgrade to Pro</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  activeOpacity={0.85}
-                  onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
-                  style={{ flex: 1, borderWidth: 1, borderColor: colors.border, paddingVertical: 11, borderRadius: 10, alignItems: 'center', justifyContent: 'center', height: 42 }}
-                >
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Upgrade to Adv</Text>
-                </TouchableOpacity>
-              </View>
+            {renderPlanCard(
+              'free',
+              'Free Plan',
+              '$0 / month',
+              [
+                '0.5 vCPU core environments',
+                '512 MB sandbox memory (RAM)',
+                '5 GB SSD storage capacity',
+                'Up to 3 active workspaces',
+                '50,000 monthly hosted AI tokens',
+                '10 min inactivity container timeout'
+              ],
+              currentTier.name === 'free'
             )}
 
-            {currentTier.name === 'pro' && (
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-                <TouchableOpacity 
-                  activeOpacity={0.85}
-                  onPress={() => setUpgradeModal({ visible: true, tierName: 'advanced' })}
-                  style={{ flex: 1, backgroundColor: colors.primary, paddingVertical: 11, borderRadius: 10, alignItems: 'center', justifyContent: 'center', height: 42 }}
-                >
-                  <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Upgrade to Advanced</Text>
-                </TouchableOpacity>
-              </View>
+            {renderPlanCard(
+              'pro',
+              'Pro Developer',
+              '$25 / month',
+              [
+                '4 vCPUs blazing-fast compilation',
+                '8 GB RAM memory (No OOM crashes)',
+                '50 GB fast SSD storage space',
+                'Up to 20 active workspaces',
+                '1 Always-On persistent workspace slot',
+                '5 Million monthly premium AI tokens',
+                'Claude 3.5, GPT-4o & Gemini Premium models'
+              ],
+              currentTier.name === 'pro'
+            )}
+
+            {renderPlanCard(
+              'advanced',
+              'Advanced Team',
+              '$99 / month',
+              [
+                '8 vCPUs dedicated high performance',
+                '32 GB RAM extreme ML environment memory',
+                '200 GB high-speed SSD storage space',
+                'Unlimited active workspace slots',
+                '5 Always-On persistent workspace slots',
+                'Unlimited monthly hosted AI tokens pool',
+                'Dedicated low-latency model APIs'
+              ],
+              currentTier.name === 'advanced'
             )}
           </View>
 
@@ -976,7 +1157,7 @@ export default function SettingsScreen() {
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>CURRENT MONTH USAGE</Text>
             </View>
             
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
               {renderMetricCard(
                 'compute',
                 'Compute Hours',
@@ -984,7 +1165,8 @@ export default function SettingsScreen() {
                 usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`,
                 (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100,
                 Cpu,
-                '#8B5CF6'
+                '#8B5CF6',
+                usage.cpu.usedHours
               )}
               {renderMetricCard(
                 'ram',
@@ -993,16 +1175,8 @@ export default function SettingsScreen() {
                 `${usage.ram.limitMB} MB`,
                 (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100,
                 HardDrive,
-                '#8B5CF6'
-              )}
-              {renderMetricCard(
-                'disk',
-                'SSD Storage',
-                `${usage.disk.usedGB} GB`,
-                `${usage.disk.limitGB} GB`,
-                (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100,
-                Database,
-                '#8B5CF6'
+                '#8B5CF6',
+                usage.ram.usedMB
               )}
               {renderMetricCard(
                 'workspaces',
@@ -1016,13 +1190,24 @@ export default function SettingsScreen() {
                 usage.workspaces.limit
               )}
               {renderMetricCard(
+                'disk',
+                'SSD Storage',
+                `${usage.disk.usedGB} GB`,
+                `${usage.disk.limitGB} GB`,
+                (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100,
+                Database,
+                '#8B5CF6',
+                usage.disk.usedGB
+              )}
+              {renderMetricCard(
                 'ai',
                 'AI Tokens',
                 usage.aiTokens.used.toLocaleString(),
                 usage.aiTokens.limit.toLocaleString(),
                 (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100,
                 Sparkles,
-                '#8B5CF6'
+                '#8B5CF6',
+                usage.aiTokens.used
               )}
             </View>
           </View>
@@ -1183,24 +1368,37 @@ export default function SettingsScreen() {
     }
 
     const renderComputeBarGraph = () => {
-      const dataMap = {
-        '1h': { values: [20, 35, 25, 45, 60, 40], labels: ['-50m', '-40m', '-30m', '-20m', '-10m', 'Now'], unit: 'm' },
-        '24h': { values: [30, 20, 50, 75, 45, 15], labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'], unit: 'h' },
-        '3d': { values: [55, 75, 45], labels: ['2 days ago', 'Yesterday', 'Today'], unit: 'h' },
-        '7d': { values: [40, 35, 60, 80, 50, 45, 30], labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], unit: 'h' },
+      const history = getComputeHistoryData()
+      if (!history.hasData) {
+        return (
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 12 }}>
+            <Clock size={32} color="#8B5CF6" style={{ opacity: 0.8 }} />
+            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>No Compute Activity</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11.5, textAlign: 'center', lineHeight: 16 }}>
+              No compute usage logs were recorded during the selected period. Start or edit a project workspace to track usage.
+            </Text>
+          </View>
+        )
       }
-      const currentData = dataMap[timelineFilter] || dataMap['24h']
+
+      const maxValue = Math.max(...history.values, 1)
+
       return (
         <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>COMPUTE HOURS HISTORICAL TIMELINE</Text>
-          <View style={{ height: 120, flexDirection: 'row', alignItems: 'flex-end', gap: 12, paddingTop: 10 }}>
-            {currentData.values.map((val, idx) => (
-              <View key={idx} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontSize: 9, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{Math.round(val * 0.1 * 10) / 10}{currentData.unit}</Text>
-                <View style={{ width: '100%', height: `${val}%`, backgroundColor: '#8B5CF6', borderRadius: 4, opacity: 0.85 }} />
-                <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{currentData.labels[idx]}</Text>
-              </View>
-            ))}
+          <View style={{ height: 130, flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingTop: 10 }}>
+            {history.values.map((val, idx) => {
+              const heightPercent = (val / maxValue) * 100
+              const label = history.intervals[idx].label
+              const displayVal = val >= 60 ? `${(val / 60).toFixed(1)}h` : `${Math.round(val)}m`
+              return (
+                <View key={idx} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 9, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{displayVal}</Text>
+                  <View style={{ width: '100%', height: `${Math.max(4, heightPercent)}%`, backgroundColor: '#8B5CF6', borderRadius: 4, opacity: 0.85 }} />
+                  <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{label}</Text>
+                </View>
+              )
+            })}
           </View>
         </View>
       )
@@ -1326,24 +1524,37 @@ export default function SettingsScreen() {
     }
 
     const renderTokensAreaSparkline = () => {
-      const dataMap = {
-        '1h': [10, 30, 20, 45, 35, 50, 40],
-        '24h': [20, 40, 15, 60, 35, 75, 45, 60],
-        '3d': [35, 55, 40, 80, 50, 65],
-        '7d': [15, 45, 30, 70, 40, 85, 50, 60, 90]
+      const history = getTokenHistoryData()
+      if (!history.hasData) {
+        return (
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 12 }}>
+            <Sparkles size={32} color="#8B5CF6" style={{ opacity: 0.8 }} />
+            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>No AI Tokens Used</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11.5, textAlign: 'center', lineHeight: 16 }}>
+              No AI queries or tokens were processed in this timeline. Interact with the chat assistant or run inline prompt commands to use AI quota.
+            </Text>
+          </View>
+        )
       }
-      const sparkData = dataMap[timelineFilter] || dataMap['24h']
-      
+
+      const maxValue = Math.max(...history.values, 1)
+
       return (
         <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>AI REQUEST TOKENS CONSUMPTION DENSITY</Text>
-          <View style={{ height: 100, justifyContent: 'flex-end', paddingTop: 10 }}>
+          <View style={{ height: 120, justifyContent: 'flex-end', paddingTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: '100%', gap: 6 }}>
-              {sparkData.map((val, idx) => (
-                <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <View style={{ width: '100%', height: `${val}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
-                </View>
-              ))}
+              {history.values.map((val, idx) => {
+                const heightPercent = (val / maxValue) * 100
+                const label = history.intervals[idx].label
+                return (
+                  <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 8, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{val.toLocaleString()}</Text>
+                    <View style={{ width: '100%', height: `${Math.max(4, heightPercent * 0.8)}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
+                    <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{label}</Text>
+                  </View>
+                )
+              })}
             </View>
           </View>
         </View>
