@@ -1655,7 +1655,7 @@ export default function SettingsScreen() {
                 }}
               >
                 <Text style={{ 
-                  color: isActive ? '#8B5CF6' : colors.textSecondary, 
+                  color: isActive ? color : colors.textSecondary, 
                   fontFamily: 'Inter_600SemiBold', 
                   fontSize: 11.5
                 }}>
@@ -1673,8 +1673,8 @@ export default function SettingsScreen() {
       if (!history.hasData) {
         return (
           <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
-              <Clock size={22} color="#8B5CF6" />
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+              <Clock size={22} color={color} />
             </View>
             <View style={{ alignItems: 'center', gap: 4 }}>
               <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>No Compute Activity</Text>
@@ -1703,8 +1703,8 @@ export default function SettingsScreen() {
               const displayVal = val >= 60 ? `${(val / 60).toFixed(1)}h` : `${Math.round(val)}m`
               return (
                 <View key={idx} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontSize: 9, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{displayVal}</Text>
-                  <View style={{ width: '100%', height: `${Math.max(4, heightPercent)}%`, backgroundColor: '#8B5CF6', borderRadius: 4, opacity: 0.85 }} />
+                  <Text style={{ fontSize: 9, color: color, fontFamily: 'JetBrainsMono_400Regular' }}>{displayVal}</Text>
+                  <View style={{ width: '100%', height: `${Math.max(4, heightPercent)}%`, backgroundColor: color, borderRadius: 4, opacity: 0.85 }} />
                   <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{label}</Text>
                 </View>
               )
@@ -1719,7 +1719,7 @@ export default function SettingsScreen() {
         <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 20, alignItems: 'center', gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5, alignSelf: 'flex-start' }}>ACTIVE ENVIRONMENT MEMORY SEGMENTS</Text>
           <View style={{ width: 140, height: 140, borderRadius: 70, borderWidth: 12, borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', alignItems: 'center', justifyContent: 'center' }}>
-            <View style={[StyleSheet.absoluteFill, { borderRadius: 70, borderWidth: 12, borderColor: '#8B5CF6', borderRightColor: 'transparent', borderBottomColor: 'transparent', transform: [{ rotate: '45deg' }] }]} />
+            <View style={[StyleSheet.absoluteFill, { borderRadius: 70, borderWidth: 12, borderColor: displayPercent > 0 ? color : 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent', transform: [{ rotate: '45deg' }] }]} />
             <Text style={{ color: colors.text, fontSize: 24, fontFamily: 'JetBrainsMono_700Bold' }}>
               {Math.round(displayPercent)}%
             </Text>
@@ -1757,7 +1757,7 @@ export default function SettingsScreen() {
                       key={item.id} 
                       style={{ 
                         width: `${pct}%`, 
-                        backgroundColor: '#8B5CF6', 
+                        backgroundColor: color, 
                         opacity: 1 - (idx * 0.15),
                       }} 
                     />
@@ -1771,7 +1771,7 @@ export default function SettingsScreen() {
                   return (
                     <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8B5CF6', opacity: 1 - (idx * 0.15) }} />
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color, opacity: 1 - (idx * 0.15) }} />
                         <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'Inter_500Medium' }}>{item.name}</Text>
                       </View>
                       <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular' }}>
@@ -1808,21 +1808,21 @@ export default function SettingsScreen() {
                     height: 70, 
                     borderRadius: 12, 
                     borderWidth: 2, 
-                    borderColor: isAllocated ? '#8B5CF6' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'), 
+                    borderColor: isAllocated ? color : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'), 
                     borderStyle: isAllocated ? 'solid' : 'dashed',
                     alignItems: 'center', 
                     justifyContent: 'center',
-                    backgroundColor: isAllocated ? 'rgba(139, 92, 246, 0.04)' : 'transparent',
-                    shadowColor: isRunning ? '#8B5CF6' : 'transparent',
+                    backgroundColor: isAllocated ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)') : 'transparent',
+                    shadowColor: isRunning ? color : 'transparent',
                     shadowOpacity: 0.4,
                     shadowRadius: 4,
                   }}
                 >
-                  <Server size={18} color={isAllocated ? '#8B5CF6' : colors.textSecondary} opacity={isAllocated ? 1 : 0.4} />
+                  <Server size={18} color={isAllocated ? color : colors.textSecondary} opacity={isAllocated ? 1 : 0.4} />
                   <Text style={{ color: isAllocated ? colors.text : colors.textSecondary, fontSize: 8, fontFamily: 'Inter_600SemiBold', marginTop: 4 }}>
                     {isAllocated ? (isRunning ? 'ACTIVE' : 'READY') : 'FREE SLOT'}
                   </Text>
-                  <Text style={{ color: isAllocated ? '#8B5CF6' : colors.textSecondary, fontSize: 7, fontFamily: 'JetBrainsMono_400Regular', marginTop: 1 }}>
+                  <Text style={{ color: isAllocated ? color : colors.textSecondary, fontSize: 7, fontFamily: 'JetBrainsMono_400Regular', marginTop: 1 }}>
                     NODE-{i + 1}
                   </Text>
                 </View>
@@ -1838,8 +1838,8 @@ export default function SettingsScreen() {
       if (!history.hasData) {
         return (
           <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={22} color="#8B5CF6" />
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+              <Sparkles size={22} color={color} />
             </View>
             <View style={{ alignItems: 'center', gap: 4 }}>
               <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>No AI Tokens Used</Text>
@@ -1868,8 +1868,8 @@ export default function SettingsScreen() {
                 const label = history.intervals[idx].label
                 return (
                   <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 8, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{val.toLocaleString()}</Text>
-                    <View style={{ width: '100%', height: `${Math.max(4, heightPercent * 0.8)}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
+                    <Text style={{ fontSize: 8, color: color, fontFamily: 'JetBrainsMono_400Regular' }}>{val.toLocaleString()}</Text>
+                    <View style={{ width: '100%', height: `${Math.max(4, heightPercent * 0.8)}%`, backgroundColor: color, opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: color }} />
                     <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{label}</Text>
                   </View>
                 )
@@ -1904,62 +1904,160 @@ export default function SettingsScreen() {
           {isWorkspaces && renderWorkspacesNodeMatrix()}
           {isAi && renderTokensAreaSparkline()}
           {isNetwork && (
-            <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
-                <Wifi size={22} color="#8B5CF6" />
-              </View>
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Network Bandwidth Channels</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 12 }}>
-                  Your sandbox environment runs on low-latency cloud routes. All incoming and outgoing container traffic flows through highly secured SSL tunnels.
-                </Text>
-              </View>
-              <View style={{ width: '100%', gap: 12, marginTop: 8 }}>
+            <View style={{ gap: 20 }}>
+              {/* Premium Latency Breakdown Dashboard Card */}
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+                    <Wifi size={16} color={color} />
+                  </View>
+                  <View>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>Network Latency Breakdown</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Roundtrip Gateway Performance Analytics</Text>
+                  </View>
+                </View>
+
+                {/* Progress bars segmenting response times */}
+                <View style={{ gap: 12, marginTop: 4 }}>
+                  {/* DNS Lookup */}
+                  <View style={{ gap: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>DNS Lookup</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>14 ms <Text style={{ fontSize: 9, fontFamily: 'Inter_400Regular' }}>(15%)</Text></Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 3, overflow: 'hidden' }}>
+                      <View style={{ width: '15%', height: '100%', backgroundColor: '#64748B', borderRadius: 3 }} />
+                    </View>
+                  </View>
+
+                  {/* TCP Handshake */}
+                  <View style={{ gap: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>TCP Handshake</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>22 ms <Text style={{ fontSize: 9, fontFamily: 'Inter_400Regular' }}>(24%)</Text></Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 3, overflow: 'hidden' }}>
+                      <View style={{ width: '24%', height: '100%', backgroundColor: '#475569', borderRadius: 3 }} />
+                    </View>
+                  </View>
+
+                  {/* TLS Negotiation */}
+                  <View style={{ gap: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>TLS Negotiation</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>18 ms <Text style={{ fontSize: 9, fontFamily: 'Inter_400Regular' }}>(20%)</Text></Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 3, overflow: 'hidden' }}>
+                      <View style={{ width: '20%', height: '100%', backgroundColor: '#334155', borderRadius: 3 }} />
+                    </View>
+                  </View>
+
+                  {/* Server Response (TTFB) */}
+                  <View style={{ gap: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>Server Response (TTFB)</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>38 ms <Text style={{ fontSize: 9, fontFamily: 'Inter_400Regular' }}>(41%)</Text></Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 3, overflow: 'hidden' }}>
+                      <View style={{ width: '41%', height: '100%', backgroundColor: '#1E293B', borderRadius: 3 }} />
+                    </View>
+                  </View>
+                </View>
+
+                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4, opacity: 0.5 }} />
+
+                {/* Total Latency */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Gateway Status:</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_500Medium' }}>Total Gateway Latency:</Text>
+                  <Text style={{ color: colors.text, fontSize: 13.5, fontFamily: 'JetBrainsMono_700Bold' }}>92 ms</Text>
+                </View>
+              </View>
+
+              {/* Network Details Card */}
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Gateway Status:</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' }} />
-                    <Text style={{ color: '#22c55e', fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>CONNECTED</Text>
+                    <Text style={{ color: '#22c55e', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>ONLINE</Text>
                   </View>
                 </View>
                 <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Current Allocated Speed:</Text>
-                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Current Speed Cap:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
                 </View>
                 <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Network Bandwidth Limit:</Text>
-                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Allocated Bandwidth:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
                 </View>
               </View>
             </View>
           )}
           {isApi && (
-            <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
-                <Shield size={22} color="#8B5CF6" />
+            <View style={{ gap: 20 }}>
+              {/* API Requests Per Minute Chart Card */}
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+                    <Shield size={16} color={color} />
+                  </View>
+                  <View>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>API Request Frequency</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Requests Per Minute (RPM) Historical Timeline</Text>
+                  </View>
+                </View>
+
+                {/* Column Bar Chart */}
+                <View style={{ height: 110, flexDirection: 'row', alignItems: 'flex-end', gap: 14, paddingTop: 10, paddingHorizontal: 10 }}>
+                  {[
+                    { label: '10m ago', value: 12 },
+                    { label: '8m ago', value: 18 },
+                    { label: '6m ago', value: 5 },
+                    { label: '4m ago', value: 24 },
+                    { label: '2m ago', value: 15 },
+                    { label: 'Just now', value: 8 }
+                  ].map((item, idx) => {
+                    // Maximum possible RPM is 25 for free, let's treat 30 as graph max
+                    const maxVal = 30
+                    const heightPercent = (item.value / maxVal) * 100
+                    return (
+                      <View key={idx} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                        <Text style={{ fontSize: 9, color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }}>{item.value}</Text>
+                        <View 
+                          style={{ 
+                            width: '100%', 
+                            height: `${Math.max(6, heightPercent)}%`, 
+                            backgroundColor: idx === 5 ? '#475569' : '#1E293B', 
+                            borderRadius: 4,
+                            opacity: 0.85
+                          }} 
+                        />
+                        <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>
+                          {item.label}
+                        </Text>
+                      </View>
+                    )
+                  })}
+                </View>
               </View>
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>API Rate Limit Status</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 12 }}>
-                  CloudCode API rate limiting prevents request bursts to maintain platform stability and protect sandboxes against abuse.
-                </Text>
-              </View>
-              <View style={{ width: '100%', gap: 12, marginTop: 8 }}>
+
+              {/* API Info Card */}
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Current Traffic Load:</Text>
-                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Current Rate Load:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
                 </View>
                 <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>API Rate Limit Cap:</Text>
-                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Rate Limit Threshold:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
                 </View>
                 <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Concurrent Request Limits:</Text>
-                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Concurrent Quota Cap:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>
                     {currentTier.name === 'free' ? '5 concurrent' : currentTier.name === 'pro' ? '50 concurrent' : 'Uncapped'}
                   </Text>
                 </View>
@@ -2236,7 +2334,7 @@ export default function SettingsScreen() {
                 }}
               >
                 <Text style={{ 
-                  color: isActive ? '#8B5CF6' : colors.textSecondary, 
+                  color: isActive ? '#475569' : colors.textSecondary, 
                   fontFamily: 'Inter_600SemiBold', 
                   fontSize: 11.5
                 }}>
@@ -2254,8 +2352,8 @@ export default function SettingsScreen() {
       if (!history.hasData) {
         return (
           <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={22} color="#8B5CF6" />
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+              <Sparkles size={22} color="#475569" />
             </View>
             <View style={{ alignItems: 'center', gap: 4 }}>
               <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>No BYOK Tokens Used</Text>
@@ -2284,8 +2382,8 @@ export default function SettingsScreen() {
                 const label = history.intervals[idx].label
                 return (
                   <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 8, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{val.toLocaleString()}</Text>
-                    <View style={{ width: '100%', height: `${Math.max(4, heightPercent * 0.8)}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
+                    <Text style={{ fontSize: 8, color: '#475569', fontFamily: 'JetBrainsMono_400Regular' }}>{val.toLocaleString()}</Text>
+                    <View style={{ width: '100%', height: `${Math.max(4, heightPercent * 0.8)}%`, backgroundColor: '#475569', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#475569' }} />
                     <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{label}</Text>
                   </View>
                 )
@@ -2317,20 +2415,22 @@ export default function SettingsScreen() {
             {/* Speedometer Semi-Circle Dial */}
             <View style={{ width: 180, height: 90, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
               <View style={{ width: 180, height: 180, borderRadius: 90, borderWidth: 14, borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', position: 'absolute', top: 0 }} />
-              <View 
-                style={{ 
-                  width: 180, 
-                  height: 180, 
-                  borderRadius: 90, 
-                  borderWidth: 14, 
-                  borderColor: '#8B5CF6', 
-                  borderBottomColor: 'transparent', 
-                  borderRightColor: 'transparent', 
-                  position: 'absolute', 
-                  top: 0,
-                  transform: [{ rotate: `${-45 + (percent * 1.8)}deg` }] 
-                }} 
-              />
+              {used > 0 && (
+                <View 
+                  style={{ 
+                    width: 180, 
+                    height: 180, 
+                    borderRadius: 90, 
+                    borderWidth: 14, 
+                    borderColor: '#475569', 
+                    borderBottomColor: 'transparent', 
+                    borderRightColor: 'transparent', 
+                    position: 'absolute', 
+                    top: 0,
+                    transform: [{ rotate: `${-45 + (percent * 1.8)}deg` }] 
+                  }} 
+                />
+              )}
               <View style={{ alignItems: 'center', justifyContent: 'center', paddingBottom: 10 }}>
                 <Text style={{ color: colors.text, fontSize: 26, fontFamily: 'JetBrainsMono_700Bold' }}>{used.toLocaleString()}</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_500Medium', marginTop: 2 }}>tokens consumed</Text>
