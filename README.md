@@ -364,8 +364,74 @@ The mobile application is built using **React Native** and **Expo**, utilizing `
   - Modified [docker.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/lib/docker.ts) to update the `port` column in the database whenever a container is recreated.
   - Modified [route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/projects/%5Bid%5D/route.ts) (project details) to prioritize the container's active host-mapped port over the stored database value when the container is running.
   - Modified [route.ts](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/backend/src/app/api/preview/%5Bid%5D/%5B%5B...path%5D%5D/route.ts) (preview proxy) to fall back to the default internal port `3000` if the requested port does not match any active container host bindings and is not a standard internal port.
-  - Modified [PreviewTab.tsx](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/mobile/components/project/PreviewTab.tsx) to resolve active ports back to clean, virtual internal port mappings (like `http://localhost:3000/` or `http://localhost:5173/`) for the address bar, keeping the public ports hidden.
-  - Added logic to [PreviewTab.tsx](file:///c:/Users/pathu/OneDrive/Desktop/cloudcode/mobile/components/project/PreviewTab.tsx) to hide the URL in the address bar initially and when a loading error occurs, showing a clean "No active server" placeholder until the page loads successfully.
+  - Modified [PreviewTab.tsx](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/components/project/PreviewTab.tsx) to resolve active ports back to clean, virtual internal port mappings (like `http://localhost:3000/` or `http://localhost:5173/`) for the address bar, keeping the public ports hidden.
+  - Added logic to [PreviewTab.tsx](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/components/project/PreviewTab.tsx) to hide the URL in the address bar initially and when a loading error occurs, showing a clean "No active server" placeholder until the page loads successfully.
+
+### 4. Shifting UI Theme from Purple to Stealth Dark Accents
+* **Issue:** The billing dashboard had a high amount of purple accents and glowing elements which did not align with a premium stealth dark design language.
+* **Fix:** Shifted the mobile settings and billing subscreen layouts from vibrant purple (`#8B5CF6`, `#4C1D95`) to harmonized charcoal, slate, and graphite dark accent shades (`#334155`, `#475569`, `#1E293B`). Updated active badges, outlines, borders, and pulse glow effects to match the new dark accent palette.
+
+### 5. High-Performance Smooth Collapsible Plans Dropdown
+* **Issue:** Toggling the membership plans carousel list caused performance lag, frame drops, and had a clunky UI using plain text triangles and redundant shield icons.
+* **Fix:** 
+  - Refactored the toggle animation in [settings.tsx](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/app/(tabs)/settings.tsx) to keep the horizontal scroll views mounted, animating only their height and opacity.
+  - Replaced standard linear timing animations with Reanimated spring physics (`withSpring` with `damping: 20`, `stiffness: 200`, `mass: 0.5`) to accelerate transitions.
+  - Substituted text-based indicators (`▲`/`▼`) with a Lucide `ChevronDown` icon rotating 180 degrees dynamically.
+  - Cleaned up the header toggle UI by removing the shield icon and setting a transparent background, matching content boundaries perfectly.
+
+### 6. Premium Latency & API Requests Volume Charts
+* **Issue:** Network latency and API request limit breakdowns were vague, lacked specific details, and had no visual graphics representation.
+* **Fix:**
+  - Designed and implemented a segmented **Latency Breakdown Dashboard** mapping response time phases (DNS Lookup: `14ms`, TCP Handshake: `22ms`, TLS Negotiation: `18ms`, Server Response / TTFB: `38ms`, Total: `92ms`) with progress rows inside the network subscreen.
+  - Implemented an **API Request Volume Chart** showing real-time requests-per-minute (RPM) as vertical column bars inside the API subscreen.
+  - Added specific layout stats for maximum network speed (Mbps limits) and monthly API request volumes dynamically matching the user's active billing tier.
+
+### 7. Workspace State Synchronization & Backend Auto-Healing
+* **Issue:** When the app was opened after some time, going directly to the Billing page and returning to the Dashboard caused a stopped workspace to unexpectedly show up as "Active" in the UI. Additionally, stopped Docker containers (in `exited` or `paused` state) were not updating their status in the database.
+* **Fix:**
+  - Refactored the dashboard screen [dashboard.tsx](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/app/(tabs)/dashboard.tsx) to subscribe directly to the global Zustand `useProjectsStore` instead of keeping a separate, duplicate local React state that loaded stale cached data.
+  - Modified [projects/route.ts](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/backend/src/app/cc-api/projects/route.ts) to correctly sync database records to `'stopped'` if their corresponding container is in `'exited'` or `'paused'` states rather than only if the container is missing.
+  - Wrapped Supabase database operations in `Promise.resolve(...)` inside the backend project list and billing status routes to resolve TypeScript compilation blocks.
+
+### 8. Custom Animated Floating Tab Bar with SVG Background & FAB Integration
+* **Requirement/Feature:** Create a highly engaging, custom navigation experience that is modern and smooth to interact with.
+* **Fix/Implementation:** Designed and integrated a custom animated floating bottom tab bar in the mobile application. Uses an SVG curved background pathway, custom spring transitions, and a centered Floating Action Button (FAB) for instant access to the workspace wizard.
+
+### 9. Client-Side Activity Audit Logging & History Dashboard
+* **Requirement/Feature:** Tracks user activities and displays a history logs feed in the Settings screen.
+* **Fix/Implementation:** Built an audit logging service inside the mobile app that records commits history and auth sessions. Stores logs inside local async storage, and renders a clean, filterable audit feed under the user profile settings interface.
+
+### 10. Grid vs. List View Toggle & Context Menu Redesign
+* **Requirement/Feature:** Redesign workspace listings for better aesthetics, add a view toggle, and fix clunky context menus.
+* **Fix/Implementation:** 
+  - Redesigned workspace cards into compact grid boxes by default and added a toggle switch to alternate between list and grid views.
+  - Relocated the three-dots context menu to the right side of workspace cards.
+  - Positioned the context dropdown dynamically beside the three-dots trigger.
+  - Added full background dimming/blurring overlays for all active popups (like profile and rename modals) to focus user attention.
+  - Integrated quick paper-opening slide/scale animations for modals.
+
+### 11. Code Editor Code-Block Interaction & Touch Responsiveness Fix
+* **Issue:** The mobile file editor (`editor.tsx`) would periodically freeze, hang, or ignore cursor touches/taps on code blocks when loading larger files.
+* **Fix:** Optimized re-rendering dependencies and touch handler event bubbling inside the custom Monaco/CodeMirror editor view wrappers, restoring instant typing responsiveness and cursor interactions.
+
+### 12. Workspace Context-Aware AI Chat Tab Integration
+* **Requirement/Feature:** The AI sidebar was cluttering the file explorer list inside workspaces.
+* **Fix/Implementation:** Removed the sidebar AI layout and refactored the workspace editor to display AI as a primary tab. The tab's layout matches the general chat interface but operates in a context-aware scope linked to the active workspace's files and directory state.
+
+### 13. Universal AI Chat System & Autonomous Execution Agent
+* **Requirement/Feature:** General AI assistant was forcing users to run backend terminal setup commands manually and had a clunky project-selection switch.
+* **Fix/Implementation:** 
+  - Redesigned the main AI tab (`(tabs)/ai`) into a clean general-purpose prompt chat without project context restrictions.
+  - Upgraded the AI Agent to execute file operations and terminal tasks autonomously on the container backend upon approval, rather than prompting the user.
+  - Integrated a **Stop Button** to immediately halt active AI token streaming responses.
+
+### 14. Localhost Bridge & Port Scanner for Loopback Container Ports
+* **Issue:** Workspace previews for frameworks like Vite, React, or Flask frequently failed with `ECONNREFUSED` because they bound internally only to loopback address `127.0.0.1`.
+* **Fix/Implementation:** Developed a backend daemon forwarder (`ensureLocalhostBridge` in [docker.ts](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/backend/src/lib/docker.ts)) that scans active container listeners (via `ss -lnt` / `netstat`) on startup. Spawns a background TCP tunnel (`nohup node -e`) within the container to map loopback listeners onto the container's external bridge network IP address.
+
+### 15. Docker Swarm Host Isolation Hardening & Log Rotation
+* **Requirement/Feature:** Secure the VPS hosting environment against inter-container attacks and prevent container log disk leaks.
+* **Fix/Implementation:** Developed the host setup script (`scripts/vps-security-setup.sh`) to configure automatic VPS updates, disable inter-container communication (Docker ICC) at the docker daemon level, and enforce strict log rotation boundaries (10MB max size, keeping 3 rotated files max).
 
 ---
 
