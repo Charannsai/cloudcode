@@ -35,8 +35,20 @@ import Animated, {
   withTiming, 
   useSharedValue, 
   Easing,
-  interpolate
+  interpolate,
+  Keyframe
 } from 'react-native-reanimated'
+
+const paperOpening = new Keyframe({
+  0: {
+    transform: [{ scale: 0.8 }, { translateY: -10 }, { rotateX: '20deg' }],
+    opacity: 0,
+  },
+  100: {
+    transform: [{ scale: 1 }, { translateY: 0 }, { rotateX: '0deg' }],
+    opacity: 1,
+  },
+}).duration(150);
 
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
   const scale = useSharedValue(1)
@@ -634,20 +646,24 @@ export default function ProjectsScreen() {
             }}
           />
           <Animated.View 
-            entering={FadeInDown.duration(120)}
+            entering={paperOpening}
             style={[
               styles.popoverMenu, 
               { 
-                backgroundColor: cardBg, 
-                borderColor: cardBorder,
-                top: menuPosition ? Math.min(menuPosition.y - 10, SCREEN_HEIGHT - 220) : 100,
-                right: 20,
+                backgroundColor: isDark ? 'rgba(22, 27, 34, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+                borderColor: isDark ? 'rgba(240, 246, 252, 0.15)' : 'rgba(48, 54, 61, 0.15)',
+                top: menuPosition ? Math.max(50, Math.min(menuPosition.y - 20, SCREEN_HEIGHT - 180)) : 100,
+                left: menuPosition 
+                  ? (menuPosition.x < SCREEN_WIDTH / 2
+                      ? Math.max(12, Math.min(menuPosition.x + 15, SCREEN_WIDTH - 170))
+                      : Math.max(12, Math.min(menuPosition.x - 160, SCREEN_WIDTH - 170)))
+                  : 100,
               }
             ]}
           >
-            <View style={{ padding: 4 }}>
+            <View style={{ padding: 6, gap: 4 }}>
               <TouchableOpacity 
-                activeOpacity={0.7}
+                activeOpacity={0.6}
                 onPress={() => {
                   if (activeProjectForMenu) {
                     const id = activeProjectForMenu.id
@@ -656,14 +672,13 @@ export default function ProjectsScreen() {
                     router.push(`/project/${id}`)
                   }
                 }}
-                style={styles.popoverItem}
+                style={[styles.popoverItem, { backgroundColor: isDark ? 'rgba(88,166,255,0.08)' : 'rgba(9,105,218,0.05)' }]}
               >
-                <Terminal size={13} color={colors.textSecondary} strokeWidth={2} />
-                <Text style={[styles.popoverItemText, { color: colors.text }]}>Open</Text>
+                <Text style={[styles.popoverItemText, { color: isDark ? '#58A6FF' : '#0969DA', fontFamily: 'Inter_700Bold' }]}>Open Workspace</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
-                activeOpacity={0.7}
+                activeOpacity={0.6}
                 onPress={() => {
                   if (activeProjectForMenu) {
                     setNewName(activeProjectForMenu.name)
@@ -673,14 +688,13 @@ export default function ProjectsScreen() {
                 }}
                 style={styles.popoverItem}
               >
-                <Sparkles size={13} color={colors.textSecondary} strokeWidth={2} />
-                <Text style={[styles.popoverItemText, { color: colors.text }]}>Rename</Text>
+                <Text style={[styles.popoverItemText, { color: colors.text, opacity: 0.9 }]}>Rename</Text>
               </TouchableOpacity>
 
-              <View style={{ height: 1, backgroundColor: cardBorder, marginVertical: 3, opacity: 0.5 }} />
+              <View style={{ height: 1, backgroundColor: isDark ? 'rgba(240, 246, 252, 0.1)' : 'rgba(48, 54, 61, 0.1)', marginVertical: 4 }} />
 
               <TouchableOpacity 
-                activeOpacity={0.7}
+                activeOpacity={0.6}
                 onPress={() => {
                   if (activeProjectForMenu) {
                     const { id, name } = activeProjectForMenu
@@ -689,10 +703,9 @@ export default function ProjectsScreen() {
                     handleDelete(id, name)
                   }
                 }}
-                style={styles.popoverItem}
+                style={[styles.popoverItem, { backgroundColor: isDark ? 'rgba(248,81,73,0.08)' : 'rgba(248,81,73,0.04)' }]}
               >
-                <Trash2 size={13} color="#F85149" strokeWidth={2} />
-                <Text style={[styles.popoverItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete</Text>
+                <Text style={[styles.popoverItemText, { color: '#FF6B6B', fontFamily: 'Inter_700Bold' }]}>Delete</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -918,16 +931,14 @@ const styles = StyleSheet.create({
     minWidth: 130,
   },
   popoverItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 8,
   },
   popoverItemText: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
+    fontSize: 13.5,
+    fontFamily: 'Inter_600SemiBold',
+    textAlign: 'center',
   },
   popoverButton: {
     paddingHorizontal: 10,
