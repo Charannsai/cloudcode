@@ -57,9 +57,9 @@ export default function SettingsScreen() {
   const chevronRotation = useSharedValue(0)
 
   useEffect(() => {
-    plansHeight.value = withTiming(showPlansList ? 260 : 0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
-    plansOpacity.value = withTiming(showPlansList ? 1 : 0, { duration: 200 })
-    chevronRotation.value = withTiming(showPlansList ? 180 : 0, { duration: 200 })
+    plansHeight.value = withSpring(showPlansList ? 262 : 0, { damping: 20, stiffness: 200, mass: 0.5 })
+    plansOpacity.value = withTiming(showPlansList ? 1 : 0, { duration: 150, easing: Easing.out(Easing.quad) })
+    chevronRotation.value = withSpring(showPlansList ? 180 : 0, { damping: 18, stiffness: 180 })
   }, [showPlansList])
 
   const plansAnimatedStyle = useAnimatedStyle(() => ({
@@ -1355,29 +1355,22 @@ export default function SettingsScreen() {
 
           {/* Plans Comparison Horizontal Swiper Section */}
           <View style={{ gap: 10 }}>
-            <TouchableOpacity
-              activeOpacity={0.8}
+             <TouchableOpacity
+              activeOpacity={0.7}
               onPress={() => setShowPlansList(prev => !prev)}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 14,
-                backgroundColor: isDark ? '#161B22' : '#F3F4F6',
-                borderWidth: 1,
-                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+                paddingVertical: 10,
+                paddingHorizontal: 4,
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Shield size={15} color={colors.textSecondary} />
-                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
-                  {showPlansList ? 'Hide membership plans' : 'Show all membership plans'}
-                </Text>
-              </View>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>
+                {showPlansList ? 'Hide membership plans' : 'Show all membership plans'}
+              </Text>
               <Animated.View style={chevronAnimatedStyle}>
-                <ChevronDown size={15} color={colors.textSecondary} />
+                <ChevronDown size={16} color={colors.text} />
               </Animated.View>
             </TouchableOpacity>
  
