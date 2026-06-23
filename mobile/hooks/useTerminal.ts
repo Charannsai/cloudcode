@@ -55,7 +55,7 @@ export function useTerminal({ projectId, terminalId, onOutput, onReady }: UseTer
       }
 
       const terminalParam = terminalId ? `&terminalId=${encodeURIComponent(terminalId)}` : ''
-      const url = `${WS_URL}/api/terminal/${projectId}?token=${encodeURIComponent(token)}${terminalParam}`
+      const url = `${WS_URL}/cc-api/terminal/${projectId}?token=${encodeURIComponent(token)}${terminalParam}`
       ws = new WebSocket(url)
       wsRef.current = ws
 

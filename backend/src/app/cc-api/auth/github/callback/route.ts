@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         client_id: process.env.GITHUB_CLIENT_ID,
         client_secret: process.env.GITHUB_CLIENT_SECRET,
         code,
-        redirect_uri: `${appUrl}/api/auth/github/callback`,
+        redirect_uri: `${appUrl}/cc-api/auth/github/callback`,
       }),
     })
 
