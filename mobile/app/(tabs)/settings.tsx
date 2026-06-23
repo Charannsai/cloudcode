@@ -366,6 +366,37 @@ export default function SettingsScreen() {
     }
   }
 
+  const getByokTokenHistoryData = () => {
+    const computeData = getComputeHistoryData()
+    const byokUsed = billingData?.usage?.byokTokens?.used || 0
+
+    if (byokUsed === 0) {
+      return {
+        intervals: computeData.intervals,
+        values: computeData.intervals.map(() => 0),
+        hasData: false,
+        totalTokens: 0
+      }
+    }
+
+    let values
+    if (computeData.hasData) {
+      values = computeData.values.map(val => {
+        const pct = val / (computeData.totalConsumedMinutes || 1)
+        return Math.round(pct * byokUsed)
+      })
+    } else {
+      values = computeData.intervals.map(() => Math.round(byokUsed / computeData.intervals.length))
+    }
+
+    return {
+      intervals: computeData.intervals,
+      values,
+      hasData: true,
+      totalTokens: byokUsed
+    }
+  }
+
   // Reanimated states for settings upgrade modal
   const [renderUpgrade, setRenderUpgrade] = useState(false)
   const upgradeOpacity = useSharedValue(0)
@@ -1822,17 +1853,22 @@ export default function SettingsScreen() {
     const maxReference = 1000000 
     const percent = Math.min((used / maxReference) * 100, 100)
     
-    let levelText = 'Optimal'
-    let levelDesc = 'Light usage. Performance response speed is low latency.'
-    if (percent > 25 && percent <= 50) {
-      levelText = 'Moderate'
-      levelDesc = 'Standard developer usage. Stable run speed.'
-    } else if (percent > 50 && percent <= 85) {
-      levelText = 'Active'
-      levelDesc = 'High volume usage. Fast compiler context injection.'
-    } else if (percent > 85) {
-      levelText = 'Extreme'
-      levelDesc = 'Heavy request bursts. Ensure your provider limits are sufficient.'
+    let levelText = 'Inactive'
+    let levelDesc = 'No BYOK request tokens consumed yet.'
+    
+    if (used > 0) {
+      levelText = 'Optimal'
+      levelDesc = 'Light usage. Performance response speed is low latency.'
+      if (percent > 25 && percent <= 50) {
+        levelText = 'Moderate'
+        levelDesc = 'Standard developer usage. Stable run speed.'
+      } else if (percent > 50 && percent <= 85) {
+        levelText = 'Active'
+        levelDesc = 'High volume usage. Fast compiler context injection.'
+      } else if (percent > 85) {
+        levelText = 'Extreme'
+        levelDesc = 'Heavy request bursts. Ensure your provider limits are sufficient.'
+      }
     }
 
     const renderTimelineSelector = () => {
@@ -1873,24 +1909,37 @@ export default function SettingsScreen() {
     }
 
     const renderTokensAreaSparkline = () => {
-      const dataMap = {
-        '1h': [10, 30, 20, 45, 35, 50, 40],
-        '24h': [20, 40, 15, 60, 35, 75, 45, 60],
-        '3d': [35, 55, 40, 80, 50, 65],
-        '7d': [15, 45, 30, 70, 40, 85, 50, 60, 90]
+      const history = getByokTokenHistoryData()
+      if (!history.hasData) {
+        return (
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 12 }}>
+            <Sparkles size={32} color="#8B5CF6" style={{ opacity: 0.8 }} />
+            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>No BYOK Tokens Used</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11.5, textAlign: 'center', lineHeight: 16 }}>
+              No BYOK API request tokens have been consumed during this period.
+            </Text>
+          </View>
+        )
       }
-      const sparkData = dataMap[timelineFilter] || dataMap['24h']
-      
+
+      const maxValue = Math.max(...history.values, 1)
+
       return (
         <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>AI REQUEST TOKENS CONSUMPTION DENSITY</Text>
-          <View style={{ height: 100, justifyContent: 'flex-end', paddingTop: 10 }}>
+          <View style={{ height: 120, justifyContent: 'flex-end', paddingTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: '100%', gap: 6 }}>
-              {sparkData.map((val, idx) => (
-                <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <View style={{ width: '100%', height: `${val}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
-                </View>
-              ))}
+              {history.values.map((val, idx) => {
+                const heightPercent = (val / maxValue) * 100
+                const label = history.intervals[idx].label
+                return (
+                  <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 8, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{val.toLocaleString()}</Text>
+                    <View style={{ width: '100%', height: `${Math.max(4, heightPercent * 0.8)}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
+                    <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{label}</Text>
+                  </View>
+                )
+              })}
             </View>
           </View>
         </View>
