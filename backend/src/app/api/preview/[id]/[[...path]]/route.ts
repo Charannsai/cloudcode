@@ -320,7 +320,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         resHeaders.delete('content-length')
         resHeaders.delete('transfer-encoding')
         
-        return withCookies(new Response(null, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
+        return withCookies(new Response(null, { status: response.status, headers: resHeaders }), projectId, token, targetPort)
       }
 
       const resHeaders = new Headers(response.headers)
