@@ -413,7 +413,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               }
               setCurrentUrl(virtualUrl)
             }}
-            injectedJavaScript={`
+            injectedJavaScriptBeforeContentLoaded={`
               (function() {
                 var originalLog = console.log;
                 var originalWarn = console.warn;
@@ -490,48 +490,43 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                   return originalSend.apply(this, arguments);
                 };
 
-                // DOM Tree Builder
-                function buildDomTree(node) {
-                  if (!node) return null;
-                  if (node.nodeType === 3) {
-                    const text = node.nodeValue.trim();
-                    if (!text) return null;
-                    return { type: 'text', text: text };
-                  }
-                  if (node.nodeType !== 1) return null;
-                  if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME'].includes(node.tagName)) return null;
-                  
-                  const children = [];
-                  for (var i = 0; i < node.childNodes.length; i++) {
-                    var childTree = buildDomTree(node.childNodes[i]);
-                    if (childTree) children.push(childTree);
-                  }
-                  
-                  return {
-                    type: 'element',
-                    tagName: node.tagName.toLowerCase(),
-                    id: node.id || '',
-                    className: (typeof node.className === 'string') ? node.className : '',
-                    children: children
-                  };
-                }
-
+                // DOM Tree Builder helper (Only runs when requested)
                 window.sendDomTree = function() {
+                  function buildDomTree(node) {
+                    if (!node) return null;
+                    if (node.nodeType === 3) {
+                      const text = node.nodeValue.trim();
+                      if (!text) return null;
+                      const truncated = text.length > 60 ? text.substring(0, 57) + '...' : text;
+                      return { type: 'text', text: truncated };
+                    }
+                    if (node.nodeType === 1) {
+                      const tagName = node.tagName.toUpperCase();
+                      if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'SVG', 'PATH', 'DEFS', 'SYMBOL', 'USE', 'G', 'CLIPPATH'].includes(tagName)) {
+                        return null;
+                      }
+                      const children = [];
+                      for (var i = 0; i < node.childNodes.length; i++) {
+                        var childTree = buildDomTree(node.childNodes[i]);
+                        if (childTree) children.push(childTree);
+                      }
+                      return {
+                        type: 'element',
+                        tagName: tagName.toLowerCase(),
+                        id: node.id || '',
+                        className: (typeof node.className === 'string') ? node.className : '',
+                        children: children
+                      };
+                    }
+                    return null;
+                  }
+                  
                   var tree = buildDomTree(document.body);
                   window.ReactNativeWebView.postMessage(JSON.stringify({
                     type: 'dom',
                     data: tree
                   }));
                 };
-
-                // Set up MutationObserver to auto-post DOM changes
-                var observer = new MutationObserver(function() {
-                  window.sendDomTree();
-                });
-                observer.observe(document.body, { subtree: true, childList: true, attributes: true });
-                
-                // Send initial DOM tree when loaded
-                setTimeout(window.sendDomTree, 1000);
               })();
               true;
             `}
@@ -680,32 +675,64 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
 
               <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
                 {/* Tab Bar */}
-                <View style={[styles.devTabBar, { borderBottomColor: colors.border }]}>
-                  {(['console', 'network', 'dom'] as const).map((tab) => (
+                <View style={[styles.devTabBar, { borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                  <View style={{ flexDirection: 'row', flex: 1 }}>
+                    {(['console', 'network', 'dom'] as const).map((tab) => (
+                      <TouchableOpacity
+                        key={tab}
+                        onPress={() => {
+                          setActiveDevTab(tab)
+                          if (tab === 'dom' && webViewRef.current) {
+                            webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
+                          }
+                        }}
+                        style={[
+                          styles.devTabItem,
+                          activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                        ]}
+                      >
+                        <Text style={[
+                          styles.devTabText,
+                          { 
+                            color: activeDevTab === tab ? colors.primary : colors.textSecondary,
+                            fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
+                          }
+                        ]}>
+                          {tab.toUpperCase()}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  {activeDevTab === 'console' && (
                     <TouchableOpacity
-                      key={tab}
-                      onPress={() => {
-                        setActiveDevTab(tab)
-                        if (tab === 'dom' && webViewRef.current) {
-                          webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
-                        }
-                      }}
-                      style={[
-                        styles.devTabItem,
-                        activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
-                      ]}
+                      onPress={() => setConsoleLogs([])}
+                      style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text style={[
-                        styles.devTabText,
-                        { 
-                          color: activeDevTab === tab ? colors.primary : colors.textSecondary,
-                          fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
-                        }
-                      ]}>
-                        {tab.toUpperCase()}
-                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>Clear</Text>
                     </TouchableOpacity>
-                  ))}
+                  )}
+                  {activeDevTab === 'network' && (
+                    <TouchableOpacity
+                      onPress={() => setNetworkLogs([])}
+                      style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>Clear</Text>
+                    </TouchableOpacity>
+                  )}
+                  {activeDevTab === 'dom' && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setDomTree(null)
+                        webViewRef.current?.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
+                      }}
+                      style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={{ fontSize: 11, color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>Reload</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Tab Content */}
