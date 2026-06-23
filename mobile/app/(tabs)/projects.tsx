@@ -617,12 +617,10 @@ export default function ProjectsScreen() {
       <Modal
         visible={activeProjectForMenu !== null && menuPosition !== null}
         transparent={true}
-        animationType="none"
+        animationType="fade"
         statusBarTranslucent={true}
         onRequestClose={() => {
           setActiveProjectForMenu(null)
-          setIsRenameMode(false)
-          setNewName('')
           setMenuPosition(null)
         }}
       >
@@ -632,8 +630,6 @@ export default function ProjectsScreen() {
             activeOpacity={1} 
             onPress={() => {
               setActiveProjectForMenu(null)
-              setIsRenameMode(false)
-              setNewName('')
               setMenuPosition(null)
             }}
           />
@@ -649,92 +645,119 @@ export default function ProjectsScreen() {
               }
             ]}
           >
-            {isRenameMode ? (
-              <View style={{ padding: 10, width: 200 }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13, marginBottom: 8 }}>
-                  Rename Workspace
+            <View style={{ padding: 4 }}>
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (activeProjectForMenu) {
+                    const id = activeProjectForMenu.id
+                    setActiveProjectForMenu(null)
+                    setMenuPosition(null)
+                    router.push(`/project/${id}`)
+                  }
+                }}
+                style={styles.popoverItem}
+              >
+                <Terminal size={13} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={[styles.popoverItemText, { color: colors.text }]}>Open</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (activeProjectForMenu) {
+                    setNewName(activeProjectForMenu.name)
+                    setIsRenameMode(true)
+                    setMenuPosition(null)
+                  }
+                }}
+                style={styles.popoverItem}
+              >
+                <Sparkles size={13} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={[styles.popoverItemText, { color: colors.text }]}>Rename</Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 1, backgroundColor: cardBorder, marginVertical: 3, opacity: 0.5 }} />
+
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (activeProjectForMenu) {
+                    const { id, name } = activeProjectForMenu
+                    setActiveProjectForMenu(null)
+                    setMenuPosition(null)
+                    handleDelete(id, name)
+                  }
+                }}
+                style={styles.popoverItem}
+              >
+                <Trash2 size={13} color="#F85149" strokeWidth={2} />
+                <Text style={[styles.popoverItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Centered Rename Workspace Modal */}
+      <Modal
+        visible={isRenameMode && activeProjectForMenu !== null}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => {
+          setIsRenameMode(false)
+          setNewName('')
+          setActiveProjectForMenu(null)
+        }}
+      >
+        <View style={styles.centeredModalBackdrop}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill} 
+            activeOpacity={1} 
+            onPress={() => {
+              setIsRenameMode(false)
+              setNewName('')
+              setActiveProjectForMenu(null)
+            }}
+          />
+          <Animated.View 
+            entering={FadeInDown.duration(150)}
+            style={[styles.centeredModalCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
+          >
+            <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16, marginBottom: 12 }}>
+              Rename Workspace
+            </Text>
+            <View style={[styles.searchBar, { backgroundColor: subtleBg, borderColor: cardBorder, marginBottom: 16, height: 42, paddingHorizontal: 12 }]}>
+              <TextInput
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="Workspace Name"
+                placeholderTextColor={colors.textSecondary + '80'}
+                style={{ flex: 1, fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.text, padding: 0 }}
+                autoFocus
+                autoCapitalize="none"
+                autoCorrect={false}
+                onSubmitEditing={handleRenameSubmit}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'flex-end', width: '100%' }}>
+              <TouchableOpacity 
+                onPress={() => { setIsRenameMode(false); setNewName(''); setActiveProjectForMenu(null); }}
+                style={[styles.popoverButton, { flex: 1, backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: cardBorder, height: 38 }]}
+              >
+                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleRenameSubmit}
+                disabled={isRenaming || !newName.trim()}
+                style={[styles.popoverButton, { flex: 1, backgroundColor: isDark ? '#F3F4F6' : '#0E1116', opacity: isRenaming || !newName.trim() ? 0.6 : 1, height: 38 }]}
+              >
+                <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
+                  {isRenaming ? 'Saving...' : 'Save'}
                 </Text>
-                <View style={[styles.searchBar, { backgroundColor: subtleBg, borderColor: cardBorder, marginBottom: 10, height: 32, paddingHorizontal: 8 }]}>
-                  <TextInput
-                    value={newName}
-                    onChangeText={setNewName}
-                    placeholder="Workspace Name"
-                    placeholderTextColor={colors.textSecondary + '80'}
-                    style={{ flex: 1, fontSize: 12, fontFamily: 'Inter_400Regular', color: colors.text, padding: 0 }}
-                    autoFocus
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-                <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'flex-end' }}>
-                  <TouchableOpacity 
-                    onPress={() => { setIsRenameMode(false); setNewName('') }}
-                    style={[styles.popoverButton, { backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: cardBorder }]}
-                  >
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={handleRenameSubmit}
-                    disabled={isRenaming || !newName.trim()}
-                    style={[styles.popoverButton, { backgroundColor: isDark ? '#F3F4F6' : '#0E1116', opacity: isRenaming || !newName.trim() ? 0.6 : 1 }]}
-                  >
-                    <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>
-                      {isRenaming ? '...' : 'Save'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={{ padding: 4 }}>
-                <TouchableOpacity 
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    if (activeProjectForMenu) {
-                      const id = activeProjectForMenu.id
-                      setActiveProjectForMenu(null)
-                      setMenuPosition(null)
-                      router.push(`/project/${id}`)
-                    }
-                  }}
-                  style={styles.popoverItem}
-                >
-                  <Terminal size={13} color={colors.textSecondary} strokeWidth={2} />
-                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Open</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    if (activeProjectForMenu) {
-                      setNewName(activeProjectForMenu.name)
-                      setIsRenameMode(true)
-                    }
-                  }}
-                  style={styles.popoverItem}
-                >
-                  <Sparkles size={13} color={colors.textSecondary} strokeWidth={2} />
-                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Rename</Text>
-                </TouchableOpacity>
-
-                <View style={{ height: 1, backgroundColor: cardBorder, marginVertical: 3, opacity: 0.5 }} />
-
-                <TouchableOpacity 
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    if (activeProjectForMenu) {
-                      const { id, name } = activeProjectForMenu
-                      setActiveProjectForMenu(null)
-                      setMenuPosition(null)
-                      handleDelete(id, name)
-                    }
-                  }}
-                  style={styles.popoverItem}
-                >
-                  <Trash2 size={13} color="#F85149" strokeWidth={2} />
-                  <Text style={[styles.popoverItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              </TouchableOpacity>
+            </View>
           </Animated.View>
         </View>
       </Modal>
@@ -862,7 +885,26 @@ const styles = StyleSheet.create({
   },
   popoverBackdrop: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  centeredModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  centeredModalCard: {
+    width: '100%',
+    maxWidth: 320,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
   popoverMenu: {
     position: 'absolute',
