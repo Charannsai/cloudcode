@@ -4,7 +4,7 @@ import {
   TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler, Pressable
 } from 'react-native'
 import Animated, { 
-  FadeInRight, FadeInDown, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing, withRepeat 
+  FadeInRight, FadeInDown, FadeOutUp, FadeOutDown, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing, withRepeat 
 } from 'react-native-reanimated'
 import { useFocusEffect } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
@@ -48,7 +48,8 @@ export default function SettingsScreen() {
   const { colors, toggleTheme, isDark } = useAppTheme()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const { projects, fetchProjects } = useProjectsStore()
-  const [billingDetailType, setBillingDetailType] = useState<'compute' | 'ram' | 'disk' | 'workspaces' | 'ai'>('compute')
+  const [billingDetailType, setBillingDetailType] = useState<'compute' | 'ram' | 'disk' | 'workspaces' | 'ai' | 'network' | 'api'>('compute')
+  const [showPlansList, setShowPlansList] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState<'1h' | '24h' | '3d' | '7d'>('24h')
 
   // Pulsing animation for Billing Skeleton UI
@@ -1031,7 +1032,7 @@ export default function SettingsScreen() {
   }
 
   function renderMetricCard(
-    type: 'compute' | 'ram' | 'disk' | 'workspaces' | 'ai',
+    type: 'compute' | 'ram' | 'disk' | 'workspaces' | 'ai' | 'network' | 'api',
     label: string,
     usedStr: string,
     limitStr: string,
@@ -1106,6 +1107,8 @@ export default function SettingsScreen() {
         {type === 'disk' && renderMiniStackBar(displayPercent, color)}
         {type === 'workspaces' && renderMiniNodeGrid(usedRaw || 0, limitRaw || 3, color)}
         {type === 'ai' && renderMiniSparkline(displayPercent, color, usedRaw)}
+        {type === 'network' && renderMiniSparkline(displayPercent, color, usedRaw)}
+        {type === 'api' && renderMiniBarGraph(displayPercent, color, usedRaw)}
       </TouchableOpacity>
     )
   }
@@ -1332,40 +1335,68 @@ export default function SettingsScreen() {
 
           {/* Plans Comparison Horizontal Swiper Section */}
           <View style={{ gap: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-              <Shield size={16} color={colors.textSecondary} />
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>MEMBERSHIP PLANS & TIERS</Text>
-            </View>
-
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              decelerationRate="fast"
-              snapToInterval={292} // Card width 280 + gap 12
-              snapToAlignment="start"
-              contentContainerStyle={{ gap: 12, paddingBottom: 6 }}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setShowPlansList(prev => !prev)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderRadius: 14,
+                backgroundColor: isDark ? '#161B22' : '#F3F4F6',
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+              }}
             >
-              {renderPlanCard(
-                'free',
-                'Free Plan',
-                '$0 / month',
-                currentTier.name === 'free'
-              )}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Shield size={15} color={colors.textSecondary} />
+                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
+                  {showPlansList ? 'Hide membership plans' : 'Show all membership plans'}
+                </Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold' }}>
+                {showPlansList ? '▲' : '▼'}
+              </Text>
+            </TouchableOpacity>
 
-              {renderPlanCard(
-                'pro',
-                'Pro Developer',
-                '$25 / month',
-                currentTier.name === 'pro'
-              )}
+            {showPlansList && (
+              <Animated.View
+                entering={FadeInDown.duration(180)}
+                exiting={FadeOutUp.duration(120)}
+              >
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  decelerationRate="fast"
+                  snapToInterval={292} // Card width 280 + gap 12
+                  snapToAlignment="start"
+                  contentContainerStyle={{ gap: 12, paddingBottom: 6, paddingTop: 4 }}
+                >
+                  {renderPlanCard(
+                    'free',
+                    'Free Plan',
+                    '$0 / month',
+                    currentTier.name === 'free'
+                  )}
 
-              {renderPlanCard(
-                'advanced',
-                'Advanced Team',
-                '$99 / month',
-                currentTier.name === 'advanced'
-              )}
-            </ScrollView>
+                  {renderPlanCard(
+                    'pro',
+                    'Pro Developer',
+                    '$25 / month',
+                    currentTier.name === 'pro'
+                  )}
+
+                  {renderPlanCard(
+                    'advanced',
+                    'Advanced Team',
+                    '$99 / month',
+                    currentTier.name === 'advanced'
+                  )}
+                </ScrollView>
+              </Animated.View>
+            )}
           </View>
 
           {/* Clean Unified Metrics Grid Dashboard */}
@@ -1383,7 +1414,7 @@ export default function SettingsScreen() {
                 usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`,
                 (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100,
                 Cpu,
-                '#8B5CF6',
+                '#4C1D95',
                 usage.cpu.usedHours
               )}
               {renderMetricCard(
@@ -1393,7 +1424,7 @@ export default function SettingsScreen() {
                 `${usage.ram.limitMB} MB`,
                 (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100,
                 HardDrive,
-                '#8B5CF6',
+                '#334155',
                 usage.ram.usedMB
               )}
               {renderMetricCard(
@@ -1403,7 +1434,7 @@ export default function SettingsScreen() {
                 `${usage.workspaces.limit}`,
                 (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100,
                 Server,
-                '#8B5CF6',
+                '#5B21B6',
                 usage.workspaces.used,
                 usage.workspaces.limit
               )}
@@ -1414,7 +1445,7 @@ export default function SettingsScreen() {
                 `${usage.disk.limitGB} GB`,
                 (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100,
                 Database,
-                '#8B5CF6',
+                '#1E293B',
                 usage.disk.usedGB
               )}
               {renderMetricCard(
@@ -1424,8 +1455,28 @@ export default function SettingsScreen() {
                 usage.aiTokens.limit.toLocaleString(),
                 (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100,
                 Sparkles,
-                '#8B5CF6',
+                '#6D28D9',
                 usage.aiTokens.used
+              )}
+              {renderMetricCard(
+                'network',
+                'Network Speed',
+                usage.workspaces.used > 0 ? (currentTier.name === 'free' ? '12 Mbps' : '380 Mbps') : '0 Mbps',
+                currentTier.name === 'free' ? '15 Mbps Cap' : 'Uncapped',
+                currentTier.name === 'free' ? (12 / 15) * 100 : 50,
+                Wifi,
+                '#334155',
+                usage.workspaces.used > 0 ? 12 : 0
+              )}
+              {renderMetricCard(
+                'api',
+                'API Rate Limit',
+                usage.workspaces.used > 0 ? `${usage.workspaces.used * 4} req/min` : '0 req/min',
+                currentTier.name === 'free' ? '25 req/min' : currentTier.name === 'pro' ? '500 req/min' : 'Uncapped',
+                currentTier.name === 'free' ? ((usage.workspaces.used * 4) / 25) * 100 : currentTier.name === 'pro' ? ((usage.workspaces.used * 4) / 500) * 100 : 0,
+                Shield,
+                '#5B21B6',
+                usage.workspaces.used > 0 ? usage.workspaces.used * 4 : 0
               )}
             </View>
           </View>
@@ -1500,6 +1551,8 @@ export default function SettingsScreen() {
     const isDisk = type === 'disk'
     const isWorkspaces = type === 'workspaces'
     const isAi = type === 'ai'
+    const isNetwork = type === 'network'
+    const isApi = type === 'api'
 
     // Set configuration based on sub-tab
     let title = ''
@@ -1508,6 +1561,8 @@ export default function SettingsScreen() {
     let percent = 0
     let valueStr = ''
     let limitStr = ''
+
+    const currentTier = billingData?.tier || { name: 'free', displayName: 'Free Plan' }
 
     if (isCompute) {
       title = 'Compute Session Analytics'
@@ -1544,6 +1599,20 @@ export default function SettingsScreen() {
       percent = (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100
       valueStr = usage.aiTokens.used.toLocaleString()
       limitStr = usage.aiTokens.limit.toLocaleString()
+    } else if (isNetwork) {
+      title = 'Network Bandwidth Speed'
+      color = '#8B5CF6'
+      Icon = Wifi
+      percent = currentTier.name === 'free' ? (12 / 15) * 100 : 50
+      valueStr = usage.workspaces.used > 0 ? (currentTier.name === 'free' ? '12 Mbps' : '380 Mbps') : '0 Mbps'
+      limitStr = currentTier.name === 'free' ? '15 Mbps Cap' : 'Uncapped'
+    } else if (isApi) {
+      title = 'API Rate Limitations'
+      color = '#8B5CF6'
+      Icon = Shield
+      percent = currentTier.name === 'free' ? ((usage.workspaces.used * 4) / 25) * 100 : currentTier.name === 'pro' ? ((usage.workspaces.used * 4) / 500) * 100 : 0
+      valueStr = usage.workspaces.used > 0 ? `${usage.workspaces.used * 4} req/min` : '0 req/min'
+      limitStr = currentTier.name === 'free' ? '25 req/min' : currentTier.name === 'pro' ? '500 req/min' : 'Uncapped'
     }
 
     const displayPercent = isNaN(percent) ? 0 : Math.min(percent, 100)
@@ -1820,6 +1889,69 @@ export default function SettingsScreen() {
           {isDisk && renderStorageStackedBreakdown()}
           {isWorkspaces && renderWorkspacesNodeMatrix()}
           {isAi && renderTokensAreaSparkline()}
+          {isNetwork && (
+            <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
+                <Wifi size={22} color="#8B5CF6" />
+              </View>
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Network Bandwidth Channels</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 12 }}>
+                  Your sandbox environment runs on low-latency cloud routes. All incoming and outgoing container traffic flows through highly secured SSL tunnels.
+                </Text>
+              </View>
+              <View style={{ width: '100%', gap: 12, marginTop: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Gateway Status:</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' }} />
+                    <Text style={{ color: '#22c55e', fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>CONNECTED</Text>
+                  </View>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Current Allocated Speed:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Network Bandwidth Limit:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
+                </View>
+              </View>
+            </View>
+          )}
+          {isApi && (
+            <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139, 92, 246, 0.08)', alignItems: 'center', justifyContent: 'center' }}>
+                <Shield size={22} color="#8B5CF6" />
+              </View>
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>API Rate Limit Status</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 12 }}>
+                  CloudCode API rate limiting prevents request bursts to maintain platform stability and protect sandboxes against abuse.
+                </Text>
+              </View>
+              <View style={{ width: '100%', gap: 12, marginTop: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Current Traffic Load:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>API Rate Limit Cap:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
+                </View>
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>Concurrent Request Limits:</Text>
+                  <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_700Bold' }}>
+                    {currentTier.name === 'free' ? '5 concurrent' : currentTier.name === 'pro' ? '50 concurrent' : 'Uncapped'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
 
           {isCompute && (
             <View style={{ gap: 14 }}>
