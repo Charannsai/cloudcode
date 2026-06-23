@@ -17,6 +17,7 @@ import { BlurView } from 'expo-blur'
 import { useAIStore } from '@/store/ai'
 import { useRouter } from 'expo-router'
 import { api } from '@/lib/api'
+import * as ExpoLinking from 'expo-linking'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -521,7 +522,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const handleUpgrade = async (tierName: 'pro' | 'advanced') => {
     setIsUpgrading(true)
     try {
-      const returnUrl = Linking.createURL('/billing/success')
+      const returnUrl = ExpoLinking.createURL('/billing/success')
       const planType = tierName === 'pro' ? 'pro_monthly' : 'advanced_monthly'
       const { checkoutUrl } = await api.billing.checkout(planType, returnUrl)
       if (checkoutUrl) {
