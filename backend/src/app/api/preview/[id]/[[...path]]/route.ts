@@ -242,7 +242,13 @@ export async function GET(req: NextRequest, { params }: Params) {
   const queryPort = req.nextUrl.searchParams.get('port')
   const queryInternalPort = req.nextUrl.searchParams.get('iport') // Direct internal port (preferred)
   const cookiePort = req.cookies.get('preview_port')?.value
-  const port = queryPort || cookiePort || project.port || 3000
+  
+  // Resolve target internal port (port of the user's dev server inside the container, e.g., 3000, 5173)
+  let targetPort = '3000'
+  const potentialPort = queryInternalPort || queryPort || cookiePort
+  if (potentialPort && potentialPort !== project.port?.toString()) {
+    targetPort = potentialPort
+  }
   
   const searchParams = new URLSearchParams(req.nextUrl.search)
   searchParams.delete('token')
@@ -257,10 +263,10 @@ export async function GET(req: NextRequest, { params }: Params) {
         errorHtmlResponse('Your workspace container was asleep and is now waking up. Please wait a few seconds and try again.', 503),
         projectId,
         token,
-        port.toString()
+        targetPort
       )
     }
-    return withCookies(new Response('Container is waking up', { status: 503 }), projectId, token, port.toString())
+    return withCookies(new Response('Container is waking up', { status: 503 }), projectId, token, targetPort)
   }
 
   // Retry logic: After container wake or bridge spawn, the server may need
@@ -269,19 +275,15 @@ export async function GET(req: NextRequest, { params }: Params) {
   const maxAttempts = 4
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const targetPort = queryInternalPort || port?.toString() || '3000'
-
       // Ensure the sidecar proxy agent is running inside the container
       await ensureSidecarRunning(project.container_id)
 
-      const containerIp = await getContainerIp(project.container_id)
-      if (!containerIp) {
-        throw new Error('Container IP not found. Is it running?')
-      }
+      // Resolve the host port mapped to the sidecar port 9999
+      const sidecarHostPort = project.port?.toString() || '9999'
 
-      // Route ALL traffic through the sidecar on port 9999 with X-Target-Port header.
-      // The sidecar runs inside the container and can reach localhost-bound servers.
-      const targetUrl = `http://${containerIp}:${SIDECAR_PORT}${subPath}${search}`
+      // Route all traffic through the host's loopback on the mapped sidecar port.
+      // This is firewall-safe (bypasses direct container IP blocks).
+      const targetUrl = `http://127.0.0.1:${sidecarHostPort}${subPath}${search}`
 
       const headersToForward: Record<string, string> = {
         'Host': `localhost:${targetPort}`,
@@ -388,7 +390,7 @@ export async function GET(req: NextRequest, { params }: Params) {
           }
       }
 
-      return withCookies(new Response(finalBody, { status: response.status, headers: resHeaders }), projectId, token, port.toString())
+      return withCookies(new Response(finalBody, { status: response.status, headers: resHeaders }), projectId, token, targetPort)
 
     } catch (err) {
       lastError = err

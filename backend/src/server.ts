@@ -157,10 +157,10 @@ const startServer = async () => {
       // Ensure the sidecar is running inside the container
       await ensureSidecarRunning(project.container_id)
 
-      // Route WebSocket through the sidecar on port 9999 with X-Target-Port header
-      const SIDECAR_PORT = 9999
+      // Route WebSocket through the sidecar on its mapped host port
+      const sidecarHostPort = project.port || 9999
       const { default: WebSocket, WebSocketServer } = await import('ws')
-      const targetUrl = `ws://${containerIp}:${SIDECAR_PORT}${pathname}${search || ''}`
+      const targetUrl = `ws://127.0.0.1:${sidecarHostPort}${pathname}${search || ''}`
       
       const targetWs = new WebSocket(targetUrl, {
         headers: {
