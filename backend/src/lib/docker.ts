@@ -236,7 +236,7 @@ export async function execDetachedInContainer(
   })
 
   await new Promise<void>((resolve, reject) => {
-    exec.start({ hijack: false }, (err) => {
+    exec.start({ Detach: true, hijack: false }, (err) => {
       if (err) return reject(err)
       resolve()
     })
@@ -454,12 +454,16 @@ export function getWorkspacePath(projectId: string): string {
  * to 127.0.0.1 (localhost) directly — no external bridge needed.
  */
 export async function ensureSidecarRunning(containerId: string): Promise<void> {
-  // Check if sidecar is already running
+  // Check if sidecar is already running by verifying if port 9999 is listening
   let isRunning = false
   try {
     const exitCode = await execInContainer(
       containerId,
-      ['pgrep', '-f', '/usr/local/bin/sidecar.js'],
+      [
+        'node',
+        '-e',
+        "const net = require('net'); const s = net.connect(9999, '127.0.0.1', () => { s.destroy(); process.exit(0); }); s.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 500);"
+      ],
       () => {}
     )
     isRunning = (exitCode === 0)
@@ -479,12 +483,16 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
   // Brief pause to let the sidecar bind the port
   await new Promise(r => setTimeout(r, 500))
 
-  // Verify if it actually started
+  // Verify if it actually started by checking if port 9999 is listening
   let started = false
   try {
     const exitCode = await execInContainer(
       containerId,
-      ['pgrep', '-f', '/usr/local/bin/sidecar.js'],
+      [
+        'node',
+        '-e',
+        "const net = require('net'); const s = net.connect(9999, '127.0.0.1', () => { s.destroy(); process.exit(0); }); s.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 500);"
+      ],
       () => {}
     )
     started = (exitCode === 0)
