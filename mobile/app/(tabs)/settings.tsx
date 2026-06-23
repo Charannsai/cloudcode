@@ -22,6 +22,7 @@ import { api } from '@/lib/api'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useUIStore } from '@/store/ui'
+import { useProjectsStore } from '@/store/projects'
 
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
   const scale = useSharedValue(1)
@@ -46,6 +47,8 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuthStore()
   const { colors, toggleTheme, isDark } = useAppTheme()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const { projects, fetchProjects } = useProjectsStore()
+  const [billingDetailType, setBillingDetailType] = useState<'compute' | 'ram' | 'disk' | 'workspaces' | 'ai'>('compute')
 
   // Pulsing animation for Billing Skeleton UI
   const skeletonOpacity = useSharedValue(0.35)
@@ -309,8 +312,9 @@ export default function SettingsScreen() {
   // Auto-refresh stats in background when settings tab gets focused, and poll periodically
   useFocusEffect(
     useCallback(() => {
-      if (currentSubScreen === 'billing') {
+      if (currentSubScreen === 'billing' || currentSubScreen === 'billing-detail') {
         fetchBillingStatus(true)
+        fetchProjects(true)
       } else if (currentSubScreen === 'gitSsh') {
         fetchGitSshData(true)
       } else if (currentSubScreen === 'dependencies') {
@@ -322,11 +326,13 @@ export default function SettingsScreen() {
         fetchGitSshData(true)
         fetchRuntimesData(true)
         loadLocalAuditLogs()
+        fetchProjects(true)
       }
 
       const interval = setInterval(() => {
-        if (currentSubScreen === 'billing') {
+        if (currentSubScreen === 'billing' || currentSubScreen === 'billing-detail') {
           fetchBillingStatus(true)
+          fetchProjects(true)
         } else if (currentSubScreen === 'gitSsh') {
           fetchGitSshData(true)
         } else if (currentSubScreen === 'dependencies') {
@@ -340,7 +346,7 @@ export default function SettingsScreen() {
       return () => {
         clearInterval(interval)
       }
-    }, [currentSubScreen, fetchRuntimesData])
+    }, [currentSubScreen, fetchRuntimesData, fetchProjects])
   )
 
   useEffect(() => {

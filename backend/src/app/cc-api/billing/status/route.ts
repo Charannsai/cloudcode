@@ -130,13 +130,42 @@ export async function GET(req: NextRequest) {
     }
     // Convert to hours exactly
     const cpuUsedHours = Number((totalCpuSeconds / 3600).toFixed(2))
-
     // 5. Fetch actual AI token usage from DB
     const aiTokensUsed = dbUser?.ai_tokens_used || 0
     const byokTokensUsed = dbUser?.byok_tokens_used || 0
     const numHash = parseInt(user.id.replace(/[^0-9]/g, '')) || 4321
 
-    // 6. Generate historical billing & usage lists based on account age
+    // 6. Compute Disk space breakdown by project in MB
+    const diskBreakdown = []
+    if (userProjects) {
+      for (const project of userProjects) {
+        const workspacePath = path.join(process.cwd(), '..', 'projects', project.id)
+        const size = await getDirSize(workspacePath)
+        diskBreakdown.push({
+          id: project.id,
+          name: project.name,
+          sizeMB: Number((size / (1024 * 1024)).toFixed(2)),
+        })
+      }
+    }
+
+    // 7. Map recent sessions to include project name
+    const sessionBreakdown = []
+    if (sessions) {
+      const sorted = [...sessions].sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime())
+      const recent = sorted.slice(-15).reverse()
+      for (const s of recent) {
+        const proj = userProjects?.find(p => p.id === s.project_id)
+        sessionBreakdown.push({
+          id: s.id || `${s.project_id}-${s.started_at}`,
+          projectName: proj?.name || 'Deleted Project',
+          startedAt: s.started_at,
+          endedAt: s.ended_at,
+        })
+      }
+    }
+
+    // 8. Generate historical billing & usage lists based on account age
     const createdAt = dbUser?.created_at ? new Date(dbUser.created_at) : new Date()
     const now = new Date()
     const billingHistory = []
@@ -213,6 +242,8 @@ export async function GET(req: NextRequest) {
       },
       billingHistory,
       usageHistory,
+      diskBreakdown,
+      sessions: sessionBreakdown,
     })
   } catch (err) {
     console.error('Billing status error:', err)
