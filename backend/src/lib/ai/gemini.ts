@@ -1,7 +1,40 @@
 import { execInContainer } from '../docker'
 import { v4 as uuidv4 } from 'uuid'
 import { createProjectInternal } from '../projects'
+import { supabaseAdmin } from '../supabase'
 
+export function estimateTokens(text: string): number {
+  if (!text) return 0
+  // Standard token estimation heuristic (1 token = ~4 characters)
+  return Math.ceil(text.length / 4)
+}
+
+export async function recordTokens(userId: string | undefined, isBYOK: boolean, tokens: number) {
+  if (!userId || tokens <= 0) return
+  try {
+    const field = isBYOK ? 'byok_tokens_used' : 'ai_tokens_used'
+    
+    // Fetch current tokens to increment safely
+    const { data: dbUser } = await supabaseAdmin
+      .from('users')
+      .select('ai_tokens_used, byok_tokens_used')
+      .eq('github_id', userId)
+      .single()
+
+    const currentVal = dbUser?.[field] || 0
+    await supabaseAdmin
+      .from('users')
+      .update({
+        [field]: currentVal + tokens,
+        updated_at: new Date().toISOString()
+      })
+      .eq('github_id', userId)
+      
+    console.log(`[AI Token Tracker] Recorded ${tokens} tokens for user ${userId} (BYOK: ${isBYOK})`)
+  } catch (err) {
+    console.error('[AI Token Tracker] Failed to record tokens:', err)
+  }
+}
 
 if (!(global as any).pendingCommands) {
   (global as any).pendingCommands = new Map()
@@ -244,37 +277,61 @@ export async function* chatWithGemini(
   context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
-  // Build the full message history with context
-  const contents: GeminiMessage[] = [...messages]
+  let totalTokens = 0
+  const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
 
-  // Inject context into the first user message  
-  if (context && contents.length > 0 && contents[0].role === 'user') {
-    let contextPrefix = ''
-    if (context.fileTree) {
-      contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+  try {
+    // Build the full message history with context
+    const contents: GeminiMessage[] = [...messages]
+
+    // Inject context into the first user message  
+    if (context && contents.length > 0 && contents[0].role === 'user') {
+      let contextPrefix = ''
+      if (context.fileTree) {
+        contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+      }
+      if (context.openFile) {
+        contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
+      }
+      const firstPart = contents[0].parts[0]
+      if ('text' in firstPart) {
+        firstPart.text = contextPrefix + firstPart.text
+      }
     }
-    if (context.openFile) {
-      contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
-    }
-    const firstPart = contents[0].parts[0]
-    if ('text' in firstPart) {
-      firstPart.text = contextPrefix + firstPart.text
-    }
-  }
 
-  // Agentic loop — keep going until we get a text-only response
-  let loopCount = 0
-  const MAX_LOOPS = 10
+    // Agentic loop — keep going until we get a text-only response
+    let loopCount = 0
+    const MAX_LOOPS = 10
 
-  while (loopCount < MAX_LOOPS) {
-    loopCount++
+    while (loopCount < MAX_LOOPS) {
+      loopCount++
 
-    try {
       const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
       const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : GEMINI_API_KEY
       const toolsToProvide = hasContainer 
         ? TOOL_DECLARATIONS 
         : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
+
+      // Calculate input prompt tokens
+      let inputPromptText = ''
+      inputPromptText += hasContainer 
+        ? SYSTEM_INSTRUCTION 
+        : 'You are CloudCode AI, a general helpful developer assistant.'
+      for (const content of contents) {
+        for (const part of content.parts) {
+          if ('text' in part) {
+            inputPromptText += part.text
+          } else if ('functionCall' in part) {
+            inputPromptText += JSON.stringify(part.functionCall)
+          } else if ('functionResponse' in part) {
+            inputPromptText += JSON.stringify(part.functionResponse)
+          }
+        }
+      }
+      if (toolsToProvide.length > 0) {
+        inputPromptText += JSON.stringify(toolsToProvide)
+      }
+      totalTokens += estimateTokens(inputPromptText)
 
       const response = await fetch(`${GEMINI_API_URL}:generateContent?key=${apiKey}`, {
         method: 'POST',
@@ -311,6 +368,17 @@ export async function* chatWithGemini(
 
       const parts = data.candidates[0].content.parts as GeminiPart[]
       let hasFunctionCall = false
+
+      // Calculate output completion tokens
+      let outputCompletionText = ''
+      for (const part of parts) {
+        if ('text' in part && part.text) {
+          outputCompletionText += part.text
+        } else if ('functionCall' in part) {
+          outputCompletionText += JSON.stringify(part.functionCall)
+        }
+      }
+      totalTokens += estimateTokens(outputCompletionText)
 
       // Add model response to history
       contents.push({
@@ -386,9 +454,13 @@ export async function* chatWithGemini(
       if (!hasFunctionCall) {
         break
       }
-    } catch (err) {
-      yield { type: 'error', content: `Error: ${(err as Error).message}` }
-      return
+    }
+  } catch (err) {
+    yield { type: 'error', content: `Error: ${(err as Error).message}` }
+    return
+  } finally {
+    if (context?.userId && totalTokens > 0) {
+      await recordTokens(context.userId, isBYOK, totalTokens)
     }
   }
 
@@ -467,13 +539,33 @@ export async function* chatWithOpenAI(
     })
   }
 
-  let loopCount = 0
-  const MAX_LOOPS = 10
+  let totalTokens = 0
+  const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
 
-  while (loopCount < MAX_LOOPS) {
-    loopCount++
+  try {
+    let loopCount = 0
+    const MAX_LOOPS = 10
 
-    try {
+    while (loopCount < MAX_LOOPS) {
+      loopCount++
+
+      // Calculate input prompt tokens
+      let inputPromptText = ''
+      for (const msg of openAIMessages) {
+        if (typeof msg.content === 'string') {
+          inputPromptText += msg.content
+        } else if (Array.isArray(msg.content)) {
+          inputPromptText += JSON.stringify(msg.content)
+        }
+        if (msg.tool_calls) {
+          inputPromptText += JSON.stringify(msg.tool_calls)
+        }
+      }
+      if (toolsToProvide.length > 0) {
+        inputPromptText += JSON.stringify(openAITools)
+      }
+      totalTokens += estimateTokens(inputPromptText)
+
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -503,6 +595,16 @@ export async function* chatWithOpenAI(
 
       const assistantMsg = choice.message
       openAIMessages.push(assistantMsg)
+
+      // Calculate output tokens
+      let outputCompletionText = ''
+      if (assistantMsg.content) {
+        outputCompletionText += assistantMsg.content
+      }
+      if (assistantMsg.tool_calls) {
+        outputCompletionText += JSON.stringify(assistantMsg.tool_calls)
+      }
+      totalTokens += estimateTokens(outputCompletionText)
 
       if (assistantMsg.content) {
         yield { type: 'text', content: assistantMsg.content }
@@ -567,9 +669,13 @@ export async function* chatWithOpenAI(
           content: JSON.stringify(result)
         })
       }
-    } catch (err) {
-      yield { type: 'error', content: `Error: ${(err as Error).message}` }
-      return
+    }
+  } catch (err) {
+    yield { type: 'error', content: `Error: ${(err as Error).message}` }
+    return
+  } finally {
+    if (context?.userId && totalTokens > 0) {
+      await recordTokens(context.userId, isBYOK, totalTokens)
     }
   }
 
@@ -621,13 +727,33 @@ export async function* chatWithAnthropic(
     })
   }
 
-  let loopCount = 0
-  const MAX_LOOPS = 10
+  let totalTokens = 0
+  const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
 
-  while (loopCount < MAX_LOOPS) {
-    loopCount++
+  try {
+    let loopCount = 0
+    const MAX_LOOPS = 10
 
-    try {
+    while (loopCount < MAX_LOOPS) {
+      loopCount++
+
+      // Calculate input prompt tokens
+      let inputPromptText = ''
+      inputPromptText += hasContainer 
+        ? SYSTEM_INSTRUCTION 
+        : 'You are CloudCode AI, a general helpful developer assistant.'
+      for (const msg of anthropicMessages) {
+        if (typeof msg.content === 'string') {
+          inputPromptText += msg.content
+        } else {
+          inputPromptText += JSON.stringify(msg.content)
+        }
+      }
+      if (toolsToProvide.length > 0) {
+        inputPromptText += JSON.stringify(anthropicTools)
+      }
+      totalTokens += estimateTokens(inputPromptText)
+
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -658,6 +784,17 @@ export async function* chatWithAnthropic(
         yield { type: 'error', content: 'No response from Anthropic' }
         return
       }
+
+      // Calculate output tokens
+      let outputCompletionText = ''
+      for (const block of data.content) {
+        if (block.type === 'text') {
+          outputCompletionText += block.text
+        } else if (block.type === 'tool_use') {
+          outputCompletionText += JSON.stringify(block)
+        }
+      }
+      totalTokens += estimateTokens(outputCompletionText)
 
       // Add to messages array
       anthropicMessages.push({
@@ -733,9 +870,13 @@ export async function* chatWithAnthropic(
         role: 'user',
         content: toolResultBlocks
       })
-    } catch (err) {
-      yield { type: 'error', content: `Error: ${(err as Error).message}` }
-      return
+    }
+  } catch (err) {
+    yield { type: 'error', content: `Error: ${(err as Error).message}` }
+    return
+  } finally {
+    if (context?.userId && totalTokens > 0) {
+      await recordTokens(context.userId, isBYOK, totalTokens)
     }
   }
 

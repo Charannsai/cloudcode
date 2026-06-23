@@ -6,6 +6,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { chatWithGemini, chatWithOpenAI, chatWithAnthropic, GeminiMessage } from '@/lib/ai/gemini'
 import { execInContainer, ensureContainerRunning } from '@/lib/docker'
 
+import { getTierConfig } from '@/lib/tiers'
+
 export async function POST(req: NextRequest) {
   const user = getUserFromRequest(req)
   if (!user) return errorResponse('Unauthorized', 401)
@@ -26,26 +28,53 @@ export async function POST(req: NextRequest) {
     return errorResponse('Missing projectId or messages')
   }
 
-  // Check user tier if calling premium models (openai / anthropic)
+  // Check user tier if calling premium models (openai / anthropic) and enforce quotas
   let userTier = 'free'
+  let aiTokensUsed = 0
   try {
     const { data: dbUser } = await supabaseAdmin
       .from('users')
-      .select('tier')
+      .select('tier, ai_tokens_used')
       .eq('github_id', user.id)
       .single()
-    if (dbUser?.tier) {
-      userTier = dbUser.tier
+    if (dbUser) {
+      userTier = dbUser.tier || 'free'
+      aiTokensUsed = dbUser.ai_tokens_used || 0
     }
   } catch (err) {
-    console.error('[AI Chat] Failed to fetch user tier:', err)
+    console.error('[AI Chat] Failed to fetch user tier/tokens:', err)
+  }
+
+  const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey)
+  const tier = getTierConfig(userTier)
+
+  // Enforce AI token limits (only for non-BYOK requests)
+  if (!isBYOK && tier.ai.monthlyTokens > 0 && aiTokensUsed >= tier.ai.monthlyTokens) {
+    const encoder = new TextEncoder()
+    const errMsg = JSON.stringify({
+      type: 'error',
+      content: `LIMIT_EXCEEDED: You have run out of AI tokens on your ${tier.displayName} plan. Please upgrade to continue using CloudCode AI.`
+    })
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`))
+        controller.close()
+      }
+    })
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
   }
 
   if ((model === 'openai' || model === 'anthropic') && userTier === 'free') {
     const encoder = new TextEncoder()
     const errMsg = JSON.stringify({
       type: 'error',
-      content: `${model === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'} is a premium model restricted to Pro and Advanced subscriptions. Please upgrade your billing plan in Settings.`
+      content: `LIMIT_EXCEEDED: ${model === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'} is a premium model restricted to Pro and Advanced subscriptions. Please upgrade your billing plan in Settings.`
     })
     const stream = new ReadableStream({
       start(controller) {

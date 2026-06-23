@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { api, AIStreamChunk } from '@/lib/api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useProjectsStore } from './projects'
+import { useUIStore } from './ui'
 
 
 
@@ -217,16 +218,24 @@ export const useAIStore = create<AIState>((set, get) => ({
           }
 
           case 'error':
-            fullText += `\n⚠️ Error: ${chunk.content}`
+            const errMsg = chunk.content || ''
+            if (errMsg.includes('LIMIT_EXCEEDED')) {
+              useUIStore.getState().showLimitModal('ai')
+            }
+            fullText += `\n⚠️ Error: ${errMsg}`
             set({ currentStreamText: fullText })
             break
         }
       })
     } catch (err) {
-      if ((err as Error).message === 'Generation stopped by user.') {
+      const errMsg = (err as Error).message || ''
+      if (errMsg.includes('LIMIT_EXCEEDED')) {
+        useUIStore.getState().showLimitModal('ai')
+      }
+      if (errMsg === 'Generation stopped by user.') {
         fullText += `\n\n■ Generation stopped by user.`
       } else {
-        fullText += `\n⚠️ ${(err as Error).message}`
+        fullText += `\n⚠️ ${errMsg}`
       }
     }
 

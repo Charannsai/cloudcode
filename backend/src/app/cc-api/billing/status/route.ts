@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     // 1. Fetch user data (tier, subscription details, and signup date)
     const { data: dbUser } = await supabaseAdmin
       .from('users')
-      .select('tier, subscription_id, subscription_status, created_at')
+      .select('tier, subscription_id, subscription_status, created_at, ai_tokens_used, byok_tokens_used')
       .eq('github_id', user.id)
       .single()
 
@@ -94,13 +94,10 @@ export async function GET(req: NextRequest) {
       Number((totalCpuSeconds / 3600).toFixed(2))
     )
 
-    // 5. Generate stable AI token count based on user identifier (to remain consistent on refresh)
+    // 5. Fetch actual AI token usage from DB
+    const aiTokensUsed = dbUser?.ai_tokens_used || 0
+    const byokTokensUsed = dbUser?.byok_tokens_used || 0
     const numHash = parseInt(user.id.replace(/[^0-9]/g, '')) || 4321
-    const maxAllowedTokens = tier.ai.monthlyTokens
-    const aiTokensUsed = Math.min(
-      maxAllowedTokens,
-      Math.floor((numHash % 40) * (maxAllowedTokens / 100) + 1200)
-    )
 
     // 6. Generate historical billing & usage lists based on account age
     const createdAt = dbUser?.created_at ? new Date(dbUser.created_at) : new Date()
@@ -174,6 +171,7 @@ export async function GET(req: NextRequest) {
         ram: { usedMB: ramUsedMB, limitMB: tier.container.memoryMB },
         disk: { usedGB: diskUsedGB, limitGB: tier.container.diskGB },
         aiTokens: { used: aiTokensUsed, limit: tier.ai.monthlyTokens },
+        byokTokens: { used: byokTokensUsed },
         networkSpeed: { currentMbps: tier.container.networkSpeedMbps, limitMbps: tier.container.networkSpeedMbps }
       },
       billingHistory,

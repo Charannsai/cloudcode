@@ -3,6 +3,8 @@ import { Project, FileNode } from '@/types'
 import EventSource from 'react-native-sse'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+import { useUIStore } from '../store/ui'
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -18,7 +20,11 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: response.statusText }))
-    throw new Error(err.error || `Request failed: ${response.status}`)
+    const errorMsg = err.error || `Request failed: ${response.status}`
+    if (response.status === 403 && errorMsg.includes('LIMIT_EXCEEDED')) {
+      useUIStore.getState().showLimitModal('workspace')
+    }
+    throw new Error(errorMsg)
   }
 
   const result = await response.json()
@@ -175,6 +181,17 @@ export const api = {
           ai: { monthlyTokens: number; premiumModels: boolean; byokSupported: boolean }
         }
         upgrades: { name: string; displayName: string; price: { monthly: number; yearly: number }; container: any; ai: any }[]
+        usage: {
+          workspaces: { used: number; limit: number }
+          cpu: { usedHours: number; limitHours: number | string }
+          ram: { usedMB: number; limitMB: number }
+          disk: { usedGB: number; limitGB: number }
+          aiTokens: { used: number; limit: number }
+          byokTokens?: { used: number }
+          networkSpeed: { currentMbps: number; limitMbps: number }
+        }
+        billingHistory?: any[]
+        usageHistory?: any[]
       }>('/cc-api/billing/status'),
 
     checkout: (planType: string, returnUrl: string) =>
