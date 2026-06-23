@@ -432,7 +432,7 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
 
   // Start the sidecar in the background. It will listen on 0.0.0.0:9999.
   const startCmd = `nohup node /usr/local/bin/sidecar.js > /tmp/sidecar.log 2>&1 &`
-  await execInContainer(containerId, ['sh', '-c', startCmd], () => {}, 'root')
+  await execInContainer(containerId, ['sh', '-c', startCmd], () => {})
 
   // Brief pause to let the sidecar bind the port
   await new Promise(r => setTimeout(r, 500))

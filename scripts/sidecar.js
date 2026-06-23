@@ -35,7 +35,7 @@ const server = http.createServer((clientReq, clientRes) => {
   forwardHeaders['host'] = `localhost:${targetPort}`;
 
   const options = {
-    hostname: '127.0.0.1',
+    hostname: 'localhost',
     port: targetPort,
     path: clientReq.url,
     method: clientReq.method,
@@ -71,7 +71,7 @@ server.on('upgrade', (clientReq, clientSocket, clientHead) => {
   const targetPort = parseInt(clientReq.headers['x-target-port'] || DEFAULT_TARGET_PORT, 10);
 
   // Open a raw TCP connection to the target port
-  const targetSocket = net.connect(targetPort, '127.0.0.1', () => {
+  const targetSocket = net.connect(targetPort, 'localhost', () => {
     // Reconstruct the HTTP upgrade request to send to the target
     const forwardHeaders = { ...clientReq.headers };
     delete forwardHeaders['x-target-port'];
