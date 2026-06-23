@@ -23,11 +23,48 @@ const net = require('net');
 const SIDECAR_PORT = 9999;
 const DEFAULT_TARGET_PORT = 3000;
 
+// Caches the correct loopback hostname ('127.0.0.1' or '::1') for each target port
+const activeHostnames = {};
+
+/**
+ * Dynamically check if the target port is bound to IPv4 (127.0.0.1) or IPv6 (::1).
+ * Caches the result to prevent TCP handshake overhead on subsequent requests.
+ */
+function getActiveHostname(port) {
+  if (activeHostnames[port]) {
+    return Promise.resolve(activeHostnames[port]);
+  }
+
+  return new Promise((resolve) => {
+    // 1. Try connecting to 127.0.0.1 (IPv4 loopback)
+    const socket4 = net.connect({ port, host: '127.0.0.1', timeout: 300 }, () => {
+      socket4.destroy();
+      activeHostnames[port] = '127.0.0.1';
+      resolve('127.0.0.1');
+    });
+
+    socket4.on('error', () => {
+      // 2. Fallback: Try connecting to ::1 (IPv6 loopback)
+      const socket6 = net.connect({ port, host: '::1', timeout: 300 }, () => {
+        socket6.destroy();
+        activeHostnames[port] = '::1';
+        resolve('::1');
+      });
+
+      socket6.on('error', () => {
+        // Fallback to localhost if both checks fail (let the standard client connection throw error)
+        resolve('localhost');
+      });
+    });
+  });
+}
+
 // ── HTTP Request Proxy ──────────────────────────────────────────────────────
 
-const server = http.createServer((clientReq, clientRes) => {
+const server = http.createServer(async (clientReq, clientRes) => {
   const targetPort = parseInt(clientReq.headers['x-target-port'] || DEFAULT_TARGET_PORT, 10);
-  console.log(`[Sidecar] HTTP ${clientReq.method} ${clientReq.url} -> localhost:${targetPort}`);
+  const hostname = await getActiveHostname(targetPort);
+  console.log(`[Sidecar] HTTP ${clientReq.method} ${clientReq.url} -> ${hostname}:${targetPort}`);
 
   // Clone headers, removing sidecar-specific ones before forwarding
   const forwardHeaders = { ...clientReq.headers };
@@ -36,7 +73,7 @@ const server = http.createServer((clientReq, clientRes) => {
   forwardHeaders['host'] = `localhost:${targetPort}`;
 
   const options = {
-    hostname: 'localhost',
+    hostname: hostname,
     port: targetPort,
     path: clientReq.url,
     method: clientReq.method,
@@ -49,11 +86,15 @@ const server = http.createServer((clientReq, clientRes) => {
   });
 
   proxyReq.on('error', (err) => {
-    // Target port is not active — return a clear 502
+    console.error(`[Sidecar] HTTP proxy error connecting to ${hostname}:${targetPort}: ${err.message}`, err);
+    
+    // Clear cache if the connection failed, forcing re-detection on next request
+    delete activeHostnames[targetPort];
+
     if (!clientRes.headersSent) {
       clientRes.writeHead(502, { 'Content-Type': 'text/plain' });
       clientRes.end(
-        `Sidecar: Cannot connect to localhost:${targetPort}. ` +
+        `Sidecar: Cannot connect to ${hostname}:${targetPort}. ` +
         `Make sure your development server is running. (${err.code || err.message})`
       );
     }
@@ -68,12 +109,13 @@ const server = http.createServer((clientReq, clientRes) => {
 
 // ── WebSocket Upgrade Proxy ─────────────────────────────────────────────────
 
-server.on('upgrade', (clientReq, clientSocket, clientHead) => {
+server.on('upgrade', async (clientReq, clientSocket, clientHead) => {
   const targetPort = parseInt(clientReq.headers['x-target-port'] || DEFAULT_TARGET_PORT, 10);
-  console.log(`[Sidecar] WS Upgrade ${clientReq.url} -> localhost:${targetPort}`);
+  const hostname = await getActiveHostname(targetPort);
+  console.log(`[Sidecar] WS Upgrade ${clientReq.url} -> ${hostname}:${targetPort}`);
 
   // Open a raw TCP connection to the target port
-  const targetSocket = net.connect(targetPort, 'localhost', () => {
+  const targetSocket = net.connect(targetPort, hostname, () => {
     // Reconstruct the HTTP upgrade request to send to the target
     const forwardHeaders = { ...clientReq.headers };
     delete forwardHeaders['x-target-port'];
@@ -100,12 +142,16 @@ server.on('upgrade', (clientReq, clientSocket, clientHead) => {
   });
 
   targetSocket.on('error', (err) => {
-    // If target isn't reachable, send a 502 and close the socket
+    console.error(`[Sidecar] WebSocket proxy error connecting to ${hostname}:${targetPort}: ${err.message}`, err);
+    
+    // Clear cache if the connection failed
+    delete activeHostnames[targetPort];
+
     clientSocket.write(
       'HTTP/1.1 502 Bad Gateway\r\n' +
       'Content-Type: text/plain\r\n' +
       '\r\n' +
-      `Sidecar: WebSocket target localhost:${targetPort} is not reachable. (${err.code || err.message})`
+      `Sidecar: WebSocket target ${hostname}:${targetPort} is not reachable. (${err.code || err.message})`
     );
     clientSocket.destroy();
   });
