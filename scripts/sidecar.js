@@ -27,6 +27,7 @@ const DEFAULT_TARGET_PORT = 3000;
 
 const server = http.createServer((clientReq, clientRes) => {
   const targetPort = parseInt(clientReq.headers['x-target-port'] || DEFAULT_TARGET_PORT, 10);
+  console.log(`[Sidecar] HTTP ${clientReq.method} ${clientReq.url} -> localhost:${targetPort}`);
 
   // Clone headers, removing sidecar-specific ones before forwarding
   const forwardHeaders = { ...clientReq.headers };
@@ -69,6 +70,7 @@ const server = http.createServer((clientReq, clientRes) => {
 
 server.on('upgrade', (clientReq, clientSocket, clientHead) => {
   const targetPort = parseInt(clientReq.headers['x-target-port'] || DEFAULT_TARGET_PORT, 10);
+  console.log(`[Sidecar] WS Upgrade ${clientReq.url} -> localhost:${targetPort}`);
 
   // Open a raw TCP connection to the target port
   const targetSocket = net.connect(targetPort, 'localhost', () => {

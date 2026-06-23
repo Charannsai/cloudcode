@@ -217,6 +217,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     return withCookies(errorResponse('Invalid path parameters', 400), projectId, token)
   }
 
+  // Auto-restart sleeping containers (or containers missing sidecar binds)
+  const wasAsleep = await ensureContainerRunning(projectId)
+
   const { data: project } = await supabaseAdmin
     .from('projects')
     .select('id, user_github_id, port, container_id, status')
@@ -235,9 +238,6 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   // Track activity to prevent idle auto-stop
   recordActivity(projectId)
-
-  // Auto-restart sleeping containers
-  const wasAsleep = await ensureContainerRunning(projectId)
 
   const queryPort = req.nextUrl.searchParams.get('port')
   const queryInternalPort = req.nextUrl.searchParams.get('iport') // Direct internal port (preferred)
