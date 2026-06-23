@@ -63,7 +63,10 @@ export default function NewProjectScreen() {
       addProject(project)
       router.replace(`/project/${project.id}`)
     } catch (err) {
-      Alert.alert('Failed', (err as Error).message)
+      const errMsg = (err as Error).message || ''
+      if (!errMsg.includes('LIMIT_EXCEEDED')) {
+        Alert.alert('Failed', errMsg)
+      }
     } finally {
       setLoading(false)
     }
