@@ -23,37 +23,22 @@ export function detectProjectTech(
   const normName = (name || '').toLowerCase();
   const normUrl = (githubUrl || '').toLowerCase();
 
-  // 1. Direct type matches
-  if (normType === 'nextjs') return 'nextjs';
+  // 1. Check for specific frameworks inside name/githubUrl first to override general type (e.g. react/node)
+  if (normName.includes('next') || normUrl.includes('next') || normType === 'nextjs') return 'nextjs';
+  if (normName.includes('fastapi') || normUrl.includes('fastapi') || normType === 'fastapi') return 'fastapi';
+  if (normName.includes('flask') || normUrl.includes('flask') || normType === 'flask') return 'flask';
+  if (normName.includes('rust') || normName.includes('cargo') || normUrl.includes('rust') || normUrl.includes('cargo') || normType === 'rust') return 'rust';
+  if (normName.includes('gin') || normName.includes('golang') || normName.includes('go-') || normUrl.includes('gin') || normUrl.includes('go') || normType === 'gin') return 'gin';
+  if (normName.includes('python') || normName.includes('django') || normUrl.includes('python') || normType === 'python') return 'python';
+
+  // 2. Direct general type matches
   if (normType === 'react') return 'react';
   if (normType === 'node') return 'node';
-  if (normType === 'flask') return 'flask';
-  if (normType === 'fastapi') return 'fastapi';
-  if (normType === 'gin') return 'gin';
-  if (normType === 'rust') return 'rust';
 
-  // 2. Name matching
-  if (normName.includes('next')) return 'nextjs';
-  if (normName.includes('react') || normName.includes('vite')) return 'react';
-  if (normName.includes('node') || normName.includes('express') || normName.includes('npm')) return 'node';
-  if (normName.includes('fastapi')) return 'fastapi';
-  if (normName.includes('flask')) return 'flask';
-  if (normName.includes('rust') || normName.includes('cargo')) return 'rust';
-  if (normName.includes('gin') || normName.includes('golang') || normName.includes('go-')) return 'gin';
-  if (normName.includes('python') || normName.includes('django')) return 'python';
-
-  // 3. Git URL matching
-  if (normUrl) {
-    if (normUrl.includes('next')) return 'nextjs';
-    if (normUrl.includes('react') || normUrl.includes('vite')) return 'react';
-    if (normUrl.includes('node') || normUrl.includes('express')) return 'node';
-    if (normUrl.includes('fastapi')) return 'fastapi';
-    if (normUrl.includes('flask')) return 'flask';
-    if (normUrl.includes('rust') || normUrl.includes('cargo')) return 'rust';
-    if (normUrl.includes('gin') || normUrl.includes('go')) return 'gin';
-    if (normUrl.includes('python')) return 'python';
-    return 'git';
-  }
+  // 3. Fallbacks
+  if (normName.includes('react') || normName.includes('vite') || normUrl.includes('react') || normUrl.includes('vite')) return 'react';
+  if (normName.includes('node') || normName.includes('express') || normName.includes('npm') || normUrl.includes('node') || normUrl.includes('express')) return 'node';
+  if (normUrl) return 'git';
 
   return 'empty';
 }

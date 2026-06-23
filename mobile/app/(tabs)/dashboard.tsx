@@ -46,9 +46,8 @@ function PressableScale({ children, onPress, style }: { children: React.ReactNod
       onPress={onPress}
       onPressIn={() => { scale.value = 0.97 }}
       onPressOut={() => { scale.value = 1 }}
-      style={style}
     >
-      <Animated.View style={animatedStyle}>
+      <Animated.View style={[style, animatedStyle]}>
         {children}
       </Animated.View>
     </Pressable>
