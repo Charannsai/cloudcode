@@ -435,8 +435,34 @@ export async function ensureSidecarRunning(containerId: string): Promise<void> {
   await execInContainer(containerId, ['sh', '-c', startCmd], () => {}, 'root')
 
   // Brief pause to let the sidecar bind the port
-  await new Promise(r => setTimeout(r, 300))
-  console.log(`[Sidecar] Sidecar proxy agent started in container ${containerId}`)
+  await new Promise(r => setTimeout(r, 500))
+
+  // Verify if it actually started
+  let started = false
+  try {
+    const exitCode = await execInContainer(
+      containerId,
+      ['sh', '-c', "pgrep -f 'node /usr/local/bin/sidecar.js'"],
+      () => {}
+    )
+    started = (exitCode === 0)
+  } catch {}
+
+  if (!started) {
+    let logContent = ''
+    try {
+      await execInContainer(
+        containerId,
+        ['cat', '/tmp/sidecar.log'],
+        (data) => { logContent += data }
+      )
+    } catch (e) {
+      logContent = `Failed to read log: ${(e as Error).message}`
+    }
+    console.error(`[Sidecar] ERROR: Sidecar failed to start in container ${containerId}. Log content:\n${logContent}`)
+  } else {
+    console.log(`[Sidecar] Sidecar proxy agent started in container ${containerId}`)
+  }
 }
 
 export { docker }
