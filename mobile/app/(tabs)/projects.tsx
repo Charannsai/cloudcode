@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, Alert, ScrollView, Pressable,
+  RefreshControl, Alert, ScrollView, Pressable, Modal,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
@@ -14,20 +14,21 @@ import {
   Plus,
   Trash2,
   Terminal,
-  Activity,
-  Cpu,
-  Globe,
   GitBranch,
   ChevronRight,
   Sparkles,
+  Search,
+  X,
+  MoreVertical,
 } from 'lucide-react-native'
+import { TextInput } from 'react-native'
+import { ProjectIcon, detectProjectTech, getTechColors } from '@/components/ProjectIcon'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import Animated, { 
   FadeInDown, 
   useAnimatedStyle, 
   withRepeat, 
   withTiming, 
-  withSpring,
   useSharedValue, 
   Easing,
   interpolate
@@ -41,7 +42,7 @@ function PressableScale({ children, onPress, style }: { children: React.ReactNod
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => { scale.value = 0.96 }}
+      onPressIn={() => { scale.value = 0.97 }}
       onPressOut={() => { scale.value = 1 }}
       style={style}
     >
@@ -57,7 +58,7 @@ const PulseDot = ({ color }: { color: string }) => {
   
   useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     )
@@ -65,37 +66,50 @@ const PulseDot = ({ color }: { color: string }) => {
   
   const animStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ scale: interpolate(opacity.value, [0.4, 1], [0.9, 1.3]) }]
+    transform: [{ scale: interpolate(opacity.value, [0.4, 1], [0.85, 1.2]) }]
   }))
   
   return (
-    <View style={{ width: 14, height: 14, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View style={[{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }, animStyle]} />
-    </View>
+    <Animated.View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: color }, animStyle]} />
   )
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  ready: '#3FB950',
-  provisioning: '#D2A8FF',
-  error: '#F85149',
-}
-
-const TYPE_ICON: Record<string, any> = {
-  node: Terminal,
-  react: Globe,
-  empty: Cpu,
 }
 
 export default function ProjectsScreen() {
   const router = useRouter()
   const { colors, isDark } = useAppTheme()
   const { handleScroll } = useScrollVisibility()
-  const { projects, loading, fetchProjects, removeProject } = useProjectsStore()
+  const { projects, loading, fetchProjects, removeProject, updateProject } = useProjectsStore()
 
   const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showSkeleton, setShowSkeleton] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'idle'>('all')
+
+  const [activeProjectForMenu, setActiveProjectForMenu] = useState<Project | null>(null)
+  const [isRenameMode, setIsRenameMode] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [isRenaming, setIsRenaming] = useState(false)
+
+  const handleRenameSubmit = async () => {
+    if (!activeProjectForMenu || !newName.trim()) return
+    setIsRenaming(true)
+    try {
+      const updated = await api.projects.rename(activeProjectForMenu.id, newName.trim())
+      updateProject(activeProjectForMenu.id, { name: updated.name })
+      setActiveProjectForMenu(null)
+      setIsRenameMode(false)
+      setNewName('')
+    } catch (err) {
+      Alert.alert('Failed to Rename', (err as Error).message)
+    } finally {
+      setIsRenaming(false)
+    }
+  }
+
+  const cardBg = isDark ? '#161B22' : '#FFFFFF'
+  const cardBorder = isDark ? '#30363D' : '#E1E4E8'
+  const subtleBg = isDark ? '#21262D' : '#F6F8FA'
 
   useEffect(() => {
     let t: any
@@ -111,34 +125,16 @@ export default function ProjectsScreen() {
 
   const showSkeletonState = showSkeleton && projects.length === 0
 
-  const ProjectSkeleton = () => (
-    <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border, opacity: 0.4, paddingVertical: 14, paddingHorizontal: 4 }}>
-      <View style={styles.cardMain}>
-        <View style={[styles.iconBox, { backgroundColor: isDark ? '#1C2128' : '#E5E7EB', width: 30, height: 30, borderRadius: 4 }]} />
-        <View style={styles.cardInfo}>
-          <View style={{ backgroundColor: isDark ? '#1C2128' : '#E5E7EB', height: 14, width: '60%', borderRadius: 4 }} />
-          <View style={[styles.cardMeta, { marginTop: 8 }]}>
-            <View style={{ backgroundColor: isDark ? '#1C2128' : '#E5E7EB', height: 10, width: '30%', borderRadius: 4 }} />
-          </View>
-        </View>
-        <ChevronRight size={16} color={colors.border} strokeWidth={1.5} />
-      </View>
-    </View>
-  )
-
   useEffect(() => {
     fetchProjects(false)
   }, [fetchProjects])
 
-  // Keep workspaces list updated on screen focus and poll silently every 10s
   useFocusEffect(
     useCallback(() => {
       fetchProjects(true)
-
       const interval = setInterval(() => {
         fetchProjects(true)
       }, 10000)
-
       return () => {
         clearInterval(interval)
       }
@@ -163,166 +159,140 @@ export default function ProjectsScreen() {
     }
   }
 
+  const filteredProjects = projects.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (p.github_url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.type.toLowerCase().includes(searchQuery.toLowerCase())
+      
+    const matchesStatus = 
+      statusFilter === 'all' ? true :
+      statusFilter === 'running' ? p.status === 'running' :
+      p.status !== 'running'
+      
+    return matchesSearch && matchesStatus
+  })
+
   const renderProject = ({ item: p, index }: { item: Project; index: number }) => {
-    const Icon = TYPE_ICON[p.type] || Terminal
-    const statusColor = STATUS_COLOR[p.status] || colors.textSecondary
+    const tech = detectProjectTech(p.type, p.name, p.github_url)
+    const techColors = getTechColors(tech, isDark)
+    const isRunning = p.status === 'running'
 
     return (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 20, 80)).duration(160)}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 25, 100)).duration(180)}>
         <PressableScale
-          style={{
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-            paddingVertical: 14,
-            paddingHorizontal: 4,
-            backgroundColor: 'transparent',
-          }}
+          style={[styles.projectRow, { backgroundColor: cardBg, borderColor: cardBorder }]}
           onPress={() => router.push(`/project/${p.id}`)}
         >
-          <View style={styles.cardMain}>
-            <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
-              <Icon size={15} color={colors.textSecondary} strokeWidth={1.8} />
+          {/* Tech Icon */}
+          <View style={[styles.projectIcon, { backgroundColor: techColors.bg }]}>
+            <ProjectIcon type={p.type} name={p.name} githubUrl={p.github_url} size={22} isDark={isDark} />
+          </View>
+
+          {/* Info */}
+          <View style={styles.projectInfo}>
+            <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 15 }} numberOfLines={1}>
+              {p.name}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
+              {isRunning ? (
+                <>
+                  <PulseDot color="#3FB950" />
+                  <Text style={{ color: isDark ? '#3FB950' : '#16A34A', fontSize: 11, fontFamily: 'Inter_500Medium' }}>Running</Text>
+                </>
+              ) : (
+                <>
+                  <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: colors.textSecondary, opacity: 0.35 }} />
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>Idle</Text>
+                </>
+              )}
+              <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
+                · {tech}
+              </Text>
             </View>
-            <View style={styles.cardInfo}>
-              <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_600SemiBold', fontSize: 14.5 }}>{p.name}</Text>
-              <View style={[styles.cardMeta, { marginTop: 4 }]}>
-                {/* Glowing Monospace status pill */}
-                <View style={{
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 4,
-                  backgroundColor: isDark ? `${statusColor}18` : `${statusColor}0E`,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4
-                }}>
-                  <Text style={{ fontFamily: 'JetBrainsMono_600SemiBold', fontSize: 10, color: statusColor, textTransform: 'lowercase' }}>
-                    [{p.status}]
-                  </Text>
-                </View>
-                
-                {/* Status pulse if running */}
-                {p.status === 'running' && <PulseDot color={statusColor} />}
-                
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginLeft: 2 }}>
-                  · {p.type === 'node' ? 'Node.js' : p.type === 'react' ? 'React' : 'Blank'}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.cardActions}>
-              <TouchableOpacity 
-                onPress={() => handleDelete(p.id, p.name)} 
-                style={styles.deleteBtn}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Trash2 size={13} color={colors.textSecondary} strokeWidth={1.5} />
-              </TouchableOpacity>
-              <ChevronRight size={15} color={colors.textSecondary} strokeWidth={1.5} />
-            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.projectActions}>
+            <TouchableOpacity 
+              onPress={() => setActiveProjectForMenu(p)} 
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{ padding: 6 }}
+            >
+              <MoreVertical size={16} color={colors.textSecondary} strokeWidth={2} />
+            </TouchableOpacity>
           </View>
         </PressableScale>
       </Animated.View>
     )
   }
 
-  const emptyState = (
-    <View style={styles.landingContainer}>
-      <View style={styles.welcomeHero}>
-        <View style={[styles.artworkCircle, { borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', backgroundColor: isDark ? '#151922' : '#FFFFFF' }]}>
-          <View style={[styles.artworkInnerCircle, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-            <Terminal size={32} color={isDark ? '#F3F4F6' : '#0E1116'} strokeWidth={1.2} />
-          </View>
-        </View>
-        <Text style={[styles.welcomeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode</Text>
-        <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-          Open or provision a developer sandbox environment to get started.
-        </Text>
+  const ProjectSkeleton = () => (
+    <View style={[styles.projectRow, { backgroundColor: cardBg, borderColor: cardBorder, opacity: 0.5 }]}>
+      <View style={[styles.projectIcon, { backgroundColor: subtleBg }]} />
+      <View style={styles.projectInfo}>
+        <View style={{ backgroundColor: subtleBg, height: 14, width: '65%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: subtleBg, height: 10, width: '35%', borderRadius: 4, marginTop: 6 }} />
       </View>
+      <ChevronRight size={16} color={cardBorder} strokeWidth={1.5} />
+    </View>
+  )
 
-      <View style={styles.startGroup}>
-        <Text style={[styles.startHeader, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>Start</Text>
+  const emptyState = (
+    <View style={styles.emptyContainer}>
+      <View style={[styles.emptyIcon, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
+        <Terminal size={28} color={colors.textSecondary} strokeWidth={1.3} />
+      </View>
+      <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 20, letterSpacing: -0.5, marginTop: 16 }}>
+        No workspaces yet
+      </Text>
+      <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13, textAlign: 'center', lineHeight: 19, marginTop: 6, paddingHorizontal: 20 }}>
+        Create a sandbox environment to start coding in the cloud.
+      </Text>
 
+      <View style={{ width: '100%', marginTop: 28, gap: 8 }}>
         <PressableScale
           onPress={() => router.push('/new-project')}
-          style={{ 
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 12,
-            gap: 14,
-            backgroundColor: 'transparent', 
-            borderWidth: 0,
-            borderLeftWidth: 2, 
-            borderLeftColor: '#3FB950', 
-            borderRadius: 0,
-            paddingLeft: 12,
-            paddingVertical: 12,
-            marginBottom: 10
-          }}
+          style={[styles.emptyAction, { backgroundColor: cardBg, borderColor: cardBorder }]}
         >
-          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
-            <Plus size={16} color={colors.text} strokeWidth={2.5} />
+          <View style={[styles.emptyActionIcon, { backgroundColor: isDark ? 'rgba(63,185,80,0.12)' : 'rgba(34,197,94,0.08)' }]}>
+            <Plus size={16} color={isDark ? '#3FB950' : '#22C55E'} strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.welcomeActionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>New from Template...</Text>
-            <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Node, React, Next.js, FastAPI, Flask, Rust, Go</Text>
+            <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>New from Template</Text>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 }}>Node, React, Next.js, FastAPI, Flask, Rust, Go</Text>
           </View>
-          <ChevronRight size={14} color={colors.textSecondary} />
+          <ChevronRight size={15} color={colors.textSecondary} />
         </PressableScale>
 
         <PressableScale
           onPress={() => router.push({ pathname: '/new-project', params: { initialMode: 'clone' } })}
-          style={{ 
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 12,
-            gap: 14,
-            backgroundColor: 'transparent', 
-            borderWidth: 0,
-            borderLeftWidth: 2, 
-            borderLeftColor: '#58A6FF', 
-            borderRadius: 0,
-            paddingLeft: 12,
-            paddingVertical: 12,
-            marginBottom: 10
-          }}
+          style={[styles.emptyAction, { backgroundColor: cardBg, borderColor: cardBorder }]}
         >
-          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
-            <GitBranch size={16} color={colors.text} strokeWidth={1.8} />
+          <View style={[styles.emptyActionIcon, { backgroundColor: isDark ? 'rgba(88,166,255,0.12)' : 'rgba(59,130,246,0.08)' }]}>
+            <GitBranch size={16} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={1.8} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.welcomeActionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Clone Git Repository...</Text>
-            <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Clone a remote repository URL directly into a sandbox</Text>
+            <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Clone Repository</Text>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 }}>Import from GitHub, GitLab, or any Git URL</Text>
           </View>
-          <ChevronRight size={14} color={colors.textSecondary} />
+          <ChevronRight size={15} color={colors.textSecondary} />
         </PressableScale>
 
         <PressableScale
           onPress={() => {
-            Alert.alert("Welcome Guide", "CloudCode lets you build web apps in the cloud. Access terminals, code editors, and live previews inside sandboxes.")
+            useAIStore.setState({ pendingPrompt: "Help me design and build a new workspace application..." })
+            router.push('/(tabs)/ai')
           }}
-          style={{ 
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 12,
-            gap: 14,
-            backgroundColor: 'transparent', 
-            borderWidth: 0,
-            borderLeftWidth: 2, 
-            borderLeftColor: '#D2A8FF', 
-            borderRadius: 0,
-            paddingLeft: 12,
-            paddingVertical: 12,
-            marginBottom: 10
-          }}
+          style={[styles.emptyAction, { backgroundColor: cardBg, borderColor: cardBorder }]}
         >
-          <View style={[styles.welcomeIconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }]}>
-            <Sparkles size={16} color={colors.text} strokeWidth={1.8} />
+          <View style={[styles.emptyActionIcon, { backgroundColor: isDark ? 'rgba(210,168,255,0.12)' : 'rgba(139,92,246,0.08)' }]}>
+            <Sparkles size={16} color={isDark ? '#D2A8FF' : '#8B5CF6'} strokeWidth={1.8} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.welcomeActionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Read Getting Started...</Text>
-            <Text style={[styles.welcomeActionSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>Learn how CloudCode sandbox containers work</Text>
+            <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Ask AI to Build</Text>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 }}>Let the AI assistant scaffold your app</Text>
           </View>
-          <ChevronRight size={14} color={colors.textSecondary} />
+          <ChevronRight size={15} color={colors.textSecondary} />
         </PressableScale>
       </View>
     </View>
@@ -342,120 +312,163 @@ export default function ProjectsScreen() {
       }
     }
 
-    const activeColor = isDark ? '#D2A8FF' : '#8250DF'
-
     return (
       <View style={{ marginTop: 24, paddingBottom: 60 }}>
-        {/* Section Header */}
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Quick Actions
-          </Text>
+        <Text style={{ fontSize: 16, fontFamily: 'Inter_600SemiBold', color: colors.text, letterSpacing: -0.3, marginBottom: 12 }}>
+          Quick Actions
+        </Text>
+        
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {/* New Workspace */}
+          <PressableScale 
+            onPress={() => router.push('/new-project')}
+            style={{ flex: 1 }}
+          >
+            <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(63,185,80,0.12)' : 'rgba(34,197,94,0.08)' }]}>
+                <Plus size={16} color={isDark ? '#3FB950' : '#22C55E'} strokeWidth={2.5} />
+              </View>
+              <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
+                New Workspace
+              </Text>
+            </View>
+          </PressableScale>
+
+          {/* Open Latest */}
+          <PressableScale 
+            onPress={handleOpenWorkspace}
+            style={{ flex: 1 }}
+          >
+            <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(88,166,255,0.12)' : 'rgba(59,130,246,0.08)' }]}>
+                <Terminal size={16} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
+              </View>
+              <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
+                Open Latest
+              </Text>
+            </View>
+          </PressableScale>
+
+          {/* Ask AI to Build */}
+          <PressableScale 
+            onPress={handleAskAIToBuild}
+            style={{ flex: 1 }}
+          >
+            <View style={[styles.qaCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <View style={[styles.qaIconWrapper, { backgroundColor: isDark ? 'rgba(210,168,255,0.12)' : 'rgba(139,92,246,0.08)' }]}>
+                <Sparkles size={16} color={isDark ? '#D2A8FF' : '#8B5CF6'} strokeWidth={2} />
+              </View>
+              <Text style={[styles.qaText, { color: colors.text }]} numberOfLines={1}>
+                Ask AI to Build
+              </Text>
+            </View>
+          </PressableScale>
         </View>
-
-        {/* CTA 1: Create New Workspace */}
-        <PressableScale
-          onPress={() => router.push('/new-project')}
-          style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            gap: 12, 
-            paddingVertical: 12, 
-            paddingHorizontal: 4, 
-            borderLeftWidth: 2, 
-            borderLeftColor: activeColor, 
-            paddingLeft: 12,
-            marginBottom: 10,
-          }}
-        >
-          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={14} color={activeColor} strokeWidth={2.5} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Create New Workspace</Text>
-            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Initialize a blank container or clone from repository template.</Text>
-          </View>
-          <ChevronRight size={14} color={colors.textSecondary} />
-        </PressableScale>
-
-        {/* CTA 2: Open Latest Workspace */}
-        <PressableScale
-          onPress={handleOpenWorkspace}
-          style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            gap: 12, 
-            paddingVertical: 12, 
-            paddingHorizontal: 4, 
-            borderLeftWidth: 2, 
-            borderLeftColor: activeColor, 
-            paddingLeft: 12,
-            marginBottom: 10,
-          }}
-        >
-          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
-            <Terminal size={14} color={activeColor} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Open Active Workspace</Text>
-            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Connect to your latest workspace terminal, file tree, and preview.</Text>
-          </View>
-          <ChevronRight size={14} color={colors.textSecondary} />
-        </PressableScale>
-
-        {/* CTA 3: Ask AI to Build */}
-        <PressableScale
-          onPress={handleAskAIToBuild}
-          style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            gap: 12, 
-            paddingVertical: 12, 
-            paddingHorizontal: 4, 
-            borderLeftWidth: 2, 
-            borderLeftColor: activeColor, 
-            paddingLeft: 12,
-            marginBottom: 10,
-          }}
-        >
-          <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={14} color={activeColor} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Ask AI to Build</Text>
-            <Text style={{ fontSize: 10.5, fontFamily: 'Inter_400Regular', color: colors.textSecondary, marginTop: 1 }}>Instruct the AI Assistant to provision and build a workspace application.</Text>
-          </View>
-          <ChevronRight size={14} color={colors.textSecondary} />
-        </PressableScale>
       </View>
     )
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Workspaces</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-            {projects.length} active {projects.length === 1 ? 'workspace' : 'workspaces'}
+          <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 24, letterSpacing: -0.5 }}>
+            Workspaces
           </Text>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13, marginTop: 2 }}>
+            {projects.length} {projects.length === 1 ? 'workspace' : 'workspaces'}
+          </Text>
+        </View>
+        <PressableScale
+          onPress={() => router.push('/new-project')}
+          style={[styles.newBtn, { backgroundColor: isDark ? '#F3F4F6' : '#0E1116' }]}
+        >
+          <Plus size={16} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
+        </PressableScale>
+      </View>
+
+      {/* Search */}
+      <View style={{ paddingHorizontal: 20, marginBottom: 6 }}>
+        <View style={[styles.searchBar, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <Search size={15} color={colors.textSecondary} />
+          <TextInput
+            placeholder="Search workspaces..."
+            placeholderTextColor={colors.textSecondary + '80'}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={{
+              flex: 1,
+              fontSize: 14,
+              fontFamily: 'Inter_400Regular',
+              color: colors.text,
+              padding: 0,
+            }}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={15} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
+      {/* Filter pills */}
+      <View style={{ paddingHorizontal: 20, marginBottom: 14 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {(['all', 'running', 'idle'] as const).map(f => {
+            const isActive = statusFilter === f
+            return (
+              <TouchableOpacity
+                key={f}
+                onPress={() => setStatusFilter(f)}
+                style={[styles.filterPill, {
+                  backgroundColor: isActive 
+                    ? (isDark ? '#F3F4F6' : '#0E1116') 
+                    : (isDark ? '#21262D' : '#F6F8FA'),
+                  borderColor: isActive 
+                    ? 'transparent'
+                    : cardBorder,
+                }]}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_500Medium',
+                  color: isActive 
+                    ? (isDark ? '#0E1116' : '#FFFFFF') 
+                    : colors.textSecondary,
+                  textTransform: 'capitalize',
+                }}>
+                  {f}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </ScrollView>
+      </View>
+
       {showSkeletonState ? (
-        <ScrollView style={styles.list} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
           <ProjectSkeleton />
           <ProjectSkeleton />
           <ProjectSkeleton />
         </ScrollView>
       ) : (
         <FlatList
-          data={projects}
+          data={filteredProjects}
           renderItem={renderProject}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={loading ? null : emptyState}
-          ListFooterComponent={projects.length > 0 ? <QuickActionsWidget /> : null}
+          ListEmptyComponent={loading ? null : (
+            searchQuery !== '' ? (
+              <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13.5 }}>No matching workspaces found</Text>
+              </View>
+            ) : emptyState
+          )}
+          ListFooterComponent={filteredProjects.length > 0 ? <QuickActionsWidget /> : null}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
@@ -476,6 +489,129 @@ export default function ProjectsScreen() {
         onConfirm={confirmDelete}
         onCancel={() => setProjectToDelete(null)}
       />
+
+      {/* Project Actions Sheet / Modal */}
+      <Modal
+        visible={activeProjectForMenu !== null}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent={true}
+        onRequestClose={() => {
+          setActiveProjectForMenu(null)
+          setIsRenameMode(false)
+          setNewName('')
+        }}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill} 
+            activeOpacity={1} 
+            onPress={() => {
+              setActiveProjectForMenu(null)
+              setIsRenameMode(false)
+              setNewName('')
+            }}
+          />
+          <Animated.View 
+            entering={FadeInDown.duration(200)}
+            style={[styles.menuSheet, { backgroundColor: cardBg, borderColor: cardBorder }]}
+          >
+            {isRenameMode ? (
+              <View style={{ padding: 18 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16, marginBottom: 12 }}>
+                  Rename Workspace
+                </Text>
+                <View style={[styles.searchBar, { backgroundColor: subtleBg, borderColor: cardBorder, marginBottom: 16, paddingHorizontal: 12 }]}>
+                  <TextInput
+                    value={newName}
+                    onChangeText={setNewName}
+                    placeholder="Workspace Name"
+                    placeholderTextColor={colors.textSecondary + '80'}
+                    style={{ flex: 1, fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.text, padding: 0 }}
+                    autoFocus
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+                <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'flex-end' }}>
+                  <TouchableOpacity 
+                    onPress={() => { setIsRenameMode(false); setNewName('') }}
+                    style={[styles.modalButton, { backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: cardBorder }]}
+                  >
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={handleRenameSubmit}
+                    disabled={isRenaming || !newName.trim()}
+                    style={[styles.modalButton, { backgroundColor: isDark ? '#F3F4F6' : '#0E1116', opacity: isRenaming || !newName.trim() ? 0.6 : 1 }]}
+                  >
+                    <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
+                      {isRenaming ? 'Saving...' : 'Save'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={{ padding: 6 }}>
+                <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: cardBorder + '80', marginBottom: 6 }}>
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }} numberOfLines={1}>
+                    {activeProjectForMenu?.name}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2, textTransform: 'capitalize' }}>
+                    {activeProjectForMenu ? detectProjectTech(activeProjectForMenu.type, activeProjectForMenu.name, activeProjectForMenu.github_url) : ''} · {activeProjectForMenu?.status || 'idle'}
+                  </Text>
+                </View>
+
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (activeProjectForMenu) {
+                      const id = activeProjectForMenu.id
+                      setActiveProjectForMenu(null)
+                      router.push(`/project/${id}`)
+                    }
+                  }}
+                  style={styles.sheetItem}
+                >
+                  <Terminal size={16} color={colors.textSecondary} strokeWidth={1.8} />
+                  <Text style={[styles.sheetItemText, { color: colors.text }]}>Open Workspace</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (activeProjectForMenu) {
+                      setNewName(activeProjectForMenu.name)
+                      setIsRenameMode(true)
+                    }
+                  }}
+                  style={styles.sheetItem}
+                >
+                  <Sparkles size={16} color={colors.textSecondary} strokeWidth={1.8} />
+                  <Text style={[styles.sheetItemText, { color: colors.text }]}>Rename Workspace</Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 1, backgroundColor: cardBorder, marginVertical: 4, opacity: 0.5 }} />
+
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (activeProjectForMenu) {
+                      const { id, name } = activeProjectForMenu
+                      setActiveProjectForMenu(null)
+                      handleDelete(id, name)
+                    }
+                  }}
+                  style={styles.sheetItem}
+                >
+                  <Trash2 size={16} color="#F85149" strokeWidth={1.8} />
+                  <Text style={[styles.sheetItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Delete Workspace</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -483,134 +619,140 @@ export default function ProjectsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 54,
+    paddingHorizontal: 20,
+    paddingTop: 56,
     paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  title: { fontSize: 22, letterSpacing: -0.6 },
-  subtitle: { fontSize: 12, marginTop: 2, opacity: 0.6 },
-  addBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
+  newBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: { paddingHorizontal: 16, paddingBottom: 100 },
-  card: {
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 12,
-    marginBottom: 8,
-  },
-  cardMain: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    height: 42,
     gap: 10,
   },
-  iconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 4,
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  list: { paddingHorizontal: 20, paddingBottom: 100 },
+  projectRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 14, letterSpacing: -0.1 },
-  cardMeta: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 4, 
-    marginTop: 2 
-  },
-  statusDot: { width: 4, height: 4, borderRadius: 2 },
-  cardStatus: { fontSize: 10.5, textTransform: 'capitalize' },
-  cardType: { fontSize: 10.5 },
-  cardActions: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 10 
-  },
-  deleteBtn: { padding: 4 },
-  landingContainer: {
-    paddingHorizontal: 8,
-    paddingTop: 40,
-    gap: 28,
-  },
-  welcomeHero: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 8,
     gap: 12,
   },
-  artworkCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  artworkInnerCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1,
+  projectIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  welcomeTitle: {
-    fontSize: 24,
-    letterSpacing: -0.8,
+  projectInfo: { flex: 1 },
+  projectActions: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6,
   },
-  welcomeSubtitle: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 19,
-    paddingHorizontal: 20,
+  emptyContainer: {
+    paddingTop: 48,
+    paddingHorizontal: 8,
+    alignItems: 'center',
   },
-  startGroup: {
-    gap: 10,
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  startHeader: {
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 1.0,
-    marginBottom: 4,
-    paddingHorizontal: 4,
-  },
-  welcomeActionBtn: {
+  emptyAction: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
-    gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: 12,
   },
-  welcomeIconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+  emptyActionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  welcomeActionTitle: {
-    fontSize: 13.5,
+  qaCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  welcomeActionSub: {
-    fontSize: 11,
-    marginTop: 2,
+  qaIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qaText: {
+    fontSize: 11.5,
+    fontFamily: 'Inter_600SemiBold',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  menuSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    paddingBottom: 34,
+    paddingTop: 8,
+  },
+  sheetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+    borderRadius: 10,
+  },
+  sheetItemText: {
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+  },
+  modalButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80,
   },
 })

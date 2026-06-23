@@ -14,37 +14,17 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
+import { WorkspaceIcon } from '@/components/WorkspaceIcon'
 
 const TAB_ANIM_CONFIG = {
   duration: 150,
   easing: Easing.out(Easing.quad),
 }
 
-const WorkspaceTabIcon = ({ color, size, strokeWidth }: any) => {
+const WorkspaceTabIcon = ({ color, size }: any) => {
+  const { isDark } = useAppTheme()
   return (
-    <Svg width={size || 20} height={size || 20} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M4 8C4 6.89543 4.89543 6 6 6H10L12 8H18C19.1046 8 20 8.89543 20 10V16C20 17.1046 19.1046 18 18 18H6C4.89543 18 4 17.1046 4 16V8Z"
-        stroke={color}
-        strokeWidth={strokeWidth || 1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M9 12L11 13.5L9 15"
-        stroke={color}
-        strokeWidth={strokeWidth || 1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Circle
-        cx="18"
-        cy="16"
-        r="1.5"
-        stroke={color}
-        strokeWidth={strokeWidth || 1.8}
-      />
-    </Svg>
+    <WorkspaceIcon size={size || 20} isDark={isDark} color={color} />
   )
 }
 
