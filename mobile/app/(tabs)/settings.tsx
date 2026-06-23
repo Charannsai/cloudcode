@@ -1734,6 +1734,34 @@ export default function SettingsScreen() {
               <>
                 <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5, marginVertical: 4 }} />
 
+                {/* BYOK Usage Card */}
+                {billingData?.usage?.byokTokens && (
+                  <View 
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(99, 102, 241, 0.08)' : 'rgba(99, 102, 241, 0.05)', 
+                      borderWidth: 1, 
+                      borderColor: isDark ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)', 
+                      borderRadius: 12, 
+                      padding: 14, 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      gap: 12,
+                      marginBottom: 4
+                    }}
+                  >
+                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(99, 102, 241, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Sparkles size={16} color="#6366F1" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 0.5 }}>BYOK TOKEN STATISTICS</Text>
+                      <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 16, marginTop: 2 }}>
+                        {(billingData.usage.byokTokens.used || 0).toLocaleString()}
+                        <Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> tokens consumed</Text>
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
                 <View style={{ gap: 16 }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>API KEYS CONFIGURATION</Text>
                   
@@ -1742,7 +1770,6 @@ export default function SettingsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Sparkles size={14} color="#8B5CF6" />
                       <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Gemini API Key</Text>
-                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>*Required</Text>
                     </View>
                     <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
                       <TextInput
@@ -1777,7 +1804,6 @@ export default function SettingsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Cpu size={14} color="#10B981" />
                       <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>OpenAI API Key</Text>
-                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
                     </View>
                     <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
                       <TextInput
@@ -1812,7 +1838,6 @@ export default function SettingsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Shield size={14} color="#D97706" />
                       <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Anthropic API Key</Text>
-                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Optional</Text>
                     </View>
                     <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
                       <TextInput
