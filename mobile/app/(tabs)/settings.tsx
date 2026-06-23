@@ -1226,7 +1226,8 @@ export default function SettingsScreen() {
           <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Billing & Usage</Text>
         </View>
 
-        <View style={{ paddingHorizontal: 24, gap: 20           {/* Active Subscription Summary Card */}
+        <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          {/* Active Subscription Summary Card */}
           <View style={{ 
             backgroundColor: isDark ? '#111622' : '#FFFFFF',
             borderRadius: 20, 
@@ -2109,8 +2110,8 @@ export default function SettingsScreen() {
                           </Text>
                           {!session.endedAt && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#8B5CF6' }} />
-                              <Text style={{ color: '#8B5CF6', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>LIVE</Text>
+                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
+                              <Text style={{ color: color, fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>LIVE</Text>
                             </View>
                           )}
                         </View>
@@ -2145,7 +2146,7 @@ export default function SettingsScreen() {
                        }}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8B5CF6' }} />
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
                         <View>
                           <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>{p.name}</Text>
                           <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Status: running</Text>
@@ -2234,15 +2235,15 @@ export default function SettingsScreen() {
                         </View>
                         <View 
                           style={{ 
-                            backgroundColor: isRunning ? 'rgba(139, 92, 246, 0.12)' : 'rgba(107, 114, 128, 0.12)', 
+                            backgroundColor: isRunning ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(71, 85, 105, 0.08)') : 'rgba(107, 114, 128, 0.12)', 
                             paddingHorizontal: 8, 
                             paddingVertical: 3, 
                             borderRadius: 6,
                             borderWidth: 1,
-                            borderColor: isRunning ? 'rgba(139, 92, 246, 0.25)' : 'rgba(107, 114, 128, 0.25)'
+                            borderColor: isRunning ? (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(71, 85, 105, 0.2)') : 'rgba(107, 114, 128, 0.25)'
                           }}
                         >
-                          <Text style={{ color: isRunning ? '#8B5CF6' : '#9CA3AF', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>
+                          <Text style={{ color: isRunning ? (isDark ? '#E2E8F0' : '#334155') : '#9CA3AF', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>
                             {p.status.toUpperCase()}
                           </Text>
                         </View>
@@ -2447,7 +2448,7 @@ export default function SettingsScreen() {
             <View style={{ height: 1, backgroundColor: colors.border, width: '100%', opacity: 0.5 }} />
 
             <View style={{ alignItems: 'center', gap: 4 }}>
-              <Text style={{ color: '#8B5CF6', fontFamily: 'Inter_700Bold', fontSize: 14 }}>Usage Profile: {levelText}</Text>
+              <Text style={{ color: '#475569', fontFamily: 'Inter_700Bold', fontSize: 14 }}>Usage Profile: {levelText}</Text>
               <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: 'center', paddingHorizontal: 20 }}>{levelDesc}</Text>
             </View>
           </View>
@@ -3201,9 +3202,9 @@ export default function SettingsScreen() {
                       setCurrentSubScreen('byok-detail')
                     }}
                     style={{ 
-                      backgroundColor: isDark ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)', 
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', 
                       borderWidth: 1, 
-                      borderColor: isDark ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.15)', 
+                      borderColor: colors.border, 
                       borderRadius: 12, 
                       padding: 14, 
                       flexDirection: 'row', 
@@ -3212,13 +3213,13 @@ export default function SettingsScreen() {
                       marginBottom: 4
                     }}
                   >
-                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Sparkles size={16} color="#8B5CF6" />
+                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+                      <Sparkles size={16} color="#475569" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 10, letterSpacing: 0.5 }}>BYOK TOKEN STATISTICS</Text>
-                        <Text style={{ color: '#8B5CF6', fontFamily: 'Inter_600SemiBold', fontSize: 9 }}>ANALYTICS ↗</Text>
+                        <Text style={{ color: '#475569', fontFamily: 'Inter_600SemiBold', fontSize: 9 }}>ANALYTICS ↗</Text>
                       </View>
                       <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 16, marginTop: 2 }}>
                         {(billingData.usage.byokTokens.used || 0).toLocaleString()}
@@ -3234,7 +3235,7 @@ export default function SettingsScreen() {
                   {/* Gemini API Key */}
                   <View style={{ gap: 6 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Sparkles size={14} color="#8B5CF6" />
+                      <Sparkles size={14} color="#475569" />
                       <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Gemini API Key</Text>
                     </View>
                     <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
