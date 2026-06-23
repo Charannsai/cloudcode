@@ -123,7 +123,10 @@ export default function SettingsScreen() {
   // Intercept Android hardware back press inside subscreens
   useEffect(() => {
     const onBackPress = () => {
-      if (currentSubScreen !== 'main') {
+      if (currentSubScreen === 'billing-detail') {
+        setCurrentSubScreen('billing')
+        return true
+      } else if (currentSubScreen !== 'main') {
         setCurrentSubScreen('main')
         return true // Intercept & block exit to dashboard
       }
@@ -2789,6 +2792,33 @@ export default function SettingsScreen() {
         >
           {renderBillingView()}
           {renderUpgradeModal()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
+
+    {currentSubScreen === 'billing-detail' && (
+      <Animated.View 
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderBillingDetailView()}
           <ConfirmModal
             visible={modalConfig.visible}
             title={modalConfig.title}
