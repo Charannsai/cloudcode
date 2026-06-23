@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
 import { createProjectInternal } from '@/lib/projects'
+import { docker } from '@/lib/docker'
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(60).regex(/^[a-zA-Z0-9_\- ]+$/),
@@ -21,7 +22,34 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
 
   if (error) return errorResponse(error.message, 500)
-  return successResponse(data)
+
+  try {
+    const runningContainersList = await docker.listContainers({ all: true })
+    const runningIdsMap = new Map(
+      runningContainersList.map(c => [c.Id, c.State])
+    )
+
+    const projectsWithLiveStatus = data.map((project: any) => {
+      let liveStatus = project.status
+      if (project.container_id) {
+        const dockerState = runningIdsMap.get(project.container_id)
+        if (dockerState === 'running') {
+          liveStatus = 'running'
+        } else if (dockerState === 'exited' || dockerState === 'paused') {
+          liveStatus = 'stopped'
+        }
+      }
+      return {
+        ...project,
+        status: liveStatus,
+      }
+    })
+
+    return successResponse(projectsWithLiveStatus)
+  } catch (dockerErr) {
+    console.warn('[GET /api/projects] Failed to query Docker daemon. Falling back to DB status.', dockerErr)
+    return successResponse(data)
+  }
 }
 
 // POST /api/projects — create a new project
