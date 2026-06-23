@@ -1,5 +1,5 @@
-import React from 'react'
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import React, { useState } from 'react'
+import { Modal, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { useUIStore } from '../store/ui'
 import { useAppTheme } from '../hooks/useAppTheme'
 import { Shield, Zap, Server, Lock, ArrowUpRight, X } from 'lucide-react-native'
@@ -13,6 +13,7 @@ export default function LimitExceededModal() {
   const { colors, isDark } = useAppTheme()
   const { limitModalVisible, limitModalType, hideLimitModal, setSettingsSubScreen } = useUIStore()
   const router = useRouter()
+  const [loadingUpgrade, setLoadingUpgrade] = useState(false)
 
   if (!limitModalVisible) return null
 
@@ -29,22 +30,32 @@ export default function LimitExceededModal() {
       : 'You have reached a resource boundary on your current plan. Upgrade to unlock the full power of CloudCode.'
 
   const handleUpgrade = async () => {
-    hideLimitModal()
+    setLoadingUpgrade(true)
     try {
       const returnUrl = Linking.createURL('/billing/success')
       // Initiate Stripe Checkout for Pro monthly
       const { checkoutUrl } = await api.billing.checkout('pro_monthly', returnUrl)
       if (checkoutUrl) {
         await WebBrowser.openBrowserAsync(checkoutUrl)
+        hideLimitModal()
       } else {
         throw new Error('No checkout URL returned')
       }
     } catch (err: any) {
       console.warn('Failed to start checkout:', err)
       // Fallback: redirect to settings billing subscreen
+      hideLimitModal()
       setSettingsSubScreen('billing')
       router.push('/(tabs)/settings')
+    } finally {
+      setLoadingUpgrade(false)
     }
+  }
+
+  const handleExplorePlans = () => {
+    hideLimitModal()
+    setSettingsSubScreen('billing')
+    router.push('/(tabs)/settings')
   }
 
   return (
@@ -61,7 +72,7 @@ export default function LimitExceededModal() {
           exiting={FadeOut.duration(150)} 
           style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.65)' }]}
         />
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={hideLimitModal} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={hideLimitModal} disabled={loadingUpgrade} />
 
         <Animated.View 
           entering={FadeInDown.springify().damping(18)} 
@@ -76,7 +87,7 @@ export default function LimitExceededModal() {
                 <Server size={22} color="#EF4444" />
               )}
             </View>
-            <TouchableOpacity onPress={hideLimitModal} style={styles.closeBtn}>
+            <TouchableOpacity onPress={hideLimitModal} style={styles.closeBtn} disabled={loadingUpgrade}>
               <X size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -106,13 +117,29 @@ export default function LimitExceededModal() {
 
           {/* Actions */}
           <View style={styles.actions}>
-            <TouchableOpacity onPress={hideLimitModal} style={[styles.cancelBtn, { borderColor: colors.border }]} activeOpacity={0.7}>
-              <Text style={[styles.cancelBtnText, { color: colors.text }]}>Maybe Later</Text>
+            <TouchableOpacity 
+              onPress={handleExplorePlans} 
+              style={[styles.cancelBtn, { borderColor: colors.border }]} 
+              activeOpacity={0.7}
+              disabled={loadingUpgrade}
+            >
+              <Text style={[styles.cancelBtnText, { color: colors.text }]}>Explore Plans</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity onPress={handleUpgrade} style={[styles.upgradeBtn, { backgroundColor: colors.primary }]} activeOpacity={0.8}>
-              <Text style={[styles.upgradeBtnText, { color: isDark ? '#000' : '#fff' }]}>Upgrade Now</Text>
-              <ArrowUpRight size={15} color={isDark ? '#000' : '#fff'} style={{ marginLeft: 4 }} />
+            <TouchableOpacity 
+              onPress={handleUpgrade} 
+              style={[styles.upgradeBtn, { backgroundColor: colors.primary }]} 
+              activeOpacity={0.8}
+              disabled={loadingUpgrade}
+            >
+              {loadingUpgrade ? (
+                <ActivityIndicator size="small" color={isDark ? '#000' : '#fff'} />
+              ) : (
+                <>
+                  <Text style={[styles.upgradeBtnText, { color: isDark ? '#000' : '#fff' }]}>Upgrade to Pro</Text>
+                  <ArrowUpRight size={15} color={isDark ? '#000' : '#fff'} style={{ marginLeft: 4 }} />
+                </>
+              )}
             </TouchableOpacity>
           </View>
         </Animated.View>
