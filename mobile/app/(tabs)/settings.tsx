@@ -174,12 +174,44 @@ export default function SettingsScreen() {
     tierKey: 'free' | 'pro' | 'advanced',
     title: string,
     priceStr: string,
-    features: string[],
     isActive: boolean
   ) {
     const isDarkTheme = isDark
     const tierColor = tierKey === 'free' ? '#9CA3AF' : tierKey === 'pro' ? '#A855F7' : '#C084FC'
     const isLoading = loadingCheckoutTier === tierKey
+
+    const specs = {
+      free: {
+        cpu: '0.5 Core',
+        ram: '512 MB',
+        ssd: '5 GB SSD',
+        workspaces: '3 Max',
+        tokens: '50K / mo',
+        network: '15 Mbps Cap',
+        api: '25 req/min',
+        timeout: '10m Auto-Stop',
+      },
+      pro: {
+        cpu: '4 Cores',
+        ram: '8 GB RAM',
+        ssd: '50 GB SSD',
+        workspaces: '20 Max',
+        tokens: '5M / mo',
+        network: 'Uncapped',
+        api: '500 req/min',
+        timeout: '60m Auto-Stop',
+      },
+      advanced: {
+        cpu: '8 Cores',
+        ram: '32 GB RAM',
+        ssd: '200 GB SSD',
+        workspaces: 'Unlimited',
+        tokens: 'Unlimited',
+        network: 'Uncapped',
+        api: 'Uncapped',
+        timeout: 'Always-On',
+      }
+    }[tierKey]
 
     return (
       <View 
@@ -189,9 +221,9 @@ export default function SettingsScreen() {
           backgroundColor: isDarkTheme ? '#121620' : '#FFFFFF',
           borderWidth: isActive ? 2 : 1,
           borderColor: isActive ? '#8B5CF6' : (isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
-          borderRadius: 16,
+          borderRadius: 20,
           padding: 16,
-          gap: 10,
+          gap: 12,
           shadowColor: isActive ? '#8B5CF6' : 'transparent',
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: isActive ? 0.12 : 0,
@@ -199,6 +231,7 @@ export default function SettingsScreen() {
           elevation: isActive ? 3 : 0,
         }}
       >
+        {/* Header Row */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View 
@@ -257,19 +290,65 @@ export default function SettingsScreen() {
           )}
         </View>
 
+        {/* Hardware core capsules */}
+        <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'space-between' }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
+            <Cpu size={10} color="#8B5CF6" />
+            <Text style={{ color: colors.text, fontSize: 9.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.cpu}</Text>
+          </View>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
+            <HardDrive size={10} color="#8B5CF6" />
+            <Text style={{ color: colors.text, fontSize: 9.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ram}</Text>
+          </View>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
+            <Database size={10} color="#8B5CF6" />
+            <Text style={{ color: colors.text, fontSize: 9.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ssd}</Text>
+          </View>
+        </View>
+
         <View style={{ height: 1, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} />
 
-        <View style={{ gap: 4 }}>
-          {features.map((feat, idx) => (
-            <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Check size={10} color="#8B5CF6" strokeWidth={2.5} />
-              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>
-                {feat}
-              </Text>
+        {/* Structured Spec List */}
+        <View style={{ gap: 7 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Server size={11} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Workspaces</Text>
             </View>
-          ))}
+            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.workspaces}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Sparkles size={11} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Monthly AI Tokens</Text>
+            </View>
+            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.tokens}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Wifi size={11} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Network Bandwidth</Text>
+            </View>
+            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.network}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Shield size={11} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>API Requests</Text>
+            </View>
+            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.api}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Clock size={11} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Inactivity Sleep</Text>
+            </View>
+            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.timeout}</Text>
+          </View>
         </View>
       </View>
+    )
+  }
     )
   }
 
@@ -1146,16 +1225,6 @@ export default function SettingsScreen() {
                 'free',
                 'Free Plan',
                 '$0 / month',
-                [
-                  '0.5 vCPU environments',
-                  '512 MB memory (RAM)',
-                  '5 GB SSD storage capacity',
-                  'Up to 3 workspaces',
-                  '50K monthly AI tokens',
-                  '15 Mbps network speed cap',
-                  '25 req/min API rate limit',
-                  '10 min inactivity timeout'
-                ],
                 currentTier.name === 'free'
               )}
 
@@ -1163,18 +1232,6 @@ export default function SettingsScreen() {
                 'pro',
                 'Pro Developer',
                 '$25 / month',
-                [
-                  '4 vCPUs fast builds',
-                  '8 GB RAM memory capacity',
-                  '50 GB SSD storage space',
-                  'Up to 20 workspaces',
-                  '1 Always-On persistent slot',
-                  '5M monthly AI tokens',
-                  'Claude, GPT-4o & Gemini Premium',
-                  'Uncapped network speed',
-                  '500 req/min API rate limit',
-                  '60 min inactivity timeout'
-                ],
                 currentTier.name === 'pro'
               )}
 
@@ -1182,18 +1239,6 @@ export default function SettingsScreen() {
                 'advanced',
                 'Advanced Team',
                 '$99 / month',
-                [
-                  '8 vCPUs dedicated power',
-                  '32 GB RAM extreme memory',
-                  '200 GB SSD storage space',
-                  'Unlimited workspaces',
-                  '5 Always-On persistent slots',
-                  'Unlimited monthly AI tokens',
-                  'Low-latency model APIs',
-                  'Uncapped network speed',
-                  'Unlimited API rate limits',
-                  'Unlimited active timeouts'
-                ],
                 currentTier.name === 'advanced'
               )}
             </ScrollView>
