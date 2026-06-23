@@ -81,3 +81,33 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   return successResponse({ deleted: true })
 }
+
+// PATCH /api/projects/[id]
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const user = getUserFromRequest(req)
+  if (!user) return errorResponse('Unauthorized', 401)
+  const { id } = await params
+
+  try {
+    const { name } = await req.json()
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return errorResponse('Project name is required', 400)
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .update({ name: name.trim() })
+      .eq('id', id)
+      .eq('user_github_id', user.id)
+      .select()
+      .single()
+
+    if (error || !data) {
+      return errorResponse('Project not found or update failed', 404)
+    }
+
+    return successResponse(data)
+  } catch (err) {
+    return errorResponse((err as Error).message, 500)
+  }
+}

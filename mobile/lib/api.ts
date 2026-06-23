@@ -43,6 +43,11 @@ export const api = {
       }),
     delete: (id: string) =>
       apiFetch<{ deleted: boolean }>(`/api/projects/${id}`, { method: 'DELETE' }),
+    rename: (id: string, name: string) =>
+      apiFetch<Project>(`/api/projects/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      }),
   },
 
   files: {
