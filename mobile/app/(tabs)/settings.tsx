@@ -49,6 +49,7 @@ export default function SettingsScreen() {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const { projects, fetchProjects } = useProjectsStore()
   const [billingDetailType, setBillingDetailType] = useState<'compute' | 'ram' | 'disk' | 'workspaces' | 'ai'>('compute')
+  const [timelineFilter, setTimelineFilter] = useState<'1h' | '24h' | '3d' | '7d'>('24h')
 
   // Pulsing animation for Billing Skeleton UI
   const skeletonOpacity = useSharedValue(0.35)
@@ -125,6 +126,9 @@ export default function SettingsScreen() {
     const onBackPress = () => {
       if (currentSubScreen === 'billing-detail') {
         setCurrentSubScreen('billing')
+        return true
+      } else if (currentSubScreen === 'byok-detail') {
+        setCurrentSubScreen('aiKeys')
         return true
       } else if (currentSubScreen !== 'main') {
         setCurrentSubScreen('main')
@@ -989,7 +993,7 @@ export default function SettingsScreen() {
                 `${usage.ram.limitMB} MB`,
                 (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100,
                 HardDrive,
-                '#3B82F6'
+                '#8B5CF6'
               )}
               {renderMetricCard(
                 'disk',
@@ -998,7 +1002,7 @@ export default function SettingsScreen() {
                 `${usage.disk.limitGB} GB`,
                 (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100,
                 Database,
-                '#F59E0B'
+                '#8B5CF6'
               )}
               {renderMetricCard(
                 'workspaces',
@@ -1007,7 +1011,7 @@ export default function SettingsScreen() {
                 `${usage.workspaces.limit}`,
                 (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100,
                 Server,
-                '#EF4444',
+                '#8B5CF6',
                 usage.workspaces.used,
                 usage.workspaces.limit
               )}
@@ -1018,7 +1022,7 @@ export default function SettingsScreen() {
                 usage.aiTokens.limit.toLocaleString(),
                 (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100,
                 Sparkles,
-                '#10B981'
+                '#8B5CF6'
               )}
             </View>
           </View>
@@ -1111,28 +1115,28 @@ export default function SettingsScreen() {
       limitStr = usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`
     } else if (isRam) {
       title = 'Memory (RAM) Footprint'
-      color = '#3B82F6'
+      color = '#8B5CF6'
       Icon = HardDrive
       percent = (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100
       valueStr = `${usage.ram.usedMB} MB`
       limitStr = `${usage.ram.limitMB} MB`
     } else if (isDisk) {
       title = 'SSD Disk Storage Space'
-      color = '#F59E0B'
+      color = '#8B5CF6'
       Icon = Database
       percent = (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100
       valueStr = `${usage.disk.usedGB} GB`
       limitStr = `${usage.disk.limitGB} GB`
     } else if (isWorkspaces) {
       title = 'Workspaces Sandbox Nodes'
-      color = '#EF4444'
+      color = '#8B5CF6'
       Icon = Server
       percent = (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100
       valueStr = `${usage.workspaces.used}`
       limitStr = `${usage.workspaces.limit}`
     } else if (isAi) {
       title = 'Hosted Premium AI Tokens'
-      color = '#10B981'
+      color = '#8B5CF6'
       Icon = Sparkles
       percent = (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100
       valueStr = usage.aiTokens.used.toLocaleString()
@@ -1140,6 +1144,211 @@ export default function SettingsScreen() {
     }
 
     const displayPercent = isNaN(percent) ? 0 : Math.min(percent, 100)
+
+    const renderTimelineSelector = () => {
+      const timelines: { key: '1h' | '24h' | '3d' | '7d'; label: string }[] = [
+        { key: '1h', label: '1 Hr' },
+        { key: '24h', label: '24 Hr' },
+        { key: '3d', label: '3 Day' },
+        { key: '7d', label: '7 Day' }
+      ]
+      return (
+        <View style={{ flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderRadius: 8, padding: 3, borderWidth: 1, borderColor: colors.border, marginVertical: 8 }}>
+          {timelines.map((t) => {
+            const isActive = timelineFilter === t.key
+            return (
+              <TouchableOpacity 
+                key={t.key} 
+                onPress={() => setTimelineFilter(t.key)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 6,
+                  alignItems: 'center',
+                  borderRadius: 6,
+                  backgroundColor: isActive ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                }}
+              >
+                <Text style={{ 
+                  color: isActive ? '#8B5CF6' : colors.textSecondary, 
+                  fontFamily: 'Inter_600SemiBold', 
+                  fontSize: 11.5
+                }}>
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      )
+    }
+
+    const renderComputeBarGraph = () => {
+      const dataMap = {
+        '1h': { values: [20, 35, 25, 45, 60, 40], labels: ['-50m', '-40m', '-30m', '-20m', '-10m', 'Now'], unit: 'm' },
+        '24h': { values: [30, 20, 50, 75, 45, 15], labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'], unit: 'h' },
+        '3d': { values: [55, 75, 45], labels: ['2 days ago', 'Yesterday', 'Today'], unit: 'h' },
+        '7d': { values: [40, 35, 60, 80, 50, 45, 30], labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], unit: 'h' },
+      }
+      const currentData = dataMap[timelineFilter] || dataMap['24h']
+      return (
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>COMPUTE HOURS HISTORICAL TIMELINE</Text>
+          <View style={{ height: 120, flexDirection: 'row', alignItems: 'flex-end', gap: 12, paddingTop: 10 }}>
+            {currentData.values.map((val, idx) => (
+              <View key={idx} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                <Text style={{ fontSize: 9, color: '#8B5CF6', fontFamily: 'JetBrainsMono_400Regular' }}>{Math.round(val * 0.1 * 10) / 10}{currentData.unit}</Text>
+                <View style={{ width: '100%', height: `${val}%`, backgroundColor: '#8B5CF6', borderRadius: 4, opacity: 0.85 }} />
+                <Text style={{ fontSize: 8, color: colors.textSecondary, textAlign: 'center', width: '100%' }} numberOfLines={1}>{currentData.labels[idx]}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )
+    }
+
+    const renderMemoryRadialDial = () => {
+      return (
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 20, alignItems: 'center', gap: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5, alignSelf: 'flex-start' }}>ACTIVE ENVIRONMENT MEMORY SEGMENTS</Text>
+          <View style={{ width: 140, height: 140, borderRadius: 70, borderWidth: 12, borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={[StyleSheet.absoluteFill, { borderRadius: 70, borderWidth: 12, borderColor: '#8B5CF6', borderRightColor: 'transparent', borderBottomColor: 'transparent', transform: [{ rotate: '45deg' }] }]} />
+            <Text style={{ color: colors.text, fontSize: 24, fontFamily: 'JetBrainsMono_700Bold' }}>
+              {Math.round(displayPercent)}%
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_500Medium' }}>Load Level</Text>
+          </View>
+          <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-around', marginTop: 6 }}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 9 }}>Allocated</Text>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 9 }}>Max Limit</Text>
+            </View>
+          </View>
+        </View>
+      )
+    }
+
+    const renderStorageStackedBreakdown = () => {
+      const breakdown = billingData?.diskBreakdown || []
+      const totalMB = breakdown.reduce((sum: number, p: any) => sum + (p.sizeMB || 0), 0)
+      
+      return (
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>DISK SPACE SEGMENTATION BY SANDBOX</Text>
+          
+          {breakdown.length > 0 ? (
+            <View style={{ gap: 12 }}>
+              <View style={{ height: 12, borderRadius: 6, overflow: 'hidden', flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
+                {breakdown.map((item: any, idx: number) => {
+                  const pct = totalMB > 0 ? (item.sizeMB / totalMB) * 100 : 0
+                  return (
+                    <View 
+                      key={item.id} 
+                      style={{ 
+                        width: `${pct}%`, 
+                        backgroundColor: '#8B5CF6', 
+                        opacity: 1 - (idx * 0.15),
+                      }} 
+                    />
+                  )
+                })}
+              </View>
+              
+              <View style={{ gap: 8 }}>
+                {breakdown.map((item: any, idx: number) => {
+                  const pct = totalMB > 0 ? (item.sizeMB / totalMB) * 100 : 0
+                  return (
+                    <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8B5CF6', opacity: 1 - (idx * 0.15) }} />
+                        <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'Inter_500Medium' }}>{item.name}</Text>
+                      </View>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular' }}>
+                        {item.sizeMB >= 1024 ? `${(item.sizeMB / 1024).toFixed(2)} GB` : `${item.sizeMB} MB`} ({Math.round(pct)}%)
+                      </Text>
+                    </View>
+                  )
+                })}
+              </View>
+            </View>
+          ) : (
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>No sandbox project storage allocated.</Text>
+          )}
+        </View>
+      )
+    }
+
+    const renderWorkspacesNodeMatrix = () => {
+      const maxWorkspaces = usage.workspaces.limit || 3
+      const used = usage.workspaces.used || 0
+      
+      return (
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>WORKSPACE NODE MATRIX GATEWAY</Text>
+          <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap', justifyContent: 'center', paddingVertical: 10 }}>
+            {Array.from({ length: maxWorkspaces }).map((_, i) => {
+              const isAllocated = i < used
+              const isRunning = isAllocated && (projects[i]?.status === 'running' || projects[i]?.status === 'ready')
+              return (
+                <View 
+                  key={i} 
+                  style={{ 
+                    width: 70, 
+                    height: 70, 
+                    borderRadius: 12, 
+                    borderWidth: 2, 
+                    borderColor: isAllocated ? '#8B5CF6' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'), 
+                    borderStyle: isAllocated ? 'solid' : 'dashed',
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    backgroundColor: isAllocated ? 'rgba(139, 92, 246, 0.04)' : 'transparent',
+                    shadowColor: isRunning ? '#8B5CF6' : 'transparent',
+                    shadowOpacity: 0.4,
+                    shadowRadius: 4,
+                  }}
+                >
+                  <Server size={18} color={isAllocated ? '#8B5CF6' : colors.textSecondary} opacity={isAllocated ? 1 : 0.4} />
+                  <Text style={{ color: isAllocated ? colors.text : colors.textSecondary, fontSize: 8, fontFamily: 'Inter_600SemiBold', marginTop: 4 }}>
+                    {isAllocated ? (isRunning ? 'ACTIVE' : 'READY') : 'FREE SLOT'}
+                  </Text>
+                  <Text style={{ color: isAllocated ? '#8B5CF6' : colors.textSecondary, fontSize: 7, fontFamily: 'JetBrainsMono_400Regular', marginTop: 1 }}>
+                    NODE-{i + 1}
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+        </View>
+      )
+    }
+
+    const renderTokensAreaSparkline = () => {
+      const dataMap = {
+        '1h': [10, 30, 20, 45, 35, 50, 40],
+        '24h': [20, 40, 15, 60, 35, 75, 45, 60],
+        '3d': [35, 55, 40, 80, 50, 65],
+        '7d': [15, 45, 30, 70, 40, 85, 50, 60, 90]
+      }
+      const sparkData = dataMap[timelineFilter] || dataMap['24h']
+      
+      return (
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>AI REQUEST TOKENS CONSUMPTION DENSITY</Text>
+          <View style={{ height: 100, justifyContent: 'flex-end', paddingTop: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: '100%', gap: 6 }}>
+              {sparkData.map((val, idx) => (
+                <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <View style={{ width: '100%', height: `${val}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      )
+    }
 
     return (
       <View style={{ gap: 20, paddingBottom: 40 }}>
@@ -1155,70 +1364,16 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
-          {/* Main Visual Dial Card */}
-          <View 
-            style={{ 
-              backgroundColor: isDark ? '#121620' : '#FFFFFF', 
-              borderRadius: 20, 
-              borderWidth: 1, 
-              borderColor: colors.border,
-              padding: 20,
-              alignItems: 'center',
-              gap: 16
-            }}
-          >
-            {/* Visual Ring Gauge */}
-            <View style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 8, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
-              <View 
-                style={{ 
-                  position: 'absolute', 
-                  width: '100%', 
-                  height: '100%', 
-                  borderRadius: 50, 
-                  borderWidth: 8, 
-                  borderColor: color, 
-                  opacity: 0.15 
-                }} 
-              />
-              <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: `${color}15`, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={22} color={color} strokeWidth={2.5} />
-              </View>
-            </View>
-
-            <View style={{ alignItems: 'center', gap: 4 }}>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12, letterSpacing: 0.5 }}>RESOURCE ALLOCATION</Text>
-              <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 24 }}>
-                {valueStr}
-                <Text style={{ fontSize: 14, fontWeight: 'normal', color: colors.textSecondary }}> / {limitStr}</Text>
-              </Text>
-              <Text style={{ color: color, fontFamily: 'Inter_700Bold', fontSize: 13, marginTop: 2 }}>
-                {displayPercent.toFixed(1)}% Consumed
-              </Text>
-            </View>
-
-            {/* Custom Block Volume Meter */}
-            <View style={{ width: '100%', flexDirection: 'row', gap: 4, height: 10 }}>
-              {Array.from({ length: 15 }).map((_, i) => {
-                const step = (i / 15) * 100
-                const isActive = step <= displayPercent
-                return (
-                  <View 
-                    key={i} 
-                    style={{ 
-                      flex: 1, 
-                      backgroundColor: isActive ? color : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'), 
-                      borderRadius: 2,
-                      shadowColor: isActive ? color : 'transparent',
-                      shadowOpacity: isActive ? 0.5 : 0,
-                      shadowRadius: 2
-                    }} 
-                  />
-                )
-              })}
-            </View>
-          </View>
+          {/* Timeline Selector for time-based components */}
+          {(isCompute || isAi) && renderTimelineSelector()}
 
           {/* Subscreen detailed representations */}
+          {isCompute && renderComputeBarGraph()}
+          {isRam && renderMemoryRadialDial()}
+          {isDisk && renderStorageStackedBreakdown()}
+          {isWorkspaces && renderWorkspacesNodeMatrix()}
+          {isAi && renderTokensAreaSparkline()}
+
           {isCompute && (
             <View style={{ gap: 14 }}>
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT ACTIVE RUN TIMELINES</Text>
@@ -1263,8 +1418,8 @@ export default function SettingsScreen() {
                           </Text>
                           {!session.endedAt && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
-                              <Text style={{ color: '#22c55e', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>LIVE</Text>
+                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#8B5CF6' }} />
+                              <Text style={{ color: '#8B5CF6', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>LIVE</Text>
                             </View>
                           )}
                         </View>
@@ -1288,18 +1443,18 @@ export default function SettingsScreen() {
                 <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
                   {projects.filter(p => p.status === 'running' || p.status === 'ready').map((p, idx, arr) => (
                     <View 
-                      key={p.id} 
-                      style={{ 
-                        padding: 14, 
-                        borderBottomWidth: idx < arr.length - 1 ? 1 : 0, 
-                        borderBottomColor: colors.border,
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
+                       key={p.id} 
+                       style={{ 
+                         padding: 14, 
+                         borderBottomWidth: idx < arr.length - 1 ? 1 : 0, 
+                         borderBottomColor: colors.border,
+                         flexDirection: 'row',
+                         justifyContent: 'space-between',
+                         alignItems: 'center'
+                       }}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' }} />
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8B5CF6' }} />
                         <View>
                           <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>{p.name}</Text>
                           <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Status: running</Text>
@@ -1388,15 +1543,15 @@ export default function SettingsScreen() {
                         </View>
                         <View 
                           style={{ 
-                            backgroundColor: isRunning ? 'rgba(34, 197, 94, 0.12)' : 'rgba(107, 114, 128, 0.12)', 
+                            backgroundColor: isRunning ? 'rgba(139, 92, 246, 0.12)' : 'rgba(107, 114, 128, 0.12)', 
                             paddingHorizontal: 8, 
                             paddingVertical: 3, 
                             borderRadius: 6,
                             borderWidth: 1,
-                            borderColor: isRunning ? 'rgba(34, 197, 94, 0.25)' : 'rgba(107, 114, 128, 0.25)'
+                            borderColor: isRunning ? 'rgba(139, 92, 246, 0.25)' : 'rgba(107, 114, 128, 0.25)'
                           }}
                         >
-                          <Text style={{ color: isRunning ? '#22c55e' : '#9CA3AF', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>
+                          <Text style={{ color: isRunning ? '#8B5CF6' : '#9CA3AF', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>
                             {p.status.toUpperCase()}
                           </Text>
                         </View>
@@ -1425,20 +1580,6 @@ export default function SettingsScreen() {
                   gap: 16
                 }}
               >
-                <View style={{ gap: 6 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Hosted Token Pool</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular' }}>
-                      {usage.aiTokens.used.toLocaleString()} / {usage.aiTokens.limit.toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={{ height: 6, backgroundColor: isDark ? '#1C2128' : '#E5E7EB', borderRadius: 3, overflow: 'hidden' }}>
-                    <View style={{ height: '100%', width: `${displayPercent}%`, backgroundColor: color, borderRadius: 3 }} />
-                  </View>
-                </View>
-
-                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
-
                 <View style={{ gap: 8 }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>
                     · Standard models (Gemini Flash, OpenAI GPT-4o, Anthropic Claude 3.5 Sonnet) deduct from this monthly hosted token quota pool.
@@ -1450,6 +1591,167 @@ export default function SettingsScreen() {
               </View>
             </View>
           )}
+        </View>
+      </View>
+    )
+  }
+
+  function renderByokDetailView() {
+    const used = billingData?.usage?.byokTokens?.used || 0
+    const maxReference = 1000000 
+    const percent = Math.min((used / maxReference) * 100, 100)
+    
+    let levelText = 'Optimal'
+    let levelDesc = 'Light usage. Performance response speed is low latency.'
+    if (percent > 25 && percent <= 50) {
+      levelText = 'Moderate'
+      levelDesc = 'Standard developer usage. Stable run speed.'
+    } else if (percent > 50 && percent <= 85) {
+      levelText = 'Active'
+      levelDesc = 'High volume usage. Fast compiler context injection.'
+    } else if (percent > 85) {
+      levelText = 'Extreme'
+      levelDesc = 'Heavy request bursts. Ensure your provider limits are sufficient.'
+    }
+
+    const renderTimelineSelector = () => {
+      const timelines: { key: '1h' | '24h' | '3d' | '7d'; label: string }[] = [
+        { key: '1h', label: '1 Hr' },
+        { key: '24h', label: '24 Hr' },
+        { key: '3d', label: '3 Day' },
+        { key: '7d', label: '7 Day' }
+      ]
+      return (
+        <View style={{ flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderRadius: 8, padding: 3, borderWidth: 1, borderColor: colors.border, marginVertical: 8 }}>
+          {timelines.map((t) => {
+            const isActive = timelineFilter === t.key
+            return (
+              <TouchableOpacity 
+                key={t.key} 
+                onPress={() => setTimelineFilter(t.key)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 6,
+                  alignItems: 'center',
+                  borderRadius: 6,
+                  backgroundColor: isActive ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                }}
+              >
+                <Text style={{ 
+                  color: isActive ? '#8B5CF6' : colors.textSecondary, 
+                  fontFamily: 'Inter_600SemiBold', 
+                  fontSize: 11.5
+                }}>
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      )
+    }
+
+    const renderTokensAreaSparkline = () => {
+      const dataMap = {
+        '1h': [10, 30, 20, 45, 35, 50, 40],
+        '24h': [20, 40, 15, 60, 35, 75, 45, 60],
+        '3d': [35, 55, 40, 80, 50, 65],
+        '7d': [15, 45, 30, 70, 40, 85, 50, 60, 90]
+      }
+      const sparkData = dataMap[timelineFilter] || dataMap['24h']
+      
+      return (
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>AI REQUEST TOKENS CONSUMPTION DENSITY</Text>
+          <View style={{ height: 100, justifyContent: 'flex-end', paddingTop: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: '100%', gap: 6 }}>
+              {sparkData.map((val, idx) => (
+                <View key={idx} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <View style={{ width: '100%', height: `${val}%`, backgroundColor: '#8B5CF6', opacity: 0.15 + (idx * 0.08), borderTopLeftRadius: 4, borderTopRightRadius: 4, borderWidth: 1, borderColor: '#8B5CF6' }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      )
+    }
+
+    return (
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Subheader */}
+        <View style={styles.subHeader}>
+          <TouchableOpacity 
+            onPress={() => setCurrentSubScreen('aiKeys')} 
+            style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+          >
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>BYOK Engine Analytics</Text>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          {/* Speedometer Gauge Dial Card */}
+          <View style={{ backgroundColor: isDark ? '#121620' : '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 24, alignItems: 'center', gap: 16 }}>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>CONSUMPTION VELOCITY METER</Text>
+            
+            {/* Speedometer Semi-Circle Dial */}
+            <View style={{ width: 180, height: 90, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
+              <View style={{ width: 180, height: 180, borderRadius: 90, borderWidth: 14, borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', position: 'absolute', top: 0 }} />
+              <View 
+                style={{ 
+                  width: 180, 
+                  height: 180, 
+                  borderRadius: 90, 
+                  borderWidth: 14, 
+                  borderColor: '#8B5CF6', 
+                  borderBottomColor: 'transparent', 
+                  borderRightColor: 'transparent', 
+                  position: 'absolute', 
+                  top: 0,
+                  transform: [{ rotate: `${-45 + (percent * 1.8)}deg` }] 
+                }} 
+              />
+              <View style={{ alignItems: 'center', justifyContent: 'center', paddingBottom: 10 }}>
+                <Text style={{ color: colors.text, fontSize: 26, fontFamily: 'JetBrainsMono_700Bold' }}>{used.toLocaleString()}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_500Medium', marginTop: 2 }}>tokens consumed</Text>
+              </View>
+            </View>
+
+            {/* Gauge indicators */}
+            <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', paddingHorizontal: 12 }}>
+              <Text style={{ fontSize: 9, color: colors.textSecondary }}>0</Text>
+              <Text style={{ fontSize: 9, color: colors.textSecondary }}>Moderate</Text>
+              <Text style={{ fontSize: 9, color: colors.textSecondary }}>1M+</Text>
+            </View>
+
+            <View style={{ height: 1, backgroundColor: colors.border, width: '100%', opacity: 0.5 }} />
+
+            <View style={{ alignItems: 'center', gap: 4 }}>
+              <Text style={{ color: '#8B5CF6', fontFamily: 'Inter_700Bold', fontSize: 14 }}>Usage Profile: {levelText}</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: 'center', paddingHorizontal: 20 }}>{levelDesc}</Text>
+            </View>
+          </View>
+
+          {/* Savings & Efficiency Cards */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flex: 1, backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14, gap: 4 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_600SemiBold' }}>ESTIMATED SAVINGS</Text>
+              <Text style={{ color: colors.text, fontSize: 18, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 }}>$0.00</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 9, marginTop: 2 }}>Bypassing hosted markup fees</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14, gap: 4 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_600SemiBold' }}>ENGINE EFFICIENCY</Text>
+              <Text style={{ color: colors.text, fontSize: 18, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 }}>Optimal</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 9, marginTop: 2 }}>Zero limit caps active</Text>
+            </View>
+          </View>
+
+          {/* BYOK Timeline statistics */}
+          <View style={{ gap: 14 }}>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ENGINE SPEED HISTORY</Text>
+            {renderTimelineSelector()}
+            {renderTokensAreaSparkline()}
+          </View>
         </View>
       </View>
     )
@@ -2173,11 +2475,15 @@ export default function SettingsScreen() {
 
                 {/* BYOK Usage Card */}
                 {billingData?.usage?.byokTokens && (
-                  <View 
+                  <TouchableOpacity 
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setCurrentSubScreen('byok-detail')
+                    }}
                     style={{ 
-                      backgroundColor: isDark ? 'rgba(99, 102, 241, 0.08)' : 'rgba(99, 102, 241, 0.05)', 
+                      backgroundColor: isDark ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)', 
                       borderWidth: 1, 
-                      borderColor: isDark ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)', 
+                      borderColor: isDark ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.15)', 
                       borderRadius: 12, 
                       padding: 14, 
                       flexDirection: 'row', 
@@ -2186,17 +2492,20 @@ export default function SettingsScreen() {
                       marginBottom: 4
                     }}
                   >
-                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(99, 102, 241, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Sparkles size={16} color="#6366F1" />
+                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Sparkles size={16} color="#8B5CF6" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 0.5 }}>BYOK TOKEN STATISTICS</Text>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 10, letterSpacing: 0.5 }}>BYOK TOKEN STATISTICS</Text>
+                        <Text style={{ color: '#8B5CF6', fontFamily: 'Inter_600SemiBold', fontSize: 9 }}>ANALYTICS ↗</Text>
+                      </View>
                       <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 16, marginTop: 2 }}>
                         {(billingData.usage.byokTokens.used || 0).toLocaleString()}
                         <Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> tokens consumed</Text>
                       </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 )}
 
                 <View style={{ gap: 16 }}>
@@ -2819,6 +3128,33 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           {renderBillingDetailView()}
+          <ConfirmModal
+            visible={modalConfig.visible}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            confirmText={modalConfig.confirmText}
+            cancelText={modalConfig.cancelText}
+            type={modalConfig.type}
+            singleButton={modalConfig.singleButton}
+            onConfirm={modalConfig.onConfirm}
+            onCancel={modalConfig.onCancel}
+          />
+        </ScrollView>
+      </Animated.View>
+    )}
+
+    {currentSubScreen === 'byok-detail' && (
+      <Animated.View 
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderByokDetailView()}
           <ConfirmModal
             visible={modalConfig.visible}
             title={modalConfig.title}
