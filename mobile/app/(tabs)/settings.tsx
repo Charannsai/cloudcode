@@ -185,26 +185,27 @@ export default function SettingsScreen() {
       <View 
         key={tierKey}
         style={{
+          width: 280,
           backgroundColor: isDarkTheme ? '#121620' : '#FFFFFF',
           borderWidth: isActive ? 2 : 1,
           borderColor: isActive ? '#8B5CF6' : (isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
-          borderRadius: 20,
-          padding: 18,
-          gap: 12,
+          borderRadius: 16,
+          padding: 16,
+          gap: 10,
           shadowColor: isActive ? '#8B5CF6' : 'transparent',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isActive ? 0.15 : 0,
-          shadowRadius: 8,
+          shadowOpacity: isActive ? 0.12 : 0,
+          shadowRadius: 6,
           elevation: isActive ? 3 : 0,
         }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View 
               style={{ 
-                width: 36, 
-                height: 36, 
-                borderRadius: 10, 
+                width: 32, 
+                height: 32, 
+                borderRadius: 8, 
                 backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', 
                 alignItems: 'center', 
                 justifyContent: 'center',
@@ -212,21 +213,21 @@ export default function SettingsScreen() {
                 borderColor: isDarkTheme ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
               }}
             >
-              <Zap size={18} color={tierColor} strokeWidth={2.5} />
+              <Zap size={16} color={tierColor} strokeWidth={2.5} />
             </View>
             <View>
-              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>
                 {title}
               </Text>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12, marginTop: 1 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, marginTop: 1 }}>
                 {priceStr}
               </Text>
             </View>
           </View>
 
           {isActive ? (
-            <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)' }}>
-              <Text style={{ color: '#8B5CF6', fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
+            <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)' }}>
+              <Text style={{ color: '#8B5CF6', fontSize: 9, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>ACTIVE</Text>
             </View>
           ) : (
             tierKey !== 'free' && (
@@ -236,18 +237,18 @@ export default function SettingsScreen() {
                 onPress={() => handleUpgradeTierDirect(tierKey as 'pro' | 'advanced')}
                 style={{
                   backgroundColor: '#8B5CF6',
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 5,
+                  borderRadius: 6,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 6
+                  gap: 4
                 }}
               >
                 {isLoading ? (
                   <ActivityIndicator size="small" color={isDarkTheme ? '#000' : '#fff'} />
                 ) : (
-                  <Text style={{ color: isDarkTheme ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>
+                  <Text style={{ color: isDarkTheme ? '#000' : '#fff', fontFamily: 'Inter_600SemiBold', fontSize: 10 }}>
                     Upgrade
                   </Text>
                 )}
@@ -256,19 +257,21 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        <View style={{ height: 1, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', marginVertical: 2 }} />
+        <View style={{ height: 1, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} />
 
-        <View style={{ gap: 6 }}>
+        <View style={{ gap: 4 }}>
           {features.map((feat, idx) => (
-            <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Check size={12} color="#8B5CF6" strokeWidth={2.5} />
-              <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_400Regular' }}>
+            <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Check size={10} color="#8B5CF6" strokeWidth={2.5} />
+              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>
                 {feat}
               </Text>
             </View>
           ))}
         </View>
       </View>
+    )
+  }
     )
   }
 
@@ -823,7 +826,7 @@ export default function SettingsScreen() {
     const isZero = usedRaw === 0 || percent === 0
     const heights = isZero ? [6, 6, 6, 6, 6, 6] : [25, 45, 60, 35, Math.max(10, percent * 0.7)]
     return (
-      <View style={{ flexDirection: 'row', gap: 4, height: 26, alignItems: 'flex-end', marginTop: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 4, height: 20, alignItems: 'flex-end', marginTop: 6 }}>
         {heights.map((h, i) => (
           <View 
             key={i} 
@@ -845,9 +848,9 @@ export default function SettingsScreen() {
 
   function renderMiniRadialGauge(percent: number, activeColor: string) {
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 }}>
-        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 3, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: activeColor, opacity: Math.max(0.2, percent / 100) }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
+        <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2.5, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: activeColor, opacity: Math.max(0.2, percent / 100) }} />
         </View>
         <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_400Regular', fontSize: 10 }}>
           {Math.round(percent)}% Load
@@ -860,8 +863,8 @@ export default function SettingsScreen() {
     const val1 = Math.min(percent, 70)
     const val2 = Math.min(100 - val1, 15)
     return (
-      <View style={{ gap: 4, marginTop: 10 }}>
-        <View style={{ height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
+      <View style={{ gap: 3, marginTop: 6 }}>
+        <View style={{ height: 5, borderRadius: 2.5, overflow: 'hidden', flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
           <View style={{ width: `${val1}%`, backgroundColor: activeColor }} />
           <View style={{ width: `${val2}%`, backgroundColor: '#3B82F6', opacity: 0.7 }} />
         </View>
@@ -875,20 +878,20 @@ export default function SettingsScreen() {
 
   function renderMiniNodeGrid(used: number, limit: number, activeColor: string) {
     return (
-      <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginTop: 10, height: 26, alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', gap: 3, flexWrap: 'wrap', marginTop: 6, height: 20, alignItems: 'center' }}>
         {Array.from({ length: limit }).map((_, i) => {
           const isRunning = i < used
           return (
             <View
               key={i}
               style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
+                width: 6,
+                height: 6,
+                borderRadius: 3,
                 backgroundColor: isRunning ? activeColor : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
                 shadowColor: isRunning ? activeColor : 'transparent',
                 shadowOpacity: isRunning ? 0.6 : 0,
-                shadowRadius: 2,
+                shadowRadius: 1.5,
                 borderWidth: 1,
                 borderColor: isRunning ? 'transparent' : colors.border
               }}
@@ -903,7 +906,7 @@ export default function SettingsScreen() {
     const isZero = usedRaw === 0 || percent === 0
     const tokenActivity = isZero ? [6, 6, 6, 6, 6, 6, 6, 6] : [10, 40, 25, 75, 45, 60, 30, Math.max(15, percent * 0.7)]
     return (
-      <View style={{ flexDirection: 'row', gap: 2, height: 26, alignItems: 'flex-end', marginTop: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 2, height: 20, alignItems: 'flex-end', marginTop: 6 }}>
         {tokenActivity.map((val, i) => (
           <View 
             key={i} 
@@ -933,8 +936,8 @@ export default function SettingsScreen() {
     limitRaw?: number
   ) {
     const displayPercent = isNaN(percent) ? 0 : Math.min(percent, 100)
-    const cardWidth = type === 'compute' ? '100%' : (type === 'ram' || type === 'workspaces') ? '48%' : type === 'disk' ? '56%' : '40%'
-    const cardHeight = type === 'compute' ? 160 : (type === 'ram' || type === 'workspaces') ? 135 : 125
+    const cardWidth = type === 'compute' ? '100%' : '48.2%'
+    const cardHeight = type === 'compute' ? 145 : 125
     
     return (
       <TouchableOpacity 
@@ -1095,62 +1098,71 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
-          {/* Plans Comparison Section */}
-          <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          {/* Plans Comparison Horizontal Swiper Section */}
+          <View style={{ gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
               <Shield size={16} color={colors.textSecondary} />
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>MEMBERSHIP PLANS & TIERS</Text>
             </View>
 
-            {renderPlanCard(
-              'free',
-              'Free Plan',
-              '$0 / month',
-              [
-                '0.5 vCPU core environments',
-                '512 MB sandbox memory (RAM)',
-                '5 GB SSD storage capacity',
-                'Up to 3 active workspaces',
-                '50,000 monthly hosted AI tokens',
-                '10 min inactivity container timeout'
-              ],
-              currentTier.name === 'free'
-            )}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToInterval={292} // Card width 280 + gap 12
+              snapToAlignment="start"
+              contentContainerStyle={{ gap: 12, paddingBottom: 6 }}
+            >
+              {renderPlanCard(
+                'free',
+                'Free Plan',
+                '$0 / month',
+                [
+                  '0.5 vCPU core environments',
+                  '512 MB sandbox memory (RAM)',
+                  '5 GB SSD storage capacity',
+                  'Up to 3 active workspaces',
+                  '50,000 monthly hosted AI tokens',
+                  '10 min inactivity timeout'
+                ],
+                currentTier.name === 'free'
+              )}
 
-            {renderPlanCard(
-              'pro',
-              'Pro Developer',
-              '$25 / month',
-              [
-                '4 vCPUs blazing-fast compilation',
-                '8 GB RAM memory (No OOM crashes)',
-                '50 GB fast SSD storage space',
-                'Up to 20 active workspaces',
-                '1 Always-On persistent workspace slot',
-                '5 Million monthly premium AI tokens',
-                'Claude 3.5, GPT-4o & Gemini Premium models'
-              ],
-              currentTier.name === 'pro'
-            )}
+              {renderPlanCard(
+                'pro',
+                'Pro Developer',
+                '$25 / month',
+                [
+                  '4 vCPUs blazing-fast builds',
+                  '8 GB RAM memory capacity',
+                  '50 GB fast SSD storage space',
+                  'Up to 20 active workspaces',
+                  '1 Always-On persistent slot',
+                  '5 Million monthly AI tokens',
+                  'Claude, GPT-4o & Gemini Premium'
+                ],
+                currentTier.name === 'pro'
+              )}
 
-            {renderPlanCard(
-              'advanced',
-              'Advanced Team',
-              '$99 / month',
-              [
-                '8 vCPUs dedicated high performance',
-                '32 GB RAM extreme ML environment memory',
-                '200 GB high-speed SSD storage space',
-                'Unlimited active workspace slots',
-                '5 Always-On persistent workspace slots',
-                'Unlimited monthly hosted AI tokens pool',
-                'Dedicated low-latency model APIs'
-              ],
-              currentTier.name === 'advanced'
-            )}
+              {renderPlanCard(
+                'advanced',
+                'Advanced Team',
+                '$99 / month',
+                [
+                  '8 vCPUs dedicated performance',
+                  '32 GB RAM extreme memory',
+                  '200 GB high-speed SSD storage',
+                  'Unlimited active workspaces',
+                  '5 Always-On persistent slots',
+                  'Unlimited monthly AI tokens',
+                  'Dedicated low-latency model APIs'
+                ],
+                currentTier.name === 'advanced'
+              )}
+            </ScrollView>
           </View>
 
-          {/* Creative Metrics Grid Dashboard */}
+          {/* Clean Unified Metrics Grid Dashboard */}
           <View style={{ marginTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <BarChart2 size={16} color={colors.textSecondary} />
