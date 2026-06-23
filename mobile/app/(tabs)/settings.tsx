@@ -293,57 +293,57 @@ export default function SettingsScreen() {
         {/* Hardware core capsules */}
         <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'space-between' }}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
-            <Cpu size={10} color="#8B5CF6" />
-            <Text style={{ color: colors.text, fontSize: 9.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.cpu}</Text>
+            <Cpu size={12} color="#8B5CF6" />
+            <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.cpu}</Text>
           </View>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
-            <HardDrive size={10} color="#8B5CF6" />
-            <Text style={{ color: colors.text, fontSize: 9.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ram}</Text>
+            <HardDrive size={12} color="#8B5CF6" />
+            <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ram}</Text>
           </View>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, justifyContent: 'center' }}>
-            <Database size={10} color="#8B5CF6" />
-            <Text style={{ color: colors.text, fontSize: 9.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ssd}</Text>
+            <Database size={12} color="#8B5CF6" />
+            <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>{specs.ssd}</Text>
           </View>
         </View>
 
         <View style={{ height: 1, backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} />
 
         {/* Structured Spec List */}
-        <View style={{ gap: 7 }}>
+        <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Server size={11} color="#8B5CF6" />
-              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Workspaces</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Server size={14} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Workspaces</Text>
             </View>
-            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.workspaces}</Text>
+            <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.workspaces}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Sparkles size={11} color="#8B5CF6" />
-              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Monthly AI Tokens</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Sparkles size={14} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Monthly AI Tokens</Text>
             </View>
-            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.tokens}</Text>
+            <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.tokens}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Wifi size={11} color="#8B5CF6" />
-              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Network Bandwidth</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Wifi size={14} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Network Bandwidth</Text>
             </View>
-            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.network}</Text>
+            <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.network}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Shield size={11} color="#8B5CF6" />
-              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>API Requests</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Shield size={14} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>API Requests</Text>
             </View>
-            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.api}</Text>
+            <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.api}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Clock size={11} color="#8B5CF6" />
-              <Text style={{ color: colors.textSecondary, fontSize: 10.5, fontFamily: 'Inter_400Regular' }}>Inactivity Sleep</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Clock size={14} color="#8B5CF6" />
+              <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Inactivity Sleep</Text>
             </View>
-            <Text style={{ color: colors.text, fontSize: 10.5, fontFamily: 'Inter_600SemiBold' }}>{specs.timeout}</Text>
+            <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'Inter_600SemiBold' }}>{specs.timeout}</Text>
           </View>
         </View>
       </View>
