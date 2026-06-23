@@ -1147,11 +1147,13 @@ export default function SettingsScreen() {
                 'Free Plan',
                 '$0 / month',
                 [
-                  '0.5 vCPU core environments',
-                  '512 MB sandbox memory (RAM)',
+                  '0.5 vCPU environments',
+                  '512 MB memory (RAM)',
                   '5 GB SSD storage capacity',
-                  'Up to 3 active workspaces',
-                  '50,000 monthly hosted AI tokens',
+                  'Up to 3 workspaces',
+                  '50K monthly AI tokens',
+                  '15 Mbps network speed cap',
+                  '25 req/min API rate limit',
                   '10 min inactivity timeout'
                 ],
                 currentTier.name === 'free'
@@ -1162,13 +1164,16 @@ export default function SettingsScreen() {
                 'Pro Developer',
                 '$25 / month',
                 [
-                  '4 vCPUs blazing-fast builds',
+                  '4 vCPUs fast builds',
                   '8 GB RAM memory capacity',
-                  '50 GB fast SSD storage space',
-                  'Up to 20 active workspaces',
+                  '50 GB SSD storage space',
+                  'Up to 20 workspaces',
                   '1 Always-On persistent slot',
-                  '5 Million monthly AI tokens',
-                  'Claude, GPT-4o & Gemini Premium'
+                  '5M monthly AI tokens',
+                  'Claude, GPT-4o & Gemini Premium',
+                  'Uncapped network speed',
+                  '500 req/min API rate limit',
+                  '60 min inactivity timeout'
                 ],
                 currentTier.name === 'pro'
               )}
@@ -1178,13 +1183,16 @@ export default function SettingsScreen() {
                 'Advanced Team',
                 '$99 / month',
                 [
-                  '8 vCPUs dedicated performance',
+                  '8 vCPUs dedicated power',
                   '32 GB RAM extreme memory',
-                  '200 GB high-speed SSD storage',
-                  'Unlimited active workspaces',
+                  '200 GB SSD storage space',
+                  'Unlimited workspaces',
                   '5 Always-On persistent slots',
                   'Unlimited monthly AI tokens',
-                  'Dedicated low-latency model APIs'
+                  'Low-latency model APIs',
+                  'Uncapped network speed',
+                  'Unlimited API rate limits',
+                  'Unlimited active timeouts'
                 ],
                 currentTier.name === 'advanced'
               )}
