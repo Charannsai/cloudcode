@@ -111,17 +111,17 @@ export async function GET(req: NextRequest) {
             end = start + sessionDuration
 
             // Self-healing: permanently close this dangling session in Supabase in the background
-            supabaseAdmin
-              .from('sessions')
-              .update({ ended_at: new Date(end).toISOString() })
-              .eq('project_id', s.project_id)
-              .is('ended_at', null)
-              .then(() => {
-                console.log(`[Compute Session] Healed dangling session for project ${s.project_id}`)
-              })
-              .catch(err => {
-                console.error(`[Compute Session] Failed to heal dangling session:`, err)
-              })
+            Promise.resolve(
+              supabaseAdmin
+                .from('sessions')
+                .update({ ended_at: new Date(end).toISOString() })
+                .eq('project_id', s.project_id)
+                .is('ended_at', null)
+            ).then(() => {
+              console.log(`[Compute Session] Healed dangling session for project ${s.project_id}`)
+            }).catch((err: any) => {
+              console.error(`[Compute Session] Failed to heal dangling session:`, err)
+            })
           }
         }
         
