@@ -596,28 +596,77 @@ export default function SettingsScreen() {
     )
   }
 
-  function renderSegmentedBar(percent: number, activeColor: string) {
-    const totalSegments = 10
-    const filledSegments = Math.min(totalSegments, Math.max(0, Math.round((percent / 100) * totalSegments)))
-    
+  function renderMiniBarGraph(percent: number, activeColor: string) {
+    const heights = [25, 45, 60, 35, Math.max(10, percent * 0.7)]
     return (
-      <View style={{ flexDirection: 'row', gap: 3, marginTop: 8, alignItems: 'center' }}>
-        {Array.from({ length: totalSegments }).map((_, i) => {
-          const isActive = i < filledSegments
+      <View style={{ flexDirection: 'row', gap: 4, height: 26, alignItems: 'flex-end', marginTop: 10 }}>
+        {heights.map((h, i) => (
+          <View 
+            key={i} 
+            style={{ 
+              flex: 1, 
+              height: `${h}%`, 
+              backgroundColor: i === 4 ? activeColor : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'), 
+              borderRadius: 2,
+              shadowColor: i === 4 ? activeColor : 'transparent',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: i === 4 ? 0.5 : 0,
+              shadowRadius: 2,
+            }} 
+          />
+        ))}
+      </View>
+    )
+  }
+
+  function renderMiniRadialGauge(percent: number, activeColor: string) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 }}>
+        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 3, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: activeColor, opacity: Math.max(0.2, percent / 100) }} />
+        </View>
+        <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_400Regular', fontSize: 10 }}>
+          {Math.round(percent)}% Load
+        </Text>
+      </View>
+    )
+  }
+
+  function renderMiniStackBar(percent: number, activeColor: string) {
+    const val1 = Math.min(percent, 70)
+    const val2 = Math.min(100 - val1, 15)
+    return (
+      <View style={{ gap: 4, marginTop: 10 }}>
+        <View style={{ height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
+          <View style={{ width: `${val1}%`, backgroundColor: activeColor }} />
+          <View style={{ width: `${val2}%`, backgroundColor: '#3B82F6', opacity: 0.7 }} />
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', opacity: 0.6 }}>
+          <Text style={{ fontSize: 7, color: colors.textSecondary }}>sources</Text>
+          <Text style={{ fontSize: 7, color: colors.textSecondary }}>cache</Text>
+        </View>
+      </View>
+    )
+  }
+
+  function renderMiniNodeGrid(used: number, limit: number, activeColor: string) {
+    return (
+      <View style={{ flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginTop: 10, height: 26, alignItems: 'center' }}>
+        {Array.from({ length: limit }).map((_, i) => {
+          const isRunning = i < used
           return (
-            <View 
-              key={i} 
+            <View
+              key={i}
               style={{
-                flex: 1,
-                height: 6,
-                borderRadius: 2,
-                backgroundColor: isActive ? activeColor : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
-                // Subtle glow on active segments in dark theme
-                shadowColor: isActive ? activeColor : 'transparent',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: isActive ? 0.6 : 0,
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: isRunning ? activeColor : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'),
+                shadowColor: isRunning ? activeColor : 'transparent',
+                shadowOpacity: isRunning ? 0.6 : 0,
                 shadowRadius: 2,
-                elevation: isActive ? 1 : 0,
+                borderWidth: 1,
+                borderColor: isRunning ? 'transparent' : colors.border
               }}
             />
           )
@@ -626,20 +675,49 @@ export default function SettingsScreen() {
     )
   }
 
+  function renderMiniSparkline(percent: number, activeColor: string) {
+    const tokenActivity = [10, 40, 25, 75, 45, 60, 30, Math.max(15, percent * 0.7)]
+    return (
+      <View style={{ flexDirection: 'row', gap: 2, height: 26, alignItems: 'flex-end', marginTop: 10 }}>
+        {tokenActivity.map((val, i) => (
+          <View 
+            key={i} 
+            style={{ 
+              flex: 1, 
+              height: `${val}%`, 
+              backgroundColor: activeColor, 
+              opacity: 0.3 + (i * 0.1),
+              borderTopLeftRadius: 1.5,
+              borderTopRightRadius: 1.5
+            }} 
+          />
+        ))}
+      </View>
+    )
+  }
+
   function renderMetricCard(
+    type: 'compute' | 'ram' | 'disk' | 'workspaces' | 'ai',
     label: string,
     usedStr: string,
     limitStr: string,
     percent: number,
     Icon: any,
     color: string,
-    isUnlimited = false
+    usedRaw?: number,
+    limitRaw?: number
   ) {
     const displayPercent = isNaN(percent) ? 0 : Math.min(percent, 100)
     
     return (
-      <View 
+      <TouchableOpacity 
         key={label}
+        activeOpacity={0.85}
+        onPress={() => {
+          setBillingDetailType(type)
+          setCurrentSubScreen('billing-detail')
+          fetchProjects(true)
+        }}
         style={{ 
           width: '48.2%', 
           backgroundColor: isDark ? '#111622' : '#FFFFFF', 
@@ -647,6 +725,7 @@ export default function SettingsScreen() {
           borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', 
           borderRadius: 16, 
           padding: 14,
+          height: 145,
           justifyContent: 'space-between',
           // Creative subtle card glow in dark mode
           shadowColor: isDark ? color : 'transparent',
@@ -669,43 +748,29 @@ export default function SettingsScreen() {
           >
             <Icon size={14} color={color} strokeWidth={2.5} />
           </View>
-          <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 10 }}>
-            {percent > 90 && !isUnlimited ? 'Critical' : ''}
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 9 }}>
+            DETAIL ↗
           </Text>
         </View>
 
-        <View style={{ marginTop: 10 }}>
+        <View style={{ marginTop: 6 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, opacity: 0.8 }}>
             {label}
           </Text>
-          <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 13, marginTop: 2 }}>
+          <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 13, marginTop: 1 }}>
             {usedStr}
           </Text>
-          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 9.5, marginTop: 1 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 9, marginTop: 1 }}>
             limit: {limitStr}
           </Text>
         </View>
 
-        {isUnlimited ? (
-          // Special unlimited visual indicator
-          <View style={{ flexDirection: 'row', gap: 3, marginTop: 10, alignItems: 'center' }}>
-            {Array.from({ length: 10 }).map((_, i) => (
-              <View 
-                key={i} 
-                style={{
-                  flex: 1,
-                  height: 5,
-                  borderRadius: 1.5,
-                  backgroundColor: color,
-                  opacity: 0.2 + (i * 0.08),
-                }}
-              />
-            ))}
-          </View>
-        ) : (
-          renderSegmentedBar(displayPercent, color)
-        )}
-      </View>
+        {type === 'compute' && renderMiniBarGraph(displayPercent, color)}
+        {type === 'ram' && renderMiniRadialGauge(displayPercent, color)}
+        {type === 'disk' && renderMiniStackBar(displayPercent, color)}
+        {type === 'workspaces' && renderMiniNodeGrid(usedRaw || 0, limitRaw || 3, color)}
+        {type === 'ai' && renderMiniSparkline(displayPercent, color)}
+      </TouchableOpacity>
     )
   }
 
@@ -786,7 +851,6 @@ export default function SettingsScreen() {
       ram: { usedMB: 0, limitMB: 512 },
       disk: { usedGB: 0, limitGB: 5 },
       aiTokens: { used: 0, limit: 50000 },
-      byokTokens: { used: 0 },
       networkSpeed: { currentMbps: 15, limitMbps: 15 }
     }
 
@@ -907,15 +971,16 @@ export default function SettingsScreen() {
             
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {renderMetricCard(
+                'compute',
                 'Compute Hours',
                 `${usage.cpu.usedHours} hrs`,
                 usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`,
                 (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100,
                 Cpu,
-                '#8B5CF6',
-                usage.cpu.limitHours === 99999
+                '#8B5CF6'
               )}
               {renderMetricCard(
+                'ram',
                 'Memory (RAM)',
                 `${usage.ram.usedMB} MB`,
                 `${usage.ram.limitMB} MB`,
@@ -924,6 +989,7 @@ export default function SettingsScreen() {
                 '#3B82F6'
               )}
               {renderMetricCard(
+                'disk',
                 'SSD Storage',
                 `${usage.disk.usedGB} GB`,
                 `${usage.disk.limitGB} GB`,
@@ -932,33 +998,24 @@ export default function SettingsScreen() {
                 '#F59E0B'
               )}
               {renderMetricCard(
+                'workspaces',
                 'Workspaces',
                 `${usage.workspaces.used}`,
                 `${usage.workspaces.limit}`,
                 (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100,
                 Server,
-                '#EF4444'
+                '#EF4444',
+                usage.workspaces.used,
+                usage.workspaces.limit
               )}
               {renderMetricCard(
+                'ai',
                 'AI Tokens',
                 usage.aiTokens.used.toLocaleString(),
                 usage.aiTokens.limit.toLocaleString(),
                 (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100,
                 Sparkles,
                 '#10B981'
-              )}
-              
-              {/* Show BYOK custom AI token usage if byokMode is enabled or they have statistics */}
-              {(byokMode || (usage.byokTokens && usage.byokTokens.used > 0)) && (
-                renderMetricCard(
-                  'BYOK AI Tokens',
-                  (usage.byokTokens?.used || 0).toLocaleString(),
-                  'Unlimited',
-                  0,
-                  Key,
-                  '#6366F1',
-                  true
-                )
               )}
             </View>
           </View>
@@ -1010,6 +1067,383 @@ export default function SettingsScreen() {
                     </View>
                   </View>
                 ))}
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    )
+  }
+
+  function renderBillingDetailView() {
+    const usage = billingData?.usage || {
+      workspaces: { used: 0, limit: 3 },
+      cpu: { usedHours: 0, limitHours: 50 },
+      ram: { usedMB: 0, limitMB: 512 },
+      disk: { usedGB: 0, limitGB: 5 },
+      aiTokens: { used: 0, limit: 50000 }
+    }
+
+    const type = billingDetailType
+    const isCompute = type === 'compute'
+    const isRam = type === 'ram'
+    const isDisk = type === 'disk'
+    const isWorkspaces = type === 'workspaces'
+    const isAi = type === 'ai'
+
+    // Set configuration based on sub-tab
+    let title = ''
+    let color = '#8B5CF6'
+    let Icon = Cpu
+    let percent = 0
+    let valueStr = ''
+    let limitStr = ''
+
+    if (isCompute) {
+      title = 'Compute Session Analytics'
+      color = '#8B5CF6'
+      Icon = Cpu
+      percent = (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100
+      valueStr = `${usage.cpu.usedHours} hrs`
+      limitStr = usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`
+    } else if (isRam) {
+      title = 'Memory (RAM) Footprint'
+      color = '#3B82F6'
+      Icon = HardDrive
+      percent = (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100
+      valueStr = `${usage.ram.usedMB} MB`
+      limitStr = `${usage.ram.limitMB} MB`
+    } else if (isDisk) {
+      title = 'SSD Disk Storage Space'
+      color = '#F59E0B'
+      Icon = Database
+      percent = (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100
+      valueStr = `${usage.disk.usedGB} GB`
+      limitStr = `${usage.disk.limitGB} GB`
+    } else if (isWorkspaces) {
+      title = 'Workspaces Sandbox Nodes'
+      color = '#EF4444'
+      Icon = Server
+      percent = (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100
+      valueStr = `${usage.workspaces.used}`
+      limitStr = `${usage.workspaces.limit}`
+    } else if (isAi) {
+      title = 'Hosted Premium AI Tokens'
+      color = '#10B981'
+      Icon = Sparkles
+      percent = (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100
+      valueStr = usage.aiTokens.used.toLocaleString()
+      limitStr = usage.aiTokens.limit.toLocaleString()
+    }
+
+    const displayPercent = isNaN(percent) ? 0 : Math.min(percent, 100)
+
+    return (
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        {/* Detail View SubHeader */}
+        <View style={styles.subHeader}>
+          <TouchableOpacity 
+            onPress={() => setCurrentSubScreen('billing')} 
+            style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+          >
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>{title}</Text>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, gap: 20 }}>
+          {/* Main Visual Dial Card */}
+          <View 
+            style={{ 
+              backgroundColor: isDark ? '#121620' : '#FFFFFF', 
+              borderRadius: 20, 
+              borderWidth: 1, 
+              borderColor: colors.border,
+              padding: 20,
+              alignItems: 'center',
+              gap: 16
+            }}
+          >
+            {/* Visual Ring Gauge */}
+            <View style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 8, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+              <View 
+                style={{ 
+                  position: 'absolute', 
+                  width: '100%', 
+                  height: '100%', 
+                  borderRadius: 50, 
+                  borderWidth: 8, 
+                  borderColor: color, 
+                  opacity: 0.15 
+                }} 
+              />
+              <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: `${color}15`, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={22} color={color} strokeWidth={2.5} />
+              </View>
+            </View>
+
+            <View style={{ alignItems: 'center', gap: 4 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 12, letterSpacing: 0.5 }}>RESOURCE ALLOCATION</Text>
+              <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 24 }}>
+                {valueStr}
+                <Text style={{ fontSize: 14, fontWeight: 'normal', color: colors.textSecondary }}> / {limitStr}</Text>
+              </Text>
+              <Text style={{ color: color, fontFamily: 'Inter_700Bold', fontSize: 13, marginTop: 2 }}>
+                {displayPercent.toFixed(1)}% Consumed
+              </Text>
+            </View>
+
+            {/* Custom Block Volume Meter */}
+            <View style={{ width: '100%', flexDirection: 'row', gap: 4, height: 10 }}>
+              {Array.from({ length: 15 }).map((_, i) => {
+                const step = (i / 15) * 100
+                const isActive = step <= displayPercent
+                return (
+                  <View 
+                    key={i} 
+                    style={{ 
+                      flex: 1, 
+                      backgroundColor: isActive ? color : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'), 
+                      borderRadius: 2,
+                      shadowColor: isActive ? color : 'transparent',
+                      shadowOpacity: isActive ? 0.5 : 0,
+                      shadowRadius: 2
+                    }} 
+                  />
+                )
+              })}
+            </View>
+          </View>
+
+          {/* Subscreen detailed representations */}
+          {isCompute && (
+            <View style={{ gap: 14 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT ACTIVE RUN TIMELINES</Text>
+              
+              {billingData?.sessions && billingData.sessions.length > 0 ? (
+                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                  {billingData.sessions.map((session: any, idx: number, arr: any[]) => {
+                    const startLocal = new Date(session.startedAt).toLocaleString()
+                    const endLocal = session.endedAt ? new Date(session.endedAt).toLocaleString() : 'Running Now'
+                    
+                    // calculate elapsed minutes
+                    const startMs = new Date(session.startedAt).getTime()
+                    const endMs = session.endedAt ? new Date(session.endedAt).getTime() : Date.now()
+                    const elapsedMin = Math.round((endMs - startMs) / 60000)
+
+                    return (
+                      <View 
+                        key={session.id} 
+                        style={{ 
+                          padding: 14, 
+                          borderBottomWidth: idx < arr.length - 1 ? 1 : 0, 
+                          borderBottomColor: colors.border,
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <View style={{ gap: 3, flex: 1, marginRight: 12 }}>
+                          <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }} numberOfLines={1}>
+                            {session.projectName}
+                          </Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                            Start: {startLocal}
+                          </Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                            End: {endLocal}
+                          </Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                          <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 13 }}>
+                            {elapsedMin} min
+                          </Text>
+                          {!session.endedAt && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
+                              <Text style={{ color: '#22c55e', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>LIVE</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    )
+                  })}
+                </View>
+              ) : (
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No recent active session timeline recordings.</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {isRam && (
+            <View style={{ gap: 14 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SANDBOX MEMORY FOOTPRINT</Text>
+              
+              {projects && projects.filter(p => p.status === 'running' || p.status === 'ready').length > 0 ? (
+                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                  {projects.filter(p => p.status === 'running' || p.status === 'ready').map((p, idx, arr) => (
+                    <View 
+                      key={p.id} 
+                      style={{ 
+                        padding: 14, 
+                        borderBottomWidth: idx < arr.length - 1 ? 1 : 0, 
+                        borderBottomColor: colors.border,
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' }} />
+                        <View>
+                          <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>{p.name}</Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Status: running</Text>
+                        </View>
+                      </View>
+                      <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 13 }}>
+                        128 MB allocation
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No active containers allocating RAM. Status is currently idle.</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {isDisk && (
+            <View style={{ gap: 14 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>WORKSPACE STORAGE BREAKDOWN</Text>
+              
+              {billingData?.diskBreakdown && billingData.diskBreakdown.length > 0 ? (
+                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                  {billingData.diskBreakdown.map((item: any, idx: number, arr: any[]) => {
+                    const mbSize = item.sizeMB
+                    const sizeStr = mbSize >= 1024 ? `${(mbSize / 1024).toFixed(2)} GB` : `${mbSize} MB`
+                    return (
+                      <View 
+                        key={item.id} 
+                        style={{ 
+                          padding: 14, 
+                          borderBottomWidth: idx < arr.length - 1 ? 1 : 0, 
+                          borderBottomColor: colors.border,
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <View style={{ gap: 2 }}>
+                          <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>{item.name}</Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }}>ID: {item.id}</Text>
+                        </View>
+                        <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 13 }}>
+                          {sizeStr}
+                        </Text>
+                      </View>
+                    )
+                  })}
+                </View>
+              ) : (
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No active storage mappings loaded.</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {isWorkspaces && (
+            <View style={{ gap: 14 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SANDBOX NODES</Text>
+              
+              {projects && projects.length > 0 ? (
+                <View style={{ gap: 10 }}>
+                  {projects.map((p) => {
+                    const isRunning = p.status === 'running' || p.status === 'ready'
+                    return (
+                      <View 
+                        key={p.id} 
+                        style={{ 
+                          backgroundColor: isDark ? '#111622' : '#FFFFFF', 
+                          borderWidth: 1, 
+                          borderColor: colors.border, 
+                          borderRadius: 14, 
+                          padding: 14,
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <View style={{ gap: 4, flex: 1, marginRight: 12 }}>
+                          <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>{p.name}</Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Type: {p.type} · Created: {new Date(p.created_at).toLocaleDateString()}</Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }} numberOfLines={1}>Container: {p.container_id || 'unassigned'}</Text>
+                        </View>
+                        <View 
+                          style={{ 
+                            backgroundColor: isRunning ? 'rgba(34, 197, 94, 0.12)' : 'rgba(107, 114, 128, 0.12)', 
+                            paddingHorizontal: 8, 
+                            paddingVertical: 3, 
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: isRunning ? 'rgba(34, 197, 94, 0.25)' : 'rgba(107, 114, 128, 0.25)'
+                          }}
+                        >
+                          <Text style={{ color: isRunning ? '#22c55e' : '#9CA3AF', fontSize: 9.5, fontFamily: 'Inter_700Bold' }}>
+                            {p.status.toUpperCase()}
+                          </Text>
+                        </View>
+                      </View>
+                    )
+                  })}
+                </View>
+              ) : (
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No sandbox workspaces created yet.</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {isAi && (
+            <View style={{ gap: 14 }}>
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>AI QUOTA ALLOCATION DETAILS</Text>
+              <View 
+                style={{ 
+                  backgroundColor: isDark ? '#111622' : '#FFFFFF', 
+                  borderWidth: 1, 
+                  borderColor: colors.border, 
+                  borderRadius: 16, 
+                  padding: 16,
+                  gap: 16
+                }}
+              >
+                <View style={{ gap: 6 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Hosted Token Pool</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular' }}>
+                      {usage.aiTokens.used.toLocaleString()} / {usage.aiTokens.limit.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={{ height: 6, backgroundColor: isDark ? '#1C2128' : '#E5E7EB', borderRadius: 3, overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: `${displayPercent}%`, backgroundColor: color, borderRadius: 3 }} />
+                  </View>
+                </View>
+
+                <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
+
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>
+                    · Standard models (Gemini Flash, OpenAI GPT-4o, Anthropic Claude 3.5 Sonnet) deduct from this monthly hosted token quota pool.
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>
+                    · Custom API keys (BYOK mode) bypass this limits pool completely and consume unlimited requests, tracked as separate stats inside the AI Providers tab.
+                  </Text>
+                </View>
               </View>
             </View>
           )}
