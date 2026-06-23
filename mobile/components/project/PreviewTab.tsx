@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
   Platform, Linking, LayoutAnimation, ScrollView, Animated, TouchableWithoutFeedback,
+  Alert,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -9,14 +10,192 @@ import { getToken } from '@/lib/auth'
 import {
   Globe, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, Copy,
   ExternalLink, ChevronDown, ChevronUp, Info, Home, AlertTriangle, Sparkles, X, Terminal,
-  MoreVertical,
+  MoreVertical, Maximize2, Minimize2, Search, Trash2, Lock,
 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 import { BlurView } from 'expo-blur'
 import { useAIStore } from '@/store/ai'
 import { useRouter } from 'expo-router'
+import { api } from '@/lib/api'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
+
+const INJECTION_SCRIPT = `
+  (function() {
+    if (window.__devToolsPatched__) return;
+    window.__devToolsPatched__ = true;
+
+    var msgQueue = [];
+    function send(msg) {
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+      } else {
+        msgQueue.push(msg);
+      }
+    }
+
+    // Periodically flush message queue when ReactNativeWebView becomes available
+    var flushInterval = setInterval(function() {
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        while (msgQueue.length > 0) {
+          window.ReactNativeWebView.postMessage(JSON.stringify(msgQueue.shift()));
+        }
+        clearInterval(flushInterval);
+      }
+    }, 50);
+
+    function serializeArg(arg) {
+      if (arg === null) return 'null';
+      if (arg === undefined) return 'undefined';
+      if (typeof arg === 'object') {
+        try {
+          return JSON.stringify(arg);
+        } catch (e) {
+          return '[Circular Object]';
+        }
+      }
+      return String(arg);
+    }
+
+    // Patch console
+    var consoleTypes = ['log', 'warn', 'error', 'info', 'debug'];
+    consoleTypes.forEach(function(type) {
+      var original = console[type];
+      console[type] = function() {
+        var argsText = Array.from(arguments).map(serializeArg).join(' ');
+        send({ 
+          type: (type === 'debug' || type === 'info') ? 'log' : type, 
+          data: argsText,
+          timestamp: Date.now()
+        });
+        if (original) {
+          try {
+            original.apply(console, arguments);
+          } catch(e) {}
+        }
+      };
+    });
+
+    // Patch global errors
+    window.onerror = function(message, source, lineno, colno, error) {
+      send({ 
+        type: 'error', 
+        data: message + ' at ' + (source || 'unknown') + ':' + (lineno || 0) + ':' + (colno || 0),
+        timestamp: Date.now()
+      });
+      return false;
+    };
+
+    // Fetch intercept
+    var originalFetch = window.fetch;
+    if (originalFetch) {
+      window.fetch = function(input, init) {
+        var url = '';
+        if (typeof input === 'string') {
+          url = input;
+        } else if (input && input.url) {
+          url = input.url;
+        } else {
+          url = String(input);
+        }
+        var method = (init && init.method) || 'GET';
+        var startTime = performance.now();
+        return originalFetch.apply(this, arguments).then(function(response) {
+          var duration = performance.now() - startTime;
+          send({
+            type: 'network',
+            data: { url: url, method: method, status: response.status, duration: Math.round(duration), timestamp: Date.now() }
+          });
+          return response;
+        }).catch(function(error) {
+          var duration = performance.now() - startTime;
+          send({
+            type: 'network',
+            data: { url: url, method: method, status: 'Failed', duration: Math.round(duration), timestamp: Date.now() }
+          });
+          throw error;
+        });
+      };
+    }
+
+    // XHR Intercept
+    var originalOpen = XMLHttpRequest.prototype.open;
+    var originalSend = XMLHttpRequest.prototype.send;
+    if (originalOpen && originalSend) {
+      XMLHttpRequest.prototype.open = function(method, url) {
+        this._method = method;
+        this._url = url;
+        this._startTime = performance.now();
+        return originalOpen.apply(this, arguments);
+      };
+      XMLHttpRequest.prototype.send = function() {
+        var self = this;
+        this.addEventListener('load', function() {
+          var duration = performance.now() - self._startTime;
+          send({
+            type: 'network',
+            data: { url: self._url, method: self._method, status: self.status, duration: Math.round(duration), timestamp: Date.now() }
+          });
+        });
+        this.addEventListener('error', function() {
+          var duration = performance.now() - self._startTime;
+          send({
+            type: 'network',
+            data: { url: self._url, method: self._method, status: 'Failed', duration: Math.round(duration), timestamp: Date.now() }
+          });
+        });
+        return originalSend.apply(this, arguments);
+      };
+    }
+
+    // DOM Tree Builder
+    window.sendDomTree = function() {
+      function buildDomTree(node) {
+        if (!node) return null;
+        if (node.nodeType === 3) {
+          const text = node.nodeValue.trim();
+          if (!text) return null;
+          const truncated = text.length > 60 ? text.substring(0, 57) + '...' : text;
+          return { type: 'text', text: truncated };
+        }
+        if (node.nodeType === 1) {
+          const tagName = node.tagName.toUpperCase();
+          if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'SVG', 'PATH', 'DEFS', 'SYMBOL', 'USE', 'G', 'CLIPPATH'].includes(tagName)) {
+            return null;
+          }
+          const children = [];
+          for (var i = 0; i < node.childNodes.length; i++) {
+            var childTree = buildDomTree(node.childNodes[i]);
+            if (childTree) children.push(childTree);
+          }
+          const attributes = {};
+          if (node.attributes) {
+            for (var a = 0; a < node.attributes.length; a++) {
+              var attr = node.attributes[a];
+              var val = attr.value;
+              if (val.length > 100) val = val.substring(0, 97) + '...';
+              attributes[attr.name] = val;
+            }
+          }
+          return {
+            type: 'element',
+            tagName: tagName.toLowerCase(),
+            attributes: attributes,
+            children: children
+          };
+        }
+        return null;
+      }
+      
+      var tree = buildDomTree(document.body);
+      send({
+        type: 'dom',
+        data: tree
+      });
+    };
+  })();
+  true;
+`;
 
 interface Props {
   projectId: string
@@ -40,14 +219,14 @@ function getInternalPort(publicPort: number, portsMap?: Record<string, number>):
 }
 
 function DOMInspectorNode({ node, depth = 0 }: { node: any; depth: number }) {
-  const { colors } = useAppTheme()
-  const [collapsed, setCollapsed] = useState(false)
+  const { colors, isDark } = useAppTheme()
+  const [collapsed, setCollapsed] = useState(true)
 
   if (!node) return null
 
   if (node.type === 'text') {
     return (
-      <View style={{ paddingLeft: depth * 12, paddingVertical: 2 }}>
+      <View style={{ paddingLeft: depth === 0 ? 12 : 22, paddingVertical: 1 }}>
         <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
           "{node.text}"
         </Text>
@@ -56,38 +235,71 @@ function DOMInspectorNode({ node, depth = 0 }: { node: any; depth: number }) {
   }
 
   const hasChildren = node.children && node.children.length > 0
-  const classText = node.className ? ` class="${node.className}"` : ''
-  const idText = node.id ? ` id="${node.id}"` : ''
+  const attributes = node.attributes || {}
 
   return (
-    <View style={{ paddingLeft: depth * 12 }}>
-      <TouchableOpacity 
-        onPress={() => setCollapsed(c => !c)} 
-        disabled={!hasChildren}
-        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 2 }}
-        activeOpacity={0.7}
-      >
-        <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: '#F47067' }}>
-          &lt;{node.tagName}
-          <Text style={{ color: '#F2C078' }}>{idText}</Text>
-          <Text style={{ color: '#58A6FF' }}>{classText}</Text>
-          &gt;
-        </Text>
-        {hasChildren && (
-          <Text style={{ fontSize: 9, color: colors.textSecondary, marginLeft: 4 }}>
-            {collapsed ? `[+${node.children.length}]` : '[-]'}
-          </Text>
+    <View style={{ paddingLeft: depth === 0 ? 0 : 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', paddingVertical: 1.5 }}>
+        {hasChildren ? (
+          <TouchableOpacity 
+            onPress={() => setCollapsed(c => !c)} 
+            style={{ width: 12, height: 12, alignItems: 'center', justifyContent: 'center', marginRight: 2 }}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 9, color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }}>
+              {collapsed ? '▶' : '▼'}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 14 }} />
         )}
-      </TouchableOpacity>
+
+        <TouchableOpacity 
+          onPress={() => hasChildren && setCollapsed(c => !c)} 
+          disabled={!hasChildren}
+          activeOpacity={0.7}
+          style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}
+        >
+          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: '#808080' }}>
+            &lt;<Text style={{ color: '#569CD6', fontWeight: 'bold' }}>{node.tagName}</Text>
+            {Object.entries(attributes).map(([key, val]) => (
+              <Text key={key}>
+                {' '}
+                <Text style={{ color: '#9CDCFE' }}>{key}</Text>
+                <Text style={{ color: '#808080' }}>=</Text>
+                <Text style={{ color: '#CE9178' }}>"{String(val)}"</Text>
+              </Text>
+            ))}
+            &gt;
+          </Text>
+          {collapsed && hasChildren && (
+            <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: colors.textSecondary }}>
+              ...
+              <Text style={{ color: '#808080' }}>&lt;/</Text>
+              <Text style={{ color: '#569CD6', fontWeight: 'bold' }}>{node.tagName}</Text>
+              <Text style={{ color: '#808080' }}>&gt;</Text>
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
       
-      {!collapsed && hasChildren && node.children.map((child: any, idx: number) => (
-        <DOMInspectorNode key={idx} node={child} depth={depth + 1} />
-      ))}
+      {!collapsed && hasChildren && (
+        <View style={{ borderLeftWidth: 1, borderLeftColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
+          {node.children.map((child: any, idx: number) => (
+            <DOMInspectorNode key={idx} node={child} depth={depth + 1} />
+          ))}
+        </View>
+      )}
       
       {hasChildren && !collapsed && (
-        <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: '#F47067', paddingLeft: depth * 12 }}>
-          &lt;/{node.tagName}&gt;
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 1.5 }}>
+          <View style={{ width: 14 }} />
+          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: '#808080' }}>
+            &lt;/
+            <Text style={{ color: '#569CD6', fontWeight: 'bold' }}>{node.tagName}</Text>
+            &gt;
+          </Text>
+        </View>
       )}
     </View>
   )
@@ -112,6 +324,14 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const [domTree, setDomTree] = useState<any>(null)
   const [activeDevTab, setActiveDevTab] = useState<'console' | 'network' | 'dom'>('console')
   const [showDevTools, setShowDevTools] = useState(false)
+  const [isDevToolsExpanded, setIsDevToolsExpanded] = useState(false)
+  const [consoleSearch, setConsoleSearch] = useState('')
+  const [replCommand, setReplCommand] = useState('')
+  const [networkSearch, setNetworkSearch] = useState('')
+  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [userTier, setUserTier] = useState<string>('free')
+  const [loadingTier, setLoadingTier] = useState<boolean>(true)
+  const [isUpgrading, setIsUpgrading] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const menuAnim = useRef(new Animated.Value(0)).current
 
@@ -142,9 +362,22 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
       setNetworkLogs([])
       setDomTree(null)
       setShowDevTools(false)
+      setIsDevToolsExpanded(false)
       setConsoleLogs([])
     }
   }
+
+  // Load user tier on mount
+  useEffect(() => {
+    api.billing.status()
+      .then(data => {
+        if (data?.tier?.name) {
+          setUserTier(data.tier.name)
+        }
+      })
+      .catch(err => console.warn('Failed to load user tier for preview:', err))
+      .finally(() => setLoadingTier(false))
+  }, [])
 
   // Clear preview URL and error state on project change (back to homepage)
   useEffect(() => {
@@ -157,6 +390,12 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     setNetworkLogs([])
     setDomTree(null)
     setShowDevTools(false)
+    setIsDevToolsExpanded(false)
+    setConsoleSearch('')
+    setNetworkSearch('')
+    setSelectedRequest(null)
+    setReplCommand('')
+    setIsUpgrading(false)
     setShowMenu(false)
     menuAnim.setValue(0)
   }, [projectId])
@@ -234,6 +473,66 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
 
   const handleOpenExternal = () => {
     Linking.openURL(url).catch(err => console.error('Failed to open url:', err))
+  }
+
+  const filteredConsoleLogs = consoleLogs.filter(log => 
+    log.data.toLowerCase().includes(consoleSearch.toLowerCase()) || 
+    log.type.toLowerCase().includes(consoleSearch.toLowerCase())
+  )
+
+  const filteredNetworkLogs = networkLogs.filter(log => 
+    log.url.toLowerCase().includes(networkSearch.toLowerCase()) || 
+    log.method.toLowerCase().includes(networkSearch.toLowerCase())
+  )
+
+  const handleExecuteRepl = () => {
+    if (!replCommand.trim() || !webViewRef.current) return
+    const code = replCommand.trim()
+    setReplCommand('')
+    
+    // Log command locally
+    setConsoleLogs(prev => [...prev.slice(-199), { type: 'log', data: `> ${code}`, timestamp: Date.now() }])
+    
+    webViewRef.current.injectJavaScript(`
+      (function() {
+        try {
+          var result = eval(${JSON.stringify(code)});
+          var serialized = '';
+          if (result === null) serialized = 'null';
+          else if (result === undefined) serialized = 'undefined';
+          else if (typeof result === 'object') {
+            try {
+              serialized = JSON.stringify(result);
+            } catch (e) {
+              serialized = '[Circular or Unserializable Object]';
+            }
+          } else {
+            serialized = String(result);
+          }
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'log', data: '< ' + serialized, timestamp: Date.now() }));
+        } catch (e) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', data: '< ' + e.message, timestamp: Date.now() }));
+        }
+      })();
+      true;
+    `)
+  }
+
+  const handleUpgrade = async (tierName: 'pro' | 'advanced') => {
+    setIsUpgrading(true)
+    try {
+      const returnUrl = Linking.createURL('/billing/success')
+      const planType = tierName === 'pro' ? 'pro_monthly' : 'advanced_monthly'
+      const { checkoutUrl } = await api.billing.checkout(planType, returnUrl)
+      if (checkoutUrl) {
+        await Linking.openURL(checkoutUrl)
+      }
+    } catch (err: any) {
+      console.warn('Failed to start upgrade checkout:', err)
+      Alert.alert('Checkout Error', err.message || 'Could not launch payment session.')
+    } finally {
+      setIsUpgrading(false)
+    }
   }
 
   const renderLoadingPage = () => {
@@ -413,123 +712,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               }
               setCurrentUrl(virtualUrl)
             }}
-            injectedJavaScriptBeforeContentLoaded={`
-              (function() {
-                var originalLog = console.log;
-                var originalWarn = console.warn;
-                var originalError = console.error;
-                
-                console.log = function() {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'log', data: Array.from(arguments).join(' ') }));
-                  originalLog.apply(console, arguments);
-                };
-                console.warn = function() {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'warn', data: Array.from(arguments).join(' ') }));
-                  originalWarn.apply(console, arguments);
-                };
-                console.error = function() {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', data: Array.from(arguments).join(' ') }));
-                  originalError.apply(console, arguments);
-                };
-                window.onerror = function(message, source, lineno, colno, error) {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({ 
-                    type: 'error', 
-                    data: message + ' at ' + source + ':' + lineno + ':' + colno 
-                  }));
-                  return false;
-                };
-
-                // Fetch intercept
-                var originalFetch = window.fetch;
-                window.fetch = function(input, init) {
-                  var url = (typeof input === 'string') ? input : input.url;
-                  var method = (init && init.method) || 'GET';
-                  var startTime = performance.now();
-                  return originalFetch.apply(this, arguments).then(function(response) {
-                    var duration = performance.now() - startTime;
-                    window.ReactNativeWebView.postMessage(JSON.stringify({
-                      type: 'network',
-                      data: { url: url, method: method, status: response.status, duration: Math.round(duration) }
-                    }));
-                    return response;
-                  }).catch(function(error) {
-                    var duration = performance.now() - startTime;
-                    window.ReactNativeWebView.postMessage(JSON.stringify({
-                      type: 'network',
-                      data: { url: url, method: method, status: 'Failed', duration: Math.round(duration) }
-                    }));
-                    throw error;
-                  });
-                };
-
-                // XHR Intercept
-                var originalOpen = XMLHttpRequest.prototype.open;
-                var originalSend = XMLHttpRequest.prototype.send;
-                XMLHttpRequest.prototype.open = function(method, url) {
-                  this._method = method;
-                  this._url = url;
-                  this._startTime = performance.now();
-                  return originalOpen.apply(this, arguments);
-                };
-                XMLHttpRequest.prototype.send = function() {
-                  var self = this;
-                  this.addEventListener('load', function() {
-                    var duration = performance.now() - self._startTime;
-                    window.ReactNativeWebView.postMessage(JSON.stringify({
-                      type: 'network',
-                      data: { url: self._url, method: self._method, status: self.status, duration: Math.round(duration) }
-                    }));
-                  });
-                  this.addEventListener('error', function() {
-                    var duration = performance.now() - self._startTime;
-                    window.ReactNativeWebView.postMessage(JSON.stringify({
-                      type: 'network',
-                      data: { url: self._url, method: self._method, status: 'Failed', duration: Math.round(duration) }
-                    }));
-                  });
-                  return originalSend.apply(this, arguments);
-                };
-
-                // DOM Tree Builder helper (Only runs when requested)
-                window.sendDomTree = function() {
-                  function buildDomTree(node) {
-                    if (!node) return null;
-                    if (node.nodeType === 3) {
-                      const text = node.nodeValue.trim();
-                      if (!text) return null;
-                      const truncated = text.length > 60 ? text.substring(0, 57) + '...' : text;
-                      return { type: 'text', text: truncated };
-                    }
-                    if (node.nodeType === 1) {
-                      const tagName = node.tagName.toUpperCase();
-                      if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'SVG', 'PATH', 'DEFS', 'SYMBOL', 'USE', 'G', 'CLIPPATH'].includes(tagName)) {
-                        return null;
-                      }
-                      const children = [];
-                      for (var i = 0; i < node.childNodes.length; i++) {
-                        var childTree = buildDomTree(node.childNodes[i]);
-                        if (childTree) children.push(childTree);
-                      }
-                      return {
-                        type: 'element',
-                        tagName: tagName.toLowerCase(),
-                        id: node.id || '',
-                        className: (typeof node.className === 'string') ? node.className : '',
-                        children: children
-                      };
-                    }
-                    return null;
-                  }
-                  
-                  var tree = buildDomTree(document.body);
-                  window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'dom',
-                    data: tree
-                  }));
-                };
-              })();
-              true;
-            `}
+            injectedJavaScriptBeforeContentLoaded={INJECTION_SCRIPT}
+            injectedJavaScript={INJECTION_SCRIPT}
             onMessage={(event) => {
               try {
                 const msg = JSON.parse(event.nativeEvent.data)
@@ -538,14 +722,14 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                   return
                 }
                 if (msg.type === 'log' || msg.type === 'warn' || msg.type === 'error') {
-                  setConsoleLogs(prev => [...prev.slice(-199), { type: msg.type, data: msg.data, timestamp: Date.now() }])
+                  setConsoleLogs(prev => [...prev.slice(-199), { type: msg.type, data: msg.data, timestamp: msg.timestamp || Date.now() }])
                 }
                 if (msg.type === 'error') {
                   setLatestError(msg.data)
                   setShowErrorOverlay(true)
                 }
                 if (msg.type === 'network') {
-                  setNetworkLogs(prev => [...prev.slice(-99), { ...msg.data, timestamp: Date.now() }])
+                  setNetworkLogs(prev => [...prev.slice(-99), { ...msg.data, timestamp: msg.timestamp || Date.now() }])
                 }
                 if (msg.type === 'dom') {
                   setDomTree(msg.data)
@@ -646,7 +830,11 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
 
       {/* DevTools Bottom Drawer (Always present in hierarchy when url is active, height-toggled for smooth layout updates) */}
       {url ? (
-        <View style={[styles.devToolsContainer, { borderTopColor: colors.border, height: showDevTools ? 260 : 0, borderTopWidth: showDevTools ? 1 : 0 }]}>
+        <View style={[styles.devToolsContainer, { 
+          borderTopColor: colors.border, 
+          height: showDevTools ? (isDevToolsExpanded ? 520 : 280) : 0, 
+          borderTopWidth: showDevTools ? 1 : 0 
+        }]}>
           {showDevTools && (
             <>
               <View style={[styles.devToolsHeader, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}>
@@ -658,13 +846,31 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                 </View>
                 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>
-                    Logs: {consoleLogs.length} | Net: {networkLogs.length}
-                  </Text>
+                  {userTier === 'advanced' && (
+                    <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>
+                      Logs: {consoleLogs.length} | Net: {networkLogs.length}
+                    </Text>
+                  )}
+                  {userTier === 'advanced' && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                        setIsDevToolsExpanded(prev => !prev)
+                      }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      {isDevToolsExpanded ? (
+                        <Minimize2 size={13} color={colors.textSecondary} />
+                      ) : (
+                        <Maximize2 size={13} color={colors.textSecondary} />
+                      )}
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity 
                     onPress={() => {
                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
                       setShowDevTools(false)
+                      setIsDevToolsExpanded(false)
                     }} 
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
@@ -673,147 +879,370 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                 </View>
               </View>
 
-              <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
-                {/* Tab Bar */}
-                <View style={[styles.devTabBar, { borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-                  <View style={{ flexDirection: 'row', flex: 1 }}>
-                    {(['console', 'network', 'dom'] as const).map((tab) => (
+              {userTier === 'advanced' ? (
+                <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
+                  {/* Tab Bar */}
+                  <View style={[styles.devTabBar, { borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                    <View style={{ flexDirection: 'row', flex: 1 }}>
+                      {(['console', 'network', 'dom'] as const).map((tab) => (
+                        <TouchableOpacity
+                          key={tab}
+                          onPress={() => {
+                            setActiveDevTab(tab)
+                            if (tab === 'dom' && webViewRef.current) {
+                              webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
+                            }
+                          }}
+                          style={[
+                            styles.devTabItem,
+                            activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                          ]}
+                        >
+                          <Text style={[
+                            styles.devTabText,
+                            { 
+                              color: activeDevTab === tab ? colors.primary : colors.textSecondary,
+                              fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
+                            }
+                          ]}>
+                            {tab.toUpperCase()}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    {activeDevTab === 'console' && (
                       <TouchableOpacity
-                        key={tab}
+                        onPress={() => setConsoleLogs([])}
+                        style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>Clear</Text>
+                      </TouchableOpacity>
+                    )}
+                    {activeDevTab === 'network' && (
+                      <TouchableOpacity
+                        onPress={() => setNetworkLogs([])}
+                        style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>Clear</Text>
+                      </TouchableOpacity>
+                    )}
+                    {activeDevTab === 'dom' && (
+                      <TouchableOpacity
                         onPress={() => {
-                          setActiveDevTab(tab)
-                          if (tab === 'dom' && webViewRef.current) {
-                            webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
-                          }
+                          setDomTree(null)
+                          webViewRef.current?.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
                         }}
+                        style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={{ fontSize: 11, color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>Reload</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* Tab Content */}
+                  <View style={{ flex: 1 }}>
+                    {activeDevTab === 'console' && (
+                      <View style={{ flex: 1 }}>
+                        {/* Filter bar */}
+                        <View style={[styles.filterBar, { borderColor: colors.border }]}>
+                          <Search size={12} color={colors.textSecondary} />
+                          <TextInput
+                            style={[styles.filterInput, { color: colors.text, fontFamily: 'Inter_400Regular' }]}
+                            placeholder="Filter logs..."
+                            placeholderTextColor={colors.textSecondary}
+                            value={consoleSearch}
+                            onChangeText={setConsoleSearch}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                          />
+                          {consoleSearch.length > 0 && (
+                            <TouchableOpacity onPress={() => setConsoleSearch('')}>
+                              <X size={12} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+
+                        {/* Logs List */}
+                        <ScrollView 
+                          ref={ref => ref?.scrollToEnd({ animated: true })}
+                          contentContainerStyle={{ padding: 10, paddingBottom: 15, gap: 4 }}
+                        >
+                          {filteredConsoleLogs.length === 0 ? (
+                            <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                              {consoleLogs.length === 0 ? 'No console logs captured yet.' : 'No matching logs found.'}
+                            </Text>
+                          ) : (
+                            filteredConsoleLogs.map((log, idx) => {
+                              const isCommand = log.data.startsWith('> ')
+                              const isResult = log.data.startsWith('< ')
+                              const timestampText = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                              
+                              let logColor = colors.text
+                              let logBg = 'transparent'
+                              if (log.type === 'error') {
+                                logColor = '#FF7B72'
+                                logBg = isDark ? 'rgba(255, 123, 114, 0.05)' : 'rgba(255, 123, 114, 0.03)'
+                              } else if (log.type === 'warn') {
+                                logColor = '#F2C078'
+                                logBg = isDark ? 'rgba(242, 192, 120, 0.05)' : 'rgba(242, 192, 120, 0.03)'
+                              } else if (isCommand) {
+                                logColor = colors.primary
+                              } else if (isResult) {
+                                logColor = '#3FB950'
+                              }
+
+                              return (
+                                <View 
+                                  key={idx} 
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'flex-start',
+                                    paddingVertical: 3,
+                                    paddingHorizontal: 6,
+                                    backgroundColor: logBg,
+                                    borderRadius: 2,
+                                    borderBottomWidth: 0.5,
+                                    borderBottomColor: colors.border + '15',
+                                  }}
+                                >
+                                  <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 8.5, color: colors.textTertiary, width: 62, marginTop: 1.5 }}>
+                                    {timestampText}
+                                  </Text>
+                                  <Text 
+                                    style={{
+                                      fontFamily: 'JetBrainsMono_400Regular',
+                                      fontSize: 10,
+                                      color: logColor,
+                                      flex: 1,
+                                      fontWeight: isCommand ? '600' : '400',
+                                    }}
+                                  >
+                                    {log.data}
+                                  </Text>
+                                </View>
+                              )
+                            })
+                          )}
+                        </ScrollView>
+
+                        {/* JS REPL Input */}
+                        <View style={[styles.replBar, { borderColor: colors.border, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}>
+                          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: colors.primary, marginRight: 6 }}>&gt;</Text>
+                          <TextInput
+                            style={[styles.replInput, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
+                            placeholder="Execute JS (e.g. document.title)..."
+                            placeholderTextColor={colors.textSecondary}
+                            value={replCommand}
+                            onChangeText={setReplCommand}
+                            onSubmitEditing={handleExecuteRepl}
+                            returnKeyType="send"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                          />
+                          {replCommand.trim().length > 0 && (
+                            <TouchableOpacity onPress={handleExecuteRepl} style={styles.replExecuteBtn}>
+                              <Text style={{ color: colors.primary, fontSize: 10, fontFamily: 'Inter_600SemiBold' }}>RUN</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    )}
+
+                    {activeDevTab === 'network' && (
+                      <View style={{ flex: 1 }}>
+                        {/* Filter bar */}
+                        <View style={[styles.filterBar, { borderColor: colors.border }]}>
+                          <Search size={12} color={colors.textSecondary} />
+                          <TextInput
+                            style={[styles.filterInput, { color: colors.text, fontFamily: 'Inter_400Regular' }]}
+                            placeholder="Filter requests..."
+                            placeholderTextColor={colors.textSecondary}
+                            value={networkSearch}
+                            onChangeText={setNetworkSearch}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                          />
+                          {networkSearch.length > 0 && (
+                            <TouchableOpacity onPress={() => setNetworkSearch('')}>
+                              <X size={12} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+
+                        {/* Requests List */}
+                        <ScrollView contentContainerStyle={{ padding: 10, gap: 2 }}>
+                          {filteredNetworkLogs.length === 0 ? (
+                            <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                              {networkLogs.length === 0 ? 'No network requests intercepted.' : 'No matching requests found.'}
+                            </Text>
+                          ) : (
+                            filteredNetworkLogs.map((log, idx) => {
+                              const displayName = log.url.split('/').pop()?.split('?')[0] || log.url
+                              const isError = log.status === 'Failed' || Number(log.status) >= 400
+                              const statusColor = isError ? '#FF7B72' : '#3FB950'
+                              
+                              return (
+                                <TouchableOpacity 
+                                  key={idx} 
+                                  onPress={() => setSelectedRequest(log)}
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    borderBottomWidth: 0.5,
+                                    borderBottomColor: colors.border + '15',
+                                    paddingVertical: 5,
+                                    paddingHorizontal: 4,
+                                  }}
+                                  activeOpacity={0.7}
+                                >
+                                  <View style={{ flex: 1, marginRight: 10 }}>
+                                    <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10.5, color: colors.text }} numberOfLines={1}>
+                                      {displayName}
+                                    </Text>
+                                    <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 8.5, color: colors.textTertiary }} numberOfLines={1}>
+                                      {log.method} {log.url}
+                                    </Text>
+                                  </View>
+                                  <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                                    <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: statusColor, width: 70, textAlign: 'right' }}>
+                                      {log.status}
+                                    </Text>
+                                    <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 9.5, color: colors.textSecondary, width: 45, textAlign: 'right' }}>
+                                      {log.duration}ms
+                                    </Text>
+                                  </View>
+                                </TouchableOpacity>
+                              )
+                            })
+                          )}
+                        </ScrollView>
+
+                        {/* Request Details Drawer Overlay */}
+                        {selectedRequest && (
+                          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', zIndex: 100 }]}>
+                            <View style={{ 
+                              flexDirection: 'row', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center', 
+                              borderBottomWidth: 1, 
+                              borderBottomColor: colors.border, 
+                              paddingHorizontal: 12,
+                              height: 34,
+                              backgroundColor: isDark ? '#1C2128' : '#EAEEF2'
+                            }}>
+                              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: colors.text }}>Request Details</Text>
+                              <TouchableOpacity onPress={() => setSelectedRequest(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <X size={13} color={colors.textSecondary} />
+                              </TouchableOpacity>
+                            </View>
+                            <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }}>
+                              <View>
+                                <Text style={{ fontSize: 9, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>URL</Text>
+                                <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10.5, color: colors.text, marginTop: 2 }} selectable>
+                                  {selectedRequest.url}
+                                </Text>
+                              </View>
+                              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 20 }}>
+                                <View style={{ minWidth: 80 }}>
+                                  <Text style={{ fontSize: 9, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>METHOD</Text>
+                                  <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: colors.primary, marginTop: 2, fontWeight: 'bold' }}>
+                                    {selectedRequest.method}
+                                  </Text>
+                                </View>
+                                <View style={{ minWidth: 80 }}>
+                                  <Text style={{ fontSize: 9, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>STATUS</Text>
+                                  <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: selectedRequest.status === 'Failed' || Number(selectedRequest.status) >= 400 ? '#FF7B72' : '#3FB950', marginTop: 2, fontWeight: 'bold' }}>
+                                    {selectedRequest.status}
+                                  </Text>
+                                </View>
+                                <View style={{ minWidth: 80 }}>
+                                  <Text style={{ fontSize: 9, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>DURATION</Text>
+                                  <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: colors.text, marginTop: 2 }}>
+                                    {selectedRequest.duration}ms
+                                  </Text>
+                                </View>
+                              </View>
+                              <View>
+                                <Text style={{ fontSize: 9, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>TIMESTAMP</Text>
+                                <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10.5, color: colors.textSecondary, marginTop: 2 }}>
+                                  {new Date(selectedRequest.timestamp).toLocaleString()}
+                                </Text>
+                              </View>
+                            </ScrollView>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {activeDevTab === 'dom' && (
+                      <ScrollView contentContainerStyle={{ padding: 10 }}>
+                        {domTree ? (
+                          <DOMInspectorNode node={domTree} depth={0} />
+                        ) : (
+                          <View style={{ alignItems: 'center', marginTop: 20, gap: 8 }}>
+                            <ActivityIndicator size="small" color={colors.primary} />
+                            <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                              Reading DOM structure...
+                            </Text>
+                          </View>
+                        )}
+                      </ScrollView>
+                    )}
+                  </View>
+                </View>
+              ) : (
+                <View style={[styles.lockedContainer, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}>
+                  <View style={[styles.lockCircle, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}>
+                    <Lock size={20} color="#F59E0B" strokeWidth={2} />
+                  </View>
+                  <Text style={[styles.lockedTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Developer Tools Locked</Text>
+                  <Text style={[styles.lockedDesc, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                    {userTier === 'pro' 
+                      ? 'Advanced Developer Tools (Console logs, Network inspector, and DOM tree explorer) are restricted to the Advanced tier.'
+                      : 'Advanced Developer Tools (Console logs, Network inspector, and DOM tree explorer) are restricted to Pro and Advanced tiers.'
+                    }
+                  </Text>
+
+                  {isUpgrading ? (
+                    <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 12 }} />
+                  ) : (
+                    <View style={styles.upgradeActionsRow}>
+                      {userTier === 'free' && (
+                        <TouchableOpacity
+                          onPress={() => handleUpgrade('pro')}
+                          style={[styles.upgradeBtn, { backgroundColor: colors.primary }]}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={[styles.upgradeBtnText, { color: isDark ? '#000' : '#fff' }]}>Upgrade to Pro</Text>
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
+                        onPress={() => handleUpgrade('advanced')}
                         style={[
-                          styles.devTabItem,
-                          activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                          styles.upgradeBtn, 
+                          userTier === 'pro' 
+                            ? { backgroundColor: colors.primary } 
+                            : { borderWidth: 1, borderColor: colors.border, backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }
                         ]}
+                        activeOpacity={0.8}
                       >
                         <Text style={[
-                          styles.devTabText,
-                          { 
-                            color: activeDevTab === tab ? colors.primary : colors.textSecondary,
-                            fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
-                          }
+                          styles.upgradeBtnText, 
+                          userTier === 'pro' 
+                            ? { color: isDark ? '#000' : '#fff' } 
+                            : { color: colors.text }
                         ]}>
-                          {tab.toUpperCase()}
+                          Upgrade to Advanced
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-                  {activeDevTab === 'console' && (
-                    <TouchableOpacity
-                      onPress={() => setConsoleLogs([])}
-                      style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>Clear</Text>
-                    </TouchableOpacity>
-                  )}
-                  {activeDevTab === 'network' && (
-                    <TouchableOpacity
-                      onPress={() => setNetworkLogs([])}
-                      style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>Clear</Text>
-                    </TouchableOpacity>
-                  )}
-                  {activeDevTab === 'dom' && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setDomTree(null)
-                        webViewRef.current?.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
-                      }}
-                      style={{ paddingHorizontal: 16, height: '100%', justifyContent: 'center', alignItems: 'center' }}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Text style={{ fontSize: 11, color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>Reload</Text>
-                    </TouchableOpacity>
+                    </View>
                   )}
                 </View>
-
-                {/* Tab Content */}
-                <View style={{ flex: 1 }}>
-                  {activeDevTab === 'console' && (
-                    <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
-                      {consoleLogs.length === 0 ? (
-                        <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
-                          No console logs captured yet.
-                        </Text>
-                      ) : (
-                        consoleLogs.map((log, idx) => (
-                          <Text 
-                            key={idx} 
-                            style={{
-                              fontFamily: 'JetBrainsMono_400Regular',
-                              fontSize: 10.5,
-                              color: log.type === 'error' ? '#FF7B72' : log.type === 'warn' ? '#F2C078' : colors.text,
-                              borderBottomWidth: 0.5,
-                              borderBottomColor: colors.border + '30',
-                              paddingVertical: 3
-                            }}
-                          >
-                            [{log.type.toUpperCase()}] {log.data}
-                          </Text>
-                        ))
-                      )}
-                    </ScrollView>
-                  )}
-
-                  {activeDevTab === 'network' && (
-                    <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
-                      {networkLogs.length === 0 ? (
-                        <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
-                          No network requests intercepted.
-                        </Text>
-                      ) : (
-                        networkLogs.map((log, idx) => (
-                          <View 
-                            key={idx} 
-                            style={{
-                              flexDirection: 'row',
-                              justifyContent: 'space-between',
-                              borderBottomWidth: 0.5,
-                              borderBottomColor: colors.border + '30',
-                              paddingVertical: 4,
-                            }}
-                          >
-                            <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.text, flex: 1, marginRight: 8 }} numberOfLines={1}>
-                              {log.method} {log.url}
-                            </Text>
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                              <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: log.status === 'Failed' || Number(log.status) >= 400 ? '#FF7B72' : '#3FB950' }}>
-                                Status: {log.status}
-                              </Text>
-                              <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
-                                {log.duration}ms
-                              </Text>
-                            </View>
-                          </View>
-                        ))
-                      )}
-                    </ScrollView>
-                  )}
-
-                  {activeDevTab === 'dom' && (
-                    <ScrollView contentContainerStyle={{ padding: 10 }}>
-                      {domTree ? (
-                        <DOMInspectorNode node={domTree} depth={0} />
-                      ) : (
-                        <View style={{ alignItems: 'center', marginTop: 20, gap: 8 }}>
-                          <ActivityIndicator size="small" color={colors.primary} />
-                          <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                            Reading DOM structure...
-                          </Text>
-                        </View>
-                      )}
-                    </ScrollView>
-                  )}
-                </View>
-              </View>
+              )}
             </>
           )}
         </View>
@@ -1422,5 +1851,82 @@ const styles = StyleSheet.create({
   devTabText: {
     fontSize: 11,
     letterSpacing: 0.5,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    height: 28,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(128,128,128,0.2)',
+    gap: 6,
+  },
+  filterInput: {
+    flex: 1,
+    fontSize: 10.5,
+    paddingVertical: 0,
+  },
+  replBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    height: 32,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(128,128,128,0.2)',
+  },
+  replInput: {
+    flex: 1,
+    fontSize: 10.5,
+    paddingVertical: 0,
+  },
+  replExecuteBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  lockedContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    gap: 8,
+  },
+  lockCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  lockedTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+  },
+  lockedDesc: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    lineHeight: 17,
+    maxWidth: 290,
+  },
+  upgradeActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  upgradeBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 130,
+  },
+  upgradeBtnText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
 })
