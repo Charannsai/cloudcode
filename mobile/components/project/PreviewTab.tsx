@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
-  Platform, Linking, LayoutAnimation, ScrollView,
+  Platform, Linking, LayoutAnimation, ScrollView, Animated, TouchableWithoutFeedback,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -9,6 +9,7 @@ import { getToken } from '@/lib/auth'
 import {
   Globe, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, Copy,
   ExternalLink, ChevronDown, ChevronUp, Info, Home, AlertTriangle, Sparkles, X, Terminal,
+  MoreVertical,
 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 import { BlurView } from 'expo-blur'
@@ -111,6 +112,25 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const [domTree, setDomTree] = useState<any>(null)
   const [activeDevTab, setActiveDevTab] = useState<'console' | 'network' | 'dom'>('console')
   const [showDevTools, setShowDevTools] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const menuAnim = useRef(new Animated.Value(0)).current
+
+  const toggleMenu = (open: boolean) => {
+    if (open) {
+      setShowMenu(true)
+      Animated.timing(menuAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start()
+    } else {
+      Animated.timing(menuAnim, {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      }).start(() => setShowMenu(false))
+    }
+  }
 
   const handleSetError = (error: boolean) => {
     setHasError(error)
@@ -137,6 +157,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     setNetworkLogs([])
     setDomTree(null)
     setShowDevTools(false)
+    setShowMenu(false)
+    menuAnim.setValue(0)
   }, [projectId])
 
   const handleNavigateToPort = async (targetPort: number) => {
@@ -256,35 +278,25 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
         </View>
         <Text style={[styles.homeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode Browser</Text>
         <Text style={[styles.homeSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-          Enter an address or port above to preview your workspace web server in real-time.
+          Search or enter a port (e.g. :5173) to preview your server in real-time.
         </Text>
 
-        <View style={styles.shortcutsContainer}>
-          <Text style={[styles.shortcutsTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-            Quick Connect Ports
-          </Text>
-          <View style={styles.shortcutRow}>
-            {[
-              { label: 'React/Next', port: 3000 },
-              { label: 'Python', port: 5000 },
-              { label: 'Vite Dev', port: 5173 },
-              { label: 'Java/Go', port: 8080 },
-            ].map((shortcut) => (
-              <TouchableOpacity
-                key={shortcut.port}
-                style={[styles.shortcutBtn, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border }]}
-                onPress={() => handleNavigateToPort(shortcut.port)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.shortcutText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                  :{shortcut.port}
-                </Text>
-                <Text style={[styles.shortcutSub, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  {shortcut.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={[styles.homeSearchBar, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
+          <Globe size={14} color={colors.textSecondary} strokeWidth={1.5} />
+          <TextInput
+            style={[styles.homeSearchInput, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
+            value={currentUrl}
+            onChangeText={setCurrentUrl}
+            onSubmitEditing={handleGo}
+            returnKeyType="go"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="Enter port (e.g. 5173) or URL"
+            placeholderTextColor={colors.textSecondary}
+          />
+          <TouchableOpacity onPress={handleGo} style={[styles.homeGoBtn, { backgroundColor: colors.primary }]}>
+            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Go</Text>
+          </TouchableOpacity>
         </View>
       </View>
     )
@@ -294,45 +306,17 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Navigation Bar */}
       <View style={[styles.navBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
-        <View style={styles.navButtons}>
-          <TouchableOpacity
-            onPress={() => {
-              setUrl('')
-              setCurrentUrl('')
-              setHasError(false)
-            }}
-            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
-            activeOpacity={0.7}
-          >
-            <Home size={12} color={colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => webViewRef.current?.goBack()}
-            disabled={!canGoBack}
-            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
-            activeOpacity={0.7}
-          >
-            <ChevronLeft size={14} color={canGoBack ? colors.text : colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => webViewRef.current?.goForward()}
-            disabled={!canGoForward}
-            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
-            activeOpacity={0.7}
-          >
-            <ChevronRight size={14} color={canGoForward ? colors.text : colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              handleSetError(false)
-              webViewRef.current?.reload()
-            }}
-            style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
-            activeOpacity={0.7}
-          >
-            <RefreshCw size={12} color={colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={() => {
+            setUrl('')
+            setCurrentUrl('')
+            setHasError(false)
+          }}
+          style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          activeOpacity={0.7}
+        >
+          <Home size={12} color={colors.textSecondary} strokeWidth={1.8} />
+        </TouchableOpacity>
 
         <View style={[styles.urlBar, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
           <Globe size={11} color={colors.textSecondary} strokeWidth={1.5} />
@@ -362,6 +346,14 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             <ArrowUpRight size={12} color={colors.textSecondary} strokeWidth={1.5} />
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          onPress={() => toggleMenu(!showMenu)}
+          style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          activeOpacity={0.7}
+        >
+          <MoreVertical size={14} color={colors.text} strokeWidth={1.8} />
+        </TouchableOpacity>
       </View>
 
       {/* WebView */}
@@ -399,17 +391,25 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                 const parts = state.url.split(previewPath)
                 const subpathAndSearch = parts[1] || ''
                 
-                // Retrieve the active port from the query string if available
+                const iportMatch = state.url.match(/[\?&]iport=(\d+)/)
                 const portMatch = state.url.match(/[\?&]port=(\d+)/)
-                const activePort = portMatch ? parseInt(portMatch[1], 10) : port
-                const displayPort = getInternalPort(activePort, ports)
+                
+                let displayPort = 3000
+                if (iportMatch) {
+                  displayPort = parseInt(iportMatch[1], 10)
+                } else if (portMatch) {
+                  displayPort = getInternalPort(parseInt(portMatch[1], 10), ports)
+                } else {
+                  displayPort = getInternalPort(port, ports)
+                }
 
                 const cleanSubpath = subpathAndSearch
-                  .replace(/[\?&]port=\d+/, '')
+                  .replace(/[\?&](?:iport|port)=\d+/, '')
                   .replace(/[\?&]token=[^&]+/, '')
                   .replace(/\?&/, '?')
+                  .replace(/\?$/, '')
                 
-                virtualUrl = `http://localhost:${displayPort || 3000}${cleanSubpath}`
+                virtualUrl = `localhost:${displayPort}${cleanSubpath}`
               }
               setCurrentUrl(virtualUrl)
             }}
@@ -649,14 +649,10 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
         </View>
       ) : null}
 
-      {/* DevTools Bottom Drawer */}
-      {url && (
-        <View style={[styles.devToolsContainer, { borderTopColor: colors.border, height: showDevTools ? 260 : 38 }]}>
-          <TouchableOpacity 
-            style={[styles.devToolsHeader, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]} 
-            onPress={() => setShowDevTools(s => !s)}
-            activeOpacity={0.8}
-          >
+      {/* DevTools Bottom Drawer (Visible only when toggled on from three-dots menu) */}
+      {showDevTools && url && (
+        <View style={[styles.devToolsContainer, { borderTopColor: colors.border, height: 260 }]}>
+          <View style={[styles.devToolsHeader, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Terminal size={13} color={colors.text} />
               <Text style={[styles.devToolsTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
@@ -668,121 +664,275 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               <Text style={{ fontSize: 10, color: colors.textSecondary, fontFamily: 'Inter_500Medium' }}>
                 Logs: {consoleLogs.length} | Net: {networkLogs.length}
               </Text>
-              <ChevronUp size={14} color={colors.textSecondary} style={{ transform: [{ rotate: showDevTools ? '180deg' : '0deg' }] }} />
+              <TouchableOpacity onPress={() => setShowDevTools(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <X size={14} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          </View>
 
-          {showDevTools && (
-            <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
-              {/* Tab Bar */}
-              <View style={[styles.devTabBar, { borderBottomColor: colors.border }]}>
-                {(['console', 'network', 'dom'] as const).map((tab) => (
-                  <TouchableOpacity
-                    key={tab}
-                    onPress={() => {
-                      setActiveDevTab(tab)
-                      if (tab === 'dom' && webViewRef.current) {
-                        webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
-                      }
-                    }}
-                    style={[
-                      styles.devTabItem,
-                      activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
-                    ]}
-                  >
-                    <Text style={[
-                      styles.devTabText,
-                      { 
-                        color: activeDevTab === tab ? colors.primary : colors.textSecondary,
-                        fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
-                      }
-                    ]}>
-                      {tab.toUpperCase()}
+          <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
+            {/* Tab Bar */}
+            <View style={[styles.devTabBar, { borderBottomColor: colors.border }]}>
+              {(['console', 'network', 'dom'] as const).map((tab) => (
+                <TouchableOpacity
+                  key={tab}
+                  onPress={() => {
+                    setActiveDevTab(tab)
+                    if (tab === 'dom' && webViewRef.current) {
+                      webViewRef.current.injectJavaScript('window.sendDomTree && window.sendDomTree(); true;')
+                    }
+                  }}
+                  style={[
+                    styles.devTabItem,
+                    activeDevTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                  ]}
+                >
+                  <Text style={[
+                    styles.devTabText,
+                    { 
+                      color: activeDevTab === tab ? colors.primary : colors.textSecondary,
+                      fontFamily: activeDevTab === tab ? 'Inter_600SemiBold' : 'Inter_500Medium'
+                    }
+                  ]}>
+                    {tab.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Tab Content */}
+            <View style={{ flex: 1 }}>
+              {activeDevTab === 'console' && (
+                <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
+                  {consoleLogs.length === 0 ? (
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                      No console logs captured yet.
                     </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Tab Content */}
-              <View style={{ flex: 1 }}>
-                {activeDevTab === 'console' && (
-                  <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
-                    {consoleLogs.length === 0 ? (
-                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
-                        No console logs captured yet.
+                  ) : (
+                    consoleLogs.map((log, idx) => (
+                      <Text 
+                        key={idx} 
+                        style={{
+                          fontFamily: 'JetBrainsMono_400Regular',
+                          fontSize: 10.5,
+                          color: log.type === 'error' ? '#FF7B72' : log.type === 'warn' ? '#F2C078' : colors.text,
+                          borderBottomWidth: 0.5,
+                          borderBottomColor: colors.border + '30',
+                          paddingVertical: 3
+                        }}
+                      >
+                        [{log.type.toUpperCase()}] {log.data}
                       </Text>
-                    ) : (
-                      consoleLogs.map((log, idx) => (
-                        <Text 
-                          key={idx} 
-                          style={{
-                            fontFamily: 'JetBrainsMono_400Regular',
-                            fontSize: 10.5,
-                            color: log.type === 'error' ? '#FF7B72' : log.type === 'warn' ? '#F2C078' : colors.text,
-                            borderBottomWidth: 0.5,
-                            borderBottomColor: colors.border + '30',
-                            paddingVertical: 3
-                          }}
-                        >
-                          [{log.type.toUpperCase()}] {log.data}
+                    ))
+                  )}
+                </ScrollView>
+              )}
+
+              {activeDevTab === 'network' && (
+                <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
+                  {networkLogs.length === 0 ? (
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                      No network requests intercepted.
+                    </Text>
+                  ) : (
+                    networkLogs.map((log, idx) => (
+                      <View 
+                        key={idx} 
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          borderBottomWidth: 0.5,
+                          borderBottomColor: colors.border + '30',
+                          paddingVertical: 4,
+                        }}
+                      >
+                        <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.text, flex: 1, marginRight: 8 }} numberOfLines={1}>
+                          {log.method} {log.url}
                         </Text>
-                      ))
-                    )}
-                  </ScrollView>
-                )}
-
-                {activeDevTab === 'network' && (
-                  <ScrollView contentContainerStyle={{ padding: 10, gap: 6 }}>
-                    {networkLogs.length === 0 ? (
-                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
-                        No network requests intercepted.
-                      </Text>
-                    ) : (
-                      networkLogs.map((log, idx) => (
-                        <View 
-                          key={idx} 
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            borderBottomWidth: 0.5,
-                            borderBottomColor: colors.border + '30',
-                            paddingVertical: 4,
-                          }}
-                        >
-                          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.text, flex: 1, marginRight: 8 }} numberOfLines={1}>
-                            {log.method} {log.url}
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: log.status === 'Failed' || Number(log.status) >= 400 ? '#FF7B72' : '#3FB950' }}>
+                            Status: {log.status}
                           </Text>
-                          <View style={{ flexDirection: 'row', gap: 8 }}>
-                            <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: log.status === 'Failed' || Number(log.status) >= 400 ? '#FF7B72' : '#3FB950' }}>
-                              Status: {log.status}
-                            </Text>
-                            <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
-                              {log.duration}ms
-                            </Text>
-                          </View>
+                          <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, color: colors.textSecondary }}>
+                            {log.duration}ms
+                          </Text>
                         </View>
-                      ))
-                    )}
-                  </ScrollView>
-                )}
-
-                {activeDevTab === 'dom' && (
-                  <ScrollView contentContainerStyle={{ padding: 10 }}>
-                    {domTree ? (
-                      <DOMInspectorNode node={domTree} depth={0} />
-                    ) : (
-                      <View style={{ alignItems: 'center', marginTop: 20, gap: 8 }}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                          Reading DOM structure...
-                        </Text>
                       </View>
-                    )}
-                  </ScrollView>
-                )}
-              </View>
+                    ))
+                  )}
+                </ScrollView>
+              )}
+
+              {activeDevTab === 'dom' && (
+                <ScrollView contentContainerStyle={{ padding: 10 }}>
+                  {domTree ? (
+                    <DOMInspectorNode node={domTree} depth={0} />
+                  ) : (
+                    <View style={{ alignItems: 'center', marginTop: 20, gap: 8 }}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                        Reading DOM structure...
+                      </Text>
+                    </View>
+                  )}
+                </ScrollView>
+              )}
             </View>
-          )}
+          </View>
+        </View>
+      )}
+
+      {/* Chrome-Style Three-Dots Dropdown Menu Overlay */}
+      {showMenu && (
+        <View style={StyleSheet.absoluteFill}>
+          {/* Backdrop to close menu when clicking outside */}
+          <TouchableWithoutFeedback onPress={() => toggleMenu(false)}>
+            <View style={styles.menuBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <Animated.View
+            style={[
+              styles.menuContainer,
+              {
+                backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
+                borderColor: colors.border,
+                opacity: menuAnim,
+                transform: [
+                  {
+                    scale: menuAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            {/* Navigation row (Back, Forward, Refresh, Home) */}
+            <View style={styles.menuNavRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  webViewRef.current?.goBack()
+                  toggleMenu(false)
+                }}
+                disabled={!canGoBack}
+                style={[styles.menuNavBtn, !canGoBack && { opacity: 0.4 }]}
+              >
+                <ChevronLeft size={16} color={colors.text} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => {
+                  webViewRef.current?.goForward()
+                  toggleMenu(false)
+                }}
+                disabled={!canGoForward}
+                style={[styles.menuNavBtn, !canGoForward && { opacity: 0.4 }]}
+              >
+                <ChevronRight size={16} color={colors.text} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  handleSetError(false)
+                  webViewRef.current?.reload()
+                  toggleMenu(false)
+                }}
+                disabled={!url}
+                style={[styles.menuNavBtn, !url && { opacity: 0.4 }]}
+              >
+                <RefreshCw size={14} color={colors.text} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setUrl('')
+                  setCurrentUrl('')
+                  setHasError(false)
+                  toggleMenu(false)
+                }}
+                style={styles.menuNavBtn}
+              >
+                <Home size={14} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+
+            {/* General Actions */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowDevTools(d => !d)
+                toggleMenu(false)
+              }}
+            >
+              <Terminal size={14} color={colors.textSecondary} />
+              <Text style={[styles.menuItemText, { color: colors.text }]}>
+                {showDevTools ? 'Hide Developer Tools' : 'Open Developer Tools'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              disabled={!url}
+              onPress={() => {
+                handleOpenExternal()
+                toggleMenu(false)
+              }}
+            >
+              <ExternalLink size={14} color={url ? colors.textSecondary : colors.textTertiary} />
+              <Text style={[styles.menuItemText, { color: url ? colors.text : colors.textTertiary }]}>
+                Open in Browser
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              disabled={!url}
+              onPress={() => {
+                handleCopy()
+                toggleMenu(false)
+              }}
+            >
+              <Copy size={14} color={url ? colors.textSecondary : colors.textTertiary} />
+              <Text style={[styles.menuItemText, { color: url ? colors.text : colors.textTertiary }]}>
+                Copy Link
+              </Text>
+            </TouchableOpacity>
+
+            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+
+            {/* Quick Connect Ports */}
+            <Text style={[styles.menuSectionTitle, { color: colors.textSecondary }]}>
+              QUICK CONNECT PORTS
+            </Text>
+            <View style={styles.menuPortsContainer}>
+              {[
+                { label: 'React/Next', port: 3000 },
+                { label: 'Python', port: 5000 },
+                { label: 'Vite Dev', port: 5173 },
+                { label: 'Java/Go', port: 8080 },
+              ].map((shortcut) => (
+                <TouchableOpacity
+                  key={shortcut.port}
+                  style={[styles.menuPortBtn, { backgroundColor: isDark ? '#2D333B' : '#F6F8FA', borderColor: colors.border }]}
+                  onPress={() => {
+                    handleNavigateToPort(shortcut.port)
+                    toggleMenu(false)
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.menuPortText, { color: colors.text }]}>
+                    :{shortcut.port}
+                  </Text>
+                  <Text style={[styles.menuPortLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {shortcut.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Animated.View>
         </View>
       )}
 
@@ -1040,38 +1190,111 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     maxWidth: 280,
   },
-  shortcutsContainer: {
+  homeSearchBar: {
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 360,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    paddingLeft: 14,
+    paddingRight: 6,
+    gap: 8,
   },
-  shortcutsTitle: {
-    fontSize: 12,
-    opacity: 0.5,
-    marginBottom: 12,
-    textTransform: 'uppercase',
+  homeSearchInput: {
+    flex: 1,
+    fontSize: 13,
+    paddingVertical: 0,
+  },
+  homeGoBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 12,
+    width: 250,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  menuNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  menuNavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuDivider: {
+    height: 1,
+    marginVertical: 6,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 12,
+  },
+  menuItemText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+  },
+  menuSectionTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    fontFamily: 'Inter_600SemiBold',
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 4,
     letterSpacing: 0.5,
-    textAlign: 'center',
   },
-  shortcutRow: {
+  menuPortsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    justifyContent: 'space-between',
   },
-  shortcutBtn: {
+  menuPortBtn: {
     width: '47%',
-    padding: 12,
-    borderRadius: 6,
+    padding: 8,
+    borderRadius: 4,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
-  shortcutText: {
-    fontSize: 14,
+  menuPortText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600',
   },
-  shortcutSub: {
-    fontSize: 10,
-    opacity: 0.5,
+  menuPortLabel: {
+    fontSize: 9,
+    fontFamily: 'Inter_400Regular',
   },
   errorOverlayContainer: {
     position: 'absolute',
