@@ -229,11 +229,91 @@ export default function DashboardScreen() {
   const ramVal = diagnostics ? diagnostics.memoryUsage : 18
   const latVal = latency !== null ? latency : 12
 
-  const metricColor = activeMetric === 'cpu' 
-    ? (isDark ? '#D2A8FF' : '#8B5CF6') 
-    : activeMetric === 'memory' 
-    ? (isDark ? '#58A6FF' : '#3B82F6') 
-    : (isDark ? '#3FB950' : '#22C55E')
+  const [selectedTimeline, setSelectedTimeline] = useState<'1h' | '24h' | '7d'>('1h')
+
+  const getGraphTimeLabels = () => {
+    const now = new Date()
+    const labels: string[] = []
+    
+    if (selectedTimeline === '1h') {
+      for (let i = 4; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 15 * 60 * 1000)
+        const hrs = String(d.getHours()).padStart(2, '0')
+        const mins = String(d.getMinutes()).padStart(2, '0')
+        labels.push(`${hrs}:${mins}`)
+      }
+    } else if (selectedTimeline === '24h') {
+      for (let i = 4; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 6 * 60 * 60 * 1000)
+        const hrs = d.getHours()
+        const ampm = hrs >= 12 ? 'PM' : 'AM'
+        const displayHrs = hrs % 12 === 0 ? 12 : hrs % 12
+        labels.push(`${displayHrs} ${ampm}`)
+      }
+    } else {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+        labels.push(days[d.getDay()])
+      }
+    }
+    return labels
+  }
+
+  const generateHistoricalData = (currentVal: number, count: number, offset: number) => {
+    const data: number[] = []
+    const now = Date.now()
+    
+    const timeStep = selectedTimeline === '1h' 
+      ? 5 * 60 * 1000 
+      : selectedTimeline === '24h' 
+      ? 2 * 60 * 1000 * 60 
+      : 24 * 60 * 60 * 1000
+
+    for (let i = 0; i < count - 1; i++) {
+      const pointTime = now - (count - 1 - i) * timeStep
+      const hashInput = Math.floor(pointTime / timeStep) + offset
+      const sineVal = Math.sin(hashInput * 0.5)
+      const cosVal = Math.cos(hashInput * 1.3)
+      
+      const variance = (sineVal * 15) + (cosVal * 8)
+      let val = Math.round(currentVal + variance)
+      
+      val = Math.max(5, Math.min(95, val))
+      data.push(val)
+    }
+    
+    data.push(currentVal)
+    return data
+  }
+
+  const getGraphData = () => {
+    const currentVal = activeMetric === 'cpu' ? cpuVal : activeMetric === 'memory' ? ramVal : latVal
+    const seedOffset = activeMetric === 'cpu' ? 10 : activeMetric === 'memory' ? 25 : 40
+    
+    const values = selectedTimeline === '7d' 
+      ? generateHistoricalData(currentVal, 7, seedOffset)
+      : generateHistoricalData(currentVal, 12, seedOffset)
+      
+    const points = values.map((val, idx) => {
+      const x = idx * (350 / (values.length - 1))
+      let pct = val
+      if (activeMetric === 'latency') {
+        pct = Math.min(100, (val / 150) * 100)
+      }
+      const y = 90 - (pct * 0.8)
+      return { x, y }
+    })
+    
+    const linePath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
+    const areaPath = `${linePath} L 350 100 L 0 100 Z`
+    
+    return { points, linePath, areaPath }
+  }
+
+  const { points, linePath, areaPath } = getGraphData()
+
+  const metricColor = colors.text
 
   return (
     <>
@@ -431,27 +511,28 @@ export default function DashboardScreen() {
           {/* Stat cards row */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
             {[
-              { id: 'cpu' as const, label: 'CPU', value: `${cpuVal}%`, icon: Cpu, color: isDark ? '#D2A8FF' : '#8B5CF6' },
-              { id: 'memory' as const, label: 'Memory', value: `${ramVal}%`, icon: Database, color: isDark ? '#58A6FF' : '#3B82F6' },
-              { id: 'latency' as const, label: 'Latency', value: `${latVal}ms`, icon: Wifi, color: isDark ? '#3FB950' : '#22C55E' },
+              { id: 'cpu' as const, label: 'CPU', value: `${cpuVal}%`, icon: Cpu },
+              { id: 'memory' as const, label: 'Memory', value: `${ramVal}%`, icon: Database },
+              { id: 'latency' as const, label: 'Latency', value: `${latVal}ms`, icon: Wifi },
             ].map(stat => {
               const isActive = activeMetric === stat.id
               const IconComp = stat.icon
+              const statColor = isActive ? colors.text : colors.textSecondary
               return (
                 <TouchableOpacity
                   key={stat.id}
                   onPress={() => setActiveMetric(stat.id)}
                   activeOpacity={0.7}
                   style={[styles.statCard, { 
-                    backgroundColor: isActive ? (isDark ? '#1C2333' : '#F0F4FF') : cardBg,
-                    borderColor: isActive ? stat.color + '40' : cardBorder,
+                    backgroundColor: isActive ? (isDark ? '#1C2128' : '#ECEEF0') : cardBg,
+                    borderColor: isActive ? colors.text + '30' : cardBorder,
                   }]}
                 >
-                  <IconComp size={14} color={stat.color} strokeWidth={2} />
+                  <IconComp size={14} color={statColor} strokeWidth={2} />
                   <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 10.5, marginTop: 6 }}>
                     {stat.label}
                   </Text>
-                  <Text style={{ color: isActive ? stat.color : colors.text, fontFamily: 'Inter_700Bold', fontSize: 18, marginTop: 2, letterSpacing: -0.5 }}>
+                  <Text style={{ color: statColor, fontFamily: 'Inter_700Bold', fontSize: 18, marginTop: 2, letterSpacing: -0.5 }}>
                     {stat.value}
                   </Text>
                 </TouchableOpacity>
@@ -461,7 +542,7 @@ export default function DashboardScreen() {
 
           {/* Graph card */}
           <View style={[styles.graphCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <View>
                 <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
                   {activeMetric === 'cpu' ? 'CPU Load' : activeMetric === 'memory' ? 'RAM Usage' : 'Network Latency'}
@@ -475,19 +556,49 @@ export default function DashboardScreen() {
                   }
                 </Text>
               </View>
-              <View style={{ backgroundColor: metricColor + '18', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                <Text style={{ color: metricColor, fontFamily: 'Inter_700Bold', fontSize: 13 }}>
+              <View style={{ backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderWidth: 1, borderColor: cardBorder, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13 }}>
                   {activeMetric === 'cpu' ? `${cpuVal}%` : activeMetric === 'memory' ? `${ramVal}%` : `${latVal}ms`}
                 </Text>
               </View>
+            </View>
+
+            {/* Timeline selector */}
+            <View style={{ flexDirection: 'row', gap: 6, marginVertical: 10, alignSelf: 'flex-start' }}>
+              {(['1h', '24h', '7d'] as const).map(t => {
+                const isActive = selectedTimeline === t
+                return (
+                  <TouchableOpacity
+                    key={t}
+                    onPress={() => setSelectedTimeline(t)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 6,
+                      backgroundColor: isActive ? (isDark ? '#21262D' : '#ECEEF0') : 'transparent',
+                      borderWidth: 1,
+                      borderColor: isActive ? cardBorder : 'transparent',
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: 10,
+                      fontFamily: 'Inter_600SemiBold',
+                      color: isActive ? colors.text : colors.textSecondary,
+                      textTransform: 'uppercase',
+                    }}>
+                      {t === '1h' ? '1 Hr' : t === '24h' ? '24 Hr' : '7 Days'}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
             </View>
 
             <View style={{ height: 100 }}>
               <Svg width="100%" height="100" viewBox="0 0 350 100">
                 <Defs>
                   <LinearGradient id="graphGlow" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor={metricColor} stopOpacity="0.2" />
-                    <Stop offset="1" stopColor={metricColor} stopOpacity="0.02" />
+                    <Stop offset="0" stopColor={metricColor} stopOpacity="0.12" />
+                    <Stop offset="1" stopColor={metricColor} stopOpacity="0.01" />
                   </LinearGradient>
                 </Defs>
 
@@ -498,23 +609,13 @@ export default function DashboardScreen() {
 
                 {/* Area fill */}
                 <Path
-                  d={activeMetric === 'cpu' 
-                    ? "M 0 70 C 35 30, 70 60, 105 25 C 140 50, 175 80, 210 35 C 245 15, 280 60, 350 45 L 350 100 L 0 100 Z"
-                    : activeMetric === 'memory'
-                    ? "M 0 55 C 40 50, 80 58, 120 52 C 160 55, 200 48, 240 53 C 280 49, 320 45, 350 42 L 350 100 L 0 100 Z"
-                    : "M 0 30 C 35 35, 70 25, 105 70 C 140 25, 175 30, 210 32 C 245 28, 280 26, 350 30 L 350 100 L 0 100 Z"
-                  }
+                  d={areaPath}
                   fill="url(#graphGlow)"
                 />
 
                 {/* Line */}
                 <Path
-                  d={activeMetric === 'cpu' 
-                    ? "M 0 70 C 35 30, 70 60, 105 25 C 140 50, 175 80, 210 35 C 245 15, 280 60, 350 45"
-                    : activeMetric === 'memory'
-                    ? "M 0 55 C 40 50, 80 58, 120 52 C 160 55, 200 48, 240 53 C 280 49, 320 45, 350 42"
-                    : "M 0 30 C 35 35, 70 25, 105 70 C 140 25, 175 30, 210 32 C 245 28, 280 26, 350 30"
-                  }
+                  d={linePath}
                   stroke={metricColor}
                   strokeWidth="2"
                   strokeLinecap="round"
@@ -522,17 +623,14 @@ export default function DashboardScreen() {
                 />
 
                 {/* Data points */}
-                {(activeMetric === 'cpu' ? [[105,25],[210,35],[350,45]] 
-                  : activeMetric === 'memory' ? [[120,52],[240,53],[350,42]]
-                  : [[105,70],[210,32],[350,30]]
-                ).map(([cx, cy], i) => (
-                  <Circle key={i} cx={cx} cy={cy} r="3.5" fill={metricColor} stroke={cardBg} strokeWidth="2" />
+                {points.map((p, i) => (
+                  <Circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="3.5" fill={metricColor} stroke={cardBg} strokeWidth="2" />
                 ))}
               </Svg>
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-              {['Now -20m', '-15m', '-10m', '-5m', 'Now'].map((t, i) => (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+              {getGraphTimeLabels().map((t, i) => (
                 <Text key={i} style={{ fontSize: 9, fontFamily: 'Inter_400Regular', color: colors.textSecondary, opacity: 0.6 }}>{t}</Text>
               ))}
             </View>
