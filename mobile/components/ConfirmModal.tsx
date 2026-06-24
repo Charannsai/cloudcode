@@ -83,25 +83,19 @@ export function ConfirmModal({
   singleButton = false,
 }: ConfirmModalProps) {
   const { colors, isDark } = useAppTheme()
-  const opacity = useSharedValue(0)
-  const scale = useSharedValue(0.98)
-  const translateY = useSharedValue(8)
+  const progress = useSharedValue(0)
   const [renderModal, setRenderModal] = React.useState(visible)
 
   useEffect(() => {
     if (visible) {
       setRenderModal(true)
-      opacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
-      scale.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
-      translateY.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.quad) })
+      progress.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     } else {
-      opacity.value = withTiming(0, { duration: 100, easing: Easing.linear }, (finished) => {
+      progress.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderModal)(false)
         }
       })
-      scale.value = withTiming(0.98, { duration: 100, easing: Easing.linear })
-      translateY.value = withTiming(4, { duration: 100, easing: Easing.linear })
     }
   }, [visible])
 
@@ -110,16 +104,29 @@ export function ConfirmModal({
   const showCancel = !singleButton && !!onCancel
 
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+    opacity: progress.value,
   }))
 
-  const modalStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value }
-    ],
-  }))
+  const modalStyle = useAnimatedStyle(() => {
+    const opacity = progress.value
+    // Sucked from bottom-center/bottom-dock (translateY goes from 350 to 0)
+    const translateY = (1 - progress.value) * 350
+    const scaleX = 0.12 + 0.88 * progress.value
+    const scaleY = 0.01 + 0.99 * progress.value
+    const skewX = `${(1 - progress.value) * 8}deg`
+    const rotateZ = `${(1 - progress.value) * -5}deg`
+
+    return {
+      opacity,
+      transform: [
+        { translateY },
+        { scaleX },
+        { scaleY },
+        { skewX },
+        { rotateZ }
+      ]
+    }
+  })
 
   if (!renderModal) return null
 
