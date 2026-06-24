@@ -253,6 +253,7 @@ export const api = {
       const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
 
       return new Promise<void>((resolve, reject) => {
+        let aborted = false
         const es = new EventSource(`${API_URL}/cc-api/ai/chat`, {
           method: 'POST',
           headers: {
@@ -266,6 +267,8 @@ export const api = {
         })
 
         const onAbort = () => {
+          if (aborted) return
+          aborted = true
           es.close()
           cleanup()
           reject(new Error('Generation stopped by user.'))
@@ -280,8 +283,10 @@ export const api = {
         }
 
         es.addEventListener('message', (event) => {
+          if (aborted) return
           if (!event.data) return
           if (event.data === '[DONE]') {
+            aborted = true
             es.close()
             cleanup()
             resolve()
@@ -296,6 +301,8 @@ export const api = {
         })
 
         es.addEventListener('error', (event) => {
+          if (aborted) return
+          aborted = true
           console.error('SSE Error:', event)
           es.close()
           cleanup()
