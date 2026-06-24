@@ -497,20 +497,14 @@ export default function SettingsScreen() {
 
   // Reanimated states for settings upgrade modal
   const [renderUpgrade, setRenderUpgrade] = useState(false)
-  const upgradeOpacity = useSharedValue(0)
-  const upgradeScale = useSharedValue(0.95)
-  const upgradeTranslateY = useSharedValue(10)
+  const upgradeProgress = useSharedValue(0)
 
   useEffect(() => {
     if (upgradeModal.visible) {
       setRenderUpgrade(true)
-      upgradeOpacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
-      upgradeScale.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
-      upgradeTranslateY.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.quad) })
+      upgradeProgress.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     } else {
-      upgradeOpacity.value = withTiming(0, { duration: 100, easing: Easing.linear })
-      upgradeScale.value = withTiming(0.95, { duration: 100, easing: Easing.linear })
-      upgradeTranslateY.value = withTiming(10, { duration: 100, easing: Easing.linear }, (finished) => {
+      upgradeProgress.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderUpgrade)(false)
         }
@@ -519,16 +513,29 @@ export default function SettingsScreen() {
   }, [upgradeModal.visible])
 
   const upgradeBackdropStyle = useAnimatedStyle(() => ({
-    opacity: upgradeOpacity.value,
+    opacity: upgradeProgress.value,
   }))
 
-  const upgradeCardStyle = useAnimatedStyle(() => ({
-    opacity: upgradeOpacity.value,
-    transform: [
-      { scale: upgradeScale.value },
-      { translateY: upgradeTranslateY.value }
-    ],
-  }))
+  const upgradeCardStyle = useAnimatedStyle(() => {
+    const opacity = upgradeProgress.value
+    // Sucked from bottom-center/bottom-dock (translateY goes from 350 to 0)
+    const translateY = (1 - upgradeProgress.value) * 350
+    const scaleX = 0.12 + 0.88 * upgradeProgress.value
+    const scaleY = 0.01 + 0.99 * upgradeProgress.value
+    const skewX = `${(1 - upgradeProgress.value) * 8}deg`
+    const rotateZ = `${(1 - upgradeProgress.value) * -5}deg`
+
+    return {
+      opacity,
+      transform: [
+        { translateY },
+        { scaleX },
+        { scaleY },
+        { skewX },
+        { rotateZ }
+      ]
+    }
+  })
 
   // Custom Modal Alert State
   const [modalConfig, setModalConfig] = useState<{

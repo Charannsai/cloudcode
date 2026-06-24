@@ -6,7 +6,13 @@ import { Shield, Zap, Server, Lock, ArrowUpRight, X } from 'lucide-react-native'
 import * as WebBrowser from 'expo-web-browser'
 import * as Linking from 'expo-linking'
 import { api } from '../lib/api'
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated'
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  Easing, 
+  runOnJS 
+} from 'react-native-reanimated'
 import { useRouter } from 'expo-router'
 
 export default function LimitExceededModal() {
@@ -15,7 +21,48 @@ export default function LimitExceededModal() {
   const router = useRouter()
   const [loadingUpgrade, setLoadingUpgrade] = useState(false)
 
-  if (!limitModalVisible) return null
+  const progress = useSharedValue(0)
+  const [renderModal, setRenderModal] = useState(limitModalVisible)
+
+  React.useEffect(() => {
+    if (limitModalVisible) {
+      setRenderModal(true)
+      progress.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
+    } else {
+      progress.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderModal)(false)
+        }
+      })
+    }
+  }, [limitModalVisible])
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+  }))
+
+  const modalStyle = useAnimatedStyle(() => {
+    const opacity = progress.value
+    // Sucked from bottom-center/bottom-dock (translateY goes from 350 to 0)
+    const translateY = (1 - progress.value) * 350
+    const scaleX = 0.12 + 0.88 * progress.value
+    const scaleY = 0.01 + 0.99 * progress.value
+    const skewX = `${(1 - progress.value) * 8}deg`
+    const rotateZ = `${(1 - progress.value) * -5}deg`
+
+    return {
+      opacity,
+      transform: [
+        { translateY },
+        { scaleX },
+        { scaleY },
+        { skewX },
+        { rotateZ }
+      ]
+    }
+  })
+
+  if (!renderModal) return null
 
   const title = limitModalType === 'workspace' 
     ? 'Workspace Limit Reached' 
@@ -60,7 +107,7 @@ export default function LimitExceededModal() {
 
   return (
     <Modal
-      visible={limitModalVisible}
+      visible={renderModal}
       transparent
       statusBarTranslucent
       animationType="none"
@@ -68,15 +115,12 @@ export default function LimitExceededModal() {
     >
       <View style={styles.backdrop}>
         <Animated.View 
-          entering={FadeIn.duration(200)} 
-          exiting={FadeOut.duration(150)} 
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.65)' }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.65)' }, backdropStyle]}
         />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={hideLimitModal} disabled={loadingUpgrade} />
 
         <Animated.View 
-          entering={FadeInDown.springify().damping(18)} 
-          style={[styles.card, { backgroundColor: isDark ? '#0F141C' : '#FFFFFF', borderColor: colors.border }]}
+          style={[styles.card, { backgroundColor: isDark ? '#0F141C' : '#FFFFFF', borderColor: colors.border }, modalStyle]}
         >
           {/* Header */}
           <View style={styles.header}>

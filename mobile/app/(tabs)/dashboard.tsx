@@ -101,20 +101,14 @@ export default function DashboardScreen() {
 
   // Reanimated states for Profile popover menu
   const [renderMenu, setRenderMenu] = useState(false)
-  const menuOpacity = useSharedValue(0)
-  const menuScale = useSharedValue(0.95)
-  const menuTranslateY = useSharedValue(-10)
+  const menuProgress = useSharedValue(0)
 
   useEffect(() => {
     if (profileMenuVisible) {
       setRenderMenu(true)
-      menuOpacity.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
-      menuScale.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) })
-      menuTranslateY.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.quad) })
+      menuProgress.value = withTiming(1, { duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     } else {
-      menuOpacity.value = withTiming(0, { duration: 100, easing: Easing.linear })
-      menuScale.value = withTiming(0.95, { duration: 100, easing: Easing.linear })
-      menuTranslateY.value = withTiming(-10, { duration: 100, easing: Easing.linear }, (finished) => {
+      menuProgress.value = withTiming(0, { duration: 240, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderMenu)(false)
         }
@@ -123,23 +117,36 @@ export default function DashboardScreen() {
   }, [profileMenuVisible])
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: menuOpacity.value,
+    opacity: menuProgress.value,
   }))
 
-  const menuCardAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: menuOpacity.value,
-    transform: [
-      { scale: menuScale.value },
-      { translateY: menuTranslateY.value }
-    ],
-  }))
+  const menuCardAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = menuProgress.value
+    // Genie transition from top-right corner (avatar position)
+    const translateX = (1 - menuProgress.value) * 110
+    const translateY = (1 - menuProgress.value) * -80
+    const scaleX = 0.1 + 0.9 * menuProgress.value
+    const scaleY = 0.05 + 0.95 * menuProgress.value
+    const skewX = `${(1 - menuProgress.value) * -8}deg`
+    const rotateZ = `${(1 - menuProgress.value) * 4}deg`
+
+    return {
+      opacity,
+      transform: [
+        { translateX },
+        { translateY },
+        { scaleX },
+        { scaleY },
+        { skewX },
+        { rotateZ }
+      ]
+    }
+  })
 
   const closePopoverInstantly = () => {
     setProfileMenuVisible(false)
     setRenderMenu(false)
-    menuOpacity.value = 0
-    menuScale.value = 0.95
-    menuTranslateY.value = -10
+    menuProgress.value = 0
   }
 
   // Track dashboard screen focus state
