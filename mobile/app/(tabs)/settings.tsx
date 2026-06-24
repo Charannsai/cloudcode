@@ -676,7 +676,6 @@ export default function SettingsScreen() {
         loadLocalAuditLogs()
       } else {
         fetchBillingStatus(true)
-        fetchGitSshData(true)
         fetchRuntimesData(true)
         loadLocalAuditLogs()
         fetchProjects(true)
