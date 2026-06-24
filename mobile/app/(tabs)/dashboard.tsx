@@ -260,7 +260,7 @@ export default function DashboardScreen() {
     return labels
   }
 
-  const generateHistoricalData = (currentVal: number, count: number, offset: number) => {
+  const generateHistoricalData = (currentVal: number, count: number, metric: 'cpu' | 'memory' | 'latency') => {
     const data: number[] = []
     const now = Date.now()
     
@@ -270,16 +270,29 @@ export default function DashboardScreen() {
       ? 2 * 60 * 1000 * 60 
       : 24 * 60 * 60 * 1000
 
+    const offset = metric === 'cpu' ? 10 : metric === 'memory' ? 25 : 40
+
     for (let i = 0; i < count - 1; i++) {
       const pointTime = now - (count - 1 - i) * timeStep
-      const hashInput = Math.floor(pointTime / timeStep) + offset
-      const sineVal = Math.sin(hashInput * 0.5)
-      const cosVal = Math.cos(hashInput * 1.3)
+      const indexSeed = Math.floor(pointTime / timeStep) + offset
       
-      const variance = (sineVal * 15) + (cosVal * 8)
-      let val = Math.round(currentVal + variance)
+      let val = currentVal
+      if (metric === 'cpu') {
+        const wave = Math.sin(indexSeed * 1.8) * 15 + Math.cos(indexSeed * 3.7) * 12
+        const spike = (indexSeed % 5 === 0) ? 22 : (indexSeed % 7 === 0) ? -18 : 0
+        val = Math.round(currentVal + wave + spike)
+        val = Math.max(8, Math.min(85, val))
+      } else if (metric === 'memory') {
+        const wave = Math.sin(indexSeed * 0.4) * 8 + Math.cos(indexSeed * 0.9) * 4
+        val = Math.round(currentVal + wave)
+        val = Math.max(20, Math.min(75, val))
+      } else {
+        const baseline = 12 + Math.sin(indexSeed * 0.5) * 4
+        const spike = (indexSeed % 4 === 0) ? 75 : (indexSeed % 9 === 0) ? 110 : 0
+        val = Math.round(baseline + spike)
+        val = Math.max(5, Math.min(160, val))
+      }
       
-      val = Math.max(5, Math.min(95, val))
       data.push(val)
     }
     
@@ -287,13 +300,29 @@ export default function DashboardScreen() {
     return data
   }
 
+  const getCurvePath = (pts: { x: number; y: number }[]) => {
+    if (pts.length === 0) return ''
+    let path = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`
+    
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i]
+      const p1 = pts[i + 1]
+      const cp1x = p0.x + (p1.x - p0.x) / 3
+      const cp1y = p0.y
+      const cp2x = p1.x - (p1.x - p0.x) / 3
+      const cp2y = p1.y
+      
+      path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`
+    }
+    return path
+  }
+
   const getGraphData = () => {
     const currentVal = activeMetric === 'cpu' ? cpuVal : activeMetric === 'memory' ? ramVal : latVal
-    const seedOffset = activeMetric === 'cpu' ? 10 : activeMetric === 'memory' ? 25 : 40
     
     const values = selectedTimeline === '7d' 
-      ? generateHistoricalData(currentVal, 7, seedOffset)
-      : generateHistoricalData(currentVal, 12, seedOffset)
+      ? generateHistoricalData(currentVal, 7, activeMetric)
+      : generateHistoricalData(currentVal, 12, activeMetric)
       
     const points = values.map((val, idx) => {
       const x = idx * (350 / (values.length - 1))
@@ -305,7 +334,7 @@ export default function DashboardScreen() {
       return { x, y }
     })
     
-    const linePath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
+    const linePath = getCurvePath(points)
     const areaPath = `${linePath} L 350 100 L 0 100 Z`
     
     return { points, linePath, areaPath }
@@ -622,10 +651,40 @@ export default function DashboardScreen() {
                   fill="none"
                 />
 
-                {/* Data points */}
-                {points.map((p, i) => (
-                  <Circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="3.5" fill={metricColor} stroke={cardBg} strokeWidth="2" />
+                {/* Historical data points as tiny dots */}
+                {points.slice(0, -1).map((p, i) => (
+                  <Circle 
+                    key={i} 
+                    cx={p.x.toFixed(1)} 
+                    cy={p.y.toFixed(1)} 
+                    r="2" 
+                    fill={metricColor} 
+                    opacity={0.3} 
+                  />
                 ))}
+
+                {/* Last point as active glowing dot */}
+                {points.length > 0 && (
+                  <>
+                    <Circle 
+                      cx={points[points.length - 1].x.toFixed(1)} 
+                      cy={points[points.length - 1].y.toFixed(1)} 
+                      r="7" 
+                      fill="none" 
+                      stroke={metricColor} 
+                      strokeWidth="1" 
+                      opacity={0.4} 
+                    />
+                    <Circle 
+                      cx={points[points.length - 1].x.toFixed(1)} 
+                      cy={points[points.length - 1].y.toFixed(1)} 
+                      r="3.5" 
+                      fill={metricColor} 
+                      stroke={cardBg} 
+                      strokeWidth="1.8" 
+                    />
+                  </>
+                )}
               </Svg>
             </View>
 
