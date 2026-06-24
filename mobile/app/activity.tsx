@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal, Platform, Dimensions
+  Modal, Platform, Dimensions, Alert
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   ArrowLeft, Cpu, Folder, HardDrive, History, CheckCircle2, AlertCircle,
-  Terminal, Shield, Clock, ChevronDown, ChevronUp, Sparkles, X
+  Terminal, Shield, Clock, ChevronDown, ChevronUp, Sparkles, X, ChevronRight
 } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
