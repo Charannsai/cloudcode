@@ -583,9 +583,9 @@ export default function AITab({ projectId }: Props) {
   useEffect(() => {
     if (modelModalVisible) {
       setRenderModelModal(true)
-      modelProgress.value = withTiming(1, { duration: 250, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+      modelProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      modelProgress.value = withTiming(0, { duration: 200, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      modelProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderModelModal)(false)
         }
@@ -614,9 +614,9 @@ export default function AITab({ projectId }: Props) {
   useEffect(() => {
     if (historyModalVisible) {
       setRenderHistoryModal(true)
-      historyProgress.value = withTiming(1, { duration: 250, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+      historyProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      historyProgress.value = withTiming(0, { duration: 200, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      historyProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderHistoryModal)(false)
         }
@@ -645,9 +645,9 @@ export default function AITab({ projectId }: Props) {
   useEffect(() => {
     if (menuVisible) {
       setRenderMenu(true)
-      menuProgress.value = withTiming(1, { duration: 280, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+      menuProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      menuProgress.value = withTiming(0, { duration: 220, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      menuProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderMenu)(false)
         }

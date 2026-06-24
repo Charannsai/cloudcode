@@ -36,6 +36,7 @@ import Animated, {
   interpolate,
   runOnJS
 } from 'react-native-reanimated'
+import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
   const scale = useSharedValue(1)
@@ -352,7 +353,7 @@ export default function DashboardScreen() {
   const metricColor = colors.text
 
   return (
-    <>
+    <TabGenieWrapper index={0}>
       <ScrollView 
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
@@ -813,8 +814,8 @@ export default function DashboardScreen() {
       }}
       onCancel={() => setShowSignOutModal(false)}
     />
-  </>
-)
+    </TabGenieWrapper>
+  )
 }
 
 const styles = StyleSheet.create({

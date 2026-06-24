@@ -27,9 +27,9 @@ export default function LimitExceededModal() {
   React.useEffect(() => {
     if (limitModalVisible) {
       setRenderModal(true)
-      progress.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
+      progress.value = withTiming(1, { duration: 180, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      progress.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      progress.value = withTiming(0, { duration: 140, easing: Easing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderModal)(false)
         }
@@ -43,21 +43,15 @@ export default function LimitExceededModal() {
 
   const modalStyle = useAnimatedStyle(() => {
     const opacity = progress.value
-    // Sucked from bottom-center/bottom-dock (translateY goes from 350 to 0)
-    const translateY = (1 - progress.value) * 350
-    const scaleX = 0.12 + 0.88 * progress.value
-    const scaleY = 0.01 + 0.99 * progress.value
-    const skewX = `${(1 - progress.value) * 8}deg`
-    const rotateZ = `${(1 - progress.value) * -5}deg`
+    // Centered pop-in: scale from 0.88 to 1.0, with a subtle 8px slide-up
+    const scale = 0.88 + 0.12 * progress.value
+    const translateY = (1 - progress.value) * 8
 
     return {
       opacity,
       transform: [
-        { translateY },
-        { scaleX },
-        { scaleY },
-        { skewX },
-        { rotateZ }
+        { scale },
+        { translateY }
       ]
     }
   })

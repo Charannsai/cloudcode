@@ -23,6 +23,7 @@ import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useUIStore } from '@/store/ui'
 import { useProjectsStore } from '@/store/projects'
+import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
   const scale = useSharedValue(1)
@@ -502,9 +503,9 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (upgradeModal.visible) {
       setRenderUpgrade(true)
-      upgradeProgress.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
+      upgradeProgress.value = withTiming(1, { duration: 180, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      upgradeProgress.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      upgradeProgress.value = withTiming(0, { duration: 140, easing: Easing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderUpgrade)(false)
         }
@@ -518,21 +519,15 @@ export default function SettingsScreen() {
 
   const upgradeCardStyle = useAnimatedStyle(() => {
     const opacity = upgradeProgress.value
-    // Sucked from bottom-center/bottom-dock (translateY goes from 350 to 0)
-    const translateY = (1 - upgradeProgress.value) * 350
-    const scaleX = 0.12 + 0.88 * upgradeProgress.value
-    const scaleY = 0.01 + 0.99 * upgradeProgress.value
-    const skewX = `${(1 - upgradeProgress.value) * 8}deg`
-    const rotateZ = `${(1 - upgradeProgress.value) * -5}deg`
+    // Centered pop-in: scale from 0.88 to 1.0, with a subtle 8px slide-up
+    const scale = 0.88 + 0.12 * opacity
+    const translateY = (1 - opacity) * 8
 
     return {
       opacity,
       transform: [
-        { translateY },
-        { scaleX },
-        { scaleY },
-        { skewX },
-        { rotateZ }
+        { scale },
+        { translateY }
       ]
     }
   })
@@ -3541,7 +3536,8 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <TabGenieWrapper index={4}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView 
         style={[styles.container, { backgroundColor: colors.background }]} 
         showsVerticalScrollIndicator={false}
@@ -4050,7 +4046,8 @@ export default function SettingsScreen() {
         </ScrollView>
       </Animated.View>
     )}
-  </View>
+      </View>
+    </TabGenieWrapper>
   )
 }
 

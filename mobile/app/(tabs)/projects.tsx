@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, Alert, ScrollView, Pressable, Modal, Dimensions,
 } from 'react-native'
+import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
 import { useAIStore } from '@/store/ai'
@@ -142,9 +143,9 @@ export default function ProjectsScreen() {
   useEffect(() => {
     if (isRenameMode && activeProjectForMenu !== null) {
       setRenderRenameModal(true)
-      renameModalProgress.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
+      renameModalProgress.value = withTiming(1, { duration: 180, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     } else if (renderRenameModal) {
-      renameModalProgress.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      renameModalProgress.value = withTiming(0, { duration: 140, easing: Easing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderRenameModal)(false)
           runOnJS(setActiveProjectForMenu)(null)
@@ -200,21 +201,15 @@ export default function ProjectsScreen() {
 
   const renameModalStyle = useAnimatedStyle(() => {
     const opacity = renameModalProgress.value
-    // Standard bottom-dock Genie transition
-    const translateY = (1 - opacity) * 350
-    const scaleX = 0.12 + 0.88 * opacity
-    const scaleY = 0.01 + 0.99 * opacity
-    const skewX = `${(1 - opacity) * 8}deg`
-    const rotateZ = `${(1 - opacity) * -5}deg`
+    // Centered pop-in: scale from 0.88 to 1.0, with a subtle 8px slide-up
+    const scale = 0.88 + 0.12 * opacity
+    const translateY = (1 - opacity) * 8
 
     return {
       opacity,
       transform: [
-        { translateY },
-        { scaleX },
-        { scaleY },
-        { skewX },
-        { rotateZ }
+        { scale },
+        { translateY }
       ]
     }
   })
@@ -507,7 +502,8 @@ export default function ProjectsScreen() {
 
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <TabGenieWrapper index={1}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -810,7 +806,8 @@ export default function ProjectsScreen() {
           </View>
         </Modal>
       )}
-    </View>
+      </View>
+    </TabGenieWrapper>
   )
 }
 
