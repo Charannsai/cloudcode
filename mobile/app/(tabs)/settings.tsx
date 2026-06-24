@@ -2123,9 +2123,9 @@ export default function SettingsScreen() {
             <View style={{ gap: 14 }}>
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SANDBOX MEMORY FOOTPRINT</Text>
               
-              {projects && projects.filter(p => p.status === 'running' || p.status === 'ready').length > 0 ? (
+              {billingData?.ramBreakdown && billingData.ramBreakdown.length > 0 ? (
                 <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
-                  {projects.filter(p => p.status === 'running' || p.status === 'ready').map((p, idx, arr) => (
+                  {billingData.ramBreakdown.map((p: any, idx: number, arr: any[]) => (
                     <View 
                        key={p.id} 
                        style={{ 
@@ -2145,7 +2145,7 @@ export default function SettingsScreen() {
                         </View>
                       </View>
                       <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 13 }}>
-                        128 MB allocation
+                        {p.usageMB} MB allocation
                       </Text>
                     </View>
                   ))}
