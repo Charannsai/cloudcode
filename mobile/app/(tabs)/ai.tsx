@@ -22,6 +22,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice'
 import * as Speech from 'expo-speech'
 // Removed react-native-reanimated for performance optimization
+import Reanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing as ReanimatedEasing,
+  runOnJS
+} from 'react-native-reanimated'
 import Markdown from 'react-native-markdown-display'
 import * as Clipboard from 'expo-clipboard'
 
@@ -593,32 +600,52 @@ export default function AIScreen() {
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
 
   const modelAnim = useRef(new Animated.Value(0)).current
-  const menuAnim = useRef(new Animated.Value(0)).current
   const historyAnim = useRef(new Animated.Value(0)).current
 
-  useEffect(() => {
-    if (modelModalVisible) {
-      modelAnim.setValue(0)
-      Animated.timing(modelAnim, {
-        toValue: 1,
-        duration: 120,
-        easing: Easing.bezier(0.16, 1, 0.3, 1),
-        useNativeDriver: true,
-      }).start()
-    }
-  }, [modelModalVisible])
+  // Reanimated states for history dropdown menu
+  const [renderMenu, setRenderMenu] = useState(false)
+  const menuProgress = useSharedValue(0)
 
   useEffect(() => {
     if (menuVisible) {
-      menuAnim.setValue(0)
-      Animated.timing(menuAnim, {
-        toValue: 1,
-        duration: 90,
-        easing: Easing.bezier(0.16, 1, 0.3, 1),
-        useNativeDriver: true,
-      }).start()
+      setRenderMenu(true)
+      menuProgress.value = withTiming(1, { duration: 280, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+    } else {
+      menuProgress.value = withTiming(0, { duration: 220, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderMenu)(false)
+        }
+      })
     }
   }, [menuVisible])
+
+  const menuBackdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: menuProgress.value,
+  }))
+
+  const menuCardAnimatedStyle = useAnimatedStyle(() => {
+    const progress = menuProgress.value
+    const opacity = progress
+    // Warp out of three-dot header button (top-right, approx right: 32)
+    const translateX = (1 - progress) * 99
+    const translateY = (1 - progress) * -80
+    const scaleX = 0.05 + 0.95 * progress
+    const scaleY = 0.05 + 0.95 * progress
+    const skewX = `${(1 - progress) * -8}deg`
+    const rotateZ = `${(1 - progress) * 4}deg`
+
+    return {
+      opacity,
+      transform: [
+        { translateX },
+        { translateY },
+        { scaleX },
+        { scaleY },
+        { skewX },
+        { rotateZ }
+      ]
+    }
+  })
 
   useEffect(() => {
     if (historyModalVisible) {
@@ -1225,130 +1252,124 @@ export default function AIScreen() {
       </Modal>
 
       {/* Dropdown Menu Modal */}
-      <Modal
-        visible={menuVisible}
-        transparent
-        animationType="none"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <Animated.View 
-            style={[
-              StyleSheet.absoluteFill, 
-              { 
-                backgroundColor: 'rgba(0, 0, 0, 0.15)', 
-                opacity: menuAnim 
-              }
-            ]} 
-          />
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setMenuVisible(false)}
-          />
-          <Animated.View 
-            style={[
-              styles.popoverCard,
-              {
-                backgroundColor: isDark ? '#151922' : '#FFFFFF',
-                borderColor: isDark ? '#21262D' : '#D8DEE4',
-                top: insets.top > 0 ? insets.top + 50 : 60,
-                right: 16,
-                opacity: menuAnim,
-                transform: [
-                  {
-                    scale: menuAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.96, 1],
-                    })
-                  }
-                ]
-              }
-            ]}
-          >
-            {/* Context switcher removed */}
-
-            {/* New Chat */}
+      {renderMenu && (
+        <Modal
+          visible={renderMenu}
+          transparent
+          animationType="none"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+            <Reanimated.View 
+              style={[
+                StyleSheet.absoluteFill, 
+                { 
+                  backgroundColor: 'rgba(0, 0, 0, 0.15)'
+                },
+                menuBackdropAnimatedStyle
+              ]} 
+            />
             <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.popoverItem}
-              onPress={() => {
-                startNewChat()
-                setMenuVisible(false)
-              }}
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => setMenuVisible(false)}
+            />
+            <Reanimated.View 
+              style={[
+                styles.popoverCard,
+                {
+                  backgroundColor: isDark ? '#151922' : '#FFFFFF',
+                  borderColor: isDark ? '#21262D' : '#D8DEE4',
+                  top: insets.top > 0 ? insets.top + 50 : 60,
+                  right: 16,
+                },
+                menuCardAnimatedStyle
+              ]}
             >
-              <Plus size={13} color={colors.text} />
-              <Text style={[styles.popoverItemText, { color: colors.text }]}>New Chat Thread</Text>
-            </TouchableOpacity>
+              {/* Context switcher removed */}
 
-            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
-
-            {/* Past Conversations */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.popoverItem}
-              onPress={() => {
-                setMenuVisible(false)
-                setHistoryModalVisible(true)
-              }}
-            >
-              <History size={13} color={colors.text} />
-              <Text style={[styles.popoverItemText, { color: colors.text }]}>Past Conversations</Text>
-              {savedConversations.length > 0 && (
-                <View style={styles.popoverBadge}>
-                  <Text style={styles.popoverBadgeText}>{savedConversations.length}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
-
-            {/* BYOK Toggle / Configure */}
-            {byokConfigured ? (
+              {/* New Chat */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.popoverItem}
                 onPress={() => {
-                  toggleByok(!byokEnabled)
+                  startNewChat()
+                  setMenuVisible(false)
                 }}
               >
-                <Shield size={13} color={byokEnabled ? '#10B981' : colors.text} />
-                <Text style={[styles.popoverItemText, { color: colors.text }]}>
-                  {byokEnabled ? 'Use BYOK (Enabled)' : 'Use BYOK (Disabled)'}
-                </Text>
+                <Plus size={13} color={colors.text} />
+                <Text style={[styles.popoverItemText, { color: colors.text }]}>New Chat Thread</Text>
               </TouchableOpacity>
-            ) : (
+
+              <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+
+              {/* Past Conversations */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.popoverItem}
                 onPress={() => {
                   setMenuVisible(false)
-                  useUIStore.getState().setSettingsSubScreen('aiKeys')
-                  router.push('/(tabs)/settings')
+                  setHistoryModalVisible(true)
                 }}
               >
-                <Lock size={13} color="#F59E0B" />
-                <Text style={[styles.popoverItemText, { color: colors.text }]}>Configure BYOK Keys</Text>
+                <History size={13} color={colors.text} />
+                <Text style={[styles.popoverItemText, { color: colors.text }]}>Past Conversations</Text>
+                {savedConversations.length > 0 && (
+                  <View style={styles.popoverBadge}>
+                    <Text style={styles.popoverBadgeText}>{savedConversations.length}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
-            )}
 
-            <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+              <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
 
-            {/* Switch Model Shortcut */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.popoverItem}
-              onPress={() => {
-                setMenuVisible(false)
-                setModelModalVisible(true)
-              }}
-            >
-              <Cpu size={13} color={colors.text} />
-              <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Model...</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
+              {/* BYOK Toggle / Configure */}
+              {byokConfigured ? (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={styles.popoverItem}
+                  onPress={() => {
+                    toggleByok(!byokEnabled)
+                  }}
+                >
+                  <Shield size={13} color={byokEnabled ? '#10B981' : colors.text} />
+                  <Text style={[styles.popoverItemText, { color: colors.text }]}>
+                    {byokEnabled ? 'Use BYOK (Enabled)' : 'Use BYOK (Disabled)'}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={styles.popoverItem}
+                  onPress={() => {
+                    setMenuVisible(false)
+                    useUIStore.getState().setSettingsSubScreen('aiKeys')
+                    router.push('/(tabs)/settings')
+                  }}
+                >
+                  <Lock size={13} color="#F59E0B" />
+                  <Text style={[styles.popoverItemText, { color: colors.text }]}>Configure BYOK Keys</Text>
+                </TouchableOpacity>
+              )}
+
+              <View style={[styles.popoverDivider, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]} />
+
+              {/* Switch Model Shortcut */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.popoverItem}
+                onPress={() => {
+                  setMenuVisible(false)
+                  setModelModalVisible(true)
+                }}
+              >
+                <Cpu size={13} color={colors.text} />
+                <Text style={[styles.popoverItemText, { color: colors.text }]}>Switch Model...</Text>
+              </TouchableOpacity>
+            </Reanimated.View>
+          </View>
+        </Modal>
+      )}
 
       {/* Past Conversations Modal */}
       <Modal
