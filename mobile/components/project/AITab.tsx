@@ -463,6 +463,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
       )}
     </View>
   )
+}
 
 interface Props {
   projectId: string
