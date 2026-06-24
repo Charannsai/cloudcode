@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
 
     const workspacesCount = userProjects?.length || 0
     const runningProjects: any[] = []
+    let ramUsedMB = 0
 
     try {
       const runningContainersList = await docker.listContainers({ all: true })
@@ -68,12 +69,12 @@ export async function GET(req: NextRequest) {
       )
 
       if (userProjects) {
+        const liveProjects = []
         for (const project of userProjects) {
-          let isLive = false
           if (project.container_id) {
             const state = runningIdsMap.get(project.container_id)
             if (state === 'running') {
-              isLive = true
+              liveProjects.push(project)
             } else if (project.status === 'running' || project.status === 'ready') {
               // Stale status in DB (container is stopped or deleted). Sync to 'stopped'.
               Promise.resolve(
@@ -96,21 +97,38 @@ export async function GET(req: NextRequest) {
             .catch(console.error)
             project.status = 'stopped'
           }
-
-          if (isLive) {
-            runningProjects.push(project)
-          }
         }
+
+        // Fetch stats in parallel for all running containers
+        const statsPromises = liveProjects.map(async (project) => {
+          let memoryBytes = 0
+          try {
+            const container = docker.getContainer(project.container_id)
+            const stats = await container.stats({ stream: false })
+            if (stats && stats.memory_stats && typeof stats.memory_stats.usage === 'number') {
+              memoryBytes = stats.memory_stats.usage
+            }
+          } catch (err) {
+            console.warn(`[Billing Status] Failed to get stats for container ${project.container_id}:`, err)
+          }
+          return { ...project, memoryBytes }
+        })
+
+        const resolvedProjects = await Promise.all(statsPromises)
+        runningProjects.push(...resolvedProjects)
       }
+
+      const totalMemoryBytes = runningProjects.reduce((sum, p) => sum + (p.memoryBytes || 0), 0)
+      ramUsedMB = Number((totalMemoryBytes / (1024 * 1024)).toFixed(1))
+
     } catch (dockerErr) {
       console.warn('[Billing Status] Failed to query Docker daemon. Falling back to DB status.', dockerErr)
       if (userProjects) {
-        runningProjects.push(...userProjects.filter(p => p.status === 'running' || p.status === 'ready'))
+        const dbRunning = userProjects.filter(p => p.status === 'running' || p.status === 'ready')
+        runningProjects.push(...dbRunning)
+        ramUsedMB = dbRunning.length * 128
       }
     }
-
-    // Calculate RAM usage (approximated based on active containers, e.g. 128MB base per container)
-    const ramUsedMB = runningProjects.length * 128
 
     // 3. Compute actual project disk size in GB
     let totalBytesUsed = 0
