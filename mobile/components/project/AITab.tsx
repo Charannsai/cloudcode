@@ -767,16 +767,12 @@ export default function AITab({ projectId }: Props) {
   }
 
   useEffect(() => {
-    if (pendingPrompt && activeProjectId === projectId && !isStreaming) {
+    if (pendingPrompt && activeProjectId === projectId) {
       const prompt = pendingPrompt
       setPendingPrompt(null)
-      
-      const fileToAttach = pinnedFile || undefined
-      setPinnedFile(null)
-      
-      sendMessage(prompt, projectId, fileToAttach, selectedModel)
+      setInputText(prompt)
     }
-  }, [pendingPrompt, activeProjectId, isStreaming, selectedModel, pinnedFile])
+  }, [pendingPrompt, activeProjectId])
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
