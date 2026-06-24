@@ -362,11 +362,26 @@ export default function AITab({ projectId }: Props) {
       <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
         <View style={[styles.spawnerInputContainer, { borderTopColor: isDark ? '#21262D' : '#E5E7EB' }]}>
           {isStreaming ? (
-            <View style={styles.streamingLoaderBox}>
+            <View style={[styles.streamingLoaderBox, { paddingHorizontal: 4 }]}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginLeft: 6 }}>
-                Agent executing workspace plan...
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginLeft: 8, flex: 1 }} numberOfLines={1}>
+                {getActiveProgressText()}
               </Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#EB5757',
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 4,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+                onPress={() => stopActiveRun()}
+              >
+                <Square size={9} fill="#FFFFFF" color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontSize: 10, fontFamily: 'Inter_700Bold' }}>Stop</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <View style={[styles.spawnerInputBox, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
@@ -426,29 +441,49 @@ export default function AITab({ projectId }: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}
+              style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
               onPress={() => {
-                setSelectedModel('openai')
-                setModelSelectorVisible(false)
+                if (userTier === 'free' && !isByokActive) {
+                  Alert.alert(
+                    'Premium Model Locked',
+                    'GPT-4o is restricted to Pro and Advanced subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) in settings to unlock.'
+                  )
+                } else {
+                  setSelectedModel('openai')
+                  setModelSelectorVisible(false)
+                }
               }}
             >
               <Shield size={14} color="#2F80ED" />
-              <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                GPT-4o (Reasoning)
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular', flex: 1 }]}>
+                  GPT-4o (Reasoning)
+                </Text>
+                {userTier === 'free' && !isByokActive && <Lock size={12} color={colors.textSecondary} />}
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}
+              style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
               onPress={() => {
-                setSelectedModel('anthropic')
-                setModelSelectorVisible(false)
+                if (userTier === 'free' && !isByokActive) {
+                  Alert.alert(
+                    'Premium Model Locked',
+                    'Claude 3.6 Opus is restricted to Pro and Advanced subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) in settings to unlock.'
+                  )
+                } else {
+                  setSelectedModel('anthropic')
+                  setModelSelectorVisible(false)
+                }
               }}
             >
               <Lock size={14} color="#9B51E0" />
-              <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                Claude 3.6 Opus (Synthesis)
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular', flex: 1 }]}>
+                  Claude 3.6 Opus (Synthesis)
+                </Text>
+                {userTier === 'free' && !isByokActive && <Lock size={12} color={colors.textSecondary} />}
+              </View>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
