@@ -482,6 +482,7 @@ export default function AITab({ projectId }: Props) {
 
   const [inputText, setInputText] = useState('')
   const [reasoningExpanded, setReasoningExpanded] = useState(false)
+  const [isActionLoading, setIsActionLoading] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'openai' | 'anthropic'>('gemini')
@@ -525,38 +526,7 @@ export default function AITab({ projectId }: Props) {
     }
   })
 
-  // Reanimated states for History Modal
-  const [renderHistoryModal, setRenderHistoryModal] = useState(false)
-  const historyProgress = useSharedValue(0)
-
-  useEffect(() => {
-    if (historyModalVisible) {
-      setRenderHistoryModal(true)
-      historyProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
-    } else {
-      historyProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
-        if (finished) {
-          runOnJS(setRenderHistoryModal)(false)
-        }
-      })
-    }
-  }, [historyModalVisible])
-
-  const historyBackdropStyle = useAnimatedStyle(() => ({
-    opacity: historyProgress.value,
-  }))
-
-  const historyCardStyle = useAnimatedStyle(() => {
-    const progress = historyProgress.value
-    const scale = 0.95 + 0.05 * progress
-    const translateY = (1 - progress) * 12
-    return {
-      opacity: progress,
-      transform: [{ scale }, { translateY }],
-    }
-  })
-
-  // Reanimated states for workspace AI dropdown menu
+  // Reanimated states for history dropdown menu
   const [renderMenu, setRenderMenu] = useState(false)
   const menuProgress = useSharedValue(0)
 
@@ -580,7 +550,6 @@ export default function AITab({ projectId }: Props) {
   const menuCardAnimatedStyle = useAnimatedStyle(() => {
     const progress = menuProgress.value
     const opacity = progress
-    // Warp out of header three-dots button (top-right area, e.g. approx right: 32)
     const translateX = (1 - progress) * 99
     const translateY = (1 - progress) * -80
     const scaleX = 0.05 + 0.95 * progress
@@ -601,12 +570,7 @@ export default function AITab({ projectId }: Props) {
     }
   })
 
-  // Synchronize context to this workspace
-  useEffect(() => {
-    setActiveProject(projectId)
-  }, [projectId])
-
-  // Speech and Voice transcription setup
+  // Speech and Voice listeners
   useEffect(() => {
     Voice.onSpeechStart = () => setIsListening(true)
     Voice.onSpeechEnd = () => setIsListening(false)
@@ -620,7 +584,11 @@ export default function AITab({ projectId }: Props) {
       setIsListening(false)
     }
 
-    // Load active subscription status
+    // Sync active project context to this workspace tab
+    setActiveProject(projectId)
+    initConversations()
+
+    // Fetch active user tier status
     api.billing.status()
       .then(data => {
         if (data?.tier?.name) {
@@ -629,13 +597,11 @@ export default function AITab({ projectId }: Props) {
       })
       .catch(err => console.warn('Failed to load user tier config:', err))
 
-    initConversations()
-
     return () => {
       Voice.destroy().then(() => Voice.removeAllListeners()).catch(() => {})
       Speech.stop().catch(() => {})
     }
-  }, [])
+  }, [projectId])
 
   const toggleListening = async () => {
     if (isListening) {
@@ -683,13 +649,21 @@ export default function AITab({ projectId }: Props) {
     }
   }
 
+  // Auto-run pending prompt (e.g., from terminal diagnostics)
   useEffect(() => {
-    if (pendingPrompt && activeProjectId === projectId) {
+    if (pendingPrompt && activeProjectId === projectId && !isStreaming) {
       const prompt = pendingPrompt
       setPendingPrompt(null)
-      setInputText(prompt)
+      sendMessage(prompt, projectId, pinnedFile || undefined, selectedModel)
     }
-  }, [pendingPrompt, activeProjectId])
+  }, [pendingPrompt, activeProjectId, projectId, isStreaming, selectedModel, pinnedFile])
+
+  // Auto-expand reasoning accordion during active stream
+  useEffect(() => {
+    if (isStreaming) {
+      setReasoningExpanded(true)
+    }
+  }, [isStreaming])
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
@@ -697,24 +671,54 @@ export default function AITab({ projectId }: Props) {
 
   const handleSend = async () => {
     if (!inputText.trim() || isStreaming) return
+
     const text = inputText.trim()
     setInputText('')
-    
-    const fileToAttach = pinnedFile || undefined
-    setPinnedFile(null)
-    
-    await sendMessage(text, projectId, fileToAttach, selectedModel)
+    await sendMessage(text, projectId, pinnedFile || undefined, selectedModel)
   }
 
-  const handleNewChatThread = () => {
-    startNewChat()
-    setActiveProject(projectId)
+  // Find if there is any pending command tool call in the active streaming list or in the last message
+  const getPendingCommand = () => {
+    if (isStreaming && currentToolCalls) {
+      const pending = currentToolCalls.find(tc => tc.name === 'run_command' && tc.status === 'pending')
+      if (pending) return pending
+    }
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1]
+      if (lastMsg.role === 'model' && lastMsg.toolCalls) {
+        const pending = lastMsg.toolCalls.find(tc => tc.name === 'run_command' && tc.status === 'pending')
+        if (pending) return pending
+      }
+    }
+    return null
   }
 
+  const handleApproveCommand = async (approvalId: string) => {
+    if (!approvalId) return
+    setIsActionLoading(true)
+    try {
+      await api.ai.approve(approvalId, 'approve')
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message || 'Failed to approve command')
+    } finally {
+      setIsActionLoading(false)
+    }
+  }
+
+  const handleRejectCommand = async (approvalId: string) => {
+    if (!approvalId) return
+    setIsActionLoading(true)
+    try {
+      await api.ai.approve(approvalId, 'reject')
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message || 'Failed to reject command')
+    } finally {
+      setIsActionLoading(false)
+    }
+  }
+
+  const pendingCommand = getPendingCommand()
   const username = user?.login || 'developer'
-  
-  // Filter conversations history to only show this workspace
-  const workspaceConversations = savedConversations.filter(c => c.projectId === projectId)
 
   const mdStyles = {
     body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22 },
@@ -729,42 +733,10 @@ export default function AITab({ projectId }: Props) {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 190 : 0}
-      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: colors.background }]}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 48 : 0}
     >
-      {/* Local Tab Header */}
-      <View style={[styles.tabHeader, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Sparkles size={14} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={1.5} />
-          <Text style={[styles.tabTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Workspace AI</Text>
-        </View>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <TouchableOpacity 
-            onPress={() => setModelModalVisible(true)}
-            style={[styles.modelPill, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}
-            activeOpacity={0.8}
-          >
-            {selectedModel === 'gemini' && <Sparkles size={12} color="#8B5CF6" />}
-            {selectedModel === 'openai' && <Cpu size={12} color="#10B981" />}
-            {selectedModel === 'anthropic' && <Shield size={12} color="#D97706" />}
-            <Text style={[styles.modelPillText, { color: colors.text }]}>
-              {selectedModel === 'gemini' ? 'Gemini' : selectedModel === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'}
-            </Text>
-            <ChevronDown size={10} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            onPress={() => setMenuVisible(true)} 
-            style={[styles.menuBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} 
-            activeOpacity={0.7}
-          >
-            <MoreVertical size={16} color={colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
       {/* Messages */}
       <ScrollView
         ref={scrollRef}
@@ -778,18 +750,18 @@ export default function AITab({ projectId }: Props) {
               <Sparkles size={28} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={1.2} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-              Hi {username}
+              Workspace Assistant
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular', marginBottom: 16 }]}>
-              Ask questions, write/edit code, run terminal commands, or brainstorm ideas inside this workspace.
+              Ask questions about this project's code, search files, run commands, or let the AI make modifications.
             </Text>
 
+            {/* Quick prompts */}
             <View style={styles.quickPrompts}>
               {[
-                { label: 'Show project structure', icon: FolderTree },
-                { label: 'Find and fix bugs', icon: Bug },
-                { label: 'Add a new feature', icon: Sparkles },
-                { label: 'Install dependencies', icon: Package },
+                { label: 'Explain this project structure', icon: FolderTree },
+                { label: 'Find and explain potential bugs', icon: Bug },
+                { label: 'Propose workspace changes', icon: Sparkles },
               ].map((prompt, i) => (
                 <TouchableOpacity
                   key={i}
@@ -823,9 +795,62 @@ export default function AITab({ projectId }: Props) {
               <Sparkles size={14} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={1.5} />
             </View>
             <View style={[styles.bubble, styles.modelBubble]}>
+              
+              {/* Live Streaming Reasoning Accordion */}
+              {(currentToolCalls.length > 0 || !currentStreamText) && (
+                <View style={[
+                  styles.persistentReasoningCard,
+                  {
+                    backgroundColor: isDark ? '#151922' : '#F6F8FA',
+                    borderColor: isDark ? '#21262D' : '#D8DEE4',
+                    marginBottom: 6,
+                  }
+                ]}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setReasoningExpanded(!reasoningExpanded)}
+                    style={styles.reasoningHeaderRow}
+                  >
+                    <ActivityIndicator size="small" color={isDark ? '#D2A8FF' : '#8250DF'} style={{ marginRight: 6 }} />
+                    <Text style={[styles.reasoningTitleText, { color: colors.textSecondary }]}>
+                      Thought Process ({getRealtimeReasoning(currentToolCalls, isStreaming).length} steps)
+                    </Text>
+                    {reasoningExpanded ? (
+                      <ChevronUp size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+                    ) : (
+                      <ChevronDown size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+                    )}
+                  </TouchableOpacity>
+
+                  {reasoningExpanded && (
+                    <View style={styles.reasoningStepsList}>
+                      {getRealtimeReasoning(currentToolCalls, isStreaming).map((step, idx) => {
+                        const isLast = idx === getRealtimeReasoning(currentToolCalls, isStreaming).length - 1
+                        const showSpinner = isLast && isStreaming && !currentStreamText
+                        return (
+                          <View key={idx} style={styles.reasoningStepRow}>
+                            {showSpinner ? (
+                              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6, transform: [{ scale: 0.7 }] }} />
+                            ) : (
+                              <CheckCircle2 size={10} color="#3FB950" style={{ marginRight: 6, marginTop: 2 }} />
+                            )}
+                            <Text style={[styles.reasoningStepText, { color: colors.textSecondary }]}>
+                              {step}
+                            </Text>
+                          </View>
+                        )
+                      })}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Tool calls */}
               {currentToolCalls.map((tc, i) => (
                 <ToolCallRow key={i} tool={tc} isDark={isDark} colors={colors} />
               ))}
+
+              {/* Streaming Text */}
               {currentStreamText ? (
                 <Markdown style={mdStyles}>
                   {(() => {
@@ -835,37 +860,6 @@ export default function AITab({ projectId }: Props) {
                     return str + ' ▊'
                   })()}
                 </Markdown>
-              ) : currentToolCalls.length === 0 ? (
-                <View>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => setReasoningExpanded(!reasoningExpanded)}
-                  >
-                    <View style={styles.typingIndicator}>
-                      <View style={styles.thinkingTextContainer}>
-                        <ActivityIndicator size="small" color={isDark ? '#8B929A' : '#656D76'} style={{ marginRight: 6 }} />
-                        <Text style={[styles.thinkingChar, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>
-                          Thinking...
-                        </Text>
-                      </View>
-                      {reasoningExpanded ? (
-                        <ChevronUp size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4 }} />
-                      ) : (
-                        <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4 }} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-
-                  {reasoningExpanded && (
-                    <View style={styles.reasoningContainer}>
-                      {getRealtimeReasoning(currentToolCalls, isStreaming).map((step, idx) => (
-                        <Text key={idx} style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
-                          • {step}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
-                </View>
               ) : null}
             </View>
           </View>
@@ -873,6 +867,59 @@ export default function AITab({ projectId }: Props) {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      {/* Floating command execution approval modal */}
+      {pendingCommand && (
+        <View style={[
+          styles.floatingApprovalCard,
+          {
+            backgroundColor: isDark ? '#161B22' : '#FFFFFF',
+            borderColor: isDark ? '#30363D' : '#E1E4E8',
+            bottom: pinnedFile ? 116 : 78,
+          }
+        ]}>
+          <View style={styles.floatingApprovalHeader}>
+            <Terminal size={14} color={isDark ? '#E2B714' : '#D97706'} style={{ marginRight: 6 }} />
+            <Text style={[styles.floatingApprovalTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+              AI Requesting Shell Execution
+            </Text>
+          </View>
+          
+          <Text style={[styles.floatingApprovalSubtitle, { color: colors.textSecondary }]}>
+            The assistant wants to run the following command in your workspace:
+          </Text>
+
+          <View style={[styles.floatingApprovalCodeBox, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+            <Text style={[styles.floatingApprovalCodeText, { color: isDark ? '#E6EDF3' : '#1F2328' }]}>
+              $ {pendingCommand.args?.command as string}
+            </Text>
+          </View>
+
+          <View style={styles.floatingApprovalActionRow}>
+            <TouchableOpacity
+              style={[styles.floatingApprovalBtn, styles.floatingRejectBtn]}
+              onPress={() => handleRejectCommand(pendingCommand.args?.approvalId as string)}
+              disabled={isActionLoading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.floatingRejectBtnText}>Reject</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.floatingApprovalBtn, styles.floatingApproveBtn]}
+              onPress={() => handleApproveCommand(pendingCommand.args?.approvalId as string)}
+              disabled={isActionLoading}
+              activeOpacity={0.8}
+            >
+              {isActionLoading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.floatingApproveBtnText}>Run Command</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Input */}
       <View style={[styles.inputContainer, { 
@@ -1867,5 +1914,159 @@ const styles = StyleSheet.create({
   unpinBtn: {
     padding: 2,
     marginLeft: 4,
+  },
+  persistentReasoningCard: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    marginVertical: 4,
+    width: '100%',
+  },
+  reasoningHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  reasoningTitleText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  reasoningStepsList: {
+    marginTop: 6,
+    paddingLeft: 4,
+    gap: 4,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    paddingTop: 6,
+  },
+  reasoningStepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 1,
+  },
+  reasoningStepText: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 14,
+    flex: 1,
+  },
+  floatingApprovalCard: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 10,
+    zIndex: 99,
+  },
+  floatingApprovalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  floatingApprovalTitle: {
+    fontSize: 13,
+  },
+  floatingApprovalSubtitle: {
+    fontSize: 11,
+    lineHeight: 14,
+    marginBottom: 8,
+  },
+  floatingApprovalCodeBox: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 10,
+  },
+  floatingApprovalCodeText: {
+    fontFamily: 'JetBrainsMono_400Regular',
+    fontSize: 11,
+  },
+  floatingApprovalActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  floatingApprovalBtn: {
+    flex: 1,
+    height: 32,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingApproveBtn: {
+    backgroundColor: '#238636',
+  },
+  floatingApproveBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  floatingRejectBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#F85149',
+  },
+  floatingRejectBtnText: {
+    color: '#F85149',
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  toolCard: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    marginVertical: 3,
+    width: '100%',
+  },
+  toolHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toolHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  toolLabelText: {
+    fontSize: 11,
+  },
+  toolTargetText: {
+    fontSize: 10,
+    fontFamily: 'JetBrainsMono_400Regular',
+    marginTop: 1,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  toolSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.03)',
+    paddingTop: 4,
+  },
+  toolSummaryText: {
+    fontSize: 10,
+    fontFamily: 'Inter_400Regular',
+    flex: 1,
+  },
+  toolDetailsBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  toolDetailsBtnText: {
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
   },
 })
