@@ -239,6 +239,90 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ approvalId, action }),
       }),
+    createRun: (projectId: string | null, model: string, initialMessage?: string, budgetTokens?: number, budgetCommands?: number) =>
+      apiFetch<{ run: any }>('/cc-api/ai/runs', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, model, initialMessage, budgetTokens, budgetCommands }),
+      }),
+    listRuns: (projectId?: string) => {
+      const url = projectId ? `/cc-api/ai/runs?projectId=${projectId}` : '/cc-api/ai/runs'
+      return apiFetch<{ runs: any[] }>(url)
+    },
+    approveRun: (runId: string, approvalId: string, action: 'approve' | 'reject') =>
+      apiFetch<{ success: boolean; status: string }>(`/cc-api/ai/runs/${runId}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({ approvalId, action }),
+      }),
+    runChat: async (
+      runId: string,
+      newMessage?: string,
+      openFile?: { path: string; content: string },
+      onChunk?: (chunk: any) => void
+    ) => {
+      const token = await getToken()
+      const byokEnabled = await AsyncStorage.getItem('byok_enabled')
+      const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
+      const customOpenaiKey = await AsyncStorage.getItem('custom_openai_key')
+      const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
+
+      return new Promise<void>((resolve, reject) => {
+        let aborted = false
+        const es = new EventSource(`${API_URL}/cc-api/ai/runs/${runId}/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
+            ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
+            ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
+          },
+          body: JSON.stringify({ newMessage, openFile }),
+        })
+
+        const onAbort = () => {
+          if (aborted) return
+          aborted = true
+          es.close()
+          cleanup()
+          reject(new Error('Generation stopped by user.'))
+        }
+
+        activeAbort = onAbort
+
+        const cleanup = () => {
+          if (activeAbort === onAbort) {
+            activeAbort = null
+          }
+        }
+
+        es.addEventListener('message', (event) => {
+          if (aborted) return
+          if (!event.data) return
+          if (event.data === '[DONE]') {
+            aborted = true
+            es.close()
+            cleanup()
+            resolve()
+            return
+          }
+          try {
+            const chunk = JSON.parse(event.data)
+            onChunk?.(chunk)
+          } catch (e) {
+            console.error('Failed to parse SSE data:', e)
+          }
+        })
+
+        es.addEventListener('error', (event) => {
+          if (aborted) return
+          aborted = true
+          console.error('SSE Error:', event)
+          es.close()
+          cleanup()
+          reject(new Error('AI stream failed or closed prematurely'))
+        })
+      })
+    },
     chat: async (
       projectId: string,
       messages: { role: 'user' | 'model'; text: string }[],

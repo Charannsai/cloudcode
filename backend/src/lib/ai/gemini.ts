@@ -2,6 +2,8 @@ import { execInContainer } from '../docker'
 import { v4 as uuidv4 } from 'uuid'
 import { createProjectInternal } from '../projects'
 import { supabaseAdmin } from '../supabase'
+import { PlanningGuard } from './planningGuard'
+import { ExecutionGuard } from './governance'
 
 export function estimateTokens(text: string): number {
   if (!text) return 0
@@ -163,11 +165,12 @@ RULES:
 7. For multi-file changes, handle them one at a time.`
 
 export interface StreamChunk {
-  type: 'text' | 'tool_call' | 'tool_result' | 'error' | 'done'
+  type: 'text' | 'tool_call' | 'tool_result' | 'error' | 'done' | 'reasoning_event' | 'plan_event'
   content?: string
   toolName?: string
   toolArgs?: Record<string, unknown>
   toolResult?: unknown
+  items?: string[]
 }
 
 /**
@@ -217,7 +220,6 @@ export async function executeTool(
 
       const newContent = current.replace(target, replacement)
       // Write via heredoc to handle special chars
-      const escaped = newContent.replace(/'/g, "'\\''")
       await execInContainer(containerId, ['sh', '-c', `cat > '${filePath}' << 'CLOUDCODE_EOF'\n${newContent}\nCLOUDCODE_EOF`], () => {})
       return { success: true, path: args.path, message: `File edited successfully` }
     }
@@ -268,38 +270,322 @@ export async function executeTool(
 }
 
 /**
+ * Extracts list items from markdown plan/checklist text
+ */
+function extractPlanItems(text: string): string[] {
+  const lines = text.split('\n')
+  const items: string[] = []
+  for (const line of lines) {
+    const trimmed = line.trim()
+    // Match "- [ ] task", "- task", "1. task", "* task"
+    const match = trimmed.match(/^(?:-\s*\[\s*\]|-\s*|\*\s*|\d+\.\s*)(.+)$/)
+    if (match) {
+      const itemText = match[1].trim()
+      if (itemText && !itemText.toLowerCase().includes('plan') && itemText.length > 3) {
+        items.push(itemText)
+      }
+    }
+  }
+  return items
+}
+
+/**
+ * Stateful run context helper to manage DB storage and re-hydration
+ */
+export class AgentRunContext {
+  runId: string
+  userId: string
+  stepIndex: number = 0
+  callCounter: number = 0
+  dbSteps: any[] = []
+  completedTools: { name: string; args: any; response: any }[] = []
+
+  constructor(runId: string, userId: string) {
+    this.runId = runId
+    this.userId = userId
+  }
+
+  async init() {
+    if (!this.runId || this.runId === 'global' || this.runId === 'none') return
+
+    const { data: dbSteps, error } = await supabaseAdmin
+      .from('agent_steps')
+      .select('*')
+      .eq('run_id', this.runId)
+      .order('step_index', { ascending: true })
+
+    if (error) {
+      console.error('[AgentRunContext] Failed to load steps:', error)
+      return
+    }
+
+    this.dbSteps = dbSteps || []
+    this.stepIndex = this.dbSteps.length
+
+    // Pair tool calls and results
+    for (let i = 0; i < this.dbSteps.length; i++) {
+      const step = this.dbSteps[i]
+      if (step.type === 'tool_call') {
+        const resultStep = this.dbSteps.find((s, idx) => idx > i && s.type === 'tool_result' && s.content.name === step.content.name)
+        if (resultStep) {
+          this.completedTools.push({
+            name: step.content.name,
+            args: step.content.args,
+            response: resultStep.content.response
+          })
+        }
+      }
+    }
+    console.log(`[AgentRunContext] Initialized run ${this.runId} with ${this.dbSteps.length} steps. Found ${this.completedTools.length} pre-recorded tool executions.`)
+  }
+
+  async saveStep(type: 'plan' | 'reasoning' | 'tool_call' | 'tool_result' | 'error', content: any) {
+    if (!this.runId || this.runId === 'global' || this.runId === 'none') return
+    try {
+      await supabaseAdmin
+        .from('agent_steps')
+        .insert({
+          run_id: this.runId,
+          step_index: this.stepIndex++,
+          type,
+          content
+        })
+    } catch (err) {
+      console.error('[AgentRunContext] Failed to save step:', err)
+    }
+  }
+
+  getPreRecordedTool(name: string): any | null {
+    const preRecorded = this.completedTools[this.callCounter]
+    if (preRecorded && preRecorded.name === name) {
+      this.callCounter++
+      return preRecorded.response
+    }
+    return null
+  }
+
+  rehydrateGeminiHistory(initialMessages: GeminiMessage[]): GeminiMessage[] {
+    if (this.dbSteps.length === 0) {
+      return initialMessages
+    }
+
+    const contents: GeminiMessage[] = []
+    
+    for (const step of this.dbSteps) {
+      if (step.type === 'reasoning') {
+        const role = step.content.role || 'model'
+        const text = step.content.text || step.content.plan || ''
+        
+        if (role === 'user') {
+          contents.push({ role: 'user', parts: [{ text }] })
+        } else {
+          const lastMsg = contents[contents.length - 1]
+          if (lastMsg && lastMsg.role === 'model') {
+            lastMsg.parts.push({ text })
+          } else {
+            contents.push({ role: 'model', parts: [{ text }] })
+          }
+        }
+      } else if (step.type === 'plan') {
+        const text = step.content.plan || `Plan:\n${step.content.items?.map((it: string) => `- ${it}`).join('\n') || ''}`
+        const lastMsg = contents[contents.length - 1]
+        if (lastMsg && lastMsg.role === 'model') {
+          lastMsg.parts.push({ text })
+        } else {
+          contents.push({ role: 'model', parts: [{ text }] })
+        }
+      } else if (step.type === 'tool_call') {
+        let lastMsg = contents[contents.length - 1]
+        if (!lastMsg || lastMsg.role !== 'model') {
+          lastMsg = { role: 'model', parts: [] }
+          contents.push(lastMsg)
+        }
+        lastMsg.parts.push({
+          functionCall: {
+            name: step.content.name,
+            args: step.content.args
+          }
+        })
+      } else if (step.type === 'tool_result') {
+        contents.push({
+          role: 'user',
+          parts: [{
+            functionResponse: {
+              name: step.content.name,
+              response: { content: step.content.response }
+            }
+          }]
+        })
+      }
+    }
+
+    return contents
+  }
+
+  rehydrateOpenAIHistory(initialMessages: any[]): any[] {
+    if (this.dbSteps.length === 0) {
+      return initialMessages
+    }
+
+    const messages: any[] = []
+    for (const step of this.dbSteps) {
+      if (step.type === 'reasoning') {
+        const role = step.content.role || 'assistant'
+        const text = step.content.text || step.content.plan || ''
+        messages.push({
+          role: role === 'user' ? 'user' : 'assistant',
+          content: text
+        })
+      } else if (step.type === 'plan') {
+        const text = step.content.plan || `Plan:\n${step.content.items?.map((it: string) => `- ${it}`).join('\n') || ''}`
+        messages.push({
+          role: 'assistant',
+          content: text
+        })
+      } else if (step.type === 'tool_call') {
+        messages.push({
+          role: 'assistant',
+          tool_calls: [{
+            id: step.content.toolCallId || 'call_' + step.id,
+            type: 'function',
+            function: {
+              name: step.content.name,
+              arguments: JSON.stringify(step.content.args)
+            }
+          }]
+        })
+      } else if (step.type === 'tool_result') {
+        const callStep = this.dbSteps.find(s => s.type === 'tool_call' && s.content.name === step.content.name)
+        const toolCallId = callStep?.content?.toolCallId || 'call_' + (callStep?.id || step.id)
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCallId,
+          content: JSON.stringify(step.content.response)
+        })
+      }
+    }
+    return messages
+  }
+
+  rehydrateAnthropicHistory(initialMessages: any[]): any[] {
+    if (this.dbSteps.length === 0) {
+      return initialMessages
+    }
+
+    const messages: any[] = []
+    for (const step of this.dbSteps) {
+      if (step.type === 'reasoning') {
+        const role = step.content.role || 'assistant'
+        const text = step.content.text || step.content.plan || ''
+        messages.push({
+          role: role === 'user' ? 'user' : 'assistant',
+          content: text
+        })
+      } else if (step.type === 'plan') {
+        const text = step.content.plan || `Plan:\n${step.content.items?.map((it: string) => `- ${it}`).join('\n') || ''}`
+        messages.push({
+          role: 'assistant',
+          content: text
+        })
+      } else if (step.type === 'tool_call') {
+        messages.push({
+          role: 'assistant',
+          content: [{
+            type: 'tool_use',
+            id: step.content.toolCallId || 'call_' + step.id,
+            name: step.content.name,
+            input: step.content.args
+          }]
+        })
+      } else if (step.type === 'tool_result') {
+        const callStep = this.dbSteps.find(s => s.type === 'tool_call' && s.content.name === step.content.name)
+        const toolCallId = callStep?.content?.toolCallId || 'call_' + (callStep?.id || step.id)
+        messages.push({
+          role: 'user',
+          content: [{
+            type: 'tool_result',
+            tool_use_id: toolCallId,
+            content: JSON.stringify(step.content.response)
+          }]
+        })
+      }
+    }
+    return messages
+  }
+}
+
+/**
  * Chat with Gemini using function calling (non-streaming for reliability)
  * Returns an async generator of StreamChunks
  */
 export async function* chatWithGemini(
   messages: GeminiMessage[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   let totalTokens = 0
   const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
 
-  try {
-    // Build the full message history with context
-    const contents: GeminiMessage[] = [...messages]
+  let runCtx: AgentRunContext | null = null
+  if (context?.runId && context?.userId) {
+    runCtx = new AgentRunContext(context.runId, context.userId)
+    await runCtx.init()
+  }
 
-    // Inject context into the first user message  
-    if (context && contents.length > 0 && contents[0].role === 'user') {
-      let contextPrefix = ''
-      if (context.fileTree) {
-        contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
-      }
-      if (context.openFile) {
-        contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
-      }
-      const firstPart = contents[0].parts[0]
-      if ('text' in firstPart) {
-        firstPart.text = contextPrefix + firstPart.text
+  try {
+    // 1. Pre-Planning: Gather resource context & inject capability system prompt
+    let capabilityPrompt = ''
+    if (context?.userId) {
+      const resourceCtx = await PlanningGuard.loadContext(context.userId)
+      capabilityPrompt = PlanningGuard.buildSystemPrompt(resourceCtx)
+      
+      // Stream initial resource allocation event to user
+      yield { 
+        type: 'reasoning_event', 
+        content: `Available resources: ${resourceCtx.tokensRemaining === 999999999 ? 'Unlimited' : resourceCtx.tokensRemaining} tokens, ${resourceCtx.workspacesLimit - resourceCtx.workspacesUsed} workspace slots remaining.` 
       }
     }
 
-    // Agentic loop — keep going until we get a text-only response
+    // 2. Re-hydrate contents from runCtx if resuming, otherwise use passed messages
+    let contents: GeminiMessage[] = []
+    if (runCtx && runCtx.dbSteps.length > 0) {
+      contents = runCtx.rehydrateGeminiHistory(messages)
+      // If we are resuming, stream the rehydrated plan to client
+      const planStep = runCtx.dbSteps.find(s => s.type === 'plan')
+      if (planStep) {
+        yield { type: 'plan_event', items: planStep.content.items }
+      }
+    } else {
+      contents = [...messages]
+      // Inject context into the first user message
+      if (context && contents.length > 0 && contents[0].role === 'user') {
+        let contextPrefix = ''
+        if (context.fileTree) {
+          contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+        }
+        if (context.openFile) {
+          contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
+        }
+        const firstPart = contents[0].parts[0]
+        if ('text' in firstPart) {
+          firstPart.text = contextPrefix + firstPart.text
+          // Save initial user message step inside the narrowed scope
+          if (runCtx) {
+            await runCtx.saveStep('reasoning', { text: firstPart.text, role: 'user' })
+          }
+        }
+      }
+    }
+
+    // Update run status in DB to executing
+    if (runCtx) {
+      await supabaseAdmin
+        .from('agent_runs')
+        .update({ status: 'executing' })
+        .eq('id', runCtx.runId)
+    }
+
     let loopCount = 0
     const MAX_LOOPS = 10
 
@@ -317,6 +603,8 @@ export async function* chatWithGemini(
       inputPromptText += hasContainer 
         ? SYSTEM_INSTRUCTION 
         : 'You are CloudCode AI, a general helpful developer assistant.'
+      inputPromptText += '\n' + capabilityPrompt
+      
       for (const content of contents) {
         for (const part of content.parts) {
           if ('text' in part) {
@@ -341,9 +629,10 @@ export async function* chatWithGemini(
           ...(toolsToProvide.length > 0 ? { tools: [{ functionDeclarations: toolsToProvide }] } : {}),
           systemInstruction: {
             parts: [{
-              text: hasContainer 
+              text: (hasContainer 
                 ? SYSTEM_INSTRUCTION 
-                : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.'
+                : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.')
+                + '\n' + capabilityPrompt
             }]
           },
           generationConfig: {
@@ -356,6 +645,10 @@ export async function* chatWithGemini(
       if (!response.ok) {
         const errText = await response.text()
         yield { type: 'error', content: `Gemini API error: ${response.status} - ${errText}` }
+        if (runCtx) {
+          await runCtx.saveStep('error', { message: `Gemini API error: ${response.status}` })
+          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+        }
         return
       }
 
@@ -363,6 +656,10 @@ export async function* chatWithGemini(
 
       if (!data.candidates?.[0]?.content?.parts) {
         yield { type: 'error', content: 'No response from Gemini' }
+        if (runCtx) {
+          await runCtx.saveStep('error', { message: 'No response from Gemini' })
+          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+        }
         return
       }
 
@@ -389,6 +686,16 @@ export async function* chatWithGemini(
       for (const part of parts) {
         if ('text' in part && part.text) {
           yield { type: 'text', content: part.text }
+          
+          if (runCtx) {
+            await runCtx.saveStep('reasoning', { text: part.text, role: 'model' })
+            
+            const planItems = extractPlanItems(part.text)
+            if (planItems.length > 0) {
+              await runCtx.saveStep('plan', { items: planItems, plan: part.text })
+              yield { type: 'plan_event', items: planItems }
+            }
+          }
         }
 
         if ('functionCall' in part) {
@@ -396,48 +703,103 @@ export async function* chatWithGemini(
           const { name, args } = part.functionCall
 
           let result: any
-          if (name === 'run_command') {
-            const command = args.command as string
-            const approvalId = uuidv4()
 
-            // Yield tool call as pending first
-            yield { 
-              type: 'tool_call', 
-              toolName: name, 
-              toolArgs: { ...args, approvalId, status: 'pending' } 
+          const preRecorded = runCtx ? runCtx.getPreRecordedTool(name) : null
+          if (preRecorded !== null) {
+            console.log(`[Gemini Loop] Reusing pre-recorded result for tool ${name}`)
+            result = preRecorded
+            yield { type: 'tool_call', toolName: name, toolArgs: args }
+            yield { type: 'tool_result', toolName: name, toolResult: result }
+          } else {
+            if (runCtx && context?.userId) {
+              try {
+                await ExecutionGuard.validate(runCtx.runId, name, args, context.userId)
+              } catch (validationErr) {
+                const errMsg = (validationErr as Error).message
+                yield { type: 'error', content: errMsg }
+                await runCtx.saveStep('error', { message: errMsg })
+                await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+                return
+              }
             }
 
-            // Create a pending promise to wait for client approval
-            const approvalPromise = new Promise<boolean>((resolve) => {
-              (global as any).pendingCommands.set(approvalId, { resolve, command })
-            })
+            if (runCtx) {
+              await runCtx.saveStep('tool_call', { name, args })
+            }
 
-            const approved = await approvalPromise
+            if (name === 'run_command') {
+              const command = args.command as string
+              const approvalId = uuidv4()
 
-            if (approved) {
-              // Yield status update to running
               yield { 
                 type: 'tool_call', 
                 toolName: name, 
-                toolArgs: { ...args, approvalId, status: 'running' } 
+                toolArgs: { ...args, approvalId, status: 'pending' } 
               }
-              result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
+
+              if (runCtx) {
+                await supabaseAdmin
+                  .from('agent_runs')
+                  .update({ status: 'waiting' })
+                  .eq('id', runCtx.runId)
+              }
+
+              const approvalPromise = new Promise<boolean>((resolve) => {
+                (global as any).pendingCommands.set(approvalId, { resolve, command })
+              })
+
+              const approved = await approvalPromise
+
+              if (approved) {
+                if (runCtx) {
+                  await supabaseAdmin
+                    .from('agent_runs')
+                    .update({ status: 'executing' })
+                    .eq('id', runCtx.runId)
+                }
+
+                yield { 
+                  type: 'tool_call', 
+                  toolName: name, 
+                  toolArgs: { ...args, approvalId, status: 'running' } 
+                }
+                result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
+              } else {
+                if (runCtx) {
+                  await supabaseAdmin
+                    .from('agent_runs')
+                    .update({ status: 'paused' })
+                    .eq('id', runCtx.runId)
+                }
+                result = { error: 'Command execution rejected by user.' }
+              }
             } else {
-              result = { error: 'Command execution rejected by user.' }
+              yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
+              result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
             }
-          } else {
-            yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
-            result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
+
+            yield { 
+              type: 'tool_result', 
+              toolName: name, 
+              toolResult: result,
+              toolArgs: { approvalId: (args as any).approvalId }
+            }
+
+            if (runCtx) {
+              await runCtx.saveStep('tool_result', { name, response: result })
+              
+              const tokensCost = estimateTokens(JSON.stringify(result))
+              const commandsCost = name === 'run_command' ? 1 : 0
+              const writesCost = (name === 'edit_file' || name === 'create_file') ? 1 : 0
+              
+              await ExecutionGuard.recordExecution(runCtx.runId, name, {
+                tokens: tokensCost,
+                commands: commandsCost,
+                writes: writesCost
+              }, args)
+            }
           }
 
-          yield { 
-            type: 'tool_result', 
-            toolName: name, 
-            toolResult: result,
-            toolArgs: { approvalId: (args as any).approvalId }
-          }
-
-          // Add function response to history for next loop iteration
           contents.push({
             role: 'user',
             parts: [{
@@ -450,13 +812,23 @@ export async function* chatWithGemini(
         }
       }
 
-      // If no function calls, we're done
       if (!hasFunctionCall) {
         break
       }
     }
+
+    if (runCtx) {
+      await supabaseAdmin
+        .from('agent_runs')
+        .update({ status: 'completed' })
+        .eq('id', runCtx.runId)
+    }
   } catch (err) {
     yield { type: 'error', content: `Error: ${(err as Error).message}` }
+    if (runCtx) {
+      await runCtx.saveStep('error', { message: (err as Error).message })
+      await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+    }
     return
   } finally {
     if (context?.userId && totalTokens > 0) {
@@ -486,7 +858,7 @@ function convertSchemaToLowercase(schema: any): any {
 export async function* chatWithOpenAI(
   messages: { role: 'user' | 'model'; text: string }[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
@@ -497,11 +869,16 @@ export async function* chatWithOpenAI(
     return
   }
 
+  let runCtx: AgentRunContext | null = null
+  if (context?.runId && context?.userId) {
+    runCtx = new AgentRunContext(context.runId, context.userId)
+    await runCtx.init()
+  }
+
   const toolsToProvide = hasContainer 
     ? TOOL_DECLARATIONS 
     : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
 
-  // Convert schema types to lowercase for OpenAI function calling compatibility
   const openAITools = toolsToProvide.map(tool => ({
     type: 'function',
     function: {
@@ -511,32 +888,63 @@ export async function* chatWithOpenAI(
     }
   }))
 
-  const openAIMessages: any[] = []
-  openAIMessages.push({
-    role: 'system',
-    content: hasContainer 
-      ? SYSTEM_INSTRUCTION 
-      : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.'
-  })
-
-  let firstUserProcessed = false
-  for (const m of messages) {
-    let content = m.text
-    if (!firstUserProcessed && m.role === 'user' && context) {
-      firstUserProcessed = true
-      let contextPrefix = ''
-      if (context.fileTree) {
-        contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
-      }
-      if (context.openFile) {
-        contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
-      }
-      content = contextPrefix + content
+  let capabilityPrompt = ''
+  if (context?.userId) {
+    const resourceCtx = await PlanningGuard.loadContext(context.userId)
+    capabilityPrompt = PlanningGuard.buildSystemPrompt(resourceCtx)
+    yield { 
+      type: 'reasoning_event', 
+      content: `Available resources: ${resourceCtx.tokensRemaining === 999999999 ? 'Unlimited' : resourceCtx.tokensRemaining} tokens, ${resourceCtx.workspacesLimit - resourceCtx.workspacesUsed} workspace slots remaining.` 
     }
+  }
+
+  let openAIMessages: any[] = []
+  
+  if (runCtx && runCtx.dbSteps.length > 0) {
+    openAIMessages = runCtx.rehydrateOpenAIHistory([])
+    const planStep = runCtx.dbSteps.find(s => s.type === 'plan')
+    if (planStep) {
+      yield { type: 'plan_event', items: planStep.content.items }
+    }
+  } else {
     openAIMessages.push({
-      role: m.role === 'user' ? 'user' : 'assistant',
-      content: content
+      role: 'system',
+      content: (hasContainer 
+        ? SYSTEM_INSTRUCTION 
+        : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.')
+        + '\n' + capabilityPrompt
     })
+
+    let firstUserProcessed = false
+    for (const m of messages) {
+      let content = m.text
+      if (!firstUserProcessed && m.role === 'user' && context) {
+        firstUserProcessed = true
+        let contextPrefix = ''
+        if (context.fileTree) {
+          contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+        }
+        if (context.openFile) {
+          contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
+        }
+        content = contextPrefix + content
+      }
+      openAIMessages.push({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: content
+      })
+      
+      if (runCtx && m.role === 'user') {
+        await runCtx.saveStep('reasoning', { text: content, role: 'user' })
+      }
+    }
+  }
+
+  if (runCtx) {
+    await supabaseAdmin
+      .from('agent_runs')
+      .update({ status: 'executing' })
+      .eq('id', runCtx.runId)
   }
 
   let totalTokens = 0
@@ -549,7 +957,6 @@ export async function* chatWithOpenAI(
     while (loopCount < MAX_LOOPS) {
       loopCount++
 
-      // Calculate input prompt tokens
       let inputPromptText = ''
       for (const msg of openAIMessages) {
         if (typeof msg.content === 'string') {
@@ -583,6 +990,10 @@ export async function* chatWithOpenAI(
       if (!response.ok) {
         const errText = await response.text()
         yield { type: 'error', content: `OpenAI API error: ${response.status} - ${errText}` }
+        if (runCtx) {
+          await runCtx.saveStep('error', { message: `OpenAI API error: ${response.status}` })
+          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+        }
         return
       }
 
@@ -590,13 +1001,16 @@ export async function* chatWithOpenAI(
       const choice = data.choices?.[0]
       if (!choice || !choice.message) {
         yield { type: 'error', content: 'No response from OpenAI' }
+        if (runCtx) {
+          await runCtx.saveStep('error', { message: 'No response from OpenAI' })
+          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+        }
         return
       }
 
       const assistantMsg = choice.message
       openAIMessages.push(assistantMsg)
 
-      // Calculate output tokens
       let outputCompletionText = ''
       if (assistantMsg.content) {
         outputCompletionText += assistantMsg.content
@@ -608,6 +1022,16 @@ export async function* chatWithOpenAI(
 
       if (assistantMsg.content) {
         yield { type: 'text', content: assistantMsg.content }
+        
+        if (runCtx) {
+          await runCtx.saveStep('reasoning', { text: assistantMsg.content, role: 'model' })
+          
+          const planItems = extractPlanItems(assistantMsg.content)
+          if (planItems.length > 0) {
+            await runCtx.saveStep('plan', { items: planItems, plan: assistantMsg.content })
+            yield { type: 'plan_event', items: planItems }
+          }
+        }
       }
 
       const toolCalls = assistantMsg.tool_calls
@@ -625,42 +1049,101 @@ export async function* chatWithOpenAI(
         }
 
         let result: any
-        if (name === 'run_command') {
-          const command = args.command as string
-          const approvalId = uuidv4()
 
-          yield { 
-            type: 'tool_call', 
-            toolName: name, 
-            toolArgs: { ...args, approvalId, status: 'pending' } 
+        const preRecorded = runCtx ? runCtx.getPreRecordedTool(name) : null
+        if (preRecorded !== null) {
+          console.log(`[OpenAI Loop] Reusing pre-recorded result for tool ${name}`)
+          result = preRecorded
+          yield { type: 'tool_call', toolName: name, toolArgs: args }
+          yield { type: 'tool_result', toolName: name, toolResult: result }
+        } else {
+          if (runCtx && context?.userId) {
+            try {
+              await ExecutionGuard.validate(runCtx.runId, name, args, context.userId)
+            } catch (validationErr) {
+              const errMsg = (validationErr as Error).message
+              yield { type: 'error', content: errMsg }
+              await runCtx.saveStep('error', { message: errMsg })
+              await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+              return
+            }
           }
 
-          const approvalPromise = new Promise<boolean>((resolve) => {
-            (global as any).pendingCommands.set(approvalId, { resolve, command })
-          })
+          if (runCtx) {
+            await runCtx.saveStep('tool_call', { name, args, toolCallId: tc.id })
+          }
 
-          const approved = await approvalPromise
+          if (name === 'run_command') {
+            const command = args.command as string
+            const approvalId = uuidv4()
 
-          if (approved) {
             yield { 
               type: 'tool_call', 
               toolName: name, 
-              toolArgs: { ...args, approvalId, status: 'running' } 
+              toolArgs: { ...args, approvalId, status: 'pending' } 
             }
-            result = await executeTool(containerId, name, args, context?.userId)
-          } else {
-            result = { error: 'Command execution rejected by user.' }
-          }
-        } else {
-          yield { type: 'tool_call', toolName: name, toolArgs: args }
-          result = await executeTool(containerId, name, args, context?.userId)
-        }
 
-        yield { 
-          type: 'tool_result', 
-          toolName: name, 
-          toolResult: result,
-          toolArgs: { approvalId: (args as any).approvalId }
+            if (runCtx) {
+              await supabaseAdmin
+                .from('agent_runs')
+                .update({ status: 'waiting' })
+                .eq('id', runCtx.runId)
+            }
+
+            const approvalPromise = new Promise<boolean>((resolve) => {
+              (global as any).pendingCommands.set(approvalId, { resolve, command })
+            })
+
+            const approved = await approvalPromise
+
+            if (approved) {
+              if (runCtx) {
+                await supabaseAdmin
+                  .from('agent_runs')
+                  .update({ status: 'executing' })
+                  .eq('id', runCtx.runId)
+              }
+
+              yield { 
+                type: 'tool_call', 
+                toolName: name, 
+                toolArgs: { ...args, approvalId, status: 'running' } 
+              }
+              result = await executeTool(containerId, name, args, context?.userId)
+            } else {
+              if (runCtx) {
+                await supabaseAdmin
+                  .from('agent_runs')
+                  .update({ status: 'paused' })
+                  .eq('id', runCtx.runId)
+              }
+              result = { error: 'Command execution rejected by user.' }
+            }
+          } else {
+            yield { type: 'tool_call', toolName: name, toolArgs: args }
+            result = await executeTool(containerId, name, args, context?.userId)
+          }
+
+          yield { 
+            type: 'tool_result', 
+            toolName: name, 
+            toolResult: result,
+            toolArgs: { approvalId: (args as any).approvalId }
+          }
+
+          if (runCtx) {
+            await runCtx.saveStep('tool_result', { name, response: result })
+            
+            const tokensCost = estimateTokens(JSON.stringify(result))
+            const commandsCost = name === 'run_command' ? 1 : 0
+            const writesCost = (name === 'edit_file' || name === 'create_file') ? 1 : 0
+            
+            await ExecutionGuard.recordExecution(runCtx.runId, name, {
+              tokens: tokensCost,
+              commands: commandsCost,
+              writes: writesCost
+            }, args)
+          }
         }
 
         openAIMessages.push({
@@ -670,8 +1153,19 @@ export async function* chatWithOpenAI(
         })
       }
     }
+
+    if (runCtx) {
+      await supabaseAdmin
+        .from('agent_runs')
+        .update({ status: 'completed' })
+        .eq('id', runCtx.runId)
+    }
   } catch (err) {
     yield { type: 'error', content: `Error: ${(err as Error).message}` }
+    if (runCtx) {
+      await runCtx.saveStep('error', { message: (err as Error).message })
+      await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+    }
     return
   } finally {
     if (context?.userId && totalTokens > 0) {
@@ -685,7 +1179,7 @@ export async function* chatWithOpenAI(
 export async function* chatWithAnthropic(
   messages: { role: 'user' | 'model'; text: string }[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
@@ -694,6 +1188,12 @@ export async function* chatWithAnthropic(
   if (!apiKey) {
     yield { type: 'error', content: 'Anthropic API key not configured. Please add it under AI API Keys (BYOK) in settings.' }
     return
+  }
+
+  let runCtx: AgentRunContext | null = null
+  if (context?.runId && context?.userId) {
+    runCtx = new AgentRunContext(context.runId, context.userId)
+    await runCtx.init()
   }
 
   const toolsToProvide = hasContainer 
@@ -706,25 +1206,55 @@ export async function* chatWithAnthropic(
     input_schema: convertSchemaToLowercase(tool.parameters)
   }))
 
-  const anthropicMessages: any[] = []
-  let firstUserProcessed = false
-  for (const m of messages) {
-    let content = m.text
-    if (!firstUserProcessed && m.role === 'user' && context) {
-      firstUserProcessed = true
-      let contextPrefix = ''
-      if (context.fileTree) {
-        contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
-      }
-      if (context.openFile) {
-        contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
-      }
-      content = contextPrefix + content
+  let capabilityPrompt = ''
+  if (context?.userId) {
+    const resourceCtx = await PlanningGuard.loadContext(context.userId)
+    capabilityPrompt = PlanningGuard.buildSystemPrompt(resourceCtx)
+    yield { 
+      type: 'reasoning_event', 
+      content: `Available resources: ${resourceCtx.tokensRemaining === 999999999 ? 'Unlimited' : resourceCtx.tokensRemaining} tokens, ${resourceCtx.workspacesLimit - resourceCtx.workspacesUsed} workspace slots remaining.` 
     }
-    anthropicMessages.push({
-      role: m.role === 'user' ? 'user' : 'assistant',
-      content: content
-    })
+  }
+
+  let anthropicMessages: any[] = []
+  
+  if (runCtx && runCtx.dbSteps.length > 0) {
+    anthropicMessages = runCtx.rehydrateAnthropicHistory([])
+    const planStep = runCtx.dbSteps.find(s => s.type === 'plan')
+    if (planStep) {
+      yield { type: 'plan_event', items: planStep.content.items }
+    }
+  } else {
+    let firstUserProcessed = false
+    for (const m of messages) {
+      let content = m.text
+      if (!firstUserProcessed && m.role === 'user' && context) {
+        firstUserProcessed = true
+        let contextPrefix = ''
+        if (context.fileTree) {
+          contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+        }
+        if (context.openFile) {
+          contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
+        }
+        content = contextPrefix + content
+      }
+      anthropicMessages.push({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: content
+      })
+      
+      if (runCtx && m.role === 'user') {
+        await runCtx.saveStep('reasoning', { text: content, role: 'user' })
+      }
+    }
+  }
+
+  if (runCtx) {
+    await supabaseAdmin
+      .from('agent_runs')
+      .update({ status: 'executing' })
+      .eq('id', runCtx.runId)
   }
 
   let totalTokens = 0
@@ -737,11 +1267,12 @@ export async function* chatWithAnthropic(
     while (loopCount < MAX_LOOPS) {
       loopCount++
 
-      // Calculate input prompt tokens
       let inputPromptText = ''
       inputPromptText += hasContainer 
         ? SYSTEM_INSTRUCTION 
         : 'You are CloudCode AI, a general helpful developer assistant.'
+      inputPromptText += '\n' + capabilityPrompt
+      
       for (const msg of anthropicMessages) {
         if (typeof msg.content === 'string') {
           inputPromptText += msg.content
@@ -764,9 +1295,10 @@ export async function* chatWithAnthropic(
         body: JSON.stringify({
           model: 'claude-3-opus-20240229',
           max_tokens: 4096,
-          system: hasContainer 
+          system: (hasContainer 
             ? SYSTEM_INSTRUCTION 
-            : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.',
+            : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.')
+            + '\n' + capabilityPrompt,
           messages: anthropicMessages,
           ...(toolsToProvide.length > 0 ? { tools: anthropicTools } : {}),
           temperature: 0.7,
@@ -776,16 +1308,23 @@ export async function* chatWithAnthropic(
       if (!response.ok) {
         const errText = await response.text()
         yield { type: 'error', content: `Anthropic API error: ${response.status} - ${errText}` }
+        if (runCtx) {
+          await runCtx.saveStep('error', { message: `Anthropic API error: ${response.status}` })
+          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+        }
         return
       }
 
       const data = await response.json()
       if (!data.content || data.content.length === 0) {
         yield { type: 'error', content: 'No response from Anthropic' }
+        if (runCtx) {
+          await runCtx.saveStep('error', { message: 'No response from Anthropic' })
+          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+        }
         return
       }
 
-      // Calculate output tokens
       let outputCompletionText = ''
       for (const block of data.content) {
         if (block.type === 'text') {
@@ -796,7 +1335,6 @@ export async function* chatWithAnthropic(
       }
       totalTokens += estimateTokens(outputCompletionText)
 
-      // Add to messages array
       anthropicMessages.push({
         role: 'assistant',
         content: data.content
@@ -808,6 +1346,16 @@ export async function* chatWithAnthropic(
       for (const block of data.content) {
         if (block.type === 'text') {
           yield { type: 'text', content: block.text }
+          
+          if (runCtx) {
+            await runCtx.saveStep('reasoning', { text: block.text, role: 'model' })
+            
+            const planItems = extractPlanItems(block.text)
+            if (planItems.length > 0) {
+              await runCtx.saveStep('plan', { items: planItems, plan: block.text })
+              yield { type: 'plan_event', items: planItems }
+            }
+          }
         }
 
         if (block.type === 'tool_use') {
@@ -816,42 +1364,101 @@ export async function* chatWithAnthropic(
           const args = block.input || {}
           
           let result: any
-          if (name === 'run_command') {
-            const command = args.command as string
-            const approvalId = uuidv4()
 
-            yield { 
-              type: 'tool_call', 
-              toolName: name, 
-              toolArgs: { ...args, approvalId, status: 'pending' } 
+          const preRecorded = runCtx ? runCtx.getPreRecordedTool(name) : null
+          if (preRecorded !== null) {
+            console.log(`[Anthropic Loop] Reusing pre-recorded result for tool ${name}`)
+            result = preRecorded
+            yield { type: 'tool_call', toolName: name, toolArgs: args }
+            yield { type: 'tool_result', toolName: name, toolResult: result }
+          } else {
+            if (runCtx && context?.userId) {
+              try {
+                await ExecutionGuard.validate(runCtx.runId, name, args, context.userId)
+              } catch (validationErr) {
+                const errMsg = (validationErr as Error).message
+                yield { type: 'error', content: errMsg }
+                await runCtx.saveStep('error', { message: errMsg })
+                await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+                return
+              }
             }
 
-            const approvalPromise = new Promise<boolean>((resolve) => {
-              (global as any).pendingCommands.set(approvalId, { resolve, command })
-            })
+            if (runCtx) {
+              await runCtx.saveStep('tool_call', { name, args, toolCallId: block.id })
+            }
 
-            const approved = await approvalPromise
+            if (name === 'run_command') {
+              const command = args.command as string
+              const approvalId = uuidv4()
 
-            if (approved) {
               yield { 
                 type: 'tool_call', 
                 toolName: name, 
-                toolArgs: { ...args, approvalId, status: 'running' } 
+                toolArgs: { ...args, approvalId, status: 'pending' } 
               }
-              result = await executeTool(containerId, name, args, context?.userId)
-            } else {
-              result = { error: 'Command execution rejected by user.' }
-            }
-          } else {
-            yield { type: 'tool_call', toolName: name, toolArgs: args }
-            result = await executeTool(containerId, name, args, context?.userId)
-          }
 
-          yield { 
-            type: 'tool_result', 
-            toolName: name, 
-            toolResult: result,
-            toolArgs: { approvalId: (args as any).approvalId }
+              if (runCtx) {
+                await supabaseAdmin
+                  .from('agent_runs')
+                  .update({ status: 'waiting' })
+                  .eq('id', runCtx.runId)
+              }
+
+              const approvalPromise = new Promise<boolean>((resolve) => {
+                (global as any).pendingCommands.set(approvalId, { resolve, command })
+              })
+
+              const approved = await approvalPromise
+
+              if (approved) {
+                if (runCtx) {
+                  await supabaseAdmin
+                    .from('agent_runs')
+                    .update({ status: 'executing' })
+                    .eq('id', runCtx.runId)
+                }
+
+                yield { 
+                  type: 'tool_call', 
+                  toolName: name, 
+                  toolArgs: { ...args, approvalId, status: 'running' } 
+                }
+                result = await executeTool(containerId, name, args, context?.userId)
+              } else {
+                if (runCtx) {
+                  await supabaseAdmin
+                    .from('agent_runs')
+                    .update({ status: 'paused' })
+                    .eq('id', runCtx.runId)
+                }
+                result = { error: 'Command execution rejected by user.' }
+              }
+            } else {
+              yield { type: 'tool_call', toolName: name, toolArgs: args }
+              result = await executeTool(containerId, name, args, context?.userId)
+            }
+
+            yield { 
+              type: 'tool_result', 
+              toolName: name, 
+              toolResult: result,
+              toolArgs: { approvalId: (args as any).approvalId }
+            }
+
+            if (runCtx) {
+              await runCtx.saveStep('tool_result', { name, response: result })
+              
+              const tokensCost = estimateTokens(JSON.stringify(result))
+              const commandsCost = name === 'run_command' ? 1 : 0
+              const writesCost = (name === 'edit_file' || name === 'create_file') ? 1 : 0
+              
+              await ExecutionGuard.recordExecution(runCtx.runId, name, {
+                tokens: tokensCost,
+                commands: commandsCost,
+                writes: writesCost
+              }, args)
+            }
           }
 
           toolResultBlocks.push({
@@ -871,8 +1478,19 @@ export async function* chatWithAnthropic(
         content: toolResultBlocks
       })
     }
+
+    if (runCtx) {
+      await supabaseAdmin
+        .from('agent_runs')
+        .update({ status: 'completed' })
+        .eq('id', runCtx.runId)
+    }
   } catch (err) {
     yield { type: 'error', content: `Error: ${(err as Error).message}` }
+    if (runCtx) {
+      await runCtx.saveStep('error', { message: (err as Error).message })
+      await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
+    }
     return
   } finally {
     if (context?.userId && totalTokens > 0) {
