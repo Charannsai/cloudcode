@@ -8,7 +8,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, User, FileCode, FolderTree, Bug, Package, Copy, Share as ShareIcon,
   Mic, Volume2, VolumeX, ChevronDown, ChevronUp, Cpu, Shield, Lock,
-  MoreVertical, History, Plus, ChevronRight, StopCircle, CheckCircle2
+  MoreVertical, History, Plus, ChevronRight, StopCircle, CheckCircle2, X
 } from 'lucide-react-native'
 
 import { useAuthStore } from '@/store/auth'
@@ -559,7 +559,8 @@ export default function AITab({ projectId }: Props) {
     sendMessage, clearChat, pendingPrompt, setPendingPrompt,
     activeProjectId, setActiveProject,
     currentThreadId, savedConversations, byokEnabled, byokConfigured,
-    initConversations, loadConversation, deleteConversation, toggleByok, startNewChat, stopGeneration
+    initConversations, loadConversation, deleteConversation, toggleByok, startNewChat, stopGeneration,
+    pinnedFile, setPinnedFile
   } = useAIStore()
 
   const [inputText, setInputText] = useState('')
@@ -769,9 +770,13 @@ export default function AITab({ projectId }: Props) {
     if (pendingPrompt && activeProjectId === projectId && !isStreaming) {
       const prompt = pendingPrompt
       setPendingPrompt(null)
-      sendMessage(prompt, projectId, undefined, selectedModel)
+      
+      const fileToAttach = pinnedFile || undefined
+      setPinnedFile(null)
+      
+      sendMessage(prompt, projectId, fileToAttach, selectedModel)
     }
-  }, [pendingPrompt, activeProjectId, isStreaming, selectedModel])
+  }, [pendingPrompt, activeProjectId, isStreaming, selectedModel, pinnedFile])
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
@@ -781,7 +786,11 @@ export default function AITab({ projectId }: Props) {
     if (!inputText.trim() || isStreaming) return
     const text = inputText.trim()
     setInputText('')
-    await sendMessage(text, projectId, undefined, selectedModel)
+    
+    const fileToAttach = pinnedFile || undefined
+    setPinnedFile(null)
+    
+    await sendMessage(text, projectId, fileToAttach, selectedModel)
   }
 
   const handleNewChatThread = () => {
@@ -957,6 +966,19 @@ export default function AITab({ projectId }: Props) {
         backgroundColor: colors.background, 
         borderTopColor: isDark ? '#21262D' : '#D8DEE4',
       }]}>
+        {pinnedFile && (
+          <View style={styles.pinnedFileContainer}>
+            <View style={[styles.pinnedFileBadge, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}>
+              <FileCode size={12} color={colors.primary} />
+              <Text style={[styles.pinnedFileName, { color: colors.text, fontFamily: 'JetBrainsMono_500Medium' }]} numberOfLines={1}>
+                {pinnedFile.path.split('/').pop()}
+              </Text>
+              <TouchableOpacity onPress={() => setPinnedFile(null)} style={styles.unpinBtn}>
+                <X size={12} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
         <View style={[styles.inputBox, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
           <TextInput
             value={inputText}
@@ -1909,5 +1931,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 8,
+  },
+  pinnedFileContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    flexDirection: 'row',
+  },
+  pinnedFileBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 6,
+  },
+  pinnedFileName: {
+    fontSize: 12,
+    maxWidth: 200,
+  },
+  unpinBtn: {
+    padding: 2,
+    marginLeft: 4,
   },
 })

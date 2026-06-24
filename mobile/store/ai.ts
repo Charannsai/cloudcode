@@ -36,6 +36,7 @@ interface AIState {
   currentToolCalls: ToolCallInfo[]
   activeProjectId: string | null
   pendingPrompt: string | null
+  pinnedFile: { path: string; content: string } | null
 
   // Conversation History fields
   currentThreadId: string | null
@@ -45,6 +46,7 @@ interface AIState {
 
   setActiveProject: (projectId: string) => void
   setPendingPrompt: (prompt: string | null) => void
+  setPinnedFile: (file: { path: string; content: string } | null) => void
   sendMessage: (
     text: string,
     projectId: string,
@@ -71,6 +73,7 @@ export const useAIStore = create<AIState>((set, get) => ({
   currentToolCalls: [],
   activeProjectId: null,
   pendingPrompt: null,
+  pinnedFile: null,
 
   currentThreadId: null,
   savedConversations: [],
@@ -79,6 +82,7 @@ export const useAIStore = create<AIState>((set, get) => ({
 
   setActiveProject: (projectId) => set({ activeProjectId: projectId }),
   setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
+  setPinnedFile: (pinnedFile) => set({ pinnedFile }),
 
   sendMessage: async (text, projectId, openFile, model) => {
     let threadId = get().currentThreadId
