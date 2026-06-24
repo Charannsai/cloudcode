@@ -8,7 +8,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, User, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, Play, X,
-  Shield, Lock, Square
+  Shield, Lock, Square, MoreVertical, Plus
 } from 'lucide-react-native'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -48,6 +48,7 @@ export default function AIScreen() {
   const [modelSelectorVisible, setModelSelectorVisible] = useState(false)
   const [showConsoleLogs, setShowConsoleLogs] = useState(false)
   const [friendlyError, setFriendlyError] = useState<string | null>(null)
+  const [menuVisible, setMenuVisible] = useState(false)
 
   const [isByokActive, setIsByokActive] = useState(false)
   const [userTier, setUserTier] = useState('free')
@@ -175,16 +176,22 @@ export default function AIScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header (Minimal, Conversation-First) */}
-        <View style={[styles.headerRow, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-          <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-            CloudCode AI
-          </Text>
+        <View style={[styles.headerRow, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB', zIndex: 10 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={[styles.statusDot, { backgroundColor: isStreaming ? '#3FB950' : '#22863a' }]} />
+            <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+              CloudCode AI
+            </Text>
+          </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
-            {/* Model picker */}
+            {/* Model picker pill chip */}
             <TouchableOpacity
               style={[styles.modelBadge, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-              onPress={() => setModelSelectorVisible(true)}
+              onPress={() => {
+                setMenuVisible(false)
+                setModelSelectorVisible(true)
+              }}
             >
               <Cpu size={12} color="#3FB950" />
               <Text style={[styles.modelBadgeText, { color: colors.text }]}>
@@ -192,15 +199,59 @@ export default function AIScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Activity screen icon */}
+            {/* Three-dot Options Menu Trigger */}
             <TouchableOpacity
-              onPress={() => router.push('/activity')}
-              style={styles.activityBtn}
+              onPress={() => setMenuVisible(!menuVisible)}
+              style={styles.menuBtn}
             >
-              <History size={20} color={colors.text} />
+              <MoreVertical size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Dropdown Menu Backdrop & Card */}
+        {menuVisible && (
+          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+            <View style={styles.menuBackdrop} />
+          </TouchableWithoutFeedback>
+        )}
+
+        {menuVisible && (
+          <View style={[styles.dropdownMenuCard, { backgroundColor: isDark ? '#161B22' : '#FFFFFF', borderColor: isDark ? '#30363D' : '#E5E7EB' }]}>
+            <TouchableOpacity
+              style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? '#21262D' : '#F6F8FA' }]}
+              onPress={() => {
+                setMenuVisible(false)
+                clearActiveRun()
+              }}
+            >
+              <Plus size={16} color={colors.text} />
+              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>New Chat</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? '#21262D' : '#F6F8FA' }]}
+              onPress={() => {
+                setMenuVisible(false)
+                setModelSelectorVisible(true)
+              }}
+            >
+              <Cpu size={16} color={colors.text} />
+              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>Switch Model</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.dropdownMenuItemRow}
+              onPress={() => {
+                setMenuVisible(false)
+                router.push('/activity')
+              }}
+            >
+              <History size={16} color={colors.text} />
+              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>History & Limits</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Conversation Chat Flow */}
         <ScrollView
@@ -786,5 +837,48 @@ const styles = StyleSheet.create({
   },
   dropdownItemText: {
     fontSize: 13,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  menuBtn: {
+    padding: 4,
+  },
+  menuBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  dropdownMenuCard: {
+    position: 'absolute',
+    top: 52,
+    right: 16,
+    width: 180,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingVertical: 4,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  dropdownMenuItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  dropdownMenuItemLabel: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
   },
 })
