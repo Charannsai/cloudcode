@@ -99,7 +99,6 @@ function getRealtimeReasoning(toolCalls: ToolCallInfo[], isStreaming: boolean): 
 
 
 function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boolean; colors: any }) {
-  const [isActionLoading, setIsActionLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const previewAnim = useRef(new Animated.Value(0)).current
 
@@ -115,46 +114,12 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
     }
   }, [modalOpen])
 
-  const handleApprove = async () => {
-    const approvalId = tool.args?.approvalId as string
-    if (!approvalId) return
-    setIsActionLoading(true)
-    try {
-      await api.ai.approve(approvalId, 'approve')
-    } catch (err) {
-      Alert.alert('Error', (err as Error).message || 'Failed to approve command')
-    } finally {
-      setIsActionLoading(false)
-    }
-  }
-
-  const handleReject = async () => {
-    const approvalId = tool.args?.approvalId as string
-    if (!approvalId) return
-    setIsActionLoading(true)
-    try {
-      await api.ai.approve(approvalId, 'reject')
-    } catch (err) {
-      Alert.alert('Error', (err as Error).message || 'Failed to reject command')
-    } finally {
-      setIsActionLoading(false)
-    }
-  }
-
   const isPending = tool.status === 'pending'
   const isRunning = tool.status === 'running'
   const isError = tool.status === 'error'
   const isDone = tool.status === 'done'
 
   // Determine status text & colors
-  const statusBg = isPending
-    ? 'rgba(226, 183, 20, 0.12)'
-    : isRunning
-      ? 'rgba(88, 166, 255, 0.12)'
-      : isDone
-        ? 'rgba(63, 185, 80, 0.12)'
-        : 'rgba(248, 81, 73, 0.12)'
-  
   const statusColor = isPending
     ? '#E2B714'
     : isRunning
@@ -164,228 +129,138 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
         : '#F85149'
 
   const statusText = isPending
-    ? 'PENDING'
+    ? 'Pending Approval'
     : isRunning
-      ? 'RUNNING'
+      ? 'Running...'
       : isDone
-        ? 'DONE'
-        : 'ERROR'
+        ? 'Success'
+        : 'Failed'
 
-  // Render Command Line Executions
+  // Determine Icon and Label for tool
+  let Icon = FileCode
+  let label = tool.name
+  let target = (tool.args?.path || tool.args?.command || '') as string
+
   if (tool.name === 'run_command') {
-    const command = (tool.args?.command || '') as string
+    Icon = Terminal
+    label = 'Execute Command'
+  } else if (tool.name === 'create_file') {
+    Icon = Plus
+    label = 'Create File'
+  } else if (tool.name === 'edit_file') {
+    Icon = FileCode
+    label = 'Edit File'
+  } else if (tool.name === 'delete_file') {
+    Icon = Trash2
+    label = 'Delete File'
+  } else if (tool.name === 'read_file') {
+    Icon = FileCode
+    label = 'Read File'
+  } else if (tool.name === 'list_files') {
+    Icon = FolderTree
+    label = 'List Directory'
+  }
+
+  // Compile summary & preview content
+  let summaryText = ''
+  let fullContent = ''
+
+  if (tool.name === 'run_command') {
     const resultObj = tool.result as any
     const output = (resultObj?.output || resultObj?.error || resultObj?.message || '') as string
-
-    return (
-      <View style={[styles.terminalBox, { backgroundColor: '#0D1117', borderColor: '#21262D', marginVertical: 6 }]}>
-        <View style={styles.terminalHeader}>
-          <View style={styles.terminalDots}>
-            <View style={[styles.terminalDot, { backgroundColor: '#FF5F56' }]} />
-            <View style={[styles.terminalDot, { backgroundColor: '#FFBD2E' }]} />
-            <View style={[styles.terminalDot, { backgroundColor: '#27C93F' }]} />
-          </View>
-          <Text style={styles.terminalTitle}>bash (workspace)</Text>
-          <View style={{ backgroundColor: statusBg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-            <Text style={{ color: statusColor, fontSize: 8, fontFamily: 'Inter_700Bold' }}>{statusText}</Text>
-          </View>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={true}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
-          <View style={styles.terminalContent}>
-            <Text style={styles.terminalPromptLine}>
-              <Text style={styles.terminalPrompt}>$ </Text>
-              <Text style={styles.terminalCommandText}>{command}</Text>
-            </Text>
-
-            {isPending && (
-              <View style={styles.permissionCard}>
-                <Text style={styles.permissionText}>
-                  ⚠️ Shell execution requires approval.
-                </Text>
-                <View style={styles.permissionActionRow}>
-                  <TouchableOpacity
-                    style={[styles.permissionBtn, styles.approveBtn]}
-                    onPress={handleApprove}
-                    disabled={isActionLoading}
-                    activeOpacity={0.8}
-                  >
-                    {isActionLoading ? (
-                      <ActivityIndicator size="small" color="#ffffff" />
-                    ) : (
-                      <Text style={styles.approveBtnText}>Approve</Text>
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.permissionBtn, styles.rejectBtn]}
-                    onPress={handleReject}
-                    disabled={isActionLoading}
-                    activeOpacity={0.8}
-                  >
-                    {isActionLoading ? (
-                      <ActivityIndicator size="small" color="#F85149" />
-                    ) : (
-                      <Text style={styles.rejectBtnText}>Reject</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {isRunning && (
-              <View style={styles.terminalRunningRow}>
-                <ActivityIndicator size="small" color="#58A6FF" style={{ marginRight: 6 }} />
-                <Text style={styles.terminalRunningText}>Executing command...</Text>
-              </View>
-            )}
-
-            {(output || isDone || isError) && !isPending && (
-              <Text style={[
-                styles.terminalOutputText,
-                isError && { color: '#F85149' }
-              ]}>
-                {output || (isDone ? 'Command completed with no output.' : '')}
-              </Text>
-            )}
-          </View>
-        </ScrollView>
-      </View>
-    )
-  }
-
-  // File Operations Card Design (read_file, edit_file, create_file, delete_file, list_files)
-  let accentColor = '#8B929A'
-  let label = tool.name
-  let Icon = FileCode
-  let bgTint = isDark ? '#1C2128' : '#F6F8FA'
-
-  if (tool.name === 'create_file') {
-    accentColor = '#3FB950'
-    label = 'Create File'
-    Icon = Plus
-    bgTint = isDark ? 'rgba(63, 185, 80, 0.05)' : 'rgba(230, 255, 236, 0.4)'
-  } else if (tool.name === 'edit_file') {
-    accentColor = '#58A6FF'
-    label = 'Edit File'
-    Icon = FileCode
-    bgTint = isDark ? 'rgba(88, 166, 255, 0.05)' : 'rgba(221, 244, 255, 0.4)'
-  } else if (tool.name === 'delete_file') {
-    accentColor = '#F85149'
-    label = 'Delete File'
-    Icon = Trash2
-    bgTint = isDark ? 'rgba(248, 81, 73, 0.05)' : 'rgba(255, 235, 235, 0.4)'
+    summaryText = isPending 
+      ? 'Requires user approval'
+      : isRunning
+        ? 'Executing in workspace...'
+        : isError
+          ? 'Failed to execute'
+          : 'Executed successfully'
+    fullContent = output || 'No console output returned.'
   } else if (tool.name === 'read_file') {
-    accentColor = '#8250DF'
-    label = 'Read File'
-    Icon = FileCode
-    bgTint = isDark ? 'rgba(130, 80, 223, 0.05)' : 'rgba(245, 240, 255, 0.4)'
-  } else if (tool.name === 'list_files') {
-    accentColor = '#D97706'
-    label = 'List Directory'
-    Icon = FolderTree
-    bgTint = isDark ? 'rgba(217, 119, 6, 0.05)' : 'rgba(255, 253, 230, 0.4)'
-  }
-
-  const target = (tool.args?.path || '') as string
-
-  // Compile summary & preview
-  let summaryText = ''
-  let previewText = ''
-
-  if (tool.name === 'read_file' && tool.result) {
     const res = tool.result as any
-    if (res.content) {
+    if (res?.content) {
       const lines = res.content.split('\n')
       summaryText = `Read ${lines.length} lines`
-      previewText = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '\n...' : '')
-    } else if (res.error) {
-      summaryText = `Failed to read: ${res.error}`
+      fullContent = res.content
+    } else if (res?.error) {
+      summaryText = `Error: ${res.error}`
+      fullContent = res.error
     }
   } else if (tool.name === 'create_file') {
     const content = (tool.args?.content || '') as string
     const lines = content.split('\n')
     summaryText = `Created with ${lines.length} lines`
-    previewText = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '\n...' : '')
+    fullContent = content
   } else if (tool.name === 'edit_file') {
     const replacement = (tool.args?.replacementContent || tool.args?.replacement || '') as string
     const targetContent = (tool.args?.targetContent || tool.args?.target || '') as string
-    summaryText = `Replacing code chunk`
-    previewText = `- Target:\n${targetContent.split('\n').slice(0, 1).join('\n')}\n+ Replacement:\n${replacement.split('\n').slice(0, 1).join('\n')}`
-  } else if (tool.name === 'list_files' && tool.result) {
+    summaryText = `Applied code changes`
+    fullContent = `<<<< TARGET CODE <<<<\n${targetContent}\n==== REPLACEMENT ==== \n${replacement}\n>>>> OUTPUT >>>>`
+  } else if (tool.name === 'list_files') {
     const res = tool.result as any
-    if (res.files) {
-      summaryText = `Found ${res.files.length} items`
-      previewText = res.files.slice(0, 3).map((f: string) => `- ${f}`).join('\n') + (res.files.length > 3 ? '\n...' : '')
-    } else if (res.error) {
+    if (res?.files) {
+      summaryText = `Scanned ${res.files.length} files`
+      fullContent = res.files.join('\n')
+    } else if (res?.error) {
       summaryText = `Error: ${res.error}`
+      fullContent = res.error
     }
   } else if (tool.name === 'delete_file') {
-    summaryText = `Deleted file from project workspace`
+    summaryText = `Deleted file`
+    fullContent = `Deleted file at: ${target}`
   }
 
-  const hasFullPreview = !!(previewText && (tool.result || tool.args?.content || tool.args?.replacement || tool.args?.replacementContent))
+  const hasDetails = !isPending && !isRunning && (tool.result || tool.args?.content || tool.args?.replacement || tool.args?.replacementContent)
 
   return (
     <View style={[
-      styles.fileCardContainer,
+      styles.toolCard,
       {
-        backgroundColor: bgTint,
-        borderLeftColor: accentColor,
+        backgroundColor: isDark ? '#161B22' : '#F6F8FA',
         borderColor: isDark ? '#21262D' : '#D8DEE4',
       }
     ]}>
-      {/* File Card Header */}
-      <View style={styles.fileCardHeader}>
-        <View style={styles.fileCardTitleContainer}>
-          <Icon size={14} color={accentColor} style={{ marginRight: 6 }} />
-          <Text style={[styles.fileCardLabel, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-            {label}
-          </Text>
+      <View style={styles.toolHeader}>
+        <View style={styles.toolHeaderLeft}>
+          <Icon size={14} color={isDark ? '#8B929A' : '#656D76'} style={{ marginRight: 6 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.toolLabelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+              {label}
+            </Text>
+            <Text style={[styles.toolTargetText, { color: colors.textSecondary }]} numberOfLines={1}>
+              {target}
+            </Text>
+          </View>
         </View>
-        <View style={{ backgroundColor: statusBg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-          <Text style={{ color: statusColor, fontSize: 8, fontFamily: 'Inter_700Bold' }}>{statusText}</Text>
+        
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_500Medium' }}>
+            {statusText}
+          </Text>
         </View>
       </View>
 
-      {/* Target Path */}
-      <Text style={[styles.fileCardPath, { color: colors.textSecondary }]} numberOfLines={1}>
-        {target || 'Workspace Root'}
-      </Text>
-
-      {/* Summary */}
       {summaryText ? (
-        <Text style={[styles.fileCardSummary, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
-          {summaryText}
-        </Text>
-      ) : null}
-
-      {/* Mini Code Preview Box */}
-      {previewText ? (
-        <View style={[styles.fileCardPreviewBox, { backgroundColor: isDark ? '#0D1117' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-          <Text style={[styles.fileCardPreviewText, { color: isDark ? '#C9D1D9' : '#24292F' }]}>
-            {previewText}
+        <View style={styles.toolSummaryRow}>
+          <Text style={[styles.toolSummaryText, { color: colors.textSecondary }]}>
+            {summaryText}
           </Text>
+          {hasDetails && (
+            <TouchableOpacity 
+              onPress={() => setModalOpen(true)}
+              style={styles.toolDetailsBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.toolDetailsBtnText, { color: colors.primary }]}>
+                {tool.name === 'run_command' ? 'View Output' : 'View Details'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : null}
 
-      {/* Preview details action button */}
-      {hasFullPreview && (
-        <View style={{ flexDirection: 'row', marginTop: 8 }}>
-          <TouchableOpacity
-            style={[styles.previewLinkBtn, { borderColor: accentColor }]}
-            onPress={() => setModalOpen(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.previewLinkBtnText, { color: accentColor }]}>View Full Details</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Full Content Preview Modal */}
+      {/* Details Modal */}
       <Modal
         visible={modalOpen}
         transparent
@@ -393,7 +268,7 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
         statusBarTranslucent={true}
         onRequestClose={() => setModalOpen(false)}
       >
-        <View style={[styles.modalBackdrop, { backgroundColor: 'transparent' }]}>
+        <View style={styles.modalBackdrop}>
           <Animated.View 
             style={[
               StyleSheet.absoluteFill, 
@@ -411,7 +286,7 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
           <Animated.View style={[
             styles.modalContent,
             {
-              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
               borderColor: isDark ? '#21262D' : '#E5E7EB',
               height: '80%',
               transform: [
@@ -429,31 +304,15 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
               <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
                 {label} Details
               </Text>
-              <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }]}>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11 }]} numberOfLines={1}>
                 {target}
               </Text>
             </View>
 
             <ScrollView style={{ flex: 1, marginVertical: 8 }} showsVerticalScrollIndicator={true}>
-              <View style={[styles.fullPreviewCodeBox, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+              <View style={[styles.fullPreviewCodeBox, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
                 <Text style={[styles.fullPreviewCodeText, { color: isDark ? '#C9D1D9' : '#24292F' }]}>
-                  {(() => {
-                    if (tool.name === 'read_file' && tool.result) {
-                      return (tool.result as any).content || 'No content';
-                    }
-                    if (tool.name === 'create_file') {
-                      return (tool.args?.content || '') as string;
-                    }
-                    if (tool.name === 'edit_file') {
-                      const replacement = (tool.args?.replacementContent || tool.args?.replacement || '') as string;
-                      const targetContent = (tool.args?.targetContent || tool.args?.target || '') as string;
-                      return `Target:\n${targetContent}\n\nReplacement:\n${replacement}`;
-                    }
-                    if (tool.name === 'list_files' && tool.result) {
-                      return (tool.result as any).files?.join('\n') || 'No files';
-                    }
-                    return 'No details available.';
-                  })()}
+                  {fullContent}
                 </Text>
               </View>
             </ScrollView>
@@ -462,7 +321,7 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
               style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
               onPress={() => setModalOpen(false)}
             >
-            <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+              <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
                 Close
               </Text>
             </TouchableOpacity>
@@ -477,6 +336,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
   message: ChatMessage; isDark: boolean; colors: any; onSpeakPress: (id: string, text: string) => void; speakingMessageId: string | null
 }) {
   const isUser = message.role === 'user'
+  const [reasoningExpanded, setReasoningExpanded] = useState(false)
 
   const mdStyles = {
     body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22 },
@@ -488,6 +348,9 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
     list_item: { marginTop: 1, marginBottom: 1 },
     link: { color: '#58A6FF', textDecorationLine: 'underline' } as const,
   }
+
+  const hasToolCalls = message.toolCalls && message.toolCalls.length > 0
+  const reasoningSteps = hasToolCalls ? getRealtimeReasoning(message.toolCalls!, false) : []
 
   return (
     <View
@@ -505,6 +368,46 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
           ? [styles.userBubble, { backgroundColor: isDark ? '#21262D' : '#F0F2F5' }]
           : styles.modelBubble
       ]}>
+        {/* Collapsible Persistent Reasoning Accordion */}
+        {hasToolCalls && (
+          <View style={[
+            styles.persistentReasoningCard,
+            {
+              backgroundColor: isDark ? '#151922' : '#F6F8FA',
+              borderColor: isDark ? '#21262D' : '#D8DEE4',
+            }
+          ]}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setReasoningExpanded(!reasoningExpanded)}
+              style={styles.reasoningHeaderRow}
+            >
+              <Sparkles size={12} color={isDark ? '#D2A8FF' : '#8250DF'} style={{ marginRight: 6 }} />
+              <Text style={[styles.reasoningTitleText, { color: colors.textSecondary }]}>
+                Thought Process ({message.toolCalls?.length} steps)
+              </Text>
+              {reasoningExpanded ? (
+                <ChevronUp size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+              ) : (
+                <ChevronDown size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+              )}
+            </TouchableOpacity>
+
+            {reasoningExpanded && (
+              <View style={styles.reasoningStepsList}>
+                {reasoningSteps.map((step, idx) => (
+                  <View key={idx} style={styles.reasoningStepRow}>
+                    <CheckCircle2 size={10} color="#3FB950" style={{ marginRight: 6, marginTop: 2 }} />
+                    <Text style={[styles.reasoningStepText, { color: colors.textSecondary }]}>
+                      {step}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Tool calls */}
         {message.toolCalls?.map((tc, i) => (
           <ToolCallRow key={i} tool={tc} isDark={isDark} colors={colors} />
@@ -516,9 +419,11 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
           </Text>
         ) : (
           <View>
-            <Markdown style={mdStyles}>
-              {message.text}
-            </Markdown>
+            {message.text ? (
+              <Markdown style={mdStyles}>
+                {message.text}
+              </Markdown>
+            ) : null}
 
             {/* AI Action Row */}
             {message.text ? (
@@ -566,7 +471,6 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
       )}
     </View>
   )
-}
 
 export default function AIScreen() {
   const { colors, isDark } = useAppTheme()
