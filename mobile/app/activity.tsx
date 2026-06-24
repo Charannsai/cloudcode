@@ -203,21 +203,19 @@ export default function ActivityScreen() {
               )}
             </View>
           )}
-        </View>
-
-        {/* 2. Historical Agent Runs */}
+        </Vi        {/* 2. Historical Agent Runs */}
         <View>
           <View style={styles.sectionHeader}>
             <History size={16} color={colors.textSecondary} />
             <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-              Agent Execution Audit Logs
+              Past Conversations
             </Text>
           </View>
 
           {runsList.length === 0 ? (
             <View style={[styles.emptyBox, { borderColor: isDark ? '#21262D' : '#E5E7EB' }]}>
               <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
-                No past agent executions found.
+                No past conversations found.
               </Text>
             </View>
           ) : (
@@ -230,20 +228,15 @@ export default function ActivityScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={styles.runHeaderRow}>
-                    <Text style={[styles.runTitle, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                      RUN #{formatRunId(run.id)}
+                    <Text style={[styles.runTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }]}>
+                      Chat Conversation
                     </Text>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(run.status) + '1A' }]}>
-                      <Text style={[styles.statusText, { color: getStatusColor(run.status), fontFamily: 'Inter_700Bold' }]}>
-                        {run.status.toUpperCase()}
-                      </Text>
-                    </View>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                      {new Date(run.created_at).toLocaleDateString()} {new Date(run.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
                   </View>
-                  <Text style={[styles.runMetaText, { color: colors.textSecondary }]}>
-                    Model: {run.model} • Duration: {Math.round(run.duration_sec / 60)}m
-                  </Text>
-                  <Text style={[styles.runUsageText, { color: colors.textSecondary }]}>
-                    Commands: {run.commands_run}/{run.budget_commands} • Tokens: {run.tokens_used.toLocaleString()}
+                  <Text style={[styles.runMetaText, { color: colors.textSecondary, marginTop: 2 }]}>
+                    Model: {run.model === 'gemini' ? 'Gemini' : run.model === 'openai' ? 'GPT-4o' : 'Claude'} • {run.tokens_used.toLocaleString()} tokens
                   </Text>
                   <ChevronRight size={16} color={colors.textSecondary} style={styles.arrowIcon} />
                 </TouchableOpacity>
@@ -266,18 +259,18 @@ export default function ActivityScreen() {
             {loadingDetail || !runDetail ? (
               <View style={styles.modalLoading}>
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Loading run history...</Text>
+                <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Loading conversation history...</Text>
               </View>
             ) : (
               <View style={{ flex: 1 }}>
                 {/* Modal Header */}
                 <View style={[styles.modalHeader, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                      RUN DETAILS #{formatRunId(runDetail.run.id)}
+                    <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                      Past Conversation
                     </Text>
                     <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
-                      Model: {runDetail.run.model} • Status: {runDetail.run.status}
+                      Model: {runDetail.run.model === 'gemini' ? 'Gemini' : runDetail.run.model === 'openai' ? 'GPT-4o' : 'Claude'} • Status: {runDetail.run.status}
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => setSelectedRunId(null)} style={styles.closeBtn}>
@@ -286,140 +279,42 @@ export default function ActivityScreen() {
                 </View>
 
                 {/* Modal Scroll Content */}
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16 }}>
-                  {/* Detailed consumption panel */}
-                  <View style={[styles.detailPanel, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                    <Text style={[styles.panelTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                      Infrastructure Consumption Metrics
-                    </Text>
-                    <View style={styles.panelGrid}>
-                      <View style={styles.panelItem}>
-                        <Text style={[styles.panelLabel, { color: colors.textSecondary }]}>AI Tokens Used</Text>
-                        <Text style={[styles.panelVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                          {runDetail.run.tokens_used.toLocaleString()}
-                        </Text>
-                      </View>
-                      <View style={styles.panelItem}>
-                        <Text style={[styles.panelLabel, { color: colors.textSecondary }]}>Command Executions</Text>
-                        <Text style={[styles.panelVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                          {runDetail.run.commands_run} / {runDetail.run.budget_commands}
-                        </Text>
-                      </View>
-                      <View style={styles.panelItem}>
-                        <Text style={[styles.panelLabel, { color: colors.textSecondary }]}>File Writes Run</Text>
-                        <Text style={[styles.panelVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                          {runDetail.run.file_writes_run}
-                        </Text>
-                      </View>
-                      <View style={styles.panelItem}>
-                        <Text style={[styles.panelLabel, { color: colors.textSecondary }]}>Duration Allocated</Text>
-                        <Text style={[styles.panelVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                          {Math.round(runDetail.run.duration_sec / 60)}m / 20m
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Toggle terminal logs */}
-                  {extractPastLogs(runDetail.steps).length > 0 && (
-                    <View style={{ gap: 8 }}>
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        onPress={() => setShowConsoleLogs(!showConsoleLogs)}
-                        style={[styles.consoleToggleBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
-                      >
-                        <Terminal size={14} color={colors.text} style={{ marginRight: 6 }} />
-                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
-                          {showConsoleLogs ? 'Hide Console stdout Logs' : 'View Console stdout Logs'}
-                        </Text>
-                        {showConsoleLogs ? <ChevronUp size={14} color={colors.text} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={14} color={colors.text} style={{ marginLeft: 'auto' }} />}
-                      </TouchableOpacity>
-
-                      {showConsoleLogs && (
-                        <View style={[styles.consolePanel, { borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
-                          <ScrollView style={{ flex: 1 }} nestedScrollEnabled>
-                            <Text style={styles.consoleText}>
-                              {extractPastLogs(runDetail.steps)}
-                            </Text>
-                          </ScrollView>
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {/* Event Alerts Ledger */}
-                  {runDetail.events.length > 0 && (
-                    <View style={[styles.detailPanel, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                      <Text style={[styles.panelTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                        Governance & Execution Events
-                      </Text>
-                      <View style={{ gap: 6, marginTop: 6 }}>
-                        {runDetail.events.map((ev: any) => (
-                          <View key={ev.id} style={styles.eventRow}>
-                            <Shield size={12} color="#E2B714" style={{ marginTop: 2 }} />
-                            <Text style={{ color: colors.text, fontSize: 12, flex: 1 }}>
-                              {ev.message}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
-
-                  {/* Detailed Timeline Steps */}
-                  <View>
-                    <Text style={{ color: colors.text, fontSize: 14, fontFamily: 'Inter_700Bold', marginBottom: 12 }}>
-                      Planner Timeline Audit Log
-                    </Text>
-                    <View style={styles.auditTimeline}>
-                      {runDetail.steps.map((step: any, idx: number) => {
-                        const isExpanded = expandedStepId === step.id
-                        let title = step.type.toUpperCase()
-                        let msg = ''
-                        
-                        if (step.type === 'reasoning') {
-                          title = step.content.role === 'user' ? 'User Prompt' : 'AI Reasoning'
-                          msg = step.content.text || ''
-                        } else if (step.type === 'plan') {
-                          title = 'Plan Checklist Prepared'
-                          msg = step.content.items ? step.content.items.map((it: string) => `✓ ${it}`).join('\n') : step.content.plan || ''
-                        } else if (step.type === 'tool_call') {
-                          title = `Tool Invocation: ${step.content.name}`
-                          msg = JSON.stringify(step.content.args, null, 2)
-                        } else if (step.type === 'tool_result') {
-                          title = `Tool Response: ${step.content.name}`
-                          msg = JSON.stringify(step.content.response, null, 2)
-                        } else if (step.type === 'error') {
-                          title = 'Execution Error'
-                          msg = step.content.message || ''
-                        }
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}>
+                  <View style={{ gap: 18 }}>
+                    {runDetail.steps
+                      .filter((step: any) => step.type === 'reasoning')
+                      .map((step: any) => {
+                        const isUser = step.content.role === 'user'
+                        const msgText = step.content.text || step.content.message || ''
+                        if (!msgText) return null
 
                         return (
-                          <View key={step.id} style={styles.auditStep}>
-                            <TouchableOpacity
-                              activeOpacity={0.7}
-                              onPress={() => setExpandedStepId(isExpanded ? null : step.id)}
-                              style={styles.auditStepHeader}
-                            >
-                              <Sparkles size={11} color={step.type === 'error' ? '#EB5757' : '#8250DF'} style={{ marginRight: 6 }} />
-                              <Text style={[styles.auditStepTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }]}>
-                                {title}
-                              </Text>
-                              <Text style={{ color: colors.textSecondary, fontSize: 10, marginLeft: 8 }}>
-                                Step {step.step_index}
-                              </Text>
-                              {msg && (isExpanded ? <ChevronUp size={14} color={colors.textSecondary} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={14} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />)}
-                            </TouchableOpacity>
-
-                            {isExpanded && msg && (
-                              <View style={styles.auditStepContent}>
-                                <Markdown style={mdStyles}>{msg}</Markdown>
+                          <View key={step.id} style={[styles.messageRow, isUser ? styles.userRow : styles.modelRow]}>
+                            {!isUser && (
+                              <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+                                <Sparkles size={11} color={isDark ? '#D2A8FF' : '#8250DF'} />
                               </View>
                             )}
+                            
+                            <View style={[
+                              styles.bubble,
+                              isUser
+                                ? [styles.userBubble, { backgroundColor: isDark ? '#21262D' : '#F0F2F5' }]
+                                : styles.modelBubble
+                            ]}>
+                              {isUser ? (
+                                <Text style={[styles.messageText, { color: isDark ? '#FFFFFF' : '#1F2328', fontFamily: 'Inter_400Regular' }]}>
+                                  {msgText}
+                                </Text>
+                              ) : (
+                                <Markdown style={mdStyles}>
+                                  {msgText}
+                                </Markdown>
+                              )}
+                            </View>
                           </View>
                         )
                       })}
-                    </View>
                   </View>
                 </ScrollView>
               </View>
