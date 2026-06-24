@@ -248,6 +248,8 @@ export const api = {
       const url = projectId ? `/cc-api/ai/runs?projectId=${projectId}` : '/cc-api/ai/runs'
       return apiFetch<{ runs: any[] }>(url)
     },
+    getRun: (runId: string) =>
+      apiFetch<{ run: any; steps: any[]; events: any[] }>(`/cc-api/ai/runs/${runId}`),
     approveRun: (runId: string, approvalId: string, action: 'approve' | 'reject') =>
       apiFetch<{ success: boolean; status: string }>(`/cc-api/ai/runs/${runId}/approve`, {
         method: 'POST',
