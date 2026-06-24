@@ -48,6 +48,7 @@ interface AgentState {
   resumeRun: (runId: string, prompt?: string) => Promise<void>
   approvePending: (action: 'approve' | 'reject') => Promise<void>
   clearActiveRun: () => void
+  stopActiveRun: () => void
   executeStream: (runId: string, prompt?: string) => Promise<void>
 }
 
@@ -152,6 +153,25 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       logs: [],
       pendingApproval: null,
     })
+  },
+
+  stopActiveRun: () => {
+    try {
+      api.ai.abort()
+    } catch (e) {}
+    set((state) => ({
+      isStreaming: false,
+      timeline: [
+        ...state.timeline,
+        {
+          id: Math.random().toString(),
+          title: 'Agent Reasoning',
+          message: 'Generation stopped by user.',
+          status: 'failed',
+          timestamp: Date.now()
+        }
+      ]
+    }))
   },
 
   // Internal helper to run the chat generator stream and parse events

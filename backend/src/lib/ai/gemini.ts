@@ -621,7 +621,7 @@ export async function* chatWithGemini(
       }
       totalTokens += estimateTokens(inputPromptText)
 
-      const response = await fetch(`${GEMINI_API_URL}:generateContent?key=${apiKey}`, {
+      const response = await fetch(`${GEMINI_API_URL.replace('generateContent', 'streamGenerateContent')}?alt=sse&key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -652,19 +652,94 @@ export async function* chatWithGemini(
         return
       }
 
-      const data = await response.json()
-
-      if (!data.candidates?.[0]?.content?.parts) {
-        yield { type: 'error', content: 'No response from Gemini' }
-        if (runCtx) {
-          await runCtx.saveStep('error', { message: 'No response from Gemini' })
-          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-        }
+      if (!response.body) {
+        yield { type: 'error', content: 'No response body from Gemini' }
         return
       }
 
-      const parts = data.candidates[0].content.parts as GeminiPart[]
+      const reader = (response.body as any).getReader()
+      const decoder = new TextDecoder('utf-8')
+      let buffer = ''
+      let fullText = ''
+      const parts: GeminiPart[] = []
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data:')) continue
+          
+          const jsonStr = trimmed.substring(5).trim()
+          if (!jsonStr) continue
+          
+          try {
+            const chunkData = JSON.parse(jsonStr)
+            const chunkParts = chunkData.candidates?.[0]?.content?.parts
+            if (chunkParts && Array.isArray(chunkParts)) {
+              for (const part of chunkParts) {
+                if ('text' in part && part.text) {
+                  const chunkText = part.text
+                  fullText += chunkText
+                  yield { type: 'text', content: chunkText }
+                }
+                if ('functionCall' in part) {
+                  parts.push(part)
+                }
+              }
+            }
+          } catch (e) {
+            // Ignore incomplete JSON errors in chunk boundaries
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const trimmed = buffer.trim()
+        if (trimmed.startsWith('data:')) {
+          const jsonStr = trimmed.substring(5).trim()
+          try {
+            const chunkData = JSON.parse(jsonStr)
+            const chunkParts = chunkData.candidates?.[0]?.content?.parts
+            if (chunkParts && Array.isArray(chunkParts)) {
+              for (const part of chunkParts) {
+                if ('text' in part && part.text) {
+                  const chunkText = part.text
+                  fullText += chunkText
+                  yield { type: 'text', content: chunkText }
+                }
+                if ('functionCall' in part) {
+                  parts.push(part)
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
+      if (fullText) {
+        parts.unshift({ text: fullText })
+        
+        if (runCtx) {
+          await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
+          
+          const planItems = extractPlanItems(fullText)
+          if (planItems.length > 0) {
+            await runCtx.saveStep('plan', { items: planItems, plan: fullText })
+            yield { type: 'plan_event', items: planItems }
+          }
+        }
+      }
+
       let hasFunctionCall = false
+      if (parts.some(p => 'functionCall' in p)) {
+        hasFunctionCall = true
+      }
 
       // Calculate output completion tokens
       let outputCompletionText = ''
@@ -684,22 +759,7 @@ export async function* chatWithGemini(
       })
 
       for (const part of parts) {
-        if ('text' in part && part.text) {
-          yield { type: 'text', content: part.text }
-          
-          if (runCtx) {
-            await runCtx.saveStep('reasoning', { text: part.text, role: 'model' })
-            
-            const planItems = extractPlanItems(part.text)
-            if (planItems.length > 0) {
-              await runCtx.saveStep('plan', { items: planItems, plan: part.text })
-              yield { type: 'plan_event', items: planItems }
-            }
-          }
-        }
-
         if ('functionCall' in part) {
-          hasFunctionCall = true
           const { name, args } = part.functionCall
 
           let result: any
@@ -984,6 +1044,7 @@ export async function* chatWithOpenAI(
           messages: openAIMessages,
           ...(toolsToProvide.length > 0 ? { tools: openAITools, tool_choice: 'auto' } : {}),
           temperature: 0.7,
+          stream: true
         })
       })
 
@@ -997,49 +1058,139 @@ export async function* chatWithOpenAI(
         return
       }
 
-      const data = await response.json()
-      const choice = data.choices?.[0]
-      if (!choice || !choice.message) {
-        yield { type: 'error', content: 'No response from OpenAI' }
-        if (runCtx) {
-          await runCtx.saveStep('error', { message: 'No response from OpenAI' })
-          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-        }
+      if (!response.body) {
+        yield { type: 'error', content: 'No response body from OpenAI' }
         return
       }
 
-      const assistantMsg = choice.message
-      openAIMessages.push(assistantMsg)
+      const reader = (response.body as any).getReader()
+      const decoder = new TextDecoder('utf-8')
+      let buffer = ''
+      let fullText = ''
+      const toolCalls: any[] = []
 
-      let outputCompletionText = ''
-      if (assistantMsg.content) {
-        outputCompletionText += assistantMsg.content
-      }
-      if (assistantMsg.tool_calls) {
-        outputCompletionText += JSON.stringify(assistantMsg.tool_calls)
-      }
-      totalTokens += estimateTokens(outputCompletionText)
-
-      if (assistantMsg.content) {
-        yield { type: 'text', content: assistantMsg.content }
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
         
-        if (runCtx) {
-          await runCtx.saveStep('reasoning', { text: assistantMsg.content, role: 'model' })
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data:')) continue
           
-          const planItems = extractPlanItems(assistantMsg.content)
-          if (planItems.length > 0) {
-            await runCtx.saveStep('plan', { items: planItems, plan: assistantMsg.content })
-            yield { type: 'plan_event', items: planItems }
+          const jsonStr = trimmed.substring(5).trim()
+          if (jsonStr === '[DONE]') continue
+          if (!jsonStr) continue
+          
+          try {
+            const chunkData = JSON.parse(jsonStr)
+            const choice = chunkData.choices?.[0]
+            if (choice && choice.delta) {
+              if (choice.delta.content) {
+                const chunkText = choice.delta.content
+                fullText += chunkText
+                yield { type: 'text', content: chunkText }
+              }
+              if (choice.delta.tool_calls) {
+                for (const tc of choice.delta.tool_calls) {
+                  const idx = tc.index
+                  if (idx === undefined) continue
+                  if (!toolCalls[idx]) {
+                    toolCalls[idx] = {
+                      id: tc.id || '',
+                      type: tc.type || 'function',
+                      function: { name: '', arguments: '' }
+                    }
+                  }
+                  if (tc.id) toolCalls[idx].id = tc.id
+                  if (tc.type) toolCalls[idx].type = tc.type
+                  if (tc.function) {
+                    if (tc.function.name) toolCalls[idx].function.name = tc.function.name
+                    if (tc.function.arguments) toolCalls[idx].function.arguments += tc.function.arguments
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            // Ignore incomplete JSON errors in chunk boundaries
           }
         }
       }
 
-      const toolCalls = assistantMsg.tool_calls
-      if (!toolCalls || toolCalls.length === 0) {
+      if (buffer.trim()) {
+        const trimmed = buffer.trim()
+        if (trimmed.startsWith('data:')) {
+          const jsonStr = trimmed.substring(5).trim()
+          if (jsonStr !== '[DONE]') {
+            try {
+              const chunkData = JSON.parse(jsonStr)
+              const choice = chunkData.choices?.[0]
+              if (choice && choice.delta) {
+                if (choice.delta.content) {
+                  const chunkText = choice.delta.content
+                  fullText += chunkText
+                  yield { type: 'text', content: chunkText }
+                }
+                if (choice.delta.tool_calls) {
+                  for (const tc of choice.delta.tool_calls) {
+                    const idx = tc.index
+                    if (idx === undefined) continue
+                    if (!toolCalls[idx]) {
+                      toolCalls[idx] = {
+                        id: tc.id || '',
+                        type: tc.type || 'function',
+                        function: { name: '', arguments: '' }
+                      }
+                    }
+                    if (tc.id) toolCalls[idx].id = tc.id
+                    if (tc.type) toolCalls[idx].type = tc.type
+                    if (tc.function) {
+                      if (tc.function.name) toolCalls[idx].function.name = tc.function.name
+                      if (tc.function.arguments) toolCalls[idx].function.arguments += tc.function.arguments
+                    }
+                  }
+                }
+              }
+            } catch {}
+          }
+        }
+      }
+
+      const finalToolCalls = toolCalls.filter(Boolean)
+
+      const assistantMsg: any = { role: 'assistant' }
+      if (fullText) {
+        assistantMsg.content = fullText
+        
+        if (runCtx) {
+          await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
+          
+          const planItems = extractPlanItems(fullText)
+          if (planItems.length > 0) {
+            await runCtx.saveStep('plan', { items: planItems, plan: fullText })
+            yield { type: 'plan_event', items: planItems }
+          }
+        }
+      }
+      if (finalToolCalls.length > 0) {
+        assistantMsg.tool_calls = finalToolCalls
+      }
+
+      let outputCompletionText = ''
+      if (fullText) outputCompletionText += fullText
+      if (finalToolCalls.length > 0) outputCompletionText += JSON.stringify(finalToolCalls)
+      totalTokens += estimateTokens(outputCompletionText)
+
+      openAIMessages.push(assistantMsg)
+
+      if (finalToolCalls.length === 0) {
         break
       }
 
-      for (const tc of toolCalls) {
+      for (const tc of finalToolCalls) {
         const name = tc.function.name
         let args: Record<string, unknown> = {}
         try {
@@ -1302,6 +1453,7 @@ export async function* chatWithAnthropic(
           messages: anthropicMessages,
           ...(toolsToProvide.length > 0 ? { tools: anthropicTools } : {}),
           temperature: 0.7,
+          stream: true
         })
       })
 
@@ -1315,18 +1467,121 @@ export async function* chatWithAnthropic(
         return
       }
 
-      const data = await response.json()
-      if (!data.content || data.content.length === 0) {
-        yield { type: 'error', content: 'No response from Anthropic' }
-        if (runCtx) {
-          await runCtx.saveStep('error', { message: 'No response from Anthropic' })
-          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-        }
+      if (!response.body) {
+        yield { type: 'error', content: 'No response body from Anthropic' }
         return
       }
 
+      const reader = (response.body as any).getReader()
+      const decoder = new TextDecoder('utf-8')
+      let buffer = ''
+      let fullText = ''
+      const contentBlocks: any[] = []
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data:')) continue
+          
+          const jsonStr = trimmed.substring(5).trim()
+          if (!jsonStr) continue
+          
+          try {
+            const chunkData = JSON.parse(jsonStr)
+            if (chunkData.type === 'content_block_start') {
+              const idx = chunkData.index
+              if (chunkData.content_block) {
+                contentBlocks[idx] = chunkData.content_block
+                if (contentBlocks[idx].type === 'tool_use') {
+                  contentBlocks[idx].input = ''
+                }
+              }
+            } else if (chunkData.type === 'content_block_delta') {
+              const idx = chunkData.index
+              const delta = chunkData.delta
+              if (delta) {
+                if (delta.type === 'text_delta' && delta.text) {
+                  fullText += delta.text
+                  yield { type: 'text', content: delta.text }
+                  if (!contentBlocks[idx]) {
+                    contentBlocks[idx] = { type: 'text', text: '' }
+                  }
+                  contentBlocks[idx].text = (contentBlocks[idx].text || '') + delta.text
+                } else if (delta.type === 'input_json_delta' && delta.partial_json) {
+                  if (!contentBlocks[idx]) {
+                    contentBlocks[idx] = { type: 'tool_use', name: '', input: '' }
+                  }
+                  contentBlocks[idx].input += delta.partial_json
+                }
+              }
+            }
+          } catch (e) {
+            // Ignore incomplete JSON errors in chunk boundaries
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const trimmed = buffer.trim()
+        if (trimmed.startsWith('data:')) {
+          const jsonStr = trimmed.substring(5).trim()
+          try {
+            const chunkData = JSON.parse(jsonStr)
+            if (chunkData.type === 'content_block_delta') {
+              const idx = chunkData.index
+              const delta = chunkData.delta
+              if (delta) {
+                if (delta.type === 'text_delta' && delta.text) {
+                  fullText += delta.text
+                  yield { type: 'text', content: delta.text }
+                  if (!contentBlocks[idx]) {
+                    contentBlocks[idx] = { type: 'text', text: '' }
+                  }
+                  contentBlocks[idx].text = (contentBlocks[idx].text || '') + delta.text
+                } else if (delta.type === 'input_json_delta' && delta.partial_json) {
+                  if (!contentBlocks[idx]) {
+                    contentBlocks[idx] = { type: 'tool_use', name: '', input: '' }
+                  }
+                  contentBlocks[idx].input += delta.partial_json
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
+      const finalContent = contentBlocks.filter(Boolean)
+      for (const block of finalContent) {
+        if (block.type === 'tool_use' && typeof block.input === 'string') {
+          try {
+            block.input = JSON.parse(block.input)
+          } catch (e) {
+            block.input = {}
+          }
+        }
+      }
+
+      if (fullText) {
+        if (runCtx) {
+          await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
+          
+          const planItems = extractPlanItems(fullText)
+          if (planItems.length > 0) {
+            await runCtx.saveStep('plan', { items: planItems, plan: fullText })
+            yield { type: 'plan_event', items: planItems }
+          }
+        }
+      }
+
       let outputCompletionText = ''
-      for (const block of data.content) {
+      for (const block of finalContent) {
         if (block.type === 'text') {
           outputCompletionText += block.text
         } else if (block.type === 'tool_use') {
@@ -1337,27 +1592,13 @@ export async function* chatWithAnthropic(
 
       anthropicMessages.push({
         role: 'assistant',
-        content: data.content
+        content: finalContent
       })
 
       const toolResultBlocks: any[] = []
       let hasToolUse = false
 
-      for (const block of data.content) {
-        if (block.type === 'text') {
-          yield { type: 'text', content: block.text }
-          
-          if (runCtx) {
-            await runCtx.saveStep('reasoning', { text: block.text, role: 'model' })
-            
-            const planItems = extractPlanItems(block.text)
-            if (planItems.length > 0) {
-              await runCtx.saveStep('plan', { items: planItems, plan: block.text })
-              yield { type: 'plan_event', items: planItems }
-            }
-          }
-        }
-
+      for (const block of finalContent) {
         if (block.type === 'tool_use') {
           hasToolUse = true
           const name = block.name

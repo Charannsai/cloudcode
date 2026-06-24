@@ -2,17 +2,18 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard,
-  TouchableWithoutFeedback, Modal, Dimensions
+  TouchableWithoutFeedback, Modal, Dimensions, Alert
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, User, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, Play, X,
-  Shield, Lock
+  Shield, Lock, Square
 } from 'lucide-react-native'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -21,6 +22,7 @@ import { useAgentStore } from '@/store/agentStore'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Markdown from 'react-native-markdown-display'
 import { TabGenieWrapper } from '@/components/TabGenieWrapper'
+import { api } from '@/lib/api'
 
 export default function AIScreen() {
   const { colors, isDark } = useAppTheme()
@@ -28,7 +30,7 @@ export default function AIScreen() {
   const { projects, fetchProjects } = useProjectsStore()
   const {
     activeRun, runsList, isStreaming, plan, timeline, logs, pendingApproval,
-    setActiveProject, loadRuns, startNewRun, resumeRun, approvePending, clearActiveRun
+    setActiveProject, loadRuns, startNewRun, resumeRun, approvePending, clearActiveRun, stopActiveRun
   } = useAgentStore()
   
   const insets = useSafeAreaInsets()
@@ -47,12 +49,34 @@ export default function AIScreen() {
   const [showConsoleLogs, setShowConsoleLogs] = useState(false)
   const [friendlyError, setFriendlyError] = useState<string | null>(null)
 
+  const [isByokActive, setIsByokActive] = useState(false)
+  const [userTier, setUserTier] = useState('free')
+
+  const fetchByokAndTier = async () => {
+    try {
+      const byok = await AsyncStorage.getItem('byok_enabled')
+      setIsByokActive(byok === 'true')
+      
+      const billing = await api.billing.status()
+      if (billing?.tier?.name) {
+        setUserTier(billing.tier.name)
+      }
+    } catch (e) {
+      console.warn('Failed to load settings:', e)
+    }
+  }
+
+  useEffect(() => {
+    fetchByokAndTier()
+  }, [])
+
   // Sync projects on focus
   useFocusEffect(
     React.useCallback(() => {
       setTabBarVisible(false)
       fetchProjects(true)
       loadRuns(selectedProjectId === 'global' ? undefined : selectedProjectId)
+      fetchByokAndTier()
 
       return () => {
         setTabBarVisible(true)
@@ -371,11 +395,26 @@ export default function AIScreen() {
         <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
           <View style={[styles.spawnerInputContainer, { borderTopColor: isDark ? '#21262D' : '#E5E7EB' }]}>
             {isStreaming ? (
-              <View style={styles.streamingLoaderBox}>
+              <View style={[styles.streamingLoaderBox, { paddingHorizontal: 4 }]}>
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ color: colors.textSecondary, fontSize: 13, marginLeft: 8 }}>
-                  Agent is executing plan steps...
+                <Text style={{ color: colors.textSecondary, fontSize: 13, marginLeft: 8, flex: 1 }} numberOfLines={1}>
+                  {getActiveProgressText()}
                 </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#EB5757',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                  onPress={() => stopActiveRun()}
+                >
+                  <Square size={10} fill="#FFFFFF" color="#FFFFFF" />
+                  <Text style={{ color: '#FFFFFF', fontSize: 11, fontFamily: 'Inter_700Bold' }}>Stop</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <View style={[styles.spawnerInputBox, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
@@ -435,29 +474,49 @@ export default function AIScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}
+                style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
                 onPress={() => {
-                  setSelectedModel('openai')
-                  setModelSelectorVisible(false)
+                  if (userTier === 'free' && !isByokActive) {
+                    Alert.alert(
+                      'Premium Model Locked',
+                      'GPT-4o is restricted to Pro and Advanced subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) in settings to unlock.'
+                    )
+                  } else {
+                    setSelectedModel('openai')
+                    setModelSelectorVisible(false)
+                  }
                 }}
               >
                 <Shield size={14} color="#2F80ED" />
-                <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                  GPT-4o (Premium reasoning)
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                  <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular', flex: 1 }]}>
+                    GPT-4o (Premium reasoning)
+                  </Text>
+                  {userTier === 'free' && !isByokActive && <Lock size={12} color={colors.textSecondary} />}
+                </View>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}
+                style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
                 onPress={() => {
-                  setSelectedModel('anthropic')
-                  setModelSelectorVisible(false)
+                  if (userTier === 'free' && !isByokActive) {
+                    Alert.alert(
+                      'Premium Model Locked',
+                      'Claude 3.6 Opus is restricted to Pro and Advanced subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) in settings to unlock.'
+                    )
+                  } else {
+                    setSelectedModel('anthropic')
+                    setModelSelectorVisible(false)
+                  }
                 }}
               >
                 <Lock size={14} color="#9B51E0" />
-                <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                  Claude 3.6 Opus (Advanced code synthesis)
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                  <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular', flex: 1 }]}>
+                    Claude 3.6 Opus (Advanced synthesis)
+                  </Text>
+                  {userTier === 'free' && !isByokActive && <Lock size={12} color={colors.textSecondary} />}
+                </View>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
