@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions, Keyboard, Share, Alert, Modal,
-  Animated, Easing
+  Animated, Easing, TouchableWithoutFeedback
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
@@ -482,6 +482,7 @@ export default function AITab({ projectId }: Props) {
   } = useAIStore()
 
   const [inputText, setInputText] = useState('')
+  const inputRef = useRef<TextInput>(null)
   const [reasoningExpanded, setReasoningExpanded] = useState(false)
   const [isActionLoading, setIsActionLoading] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
@@ -980,72 +981,75 @@ export default function AITab({ projectId }: Props) {
             </View>
           </View>
         )}
-        <View style={[styles.inputBox, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-          <TextInput
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={isStreaming ? 'AI is working...' : 'Ask anything about workspace...'}
-            placeholderTextColor={isDark ? '#484F58' : '#8C959F'}
-            multiline
-            style={[styles.input, { color: colors.text, fontFamily: 'Inter_400Regular' }]}
-            editable={!isStreaming}
-            onSubmitEditing={handleSend}
-            blurOnSubmit={false}
-          />
-          
-          <TouchableOpacity
-            style={[
-              styles.sendBtn,
-              {
-                marginRight: 4,
-                backgroundColor: isListening 
-                  ? '#F85149' 
-                  : (isDark ? '#1C2128' : '#F6F8FA')
-              }
-            ]}
-            onPress={toggleListening}
-            disabled={isStreaming}
-            activeOpacity={0.7}
-          >
-            {isListening ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Mic size={14} color={isDark ? '#6E7681' : '#656D76'} strokeWidth={1.5} />
-            )}
-          </TouchableOpacity>
-
-          {isStreaming ? (
-            <TouchableOpacity
-              style={[
-                styles.sendBtn,
-                { backgroundColor: '#F85149' }
-              ]}
-              onPress={stopGeneration}
-              activeOpacity={0.8}
-            >
-              <StopCircle size={15} color="#FFFFFF" strokeWidth={2} />
-            </TouchableOpacity>
-          ) : (
+        <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
+          <View style={[styles.inputBox, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+            <TextInput
+              ref={inputRef}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder={isStreaming ? 'AI is working...' : 'Ask anything about workspace...'}
+              placeholderTextColor={isDark ? '#484F58' : '#8C959F'}
+              multiline
+              style={[styles.input, { color: colors.text, fontFamily: 'Inter_400Regular' }]}
+              editable={!isStreaming}
+              onSubmitEditing={handleSend}
+              blurOnSubmit={false}
+            />
+            
             <TouchableOpacity
               style={[
                 styles.sendBtn,
                 {
-                  backgroundColor: inputText.trim()
-                    ? (isDark ? '#F3F4F6' : '#0E1116')
+                  marginRight: 4,
+                  backgroundColor: isListening 
+                    ? '#F85149' 
                     : (isDark ? '#1C2128' : '#F6F8FA')
                 }
               ]}
-              onPress={handleSend}
-              disabled={!inputText.trim()}
+              onPress={toggleListening}
+              disabled={isStreaming}
+              activeOpacity={0.7}
             >
-              <ArrowUp
-                size={16}
-                color={inputText.trim() ? (isDark ? '#0E1116' : '#FFFFFF') : (isDark ? '#484F58' : '#8C959F')}
-                strokeWidth={2.5}
-              />
+              {isListening ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Mic size={14} color={isDark ? '#6E7681' : '#656D76'} strokeWidth={1.5} />
+              )}
             </TouchableOpacity>
-          )}
-        </View>
+
+            {isStreaming ? (
+              <TouchableOpacity
+                style={[
+                  styles.sendBtn,
+                  { backgroundColor: '#F85149' }
+                ]}
+                onPress={stopGeneration}
+                activeOpacity={0.8}
+              >
+                <StopCircle size={15} color="#FFFFFF" strokeWidth={2} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.sendBtn,
+                  {
+                    backgroundColor: inputText.trim()
+                      ? (isDark ? '#F3F4F6' : '#0E1116')
+                      : (isDark ? '#1C2128' : '#F6F8FA')
+                  }
+                ]}
+                onPress={handleSend}
+                disabled={!inputText.trim()}
+              >
+                <ArrowUp
+                  size={16}
+                  color={inputText.trim() ? (isDark ? '#0E1116' : '#FFFFFF') : (isDark ? '#484F58' : '#8C959F')}
+                  strokeWidth={2.5}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableWithoutFeedback>
       </View>
 
       {/* Model Selection Modal */}
