@@ -692,7 +692,7 @@ export default function AIScreen() {
   // Hide the global tab bar completely when on this screen and sync projects
   useFocusEffect(
     React.useCallback(() => {
-      setTabBarVisible(true)
+      setTabBarVisible(false)
       fetchProjects(true)
 
       // Fetch active user tier status for premium model checks
@@ -710,7 +710,9 @@ export default function AIScreen() {
       // Load conversation history and check BYOK keys status
       initConversations()
 
-      return () => {}
+      return () => {
+        setTabBarVisible(true)
+      }
     }, [fetchProjects, setTabBarVisible])
   )
 
@@ -1575,6 +1577,7 @@ export default function AIScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
