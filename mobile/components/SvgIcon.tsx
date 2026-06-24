@@ -17,6 +17,14 @@ const ICON_COMPONENTS: Record<SvgIconName, React.FC<SvgProps>> = {
   settings: SettingsIcon,
 };
 
+const ICON_STROKE_WIDTHS: Record<SvgIconName, number> = {
+  home: 22,
+  workspace: 24,
+  create: 22,
+  ai: 24,
+  settings: 22,
+};
+
 interface SvgIconProps extends SvgProps {
   name: SvgIconName;
   size?: number;
@@ -37,6 +45,10 @@ export const SvgIcon: React.FC<SvgIconProps> = ({
       width={size}
       height={size}
       fill={color}
+      stroke={color}
+      strokeWidth={ICON_STROKE_WIDTHS[name]}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       {...props}
     />
   );
