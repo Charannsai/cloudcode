@@ -17,7 +17,7 @@ import { FileNode } from '@/types'
 import { WebView } from 'react-native-webview'
 import { getToken } from '@/lib/auth'
 import { BlurView } from 'expo-blur'
-import Reanimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated'
+import Reanimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated'
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
 
@@ -228,7 +228,7 @@ function AnimatedMenuItem({ name, activeMenu, onPress, colors, isDark }: {
   )
 }
 
-// Premium animated glassmorphic dropdown card
+// Premium animated flat, clean dropdown card (No cartoony swinging or bouncy spring scaling)
 function AnimatedDropdownCard({
   visible,
   items,
@@ -248,19 +248,19 @@ function AnimatedDropdownCard({
   right?: number;
   top: number;
 }) {
-  const scale = useSharedValue(0.9)
+  const scale = useSharedValue(0.95)
   const opacity = useSharedValue(0)
-  const translateY = useSharedValue(-15)
+  const translateY = useSharedValue(-4)
 
   useEffect(() => {
     if (visible) {
-      scale.value = withSpring(1, { damping: 14, stiffness: 300 })
-      opacity.value = withTiming(1, { duration: 120 })
-      translateY.value = withSpring(0, { damping: 14, stiffness: 300 })
+      scale.value = withTiming(1, { duration: 80, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      opacity.value = withTiming(1, { duration: 80 })
+      translateY.value = withTiming(0, { duration: 80, easing: Easing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      scale.value = withTiming(0.9, { duration: 100 })
-      opacity.value = withTiming(0, { duration: 100 })
-      translateY.value = withTiming(-15, { duration: 100 })
+      scale.value = withTiming(0.95, { duration: 60 })
+      opacity.value = withTiming(0, { duration: 60 })
+      translateY.value = withTiming(-4, { duration: 60 })
     }
   }, [visible])
 
@@ -272,7 +272,8 @@ function AnimatedDropdownCard({
     ]
   }))
 
-  const containerBg = isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.82)'
+  const containerBg = isDark ? 'rgba(22, 27, 34, 0.94)' : 'rgba(255, 255, 255, 0.94)'
+  const cardBorderColor = isDark ? '#30363D' : '#D0D7DE'
 
   return (
     <Reanimated.View
@@ -283,14 +284,14 @@ function AnimatedDropdownCard({
           top,
           left,
           right,
-          borderColor: colors.border,
+          borderColor: cardBorderColor,
           backgroundColor: containerBg,
         }
       ]}
     >
       {Platform.OS === 'ios' && (
         <BlurView
-          intensity={65}
+          intensity={50}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
@@ -312,8 +313,8 @@ function AnimatedDropdownCard({
                   {IconComponent && (
                     <IconComponent 
                       size={14} 
-                      color={item.danger ? '#F85149' : (colors.textSecondary)} 
-                      strokeWidth={2}
+                      color={item.danger ? '#F85149' : (isDark ? '#8B949E' : '#6A737D')} 
+                      strokeWidth={1.8}
                     />
                   )}
                   <Text
@@ -329,7 +330,7 @@ function AnimatedDropdownCard({
                   </Text>
                 </View>
               </TouchableOpacity>
-              {item.divider && <View style={[styles.dropdownDivider, { backgroundColor: colors.border }]} />}
+              {item.divider && <View style={[styles.dropdownDivider, { backgroundColor: isDark ? '#21262D' : '#D8DEE4' }]} />}
             </View>
           )
         })}
@@ -425,6 +426,27 @@ export default function EditorScreen() {
 
   // Menubar state
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
+
+  // Tab Indicator Shared Values for Segmented sliding indicator
+  const indicatorX = useSharedValue(0)
+  const indicatorW = useSharedValue(0)
+  const [tabLayouts, setTabLayouts] = useState<Record<string, { x: number; width: number }>>({})
+
+  const activePath = focusedPane === 1 ? currentPath : (currentPath2 || currentPath)
+
+  // Animate sliding tab background pill to match the active tab's layout coordinates
+  useEffect(() => {
+    const layout = tabLayouts[activePath]
+    if (layout) {
+      indicatorX.value = withTiming(layout.x, { duration: 110, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+      indicatorW.value = withTiming(layout.width, { duration: 110, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+    }
+  }, [activePath, tabLayouts])
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+    width: indicatorW.value,
+  }))
 
   const MENUS = [
     { name: 'File' },
@@ -778,7 +800,6 @@ export default function EditorScreen() {
     finally {setSaving(false) }
   }
 
-  const activePath = focusedPane === 1 ? currentPath : (currentPath2 || currentPath)
   const fileName = activePath?.split('/').pop() || 'File'
   const activeHasChanges = focusedPane === 1 ? (content !== originalContent) : (content2 !== originalContent2)
 
@@ -884,50 +905,59 @@ export default function EditorScreen() {
         ))}
       </View>
 
-      {/* Redesigned Premium IDE Scrollable Editor Tab Bar */}
-      <View style={[styles.tabBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBarScroll}>
-          {openTabs.map((tab) => {
-            const isActive = tab.path === activePath
-            return (
-              <TouchableOpacity
-                key={tab.path}
-                onPress={() => switchTab(tab.path)}
-                style={[
-                  styles.tabItem,
-                  { 
-                    backgroundColor: isActive 
-                      ? (isDark ? '#0E1116' : '#FFFFFF') 
-                      : (isDark ? '#11151D' : '#EAEDF0'),
-                    borderColor: isActive ? colors.border : 'transparent',
-                    borderTopColor: isActive ? colors.primary : 'transparent',
-                    borderRightColor: colors.border,
-                  }
-                ]}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.tabText,
-                  { 
-                    color: isActive ? colors.text : colors.textSecondary,
-                    fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_400Regular'
-                  }
-                ]}>
-                  {tab.name}
-                </Text>
-                <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation()
-                    closeTab(tab.path)
+      {/* Redesigned Sliding Segmented File Tab Bar - matches workspaces segmented tab bar */}
+      <View style={[styles.tabBar, { backgroundColor: isDark ? '#11141B' : '#EDF0F3', borderBottomColor: colors.border }]}>
+        <View style={[styles.tabBarInner, { borderColor: colors.border }]}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            contentContainerStyle={styles.tabBarScroll}
+            keyboardShouldPersistTaps="always"
+          >
+            <Reanimated.View 
+              style={[
+                styles.tabIndicator, 
+                { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }, 
+                indicatorStyle
+              ]} 
+            />
+            {openTabs.map((tab) => {
+              const isActive = tab.path === activePath
+              return (
+                <TouchableOpacity
+                  key={tab.path}
+                  onPress={() => switchTab(tab.path)}
+                  onLayout={(e) => {
+                    const { x, width } = e.nativeEvent.layout
+                    setTabLayouts(prev => ({ ...prev, [tab.path]: { x, width } }))
                   }}
-                  style={styles.closeTabBtn}
+                  style={styles.tabItem}
+                  activeOpacity={0.75}
                 >
-                  <X size={12} color={colors.textSecondary} />
+                  <Text style={[
+                    styles.tabText,
+                    { 
+                      color: isActive ? colors.text : colors.textSecondary,
+                      fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_400Regular'
+                    }
+                  ]}>
+                    {tab.name}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={(e) => {
+                      e.stopPropagation()
+                      closeTab(tab.path)
+                    }}
+                    style={styles.closeTabBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <X size={11} color={colors.textSecondary} />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            )
-          })}
-        </ScrollView>
+              )
+            })}
+          </ScrollView>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -1202,29 +1232,47 @@ const styles = StyleSheet.create({
   fileRowName: { fontSize: 14, fontFamily: 'JetBrainsMono_400Regular', flex: 1 },
   activeIndicator: { width: 6, height: 6, borderRadius: 3, marginLeft: 8 },
   tabBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    height: 42,
+  },
+  tabBarInner: {
+    flexDirection: 'row',
+    padding: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    position: 'relative',
   },
   tabBarScroll: {
-    alignItems: 'flex-end',
-    height: 41,
-    paddingHorizontal: 8,
-    gap: 2,
-  },
-  tabItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    height: 36,
-    borderTopWidth: 2.5,
-    borderRightWidth: 1,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
+    gap: 4,
+    paddingRight: 16,
+  },
+  tabIndicator: {
+    position: 'absolute',
+    top: 3,
+    bottom: 3,
+    borderRadius: 6,
+    zIndex: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
+    zIndex: 1,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 11,
   },
   closeTabBtn: {
     padding: 2,
@@ -1273,22 +1321,22 @@ const styles = StyleSheet.create({
   },
   dropdownMenuAnimated: {
     position: 'absolute',
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
     overflow: 'hidden',
     minWidth: 190,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
   dropdownInner: {
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   dropdownItemText: {
     fontSize: 13,
