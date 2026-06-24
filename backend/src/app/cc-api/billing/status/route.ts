@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
       console.warn('[Billing Status] Failed to query Docker daemon. Falling back to DB status.', dockerErr)
       if (userProjects) {
         const dbRunning = userProjects.filter(p => p.status === 'running' || p.status === 'ready')
-        runningProjects.push(...dbRunning)
+        runningProjects.push(...dbRunning.map(p => ({ ...p, memoryBytes: 128 * 1024 * 1024 })))
         ramUsedMB = dbRunning.length * 128
       }
     }
@@ -310,6 +310,11 @@ export async function GET(req: NextRequest) {
       billingHistory,
       usageHistory,
       diskBreakdown,
+      ramBreakdown: runningProjects.map(p => ({
+        id: p.id,
+        name: p.name,
+        usageMB: Number(((p.memoryBytes || 0) / (1024 * 1024)).toFixed(1))
+      })),
       sessions: sessionBreakdown,
     })
   } catch (err) {
