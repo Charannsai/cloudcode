@@ -114,6 +114,14 @@ export default function ProjectsScreen() {
   const [renderPopover, setRenderPopover] = useState(false)
   const popoverProgress = useSharedValue(0)
 
+  const handlePopoverCloseFinished = (renameActive: boolean) => {
+    setRenderPopover(false)
+    if (!renameActive) {
+      setActiveProjectForMenu(null)
+      setMenuPosition(null)
+    }
+  }
+
   useEffect(() => {
     if (menuVisible) {
       setRenderPopover(true)
@@ -121,13 +129,11 @@ export default function ProjectsScreen() {
     } else {
       popoverProgress.value = withTiming(0, { duration: 240, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
         if (finished) {
-          runOnJS(setRenderPopover)(false)
-          runOnJS(setActiveProjectForMenu)(null)
-          runOnJS(setMenuPosition)(null)
+          runOnJS(handlePopoverCloseFinished)(isRenameMode)
         }
       })
     }
-  }, [menuVisible])
+  }, [menuVisible, isRenameMode])
 
   // Reanimated states for rename workspace modal
   const [renderRenameModal, setRenderRenameModal] = useState(false)
@@ -137,7 +143,7 @@ export default function ProjectsScreen() {
     if (isRenameMode && activeProjectForMenu !== null) {
       setRenderRenameModal(true)
       renameModalProgress.value = withTiming(1, { duration: 320, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
-    } else {
+    } else if (renderRenameModal) {
       renameModalProgress.value = withTiming(0, { duration: 250, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderRenameModal)(false)
@@ -146,7 +152,7 @@ export default function ProjectsScreen() {
         }
       })
     }
-  }, [isRenameMode, activeProjectForMenu])
+  }, [isRenameMode, activeProjectForMenu, renderRenameModal])
 
   const validX = menuPosition && typeof menuPosition.x === 'number' && !isNaN(menuPosition.x) && menuPosition.x !== 0 
     ? menuPosition.x 
