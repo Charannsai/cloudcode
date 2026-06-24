@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue,
   interpolate,
   withTiming,
+  withSpring,
   Easing,
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
@@ -18,20 +19,44 @@ const TAB_ANIM_CONFIG = {
   easing: Easing.out(Easing.quad),
 }
 
+const TabIconWrapper = ({ isFocused, children }: { isFocused: boolean; children: React.ReactNode }) => {
+  const scale = useSharedValue(isFocused ? 1.1 : 1)
+
+  useEffect(() => {
+    scale.value = withSpring(isFocused ? 1.18 : 1, {
+      damping: 12,
+      stiffness: 180,
+      mass: 0.8,
+    })
+  }, [isFocused])
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    }
+  })
+
+  return (
+    <Animated.View style={animatedStyle}>
+      {children}
+    </Animated.View>
+  )
+}
+
 const HomeTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="home" size={size || 20} color={color} />
+  return <SvgIcon name="home" size={size || 26} color={color} />
 }
 
 const WorkspaceTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="workspace" size={size || 20} color={color} />
+  return <SvgIcon name="workspace" size={size || 26} color={color} />
 }
 
 const AiTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="ai" size={size || 20} color={color} />
+  return <SvgIcon name="ai" size={size || 26} color={color} />
 }
 
 const SettingsTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="settings" size={size || 20} color={color} />
+  return <SvgIcon name="settings" size={size || 26} color={color} />
 }
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -135,7 +160,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 activeOpacity={0.8}
               >
                 <View style={[styles.fabButton, { backgroundColor: activeColor }]}>
-                  <SvgIcon name="create" size={18} color={isDark ? '#0E1116' : '#FFFFFF'} />
+                  <SvgIcon name="create" size={24} color={isDark ? '#0E1116' : '#FFFFFF'} />
                 </View>
               </TouchableOpacity>
             )
@@ -179,10 +204,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               onPress={onPress}
               activeOpacity={0.7}
             >
-              <Icon 
-                color={isFocused ? activeColor : inactiveColor} 
-                size={20} 
-              />
+              <TabIconWrapper isFocused={isFocused}>
+                <Icon 
+                  color={isFocused ? activeColor : inactiveColor} 
+                  size={26} 
+                />
+              </TabIconWrapper>
             </TouchableOpacity>
           )
         })}
