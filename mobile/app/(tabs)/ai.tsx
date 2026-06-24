@@ -471,6 +471,7 @@ function MessageBubble({ message, isDark, colors, onSpeakPress, speakingMessageI
       )}
     </View>
   )
+}
 
 export default function AIScreen() {
   const { colors, isDark } = useAppTheme()
@@ -1565,6 +1566,10 @@ export default function AIScreen() {
       </KeyboardAvoidingView>
     </TabGenieWrapper>
   )
+}
+
+const styles = StyleSheet.create({
+  header: {
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
