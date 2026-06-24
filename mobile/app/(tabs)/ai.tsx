@@ -31,6 +31,7 @@ import Reanimated, {
 } from 'react-native-reanimated'
 import Markdown from 'react-native-markdown-display'
 import * as Clipboard from 'expo-clipboard'
+import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -606,9 +607,9 @@ export default function AIScreen() {
   useEffect(() => {
     if (modelModalVisible) {
       setRenderModelModal(true)
-      modelProgress.value = withTiming(1, { duration: 250, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+      modelProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      modelProgress.value = withTiming(0, { duration: 200, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      modelProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderModelModal)(false)
         }
@@ -637,9 +638,9 @@ export default function AIScreen() {
   useEffect(() => {
     if (historyModalVisible) {
       setRenderHistoryModal(true)
-      historyProgress.value = withTiming(1, { duration: 250, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+      historyProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      historyProgress.value = withTiming(0, { duration: 200, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      historyProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderHistoryModal)(false)
         }
@@ -668,9 +669,9 @@ export default function AIScreen() {
   useEffect(() => {
     if (menuVisible) {
       setRenderMenu(true)
-      menuProgress.value = withTiming(1, { duration: 280, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+      menuProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
     } else {
-      menuProgress.value = withTiming(0, { duration: 220, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+      menuProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
         if (finished) {
           runOnJS(setRenderMenu)(false)
         }
@@ -785,7 +786,7 @@ export default function AIScreen() {
   // Hide the global tab bar completely when on this screen and sync projects
   useFocusEffect(
     React.useCallback(() => {
-      setTabBarVisible(false)
+      setTabBarVisible(true)
       fetchProjects(true)
 
       // Fetch active user tier status for premium model checks
@@ -803,7 +804,7 @@ export default function AIScreen() {
       // Load conversation history and check BYOK keys status
       initConversations()
 
-      return () => setTabBarVisible(true)
+      return () => {}
     }, [fetchProjects, setTabBarVisible])
   )
 
@@ -842,7 +843,8 @@ export default function AIScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <TabGenieWrapper index={3}>
+      <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: colors.background }]}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
@@ -1537,7 +1539,8 @@ export default function AIScreen() {
           </View>
         </Modal>
       )}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </TabGenieWrapper>
   )
 }
 

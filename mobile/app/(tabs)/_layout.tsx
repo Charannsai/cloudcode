@@ -2,9 +2,8 @@ import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Keyboard, Platform } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
+import { Home, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
 import { BlurView } from 'expo-blur'
-import Svg, { Path, Circle } from 'react-native-svg'
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
@@ -30,17 +29,15 @@ const WorkspaceTabIcon = ({ color, size }: any) => {
 
 const HomeTabIcon = ({ color, size, strokeWidth }: any) => {
   return (
-    <Svg width={size || 20} height={size || 20} viewBox="0 0 52 54" fill="none">
-      <Path
-        d="M13.5 42.5243L16 43.5243H19.5H21.5H25.5H28.5L30.5 44.5243L31.5 45.5243L33 47.0243L35 48.5243L37.5 50.0243L40 51.5243H42H43L45 50.5243L47.5 48.5243L49 47.0243L50 45.5243V43.5243V41.0243L49 38.5243L45 34.0243L43 31.5243L42 28.5243V25.0243V22.0243V21.0243V18.5243L40 15.5243L38 13.0243L36.5 11.5243L34 10.5243H31.5H28.5H24H21.5L19.5 9.02429L17 7.02429L14.5 4.52429L10.5 3.52429H6.5L3.5 6.02429L2 9.02429C1.80474 10.3911 1.5 12.5243 1.5 12.5243L2 14.5243L3.5 17.0243L6.5 19.5243L8.5 22.0243L9.5 23.5243V25.0243V26.5243V28.5243V31.5243V35.0243V37.0243L10.5 39.5243M13.5 42.5243L11.5 41.0243L10.5 39.5243M13.5 42.5243V45.5243L13 49.5243L11.5 51.5243L8.5 53.0243H6.5L3.5 51.5243L1.5 49.5243L0.5 47.0243V44.5243L1.5 43.5243L3.5 41.0243L5.5 39.5243H8.5H10.5M38 11.5243V7.02429L39 3.52429L41 1.52429L45 0.524292L47.5 1.52429L50 3.52429L51 7.02429V9.02429L50 11.5243L47.5 13.0243H45H42H40L38 11.5243Z"
-        stroke={color}
-        strokeWidth={(strokeWidth || 1.8) * 2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <Home 
+      color={color} 
+      size={size || 20} 
+      strokeWidth={strokeWidth || 2} 
+    />
   )
 }
+
+// Removed floating DockIconWrapper for flat non-floating icons
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { isDark, colors } = useAppTheme()
