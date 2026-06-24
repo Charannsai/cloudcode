@@ -483,11 +483,11 @@ export default function AIScreen() {
     currentThreadId, savedConversations, byokEnabled, byokConfigured,
     initConversations, loadConversation, deleteConversation, toggleByok, startNewChat, stopGeneration
   } = useAIStore()
-
   const insets = useSafeAreaInsets()
 
   const [inputText, setInputText] = useState('')
   const [reasoningExpanded, setReasoningExpanded] = useState(false)
+  const [isActionLoading, setIsActionLoading] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
   const router = useRouter()
@@ -712,12 +712,17 @@ export default function AIScreen() {
     }, [fetchProjects, setTabBarVisible])
   )
 
-  // Thinking animation states removed for performance
-
   // Auto-select global for the main assistant
   useEffect(() => {
     setSelectedProjectId('global')
   }, [])
+
+  // Auto-expand reasoning accordion during active stream
+  useEffect(() => {
+    if (isStreaming) {
+      setReasoningExpanded(true)
+    }
+  }, [isStreaming])
 
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
@@ -732,6 +737,47 @@ export default function AIScreen() {
     await sendMessage(text, selectedProjectId, undefined, selectedModel)
   }
 
+  // Find if there is any pending command tool call in the active streaming list or in the last message
+  const getPendingCommand = () => {
+    if (isStreaming && currentToolCalls) {
+      const pending = currentToolCalls.find(tc => tc.name === 'run_command' && tc.status === 'pending')
+      if (pending) return pending
+    }
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1]
+      if (lastMsg.role === 'model' && lastMsg.toolCalls) {
+        const pending = lastMsg.toolCalls.find(tc => tc.name === 'run_command' && tc.status === 'pending')
+        if (pending) return pending
+      }
+    }
+    return null
+  }
+
+  const handleApproveCommand = async (approvalId: string) => {
+    if (!approvalId) return
+    setIsActionLoading(true)
+    try {
+      await api.ai.approve(approvalId, 'approve')
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message || 'Failed to approve command')
+    } finally {
+      setIsActionLoading(false)
+    }
+  }
+
+  const handleRejectCommand = async (approvalId: string) => {
+    if (!approvalId) return
+    setIsActionLoading(true)
+    try {
+      await api.ai.approve(approvalId, 'reject')
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message || 'Failed to reject command')
+    } finally {
+      setIsActionLoading(false)
+    }
+  }
+
+  const pendingCommand = getPendingCommand()
   const username = user?.login || 'developer'
   const selectedProject = projects.find(p => p.id === selectedProjectId)
 
@@ -817,8 +863,6 @@ export default function AIScreen() {
           </Text>
         </View>
       )}
-
-      {/* Switcher removed */}
 
       {/* Messages */}
       <ScrollView
@@ -906,9 +950,62 @@ export default function AIScreen() {
               <Sparkles size={14} color={isDark ? '#D2A8FF' : '#8250DF'} strokeWidth={1.5} />
             </View>
             <View style={[styles.bubble, styles.modelBubble]}>
+              
+              {/* Live Streaming Reasoning Accordion */}
+              {(currentToolCalls.length > 0 || !currentStreamText) && (
+                <View style={[
+                  styles.persistentReasoningCard,
+                  {
+                    backgroundColor: isDark ? '#151922' : '#F6F8FA',
+                    borderColor: isDark ? '#21262D' : '#D8DEE4',
+                    marginBottom: 6,
+                  }
+                ]}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setReasoningExpanded(!reasoningExpanded)}
+                    style={styles.reasoningHeaderRow}
+                  >
+                    <ActivityIndicator size="small" color={isDark ? '#D2A8FF' : '#8250DF'} style={{ marginRight: 6 }} />
+                    <Text style={[styles.reasoningTitleText, { color: colors.textSecondary }]}>
+                      Thought Process ({getRealtimeReasoning(currentToolCalls, isStreaming).length} steps)
+                    </Text>
+                    {reasoningExpanded ? (
+                      <ChevronUp size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+                    ) : (
+                      <ChevronDown size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+                    )}
+                  </TouchableOpacity>
+
+                  {reasoningExpanded && (
+                    <View style={styles.reasoningStepsList}>
+                      {getRealtimeReasoning(currentToolCalls, isStreaming).map((step, idx) => {
+                        const isLast = idx === getRealtimeReasoning(currentToolCalls, isStreaming).length - 1
+                        const showSpinner = isLast && isStreaming && !currentStreamText
+                        return (
+                          <View key={idx} style={styles.reasoningStepRow}>
+                            {showSpinner ? (
+                              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6, transform: [{ scale: 0.7 }] }} />
+                            ) : (
+                              <CheckCircle2 size={10} color="#3FB950" style={{ marginRight: 6, marginTop: 2 }} />
+                            )}
+                            <Text style={[styles.reasoningStepText, { color: colors.textSecondary }]}>
+                              {step}
+                            </Text>
+                          </View>
+                        )
+                      })}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Tool calls */}
               {currentToolCalls.map((tc, i) => (
                 <ToolCallRow key={i} tool={tc} isDark={isDark} colors={colors} />
               ))}
+
+              {/* Streaming Text */}
               {currentStreamText ? (
                 <Markdown style={mdStyles}>
                   {(() => {
@@ -918,37 +1015,6 @@ export default function AIScreen() {
                     return str + ' ▊'
                   })()}
                 </Markdown>
-              ) : currentToolCalls.length === 0 ? (
-                <View>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => setReasoningExpanded(!reasoningExpanded)}
-                  >
-                    <View style={styles.typingIndicator}>
-                      <View style={styles.thinkingTextContainer}>
-                        <ActivityIndicator size="small" color={isDark ? '#8B929A' : '#656D76'} style={{ marginRight: 6 }} />
-                        <Text style={[styles.thinkingChar, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_500Medium' }]}>
-                          Thinking...
-                        </Text>
-                      </View>
-                      {reasoningExpanded ? (
-                        <ChevronUp size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4 }} />
-                      ) : (
-                        <ChevronDown size={12} color={isDark ? '#8B929A' : '#656D76'} style={{ marginLeft: 4 }} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-
-                  {reasoningExpanded && (
-                    <View style={styles.reasoningContainer}>
-                      {getRealtimeReasoning(currentToolCalls, isStreaming).map((step, idx) => (
-                        <Text key={idx} style={[styles.reasoningStep, { color: isDark ? '#8B929A' : '#656D76', fontFamily: 'Inter_400Regular' }]}>
-                          • {step}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
-                </View>
               ) : null}
             </View>
           </View>
@@ -956,6 +1022,59 @@ export default function AIScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      {/* Floating command execution approval modal */}
+      {pendingCommand && (
+        <View style={[
+          styles.floatingApprovalCard,
+          {
+            backgroundColor: isDark ? '#161B22' : '#FFFFFF',
+            borderColor: isDark ? '#30363D' : '#E1E4E8',
+            bottom: insets.bottom > 0 ? insets.bottom + 70 : 86
+          }
+        ]}>
+          <View style={styles.floatingApprovalHeader}>
+            <Terminal size={14} color={isDark ? '#E2B714' : '#D97706'} style={{ marginRight: 6 }} />
+            <Text style={[styles.floatingApprovalTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+              AI Requesting Shell Execution
+            </Text>
+          </View>
+          
+          <Text style={[styles.floatingApprovalSubtitle, { color: colors.textSecondary }]}>
+            The assistant wants to run the following command in your workspace:
+          </Text>
+
+          <View style={[styles.floatingApprovalCodeBox, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+            <Text style={[styles.floatingApprovalCodeText, { color: isDark ? '#E6EDF3' : '#1F2328' }]}>
+              $ {pendingCommand.args?.command as string}
+            </Text>
+          </View>
+
+          <View style={styles.floatingApprovalActionRow}>
+            <TouchableOpacity
+              style={[styles.floatingApprovalBtn, styles.floatingRejectBtn]}
+              onPress={() => handleRejectCommand(pendingCommand.args?.approvalId as string)}
+              disabled={isActionLoading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.floatingRejectBtnText}>Reject</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.floatingApprovalBtn, styles.floatingApproveBtn]}
+              onPress={() => handleApproveCommand(pendingCommand.args?.approvalId as string)}
+              disabled={isActionLoading}
+              activeOpacity={0.8}
+            >
+              {isActionLoading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.floatingApproveBtnText}>Run Command</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Input */}
       <View style={[styles.inputContainer, { 
@@ -1446,12 +1565,6 @@ export default function AIScreen() {
       </KeyboardAvoidingView>
     </TabGenieWrapper>
   )
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
