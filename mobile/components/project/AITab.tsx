@@ -2,21 +2,23 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard,
-  TouchableWithoutFeedback, Modal, Dimensions
+  TouchableWithoutFeedback, Modal, Dimensions, Alert
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
-  Shield, Lock
+  Shield, Lock, Square
 } from 'lucide-react-native'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useAgentStore } from '@/store/agentStore'
 import Markdown from 'react-native-markdown-display'
+import { api } from '@/lib/api'
 
 interface Props {
   projectId: string
@@ -27,7 +29,7 @@ export default function AITab({ projectId }: Props) {
   const { user } = useAuthStore()
   const {
     activeRun, runsList, isStreaming, plan, timeline, logs, pendingApproval,
-    setActiveProject, loadRuns, startNewRun, resumeRun, approvePending, clearActiveRun
+    setActiveProject, loadRuns, startNewRun, resumeRun, approvePending, clearActiveRun, stopActiveRun
   } = useAgentStore()
   
   const router = useRouter()
@@ -43,9 +45,27 @@ export default function AITab({ projectId }: Props) {
   const [showConsoleLogs, setShowConsoleLogs] = useState(false)
   const [friendlyError, setFriendlyError] = useState<string | null>(null)
 
+  const [isByokActive, setIsByokActive] = useState(false)
+  const [userTier, setUserTier] = useState('free')
+
+  const fetchByokAndTier = async () => {
+    try {
+      const byok = await AsyncStorage.getItem('byok_enabled')
+      setIsByokActive(byok === 'true')
+      
+      const billing = await api.billing.status()
+      if (billing?.tier?.name) {
+        setUserTier(billing.tier.name)
+      }
+    } catch (e) {
+      console.warn('Failed to load settings:', e)
+    }
+  }
+
   // Sync project context on mount
   useEffect(() => {
     setActiveProject(projectId)
+    fetchByokAndTier()
   }, [projectId])
 
   // Auto-scroll logs and main timeline
