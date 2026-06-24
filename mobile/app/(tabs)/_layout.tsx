@@ -2,42 +2,37 @@ import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Keyboard, Platform } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Home, FolderGit2, Sparkles, SlidersHorizontal, Plus } from 'lucide-react-native'
 import { BlurView } from 'expo-blur'
 import Animated, { 
   useAnimatedStyle, 
-  withSpring, 
   useSharedValue,
   interpolate,
   withTiming,
   Easing,
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
-import { WorkspaceIcon } from '@/components/WorkspaceIcon'
+import { SvgIcon } from '@/components/SvgIcon'
 
 const TAB_ANIM_CONFIG = {
   duration: 150,
   easing: Easing.out(Easing.quad),
 }
 
+const HomeTabIcon = ({ color, size }: any) => {
+  return <SvgIcon name="home" size={size || 20} color={color} />
+}
+
 const WorkspaceTabIcon = ({ color, size }: any) => {
-  const { isDark } = useAppTheme()
-  return (
-    <WorkspaceIcon size={size || 20} isDark={isDark} color={color} />
-  )
+  return <SvgIcon name="workspace" size={size || 20} color={color} />
 }
 
-const HomeTabIcon = ({ color, size, strokeWidth }: any) => {
-  return (
-    <Home 
-      color={color} 
-      size={size || 20} 
-      strokeWidth={strokeWidth || 2} 
-    />
-  )
+const AiTabIcon = ({ color, size }: any) => {
+  return <SvgIcon name="ai" size={size || 20} color={color} />
 }
 
-// Removed floating DockIconWrapper for flat non-floating icons
+const SettingsTabIcon = ({ color, size }: any) => {
+  return <SvgIcon name="settings" size={size || 20} color={color} />
+}
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { isDark, colors } = useAppTheme()
@@ -97,8 +92,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     { type: 'route', routeIndex: 0, key: 'dashboard', icon: HomeTabIcon },
     { type: 'route', routeIndex: 1, key: 'projects', icon: WorkspaceTabIcon },
     { type: 'fab', key: 'fab' },
-    { type: 'route', routeIndex: 2, key: 'ai', icon: Sparkles },
-    { type: 'route', routeIndex: 3, key: 'settings', icon: SlidersHorizontal }
+    { type: 'route', routeIndex: 2, key: 'ai', icon: AiTabIcon },
+    { type: 'route', routeIndex: 3, key: 'settings', icon: SettingsTabIcon }
   ]
 
   const activeColor = colors.tabBarActive
@@ -140,7 +135,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 activeOpacity={0.8}
               >
                 <View style={[styles.fabButton, { backgroundColor: activeColor }]}>
-                  <Plus size={18} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
+                  <SvgIcon name="create" size={18} color={isDark ? '#0E1116' : '#FFFFFF'} />
                 </View>
               </TouchableOpacity>
             )
@@ -187,7 +182,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               <Icon 
                 color={isFocused ? activeColor : inactiveColor} 
                 size={20} 
-                strokeWidth={isFocused ? 2.2 : 1.8}
               />
             </TouchableOpacity>
           )
