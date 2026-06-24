@@ -46,6 +46,7 @@ export const SvgIcon: React.FC<SvgIconProps> = ({
       height={size}
       fill={color}
       stroke={color}
+      color={color}
       strokeWidth={ICON_STROKE_WIDTHS[name]}
       strokeLinecap="round"
       strokeLinejoin="round"
