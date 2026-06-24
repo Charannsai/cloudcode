@@ -127,12 +127,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   return (
     <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
       <BlurView
-        intensity={isDark ? 35 : 75}
+        intensity={isDark ? 35 : 100}
         tint={isDark ? 'dark' : 'light'}
         style={[
           styles.tabBarContainer,
           { 
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            borderColor: isDark ? 'rgba(255, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.06)',
             backgroundColor: isDark ? 'rgba(21, 25, 34, 0.72)' : 'rgba(255, 255, 255, 0.85)',
           }
         ]}
@@ -207,7 +207,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               <TabIconWrapper isFocused={isFocused}>
                 <Icon 
                   color={isFocused ? activeColor : inactiveColor} 
-                  size={26} 
+                  size={32} 
                 />
               </TabIconWrapper>
             </TouchableOpacity>
