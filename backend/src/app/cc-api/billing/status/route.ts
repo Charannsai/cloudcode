@@ -226,8 +226,8 @@ export async function GET(req: NextRequest) {
         sessionBreakdown.push({
           id: s.id || `${s.project_id}-${s.started_at}`,
           projectName: proj?.name || 'Deleted Project',
-          startedAt: s.started_at,
-          endedAt: s.ended_at,
+          startedAt: s.started_at ? new Date(s.started_at).toISOString() : null,
+          endedAt: s.ended_at ? new Date(s.ended_at).toISOString() : null,
         })
       }
     }
