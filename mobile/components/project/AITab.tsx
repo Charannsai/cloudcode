@@ -8,7 +8,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Trash2, User, FileCode, FolderTree, Bug, Package, Copy, Share as ShareIcon,
   Mic, Volume2, VolumeX, ChevronDown, ChevronUp, Cpu, Shield, Lock,
-  MoreVertical, History, Plus, ChevronRight, StopCircle, CheckCircle2, X
+  MoreVertical, History, Plus, ChevronRight, StopCircle, CheckCircle2, X, Terminal
 } from 'lucide-react-native'
 
 import { useAuthStore } from '@/store/auth'
@@ -202,7 +202,7 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
     fullContent = `Deleted file at: ${target}`
   }
 
-  const hasDetails = !isPending && !isRunning && (tool.result || tool.args?.content || tool.args?.replacement || tool.args?.replacementContent)
+  const hasDetails = !!(!isPending && !isRunning && (tool.result || tool.args?.content || tool.args?.replacement || tool.args?.replacementContent))
 
   return (
     <View style={[
@@ -519,6 +519,46 @@ export default function AITab({ projectId }: Props) {
 
   const modelCardStyle = useAnimatedStyle(() => {
     const progress = modelProgress.value
+    const scale = 0.95 + 0.05 * progress
+    const translateY = (1 - progress) * 12
+    return {
+      opacity: progress,
+      transform: [{ scale }, { translateY }],
+    }
+  })
+
+  const workspaceConversations = savedConversations.filter(
+    (c) => c.projectId === projectId
+  )
+
+  const handleNewChatThread = () => {
+    startNewChat()
+    setInputText('')
+  }
+
+  // Reanimated states for History Modal
+  const [renderHistoryModal, setRenderHistoryModal] = useState(false)
+  const historyProgress = useSharedValue(0)
+
+  useEffect(() => {
+    if (historyModalVisible) {
+      setRenderHistoryModal(true)
+      historyProgress.value = withTiming(1, { duration: 180, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) })
+    } else {
+      historyProgress.value = withTiming(0, { duration: 140, easing: ReanimatedEasing.bezier(0.16, 1, 0.3, 1) }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderHistoryModal)(false)
+        }
+      })
+    }
+  }, [historyModalVisible])
+
+  const historyBackdropStyle = useAnimatedStyle(() => ({
+    opacity: historyProgress.value,
+  }))
+
+  const historyCardStyle = useAnimatedStyle(() => {
+    const progress = historyProgress.value
     const scale = 0.95 + 0.05 * progress
     const translateY = (1 - progress) * 12
     return {
@@ -1341,7 +1381,7 @@ export default function AITab({ projectId }: Props) {
                     </Text>
                   </View>
                 ) : (
-                  workspaceConversations.map((thread) => {
+                  workspaceConversations.map((thread: any) => {
                     const isCurrent = currentThreadId === thread.id
                     const projName = thread.projectId === 'global' ? 'General Assistant' : 'Workspace'
 
