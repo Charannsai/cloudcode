@@ -210,7 +210,7 @@ function ToolCallRow({ tool, isDark, colors }: { tool: ToolCallInfo; isDark: boo
     fullContent = `Deleted file at: ${target}`
   }
 
-  const hasDetails = !isPending && !isRunning && (tool.result || tool.args?.content || tool.args?.replacement || tool.args?.replacementContent)
+  const hasDetails = !!(!isPending && !isRunning && (tool.result || tool.args?.content || tool.args?.replacement || tool.args?.replacementContent))
 
   return (
     <View style={[
@@ -1569,6 +1569,7 @@ export default function AIScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   header: {
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1640,15 +1641,6 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 18, letterSpacing: -0.1,
   },
-  toolCard: {
-    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 6, marginBottom: 4,
-    borderWidth: 1,
-  },
-  toolHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-  },
-  toolLabel: { fontSize: 9, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.4 },
-  toolTarget: { fontSize: 10, fontFamily: 'JetBrainsMono_400Regular', flex: 1 },
   typingIndicator: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4,
   },
@@ -1786,41 +1778,6 @@ const styles = StyleSheet.create({
   thinkingChar: {
     fontSize: 12,
     fontFamily: 'Inter_500Medium',
-  },
-  toolRowContainer: {
-    marginBottom: 4,
-    width: '100%',
-  },
-  toolHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  toolHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-    marginRight: 6,
-  },
-  toolLabelText: {
-    fontSize: 11,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  toolTargetText: {
-    fontSize: 11,
-    fontFamily: 'JetBrainsMono_400Regular',
-    flex: 1,
-  },
-  statusDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginHorizontal: 3,
   },
   terminalBox: {
     borderRadius: 6,
