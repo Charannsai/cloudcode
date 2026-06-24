@@ -2,13 +2,16 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard,
-  TouchableWithoutFeedback, Modal
+  TouchableWithoutFeedback, Modal, Dimensions
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, User, Terminal, Loader,
-  CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, Play, X
+  CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, Play, X,
+  Shield, Lock
 } from 'lucide-react-native'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
