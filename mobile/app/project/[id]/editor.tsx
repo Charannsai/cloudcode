@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, Alert, Platform, ScrollView, Modal,
   KeyboardAvoidingView
 } from 'react-native'
@@ -10,9 +10,173 @@ import { api } from '@/lib/api'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { ArrowLeft, Save, Check, ChevronDown, ChevronRight, X, File, Folder, FileCode, Code, Hash, FileJson, FileText, Settings, Columns, Sparkles } from 'lucide-react-native'
 import { FileNode } from '@/types'
+import { WebView } from 'react-native-webview'
 import { getToken } from '@/lib/auth'
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
+
+function getLanguageMode(fileName: string) {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  switch(ext) {
+    case 'js': case 'jsx': return 'javascript';
+    case 'ts': case 'tsx': return 'text/typescript';
+    case 'json': return 'application/json';
+    case 'html': return 'htmlmixed';
+    case 'css': return 'css';
+    case 'md': return 'markdown';
+    case 'py': return 'python';
+    case 'go': return 'go';
+    case 'rs': return 'rust';
+    case 'c': return 'text/x-csrc';
+    case 'cpp': case 'cc': return 'text/x-c++src';
+    case 'sh': case 'bash': return 'shell';
+    case 'yaml': case 'yml': return 'yaml';
+    default: return 'plaintext';
+  }
+}
+
+function getCodeMirrorHtml(isDark: boolean, colors: any) {
+  const bg = colors.background;
+  const border = colors.border;
+  const text = colors.text;
+  const primary = colors.primary;
+  const textSecondary = colors.textSecondary;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <style>
+    body, html {
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      overflow: hidden; background: ${bg};
+    }
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    .cm-s-custom.CodeMirror {
+      background: ${bg} !important;
+      color: ${text} !important;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      height: 100%;
+    }
+    .cm-s-custom .CodeMirror-gutters {
+      background: ${isDark ? '#0E1116' : '#F6F8FA'} !important;
+      border-right: 1px solid ${border} !important;
+      width: 40px;
+    }
+    .cm-s-custom .CodeMirror-linenumber {
+      color: ${textSecondary} !important;
+      opacity: 0.6;
+      padding-right: 8px;
+    }
+    .cm-s-custom .CodeMirror-cursor {
+      border-left: 2px solid ${primary} !important;
+    }
+    .cm-s-custom div.CodeMirror-selected {
+      background: ${primary}25 !important;
+    }
+    .cm-s-custom .CodeMirror-focused div.CodeMirror-selected {
+      background: ${primary}33 !important;
+    }
+    .cm-s-custom .CodeMirror-activeline-background {
+      background: ${isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)'} !important;
+    }
+    
+    /* Syntax Highlighting Tokens */
+    .cm-s-custom .cm-keyword { color: ${isDark ? '#FF7B72' : '#D73A49'} !important; font-weight: bold; }
+    .cm-s-custom .cm-atom { color: ${isDark ? '#79C0FF' : '#005CC5'} !important; }
+    .cm-s-custom .cm-number { color: ${isDark ? '#79C0FF' : '#005CC5'} !important; }
+    .cm-s-custom .cm-def { color: ${isDark ? '#D2A8FF' : '#6F42C1'} !important; font-weight: bold; }
+    .cm-s-custom .cm-variable { color: ${text} !important; }
+    .cm-s-custom .cm-variable-2 { color: ${isDark ? '#C9D1D9' : '#24292E'} !important; }
+    .cm-s-custom .cm-variable-3 { color: ${isDark ? '#FFA657' : '#E36209'} !important; }
+    .cm-s-custom .cm-property { color: ${isDark ? '#79C0FF' : '#005CC5'} !important; }
+    .cm-s-custom .cm-operator { color: ${isDark ? '#FF7B72' : '#D73A49'} !important; }
+    .cm-s-custom .cm-comment { color: ${isDark ? '#8B949E' : '#6A737D'} !important; font-style: italic; }
+    .cm-s-custom .cm-string { color: ${isDark ? '#A5D6FF' : '#032F62'} !important; }
+    .cm-s-custom .cm-string-2 { color: ${isDark ? '#79C0FF' : '#005CC5'} !important; }
+    .cm-s-custom .cm-meta { color: ${isDark ? '#8B949E' : '#6A737D'} !important; }
+    .cm-s-custom .cm-qualifier { color: ${isDark ? '#FFA657' : '#E36209'} !important; }
+    .cm-s-custom .cm-builtin { color: ${isDark ? '#D2A8FF' : '#6F42C1'} !important; }
+    .cm-s-custom .cm-bracket { color: ${isDark ? '#C9D1D9' : '#24292E'} !important; }
+    .cm-s-custom .cm-tag { color: ${isDark ? '#7EE787' : '#22863A'} !important; }
+    .cm-s-custom .cm-attribute { color: ${isDark ? '#D2A8FF' : '#6F42C1'} !important; }
+    .cm-s-custom .cm-header { color: ${isDark ? '#79C0FF' : '#005CC5'} !important; font-weight: bold; }
+    .cm-s-custom .cm-quote { color: ${isDark ? '#8B949E' : '#6A737D'} !important; }
+    .cm-s-custom .cm-hr { color: ${isDark ? '#8B949E' : '#6A737D'} !important; }
+    .cm-s-custom .cm-link { color: ${isDark ? '#A5D6FF' : '#032F62'} !important; text-decoration: underline; }
+    .cm-s-custom .cm-error { color: #F85149 !important; border-bottom: 1px dotted #F85149; }
+
+    .CodeMirror-vscrollbar, .CodeMirror-hscrollbar {
+      opacity: 0.5;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  
+  <!-- Modes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/markdown/markdown.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/go/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/rust/rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/shell/shell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/yaml/yaml.min.js"></script>
+  
+  <!-- Addons -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+</head>
+<body>
+  <textarea id="editor"></textarea>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+      lineNumbers: true,
+      theme: 'custom',
+      lineWrapping: false,
+      autoCloseBrackets: true,
+      viewportMargin: Infinity,
+      tabSize: 2,
+      indentWithTabs: false,
+      styleActiveLine: true
+    });
+
+    editor.on('change', function(cm) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'CONTENT_CHANGE',
+        content: cm.getValue()
+      }));
+    });
+
+    editor.on('cursorActivity', function(cm) {
+      var selection = cm.getSelection();
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'SELECTION_CHANGE',
+        text: selection
+      }));
+    });
+
+    editor.on('focus', function() {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'FOCUS_PANE'
+      }));
+    });
+
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'EDITOR_READY' }));
+  </script>
+</body>
+</html>
+`;
+}
 
 function FileRow({ node, depth, currentPath, onFilePress }: {
   node: FileNode; depth: number; currentPath: string; onFilePress: (path: string) => void;
@@ -66,8 +230,8 @@ export default function EditorScreen() {
   const { id, path } = useLocalSearchParams<{ id: string; path: string }>()
   const router = useRouter()
   const { colors, isDark } = useAppTheme()
-  const inputRef1 = useRef<TextInput>(null)
-  const inputRef2 = useRef<TextInput>(null)
+  const webViewRef = useRef<WebView>(null)
+  const webViewRef2 = useRef<WebView>(null)
 
   const { setActiveProject, setPendingPrompt } = useAIStore()
 
@@ -80,6 +244,7 @@ export default function EditorScreen() {
   const [showFilePicker, setShowFilePicker] = useState(false)
   const [fileTree, setFileTree] = useState<FileNode[]>([])
   const [fetchingFiles, setFetchingFiles] = useState(false)
+  const [editorReady, setEditorReady] = useState(false)
 
   // Multi-File Tab System state
   const [openTabs, setOpenTabs] = useState<{ path: string; name: string }[]>(
@@ -93,6 +258,7 @@ export default function EditorScreen() {
   const [content2, setContent2] = useState('')
   const [originalContent2, setOriginalContent2] = useState('')
   const [loading2, setLoading2] = useState(false)
+  const [editorReady2, setEditorReady2] = useState(false)
 
   // Menubar state
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
@@ -424,15 +590,40 @@ export default function EditorScreen() {
   const fileName = activePath?.split('/').pop() || 'File'
   const activeHasChanges = focusedPane === 1 ? (content !== originalContent) : (content2 !== originalContent2)
 
-  const lines = useMemo(() => {
-    const count = content ? content.split('\n').length : 1
-    return Array.from({ length: count }, (_, i) => i + 1)
-  }, [content])
+  // Memoize the CodeMirror html template so it loads once per theme change
+  const editorHtml = useMemo(() => getCodeMirrorHtml(isDark, colors), [isDark, colors])
 
-  const lines2 = useMemo(() => {
-    const count = content2 ? content2.split('\n').length : 1
-    return Array.from({ length: count }, (_, i) => i + 1)
-  }, [content2])
+  // Sync content & mode into Pane 1 WebView
+  useEffect(() => {
+    if (editorReady && webViewRef.current && content !== undefined && !loading) {
+      webViewRef.current.injectJavaScript(`
+        if (window.editor) {
+          if (window.editor.getValue() !== ${JSON.stringify(content)}) {
+            window.editor.setValue(${JSON.stringify(content)});
+            window.editor.clearHistory();
+          }
+          window.editor.setOption('mode', '${getLanguageMode(currentPath)}');
+        }
+        true;
+      `);
+    }
+  }, [editorReady, content, loading, currentPath])
+
+  // Sync content & mode into Pane 2 WebView
+  useEffect(() => {
+    if (editorReady2 && webViewRef2.current && content2 !== undefined && !loading2 && currentPath2) {
+      webViewRef2.current.injectJavaScript(`
+        if (window.editor) {
+          if (window.editor.getValue() !== ${JSON.stringify(content2)}) {
+            window.editor.setValue(${JSON.stringify(content2)});
+            window.editor.clearHistory();
+          }
+          window.editor.setOption('mode', '${getLanguageMode(currentPath2)}');
+        }
+        true;
+      `);
+    }
+  }, [editorReady2, content2, loading2, currentPath2])
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -535,12 +726,7 @@ export default function EditorScreen() {
           <View style={styles.editorsContainer}>
             <View style={splitMode ? styles.splitLayout : styles.singleLayout}>
               {/* Pane 1 (Primary) */}
-              <TouchableOpacity 
-                activeOpacity={1}
-                onPress={() => {
-                  setFocusedPane(1)
-                  inputRef1.current?.focus()
-                }}
+              <View 
                 style={[
                   styles.paneContainer, 
                   splitMode && styles.splitPane, 
@@ -555,90 +741,47 @@ export default function EditorScreen() {
                   </View>
                 )}
                 
-                <ScrollView 
-                  style={styles.editorScrollView} 
-                  contentContainerStyle={styles.editorScrollContent}
-                  keyboardShouldPersistTaps="always"
-                >
-                  <View style={styles.editorRow}>
-                    {/* Gutter */}
-                    <View style={[styles.gutter, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderRightColor: colors.border }]}>
-                      {lines.map((lineNum) => (
-                        <Text
-                          key={lineNum}
-                          style={[
-                            styles.gutterText,
-                            {
-                              color: colors.textSecondary,
-                              fontFamily: 'JetBrainsMono_400Regular',
-                              fontSize: 13,
-                              lineHeight: 20,
-                              includeFontPadding: false,
-                            }
-                          ]}
-                        >
-                          {lineNum}
-                        </Text>
-                      ))}
-                    </View>
-                    
-                    {/* TextInput in horizontal scroll */}
-                    <ScrollView 
-                      horizontal 
-                      style={styles.horizontalScroll}
-                      contentContainerStyle={styles.horizontalScrollContent}
-                      keyboardShouldPersistTaps="always"
-                    >
-                      <TextInput
-                        ref={inputRef1}
-                        multiline
-                        value={content}
-                        onChangeText={setContent}
-                        style={[
-                          styles.editorInput,
-                          {
-                            color: colors.text,
-                            fontFamily: 'JetBrainsMono_400Regular',
-                            fontSize: 13,
-                            lineHeight: 20,
-                            includeFontPadding: false,
-                          }
-                        ]}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        spellCheck={false}
-                        scrollEnabled={false}
-                        onSelectionChange={(e) => {
-                          const { start, end } = e.nativeEvent.selection
-                          if (start !== end && content) {
-                            setSelectedText(content.substring(start, end))
-                          } else {
-                            setSelectedText('')
-                          }
-                        }}
-                      />
-                    </ScrollView>
-                  </View>
-                </ScrollView>
+                <WebView
+                  ref={webViewRef}
+                  source={{ html: editorHtml }}
+                  style={{ flex: 1, backgroundColor: colors.background }}
+                  originWhitelist={['*']}
+                  javaScriptEnabled={true}
+                  domStorageEnabled={true}
+                  keyboardDisplayRequiresUserAction={false}
+                  allowFileAccess={true}
+                  allowUniversalAccessFromFileURLs={true}
+                  onMessage={(event) => {
+                    try {
+                      const msg = JSON.parse(event.nativeEvent.data)
+                      if (msg.type === 'EDITOR_READY') {
+                        setEditorReady(true)
+                      } else if (msg.type === 'CONTENT_CHANGE') {
+                        setContent(prev => prev !== msg.content ? msg.content : prev)
+                      } else if (msg.type === 'SELECTION_CHANGE') {
+                        setSelectedText(msg.text)
+                      } else if (msg.type === 'FOCUS_PANE') {
+                        setFocusedPane(1)
+                      }
+                    } catch (e) {
+                      // Ignore invalid JSON
+                    }
+                  }}
+                />
 
-                {loading && (
+                {(loading || !editorReady) && (
                   <View style={[StyleSheet.absoluteFill, styles.loadingOverlay, { backgroundColor: colors.background }]}>
                     <ActivityIndicator color={colors.text} size="small" />
                     <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                      Opening file...
+                      {loading ? 'Opening file...' : 'Booting IDE Engine...'}
                     </Text>
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
 
               {/* Pane 2 (Secondary) */}
               {splitMode && currentPath2 && (
-                <TouchableOpacity 
-                  activeOpacity={1}
-                  onPress={() => {
-                    setFocusedPane(2)
-                    inputRef2.current?.focus()
-                  }}
+                <View 
                   style={[
                     styles.paneContainer, 
                     styles.splitPane, 
@@ -652,81 +795,43 @@ export default function EditorScreen() {
                     </Text>
                   </View>
 
-                  <ScrollView 
-                    style={styles.editorScrollView} 
-                    contentContainerStyle={styles.editorScrollContent}
-                    keyboardShouldPersistTaps="always"
-                  >
-                    <View style={styles.editorRow}>
-                      {/* Gutter */}
-                      <View style={[styles.gutter, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderRightColor: colors.border }]}>
-                        {lines2.map((lineNum) => (
-                          <Text
-                            key={lineNum}
-                            style={[
-                              styles.gutterText,
-                              {
-                                color: colors.textSecondary,
-                                fontFamily: 'JetBrainsMono_400Regular',
-                                fontSize: 13,
-                                lineHeight: 20,
-                                includeFontPadding: false,
-                              }
-                            ]}
-                          >
-                            {lineNum}
-                          </Text>
-                        ))}
-                      </View>
+                  <WebView
+                    ref={webViewRef2}
+                    source={{ html: editorHtml }}
+                    style={{ flex: 1, backgroundColor: colors.background }}
+                    originWhitelist={['*']}
+                    javaScriptEnabled={true}
+                    domStorageEnabled={true}
+                    keyboardDisplayRequiresUserAction={false}
+                    allowFileAccess={true}
+                    allowUniversalAccessFromFileURLs={true}
+                    onMessage={(event) => {
+                      try {
+                        const msg = JSON.parse(event.nativeEvent.data)
+                        if (msg.type === 'EDITOR_READY') {
+                          setEditorReady2(true)
+                        } else if (msg.type === 'CONTENT_CHANGE') {
+                          setContent2(prev => prev !== msg.content ? msg.content : prev)
+                        } else if (msg.type === 'SELECTION_CHANGE') {
+                          setSelectedText(msg.text)
+                        } else if (msg.type === 'FOCUS_PANE') {
+                          setFocusedPane(2)
+                        }
+                      } catch (e) {
+                        // Ignore invalid JSON
+                      }
+                    }}
+                  />
 
-                      {/* TextInput in horizontal scroll */}
-                      <ScrollView 
-                        horizontal 
-                        style={styles.horizontalScroll}
-                        contentContainerStyle={styles.horizontalScrollContent}
-                        keyboardShouldPersistTaps="always"
-                      >
-                        <TextInput
-                          ref={inputRef2}
-                          multiline
-                          value={content2}
-                          onChangeText={setContent2}
-                          style={[
-                            styles.editorInput,
-                            {
-                              color: colors.text,
-                              fontFamily: 'JetBrainsMono_400Regular',
-                              fontSize: 13,
-                              lineHeight: 20,
-                              includeFontPadding: false,
-                            }
-                          ]}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          spellCheck={false}
-                          scrollEnabled={false}
-                          onSelectionChange={(e) => {
-                            const { start, end } = e.nativeEvent.selection
-                            if (start !== end && content2) {
-                              setSelectedText(content2.substring(start, end))
-                            } else {
-                              setSelectedText('')
-                            }
-                          }}
-                        />
-                      </ScrollView>
-                    </View>
-                  </ScrollView>
-
-                  {loading2 && (
+                  {(loading2 || !editorReady2) && (
                     <View style={[StyleSheet.absoluteFill, styles.loadingOverlay, { backgroundColor: colors.background }]}>
                       <ActivityIndicator color={colors.text} size="small" />
                       <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-                        Opening file...
+                        {loading2 ? 'Opening file...' : 'Booting IDE Engine...'}
                       </Text>
                     </View>
                   )}
-                </TouchableOpacity>
+                </View>
               )}
             </View>
           </View>
@@ -855,26 +960,6 @@ const styles = StyleSheet.create({
   loadingOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 10 },
   loadingText: { fontSize: 13 },
   paneContainer: { flex: 1, position: 'relative' },
-  editorScrollView: { flex: 1 },
-  editorScrollContent: { flexGrow: 1 },
-  editorRow: { flexDirection: 'row', flex: 1 },
-  gutter: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'flex-end',
-    borderRightWidth: 1,
-    minWidth: 36,
-  },
-  gutterText: { textAlign: 'right' },
-  horizontalScroll: { flex: 1 },
-  horizontalScrollContent: { flexGrow: 1 },
-  editorInput: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    textAlignVertical: 'top',
-    minWidth: 2000,
-  },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { height: '70%', borderTopLeftRadius: 8, borderTopRightRadius: 8, paddingTop: 8 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
