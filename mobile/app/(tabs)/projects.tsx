@@ -148,12 +148,17 @@ export default function ProjectsScreen() {
     }
   }, [isRenameMode, activeProjectForMenu])
 
-  const popoverTop = menuPosition ? Math.max(50, Math.min(menuPosition.y - 20, SCREEN_HEIGHT - 180)) : 100
-  const popoverLeft = menuPosition 
-    ? (menuPosition.x < SCREEN_WIDTH / 2
-        ? Math.max(12, Math.min(menuPosition.x + 15, SCREEN_WIDTH - 170))
-        : Math.max(12, Math.min(menuPosition.x - 160, SCREEN_WIDTH - 170)))
-    : 100
+  const validX = menuPosition && typeof menuPosition.x === 'number' && !isNaN(menuPosition.x) && menuPosition.x !== 0 
+    ? menuPosition.x 
+    : SCREEN_WIDTH - 40;
+  const validY = menuPosition && typeof menuPosition.y === 'number' && !isNaN(menuPosition.y) && menuPosition.y !== 0 
+    ? menuPosition.y 
+    : 300;
+
+  const popoverTop = Math.max(50, Math.min(validY - 20, SCREEN_HEIGHT - 180))
+  const popoverLeft = validX < SCREEN_WIDTH / 2
+    ? Math.max(12, Math.min(validX + 15, SCREEN_WIDTH - 170))
+    : Math.max(12, Math.min(validX - 160, SCREEN_WIDTH - 170))
 
   const popoverBackdropStyle = useAnimatedStyle(() => ({
     opacity: popoverProgress.value,
@@ -163,8 +168,8 @@ export default function ProjectsScreen() {
     const progress = popoverProgress.value
     const opacity = progress
     // Warp out of tapped MoreVertical coordinates
-    const translateX = (1 - progress) * ((menuPosition?.x ?? 0) - (popoverLeft + 70))
-    const translateY = (1 - progress) * ((menuPosition?.y ?? 0) - (popoverTop + 60))
+    const translateX = (1 - progress) * (validX - (popoverLeft + 70))
+    const translateY = (1 - progress) * (validY - (popoverTop + 60))
     const scaleX = 0.05 + 0.95 * progress
     const scaleY = 0.05 + 0.95 * progress
     const skewX = `${(1 - progress) * -8}deg`
@@ -311,10 +316,9 @@ export default function ProjectsScreen() {
                 onPress={(e) => {
                   setActiveProjectForMenu(p)
                   setNewName(p.name)
-                  setMenuPosition({
-                    x: e.nativeEvent.pageX,
-                    y: e.nativeEvent.pageY,
-                  })
+                  const x = e?.nativeEvent?.pageX ?? 0;
+                  const y = e?.nativeEvent?.pageY ?? 0;
+                  setMenuPosition({ x, y })
                   setMenuVisible(true)
                 }} 
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -393,10 +397,9 @@ export default function ProjectsScreen() {
               onPress={(e) => {
                 setActiveProjectForMenu(p)
                 setNewName(p.name)
-                setMenuPosition({
-                  x: e.nativeEvent.pageX,
-                  y: e.nativeEvent.pageY,
-                })
+                const x = e?.nativeEvent?.pageX ?? 0;
+                const y = e?.nativeEvent?.pageY ?? 0;
+                setMenuPosition({ x, y })
                 setMenuVisible(true)
               }} 
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -925,11 +928,11 @@ const styles = StyleSheet.create({
   },
   popoverBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'transparent',
   },
   centeredModalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
