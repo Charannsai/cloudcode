@@ -1,22 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, Alert, Modal,
-  TouchableWithoutFeedback
+  KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard,
+  TouchableWithoutFeedback, Modal
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
-  Sparkles, ArrowUp, Trash2, Bot, User, FileCode, Terminal, Loader,
-  CheckCircle2, AlertCircle, Wrench, FolderTree, Bug, Package, ArrowLeft, Copy, Share as ShareIcon,
-  ChevronDown, ChevronUp, Cpu, Shield, Lock, History, Plus, ChevronRight, Play, X
+  Sparkles, ArrowUp, Bot, Terminal, Loader,
+  CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X
 } from 'lucide-react-native'
 
+import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
-import { useAgentStore, PlanItem, ReasoningEvent, AgentRun } from '@/store/agentStore'
-import { useProjectsStore } from '@/store/projects'
-import { api } from '@/lib/api'
+import { useAgentStore } from '@/store/agentStore'
 import Markdown from 'react-native-markdown-display'
-import * as Clipboard from 'expo-clipboard'
 
 interface Props {
   projectId: string
@@ -29,6 +26,8 @@ export default function AITab({ projectId }: Props) {
     activeRun, runsList, isStreaming, plan, timeline, logs, pendingApproval,
     setActiveProject, loadRuns, startNewRun, resumeRun, approvePending, clearActiveRun
   } = useAgentStore()
+  
+  const router = useRouter()
 
   const [inputText, setInputText] = useState('')
   const [selectedModel, setSelectedModel] = useState<string>('gemini')
@@ -38,66 +37,82 @@ export default function AITab({ projectId }: Props) {
   const consoleScrollRef = useRef<ScrollView>(null)
   
   const [modelSelectorVisible, setModelSelectorVisible] = useState(false)
-  const [expandedTimelineId, setExpandedTimelineId] = useState<string | null>(null)
+  const [showConsoleLogs, setShowConsoleLogs] = useState(false)
+  const [friendlyError, setFriendlyError] = useState<string | null>(null)
 
-  // Sync project context and runs list on mount / project change
+  // Sync project context on mount
   useEffect(() => {
     setActiveProject(projectId)
   }, [projectId])
 
   // Auto-scroll logs and main timeline
   useEffect(() => {
-    setTimeout(() => {
-      consoleScrollRef.current?.scrollToEnd({ animated: true })
-    }, 100)
-  }, [logs])
+    if (showConsoleLogs) {
+      setTimeout(() => {
+        consoleScrollRef.current?.scrollToEnd({ animated: true })
+      }, 100)
+    }
+  }, [logs, showConsoleLogs])
 
   useEffect(() => {
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true })
     }, 200)
-  }, [timeline, plan])
+  }, [timeline, plan, isStreaming])
 
-  const handleSpawnAgent = async () => {
+  const handleSend = async () => {
     if (!inputText.trim() || isStreaming) return
     const prompt = inputText.trim()
     setInputText('')
+    setFriendlyError(null)
     Keyboard.dismiss()
     
-    await startNewRun(projectId, selectedModel, prompt)
-  }
-
-  const handleFollowUp = async () => {
-    if (!inputText.trim() || isStreaming || !activeRun) return
-    const prompt = inputText.trim()
-    setInputText('')
-    Keyboard.dismiss()
-
-    await resumeRun(activeRun.id, prompt)
-  }
-
-  const formatRunId = (id: string) => {
-    return id.substring(0, 8).toUpperCase()
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return '#3FB950'
-      case 'executing': return '#2F80ED'
-      case 'waiting': return '#F2C94C'
-      case 'failed': return '#EB5757'
-      case 'planning': return '#9B51E0'
-      case 'paused': return '#828282'
-      default: return colors.textSecondary
+    if (!activeRun) {
+      // Spawn new agent run for this specific workspace
+      await startNewRun(projectId, selectedModel, prompt)
+    } else {
+      // Follow up in active run
+      await resumeRun(activeRun.id, prompt)
     }
   }
 
+  // Parse custom friendly errors for better UX
+  useEffect(() => {
+    const lastEvent = timeline[timeline.length - 1]
+    if (lastEvent && lastEvent.status === 'failed' && lastEvent.message) {
+      const msg = lastEvent.message
+      if (msg.includes('LIMIT_EXCEEDED') || msg.includes('QUOTA_EXCEEDED') || msg.includes('monthly token limit exceeded')) {
+        setFriendlyError('Rate limit reached. Retry available in 45 seconds. Tap Switch Model or use BYOK.')
+      } else if (msg.includes('Gemini API error') || msg.includes('fetch failed')) {
+        setFriendlyError('Gemini is currently unavailable. Retrying connection...')
+      } else {
+        setFriendlyError(msg)
+      }
+    } else {
+      setFriendlyError(null)
+    }
+  }, [timeline])
+
+  // Determine current active progress text
+  const getActiveProgressText = () => {
+    if (pendingApproval) return 'Waiting for action approval...'
+    const activeItem = plan.find(p => p.status === 'running')
+    if (activeItem) return `Executing: ${activeItem.label}...`
+    const lastReasoning = timeline.filter(t => t.title === 'Agent Reasoning').pop()
+    if (lastReasoning?.message) {
+      const lines = lastReasoning.message.trim().split('\n')
+      return lines[lines.length - 1] || 'Agent is working...'
+    }
+    return 'Understanding request...'
+  }
+
+  // Markdown rendering configurations
   const mdStyles = {
     body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 20 },
-    heading1: { fontSize: 16, fontFamily: 'Inter_700Bold', marginTop: 10, marginBottom: 4, color: isDark ? '#F3F4F6' : '#0E1116' },
-    heading2: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginTop: 8, marginBottom: 2, color: isDark ? '#F3F4F6' : '#0E1116' },
+    heading1: { fontSize: 16, fontFamily: 'Inter_700Bold', marginTop: 10, color: isDark ? '#F3F4F6' : '#0E1116' },
+    heading2: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginTop: 6, color: isDark ? '#F3F4F6' : '#0E1116' },
     code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#1C2128' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 2, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#161B22' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 8, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#161B22' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 6, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
     paragraph: { marginTop: 2, marginBottom: 2 },
   }
 
@@ -107,320 +122,252 @@ export default function AITab({ projectId }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      {/* ========================================================= */}
-      {/* VIEW A: RUN CREATOR / PROJECT HISTORY                     */}
-      {/* ========================================================= */}
-      {!activeRun ? (
-        <View style={styles.contentWrapper}>
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
-            {/* Context and Model selector row */}
-            <View style={styles.selectorRow}>
-              <TouchableOpacity
-                style={[styles.selectorCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-                onPress={() => setModelSelectorVisible(true)}
-              >
-                <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>LLM Model</Text>
-                <View style={styles.selectorValueRow}>
-                  <Cpu size={14} color="#3FB950" />
-                  <Text style={[styles.selectorValue, { color: colors.text }]}>
-                    {selectedModel === 'gemini' ? 'Gemini 3 Flash' : selectedModel === 'openai' ? 'GPT-4o' : 'Claude 3.6 Opus'}
-                  </Text>
-                  <ChevronDown size={14} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Project Past Runs */}
-            <View style={{ marginTop: 20 }}>
-              <View style={styles.sectionHeader}>
-                <History size={16} color={colors.textSecondary} />
-                <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                  Project Agent Runs
-                </Text>
-              </View>
-
-              {runsList.length === 0 ? (
-                <View style={[styles.emptyHistoryBox, { borderColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-                  <Bot size={28} color={isDark ? '#30363D' : '#8B929A'} style={{ marginBottom: 8 }} />
-                  <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
-                    No active agent runs for this project. Use the prompt below to spawn one.
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.runsListContainer}>
-                  {runsList.map((run) => (
-                    <TouchableOpacity
-                      key={run.id}
-                      style={[styles.runListItem, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-                      onPress={() => resumeRun(run.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.runListHeader}>
-                        <Text style={[styles.runListId, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                          RUN #{formatRunId(run.id)}
-                        </Text>
-                        <View style={[styles.miniStatusBadge, { backgroundColor: getStatusColor(run.status) + '1A' }]}>
-                          <Text style={[styles.miniStatusText, { color: getStatusColor(run.status) }]}>
-                            {run.status.toUpperCase()}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text style={[styles.runListMeta, { color: colors.textSecondary }]} numberOfLines={1}>
-                        Model: {run.model} • Commands: {run.commands_run}/{run.budget_commands} • Tokens: {run.tokens_used.toLocaleString()}
-                      </Text>
-                      <ChevronRight size={14} color={colors.textSecondary} style={styles.runListArrow} />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-          </ScrollView>
-
-          {/* Prompt spawner area - tap container to focus text input */}
-          <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
-            <View style={[styles.spawnerInputContainer, { borderTopColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-              <View style={[styles.spawnerInputBox, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
-                <TextInput
-                  ref={inputRef}
-                  style={[styles.spawnerInput, { color: colors.text }]}
-                  placeholder="Task for the agent (e.g., 'Fix the styling in index.css')"
-                  placeholderTextColor={colors.textSecondary}
-                  value={inputText}
-                  onChangeText={setInputText}
-                  multiline
-                  maxLength={1000}
-                />
-                <TouchableOpacity
-                  style={[styles.spawnBtn, { backgroundColor: inputText.trim() ? colors.primary : (isDark ? '#21262D' : '#E1E4E8') }]}
-                  onPress={handleSpawnAgent}
-                  disabled={!inputText.trim()}
-                >
-                  <Play size={14} color={inputText.trim() ? '#FFFFFF' : colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
+      {/* Tab Subheader Row */}
+      <View style={[styles.subheaderRow, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Bot size={14} color={colors.primary} />
+          <Text style={[styles.subheaderTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+            Workspace Copilot
+          </Text>
         </View>
-      ) : (
-        /* ========================================================= */
-        /* VIEW B: ACTIVE PROJECT AGENT DASHBOARD                    */
-        /* ========================================================= */
-        <View style={styles.contentWrapper}>
-          {/* Dashboard Subheader */}
-          <View style={[styles.subheaderRow, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-            <TouchableOpacity onPress={clearActiveRun} style={styles.backBtn}>
-              <ArrowLeft size={16} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={[styles.runHeaderId, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-              RUN #{formatRunId(activeRun.id)}
-            </Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(activeRun.status) + '1A', marginLeft: 8 }]}>
-              <Text style={[styles.statusBadgeText, { color: getStatusColor(activeRun.status), fontFamily: 'Inter_700Bold' }]}>
-                {activeRun.status.toUpperCase()}
-              </Text>
-            </View>
-          </View>
 
-          <ScrollView
-            ref={scrollRef}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 12, gap: 12 }}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+          {/* Model picker badge */}
+          <TouchableOpacity
+            style={[styles.modelBadge, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
+            onPress={() => setModelSelectorVisible(true)}
           >
-            {/* Resource Ledger */}
-            <View style={[styles.dashboardCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-              <View style={styles.ledgerGrid}>
-                {/* Tokens */}
-                <View style={styles.ledgerItem}>
-                  <View style={styles.ledgerMetaRow}>
-                    <Text style={[styles.ledgerLabel, { color: colors.textSecondary }]}>Tokens Budget</Text>
-                    <Text style={[styles.ledgerVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                      {activeRun.tokens_used.toLocaleString()} / {activeRun.budget_tokens.toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}>
-                    <View style={[
-                      styles.progressBarFill,
-                      {
-                        backgroundColor: '#2F80ED',
-                        width: `${Math.min(100, (activeRun.tokens_used / activeRun.budget_tokens) * 100)}%`
-                      }
-                    ]} />
-                  </View>
-                </View>
+            <Cpu size={10} color="#3FB950" />
+            <Text style={[styles.modelBadgeText, { color: colors.text }]}>
+              {selectedModel === 'gemini' ? 'Gemini' : selectedModel === 'openai' ? 'GPT-4o' : 'Claude'}
+            </Text>
+          </TouchableOpacity>
 
-                {/* Commands */}
-                <View style={styles.ledgerItem}>
-                  <View style={styles.ledgerMetaRow}>
-                    <Text style={[styles.ledgerLabel, { color: colors.textSecondary }]}>Commands Budget</Text>
-                    <Text style={[styles.ledgerVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                      {activeRun.commands_run} / {activeRun.budget_commands}
-                    </Text>
-                  </View>
-                  <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}>
-                    <View style={[
-                      styles.progressBarFill,
-                      {
-                        backgroundColor: '#F2C94C',
-                        width: `${Math.min(100, (activeRun.commands_run / activeRun.budget_commands) * 100)}%`
-                      }
-                    ]} />
-                  </View>
-                </View>
-              </View>
-            </View>
+          {/* Activity link */}
+          <TouchableOpacity
+            onPress={() => router.push('/activity')}
+            style={styles.activityBtn}
+          >
+            <History size={16} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-            {/* Road Map Checklist */}
-            {plan.length > 0 && (
-              <View style={[styles.dashboardCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                  Plan Roadmap
-                </Text>
-                <View style={styles.planList}>
-                  {plan.map((item, idx) => (
-                    <View key={idx} style={styles.planItemRow}>
-                      {item.status === 'completed' && <CheckCircle2 size={14} color="#3FB950" />}
-                      {item.status === 'running' && <ActivityIndicator size="small" color="#2F80ED" style={{ width: 14, height: 14 }} />}
-                      {item.status === 'pending' && <Loader size={14} color={colors.textSecondary} />}
-                      {item.status === 'failed' && <AlertCircle size={14} color="#EB5757" />}
-                      <Text style={[
-                        styles.planItemLabel,
-                        {
-                          color: item.status === 'completed' ? colors.textSecondary : colors.text,
-                          textDecorationLine: item.status === 'completed' ? 'line-through' : 'none',
-                          fontSize: 12
-                        }
-                      ]}>
-                        {item.label}
-                      </Text>
+      {/* Chat Messages flow */}
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {timeline.length === 0 ? (
+          <View style={styles.welcomeContainer}>
+            <Bot size={36} color={isDark ? '#30363D' : '#8B929A'} style={{ marginBottom: 10 }} />
+            <Text style={[styles.welcomeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+              Workspace Agent
+            </Text>
+            <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
+              Describe changes or ask questions about this project's code. The agent can read, create, and edit files directly in this workspace.
+            </Text>
+          </View>
+        ) : (
+          <View style={{ gap: 14 }}>
+            {timeline.map((event) => {
+              const isUser = event.title === 'User Prompt'
+              const isReasoning = event.title === 'Agent Reasoning'
+              
+              if (!isUser && !isReasoning) return null
+
+              return (
+                <View key={event.id} style={[styles.messageRow, isUser ? styles.userRow : styles.modelRow]}>
+                  {!isUser && (
+                    <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+                      <Sparkles size={11} color={isDark ? '#D2A8FF' : '#8250DF'} />
                     </View>
-                  ))}
+                  )}
+                  
+                  <View style={[
+                    styles.bubble,
+                    isUser
+                      ? [styles.userBubble, { backgroundColor: isDark ? '#21262D' : '#F0F2F5' }]
+                      : styles.modelBubble
+                  ]}>
+                    {isUser ? (
+                      <Text style={[styles.messageText, { color: isDark ? '#FFFFFF' : '#1F2328', fontFamily: 'Inter_400Regular' }]}>
+                        {event.message}
+                      </Text>
+                    ) : (
+                      <Markdown style={mdStyles}>
+                        {event.message || ''}
+                      </Markdown>
+                    )}
+                  </View>
                 </View>
-              </View>
-            )}
+              )
+            })}
 
-            {/* Reasoning Timeline */}
-            {timeline.length > 0 && (
-              <View style={[styles.dashboardCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                  Timeline & Reasoning
-                </Text>
-                <View style={styles.timelineList}>
-                  {timeline.map((event) => {
-                    const isExpanded = expandedTimelineId === event.id
-                    return (
-                      <View key={event.id} style={styles.timelineItem}>
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={() => setExpandedTimelineId(isExpanded ? null : event.id)}
-                          style={styles.timelineHeader}
-                        >
-                          <Sparkles size={11} color={event.title === 'User Prompt' ? '#9B51E0' : '#8250DF'} style={{ marginRight: 6 }} />
-                          <Text style={[styles.timelineEventTitle, { color: colors.text, fontSize: 12, fontFamily: 'Inter_600SemiBold' }]}>
-                            {event.title}
-                          </Text>
-                          {event.message && (isExpanded ? <ChevronUp size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={12} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />)}
-                        </TouchableOpacity>
-                        
-                        {isExpanded && event.message && (
-                          <View style={styles.timelineContent}>
-                            <Markdown style={mdStyles}>{event.message}</Markdown>
-                          </View>
-                        )}
+            {/* Working Progress Card */}
+            {isStreaming && (
+              <View style={[styles.progressCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+                <View style={styles.progressCardHeader}>
+                  <ActivityIndicator size="small" color={colors.primary} style={{ width: 12, height: 12 }} />
+                  <Text style={[styles.progressCardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                    Working...
+                  </Text>
+                </View>
+
+                {plan.length > 0 && (
+                  <View style={styles.checklist}>
+                    {plan.map((item, idx) => (
+                      <View key={idx} style={styles.checklistItem}>
+                        {item.status === 'completed' && <CheckCircle2 size={12} color="#3FB950" />}
+                        {item.status === 'running' && <ActivityIndicator size="small" color="#2F80ED" style={{ width: 12, height: 12 }} />}
+                        {item.status === 'pending' && <Loader size={12} color={colors.textSecondary} />}
+                        {item.status === 'failed' && <AlertCircle size={12} color="#EB5757" />}
+                        <Text style={[
+                          styles.checklistText,
+                          {
+                            color: item.status === 'completed' ? colors.textSecondary : colors.text,
+                            textDecorationLine: item.status === 'completed' ? 'line-through' : 'none'
+                          }
+                        ]}>
+                          {item.label}
+                        </Text>
                       </View>
-                    )
-                  })}
-                </View>
+                    ))}
+                  </View>
+                )}
+
+                <Text style={[styles.activeProgressLabel, { color: colors.textSecondary }]}>
+                  {getActiveProgressText()}
+                </Text>
+
+                {logs.length > 0 && (
+                  <View style={{ marginTop: 8, gap: 4 }}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => setShowConsoleLogs(!showConsoleLogs)}
+                      style={[styles.logsToggleBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
+                    >
+                      <Terminal size={11} color={colors.text} style={{ marginRight: 4 }} />
+                      <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 10 }}>
+                        {showConsoleLogs ? 'Hide Logs' : 'Show Logs'}
+                      </Text>
+                      {showConsoleLogs ? <ChevronUp size={11} color={colors.text} style={{ marginLeft: 'auto' }} /> : <ChevronDown size={11} color={colors.text} style={{ marginLeft: 'auto' }} />}
+                    </TouchableOpacity>
+
+                    {showConsoleLogs && (
+                      <View style={[styles.consoleBox, { borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
+                        <ScrollView
+                          ref={consoleScrollRef}
+                          style={{ flex: 1 }}
+                          contentContainerStyle={{ padding: 4 }}
+                          nestedScrollEnabled
+                        >
+                          <Text style={styles.consoleText}>
+                            {logs.join('')}
+                          </Text>
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             )}
 
-            {/* Live Terminal Log Console */}
-            {logs.length > 0 && (
-              <View style={[styles.consoleCard, { borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
-                <View style={styles.consoleHeader}>
-                  <Terminal size={12} color="#58A6FF" />
-                  <Text style={styles.consoleTitle}>Console Log Output</Text>
-                  {isStreaming && <ActivityIndicator size="small" color="#58A6FF" style={{ marginLeft: 'auto' }} />}
-                </View>
-                <ScrollView
-                  ref={consoleScrollRef}
-                  style={styles.consoleScroll}
-                  contentContainerStyle={{ padding: 6 }}
-                  nestedScrollEnabled
-                >
-                  <Text style={styles.consoleText}>
-                    {logs.join('')}
+            {/* Friendly Error Display */}
+            {friendlyError && (
+              <View style={[styles.errorCard, { backgroundColor: isDark ? '#221515' : '#FDF2F2', borderColor: '#F85149' }]}>
+                <AlertCircle size={14} color="#EB5757" style={{ marginTop: 2 }} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Text style={[styles.errorCardText, { color: isDark ? '#FF7B72' : '#F85149' }]}>
+                    {friendlyError}
                   </Text>
-                </ScrollView>
+                  {friendlyError.includes('Rate limit') && (
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <TouchableOpacity
+                        style={[styles.errorActionBtn, { backgroundColor: '#EB5757' }]}
+                        onPress={handleSend}
+                      >
+                        <Text style={styles.errorActionText}>Retry</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.errorActionBtn, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}
+                        onPress={() => setModelSelectorVisible(true)}
+                      >
+                        <Text style={[styles.errorActionText, { color: colors.text }]}>Switch Model</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
             )}
-          </ScrollView>
+          </View>
+        )}
+      </ScrollView>
 
-          {/* Action Approval Card */}
-          {pendingApproval && (
-            <View style={[styles.approvalFloatingCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: '#E2B714' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <Shield size={13} color="#E2B714" />
-                <Text style={[styles.approvalTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13 }]}>
-                  Command Approval Required
-                </Text>
-              </View>
-              <View style={[styles.approvalCommandBox, { backgroundColor: isDark ? '#0D1117' : '#E1E4E8' }]}>
-                <Text style={styles.approvalCommandText}>
-                  $ {pendingApproval.command}
-                </Text>
-              </View>
-              <View style={styles.approvalActions}>
-                <TouchableOpacity
-                  style={[styles.approvalBtn, { backgroundColor: '#EB5757' }]}
-                  onPress={() => approvePending('reject')}
-                >
-                  <Text style={styles.approvalBtnText}>Deny</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.approvalBtn, { backgroundColor: '#3FB950' }]}
-                  onPress={() => approvePending('approve')}
-                >
-                  <Text style={styles.approvalBtnText}>Approve</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Footer Input for active run - tap container to focus text input */}
-          <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
-            <View style={[styles.spawnerInputContainer, { borderTopColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-              {isStreaming ? (
-                <View style={styles.streamingLoaderBox}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={{ color: colors.textSecondary, fontSize: 12, marginLeft: 6 }}>
-                    Agent executing project roadmap...
-                  </Text>
-                </View>
-              ) : (
-                <View style={[styles.spawnerInputBox, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
-                  <TextInput
-                    ref={inputRef}
-                    style={[styles.spawnerInput, { color: colors.text }]}
-                    placeholder={activeRun.status === 'completed' ? "Run finished. Type follow-up..." : "Send guidelines/instructions..."}
-                    placeholderTextColor={colors.textSecondary}
-                    value={inputText}
-                    onChangeText={setInputText}
-                    multiline
-                    maxLength={1000}
-                  />
-                  <TouchableOpacity
-                    style={[styles.spawnBtn, { backgroundColor: inputText.trim() ? colors.primary : (isDark ? '#21262D' : '#E1E4E8') }]}
-                    onPress={handleFollowUp}
-                    disabled={!inputText.trim()}
-                  >
-                    <ArrowUp size={14} color={inputText.trim() ? '#FFFFFF' : colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </TouchableWithoutFeedback>
+      {/* Floating Approvals Card */}
+      {pendingApproval && (
+        <View style={[styles.approvalCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: '#E2B714' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <Shield size={13} color="#E2B714" />
+            <Text style={[styles.approvalTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13 }]}>
+              Action Approval Required
+            </Text>
+          </View>
+          <View style={[styles.approvalCommandBox, { backgroundColor: isDark ? '#0D1117' : '#E1E4E8' }]}>
+            <Text style={styles.approvalCommandText}>$ {pendingApproval.command}</Text>
+          </View>
+          <View style={styles.approvalActions}>
+            <TouchableOpacity
+              style={[styles.approvalBtn, { backgroundColor: '#EB5757' }]}
+              onPress={() => approvePending('reject')}
+            >
+              <Text style={styles.approvalBtnText}>Deny</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.approvalBtn, { backgroundColor: '#3FB950' }]}
+              onPress={() => approvePending('approve')}
+            >
+              <Text style={styles.approvalBtnText}>Approve</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
+
+      {/* Spawner Input area - tap container wrapper to focus input */}
+      <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
+        <View style={[styles.spawnerInputContainer, { borderTopColor: isDark ? '#21262D' : '#E5E7EB' }]}>
+          {isStreaming ? (
+            <View style={styles.streamingLoaderBox}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginLeft: 6 }}>
+                Agent executing workspace plan...
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.spawnerInputBox, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#30363D' : '#D1D5DB' }]}>
+              <TextInput
+                ref={inputRef}
+                style={[styles.spawnerInput, { color: colors.text }]}
+                placeholder={activeRun?.status === 'completed' ? "Goal completed. Type follow-up..." : "Send guidelines or prompt..."}
+                placeholderTextColor={colors.textSecondary}
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={1000}
+              />
+              <TouchableOpacity
+                style={[styles.sendBtn, { backgroundColor: inputText.trim() ? colors.primary : (isDark ? '#21262D' : '#E1E4E8') }]}
+                onPress={handleSend}
+                disabled={!inputText.trim()}
+              >
+                <ArrowUp size={14} color={inputText.trim() ? '#FFFFFF' : colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
 
       {/* Model Selector Modal */}
       <Modal
@@ -451,7 +398,7 @@ export default function AITab({ projectId }: Props) {
             >
               <Cpu size={14} color="#3FB950" />
               <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                Gemini 3 Flash (Resource-governed)
+                Gemini 3 Flash (Fast)
               </Text>
             </TouchableOpacity>
 
@@ -464,7 +411,7 @@ export default function AITab({ projectId }: Props) {
             >
               <Shield size={14} color="#2F80ED" />
               <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                GPT-4o (Premium reasoning)
+                GPT-4o (Reasoning)
               </Text>
             </TouchableOpacity>
 
@@ -477,7 +424,7 @@ export default function AITab({ projectId }: Props) {
             >
               <Lock size={14} color="#9B51E0" />
               <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                Claude 3.6 Opus (Code synthesis)
+                Claude 3.6 Opus (Synthesis)
               </Text>
             </TouchableOpacity>
           </View>
@@ -491,85 +438,196 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  contentWrapper: {
-    flex: 1,
-  },
-  selectorRow: {
+  subheaderRow: {
     flexDirection: 'row',
-    marginBottom: 16,
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
   },
-  selectorCard: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
+  subheaderTitle: {
+    fontSize: 14,
+  },
+  modelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
     borderWidth: 1,
   },
-  selectorLabel: {
-    fontSize: 9,
+  modelBadgeText: {
+    fontSize: 10,
     fontFamily: 'Inter_500Medium',
-    marginBottom: 2,
   },
-  selectorValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  activityBtn: {
+    padding: 4,
   },
-  selectorValue: {
-    fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
+  welcomeContainer: {
     flex: 1,
+    paddingTop: 60,
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  sectionHeader: {
+  welcomeTitle: {
+    fontSize: 16,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  welcomeSubtitle: {
+    fontSize: 12,
+    color: '#8B929A',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  messageRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    gap: 8,
+    width: '100%',
   },
-  sectionTitle: {
-    fontSize: 13,
+  userRow: {
+    justifyContent: 'flex-end',
   },
-  emptyHistoryBox: {
-    padding: 24,
-    borderRadius: 8,
+  modelRow: {
+    justifyContent: 'flex-start',
+  },
+  avatarCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 1,
-    borderStyle: 'dashed',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
   },
-  runsListContainer: {
-    gap: 6,
+  bubble: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    maxWidth: SCREEN_WIDTH * 0.8,
   },
-  runListItem: {
+  userBubble: {
+    borderBottomRightRadius: 2,
+  },
+  modelBubble: {
+    borderTopLeftRadius: 2,
+  },
+  messageText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  progressCard: {
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    position: 'relative',
+    marginTop: 6,
+    gap: 6,
   },
-  runListHeader: {
+  progressCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 2,
+    gap: 6,
   },
-  runListId: {
+  progressCardTitle: {
     fontSize: 12,
   },
-  miniStatusBadge: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 3,
+  checklist: {
+    gap: 4,
+    paddingLeft: 4,
   },
-  miniStatusText: {
-    fontSize: 8,
+  checklistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  checklistText: {
+    fontSize: 11,
+    flex: 1,
+  },
+  activeProgressLabel: {
+    fontSize: 10,
+    fontStyle: 'italic',
+    paddingLeft: 4,
+  },
+  logsToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  consoleBox: {
+    height: 90,
+    backgroundColor: '#0D1117',
+    borderRadius: 4,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  consoleText: {
+    color: '#C9D1D9',
+    fontFamily: 'JetBrainsMono_400Regular',
+    fontSize: 9,
+  },
+  errorCard: {
+    flexDirection: 'row',
+    padding: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 8,
+    marginTop: 6,
+  },
+  errorCardText: {
+    fontSize: 11,
+    lineHeight: 15,
+    flex: 1,
+  },
+  errorActionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+    justifyContent: 'center',
+  },
+  errorActionText: {
+    color: '#FFFFFF',
+    fontSize: 10,
     fontFamily: 'Inter_700Bold',
   },
-  runListMeta: {
-    fontSize: 10,
-    paddingRight: 20,
+  approvalCard: {
+    marginHorizontal: 12,
+    marginBottom: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 10,
   },
-  runListArrow: {
-    position: 'absolute',
-    right: 10,
-    top: 16,
+  approvalTitle: {
+    fontSize: 13,
+  },
+  approvalCommandBox: {
+    padding: 6,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  approvalCommandText: {
+    fontFamily: 'JetBrainsMono_400Regular',
+    fontSize: 10,
+    color: '#F85149',
+  },
+  approvalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  approvalBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  approvalBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
   },
   spawnerInputContainer: {
     padding: 8,
@@ -591,171 +649,17 @@ const styles = StyleSheet.create({
     maxHeight: 60,
     paddingVertical: 4,
   },
-  spawnBtn: {
+  sendBtn: {
     padding: 6,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  subheaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-  },
-  backBtn: {
-    padding: 4,
-    marginRight: 8,
-  },
-  runHeaderId: {
-    fontSize: 14,
-  },
-  statusBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 3,
-  },
-  statusBadgeText: {
-    fontSize: 9,
-  },
-  dashboardCard: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  cardTitle: {
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  ledgerGrid: {
-    gap: 8,
-  },
-  ledgerItem: {
-    gap: 2,
-  },
-  ledgerMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  ledgerLabel: {
-    fontSize: 10,
-  },
-  ledgerVal: {
-    fontSize: 11,
-  },
-  progressBarBg: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  planList: {
-    gap: 6,
-  },
-  planItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  planItemLabel: {
-    flex: 1,
-  },
-  timelineList: {
-    gap: 6,
-  },
-  timelineItem: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#30363D',
-    paddingBottom: 6,
-  },
-  timelineHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timelineEventTitle: {
-    flex: 1,
-  },
-  timelineContent: {
-    marginTop: 4,
-    paddingLeft: 16,
-  },
-  consoleCard: {
-    backgroundColor: '#0D1117',
-    borderRadius: 6,
-    borderWidth: 1,
-    height: 140,
-    overflow: 'hidden',
-  },
-  consoleHeader: {
-    backgroundColor: '#161B22',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#30363D',
-  },
-  consoleTitle: {
-    color: '#8B929A',
-    fontSize: 10,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  consoleScroll: {
-    flex: 1,
-  },
-  consoleText: {
-    color: '#C9D1D9',
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 10,
   },
   streamingLoaderBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-  },
-  approvalFloatingCard: {
-    marginHorizontal: 12,
-    marginBottom: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 10,
-  },
-  approvalTitle: {
-    flex: 1,
-  },
-  approvalCommandBox: {
-    padding: 8,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  approvalCommandText: {
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 11,
-    color: '#F85149',
-  },
-  approvalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 6,
-  },
-  approvalBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  approvalBtnText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontFamily: 'Inter_700Bold',
   },
   modalBackdrop: {
     flex: 1,
@@ -766,7 +670,7 @@ const styles = StyleSheet.create({
   },
   selectorDropdownCard: {
     width: '90%',
-    maxHeight: '50%',
+    maxHeight: '40%',
     borderRadius: 12,
     borderWidth: 1,
     padding: 14,
