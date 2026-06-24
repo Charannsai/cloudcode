@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { useAgentStore } from '@/store/agentStore'
 import Markdown from 'react-native-markdown-display'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -33,6 +34,7 @@ export default function ActivityScreen() {
   const { runsList, loadRuns, activeProjectId } = useAgentStore()
   const [billingStats, setBillingStats] = useState<BillingStats | null>(null)
   const [loadingResources, setLoadingResources] = useState(true)
+  const [isByokActive, setIsByokActive] = useState(false)
   
   // Detail Modal state
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
@@ -41,9 +43,19 @@ export default function ActivityScreen() {
   const [showConsoleLogs, setShowConsoleLogs] = useState(false)
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
 
+  const checkByok = async () => {
+    try {
+      const byok = await AsyncStorage.getItem('byok_enabled')
+      setIsByokActive(byok === 'true')
+    } catch (e) {
+      console.warn('Failed to load BYOK setting in activity:', e)
+    }
+  }
+
   useEffect(() => {
     loadRuns(activeProjectId || undefined)
     fetchBilling()
+    checkByok()
   }, [activeProjectId])
 
   const fetchBilling = async () => {
@@ -138,9 +150,16 @@ export default function ActivityScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 20 }}>
         {/* 1. Resource Consumption Ledger */}
         <View style={[styles.card, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-          <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-            Resource Consumption
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold', marginBottom: 0 }]}>
+              Plan & Quota Limits
+            </Text>
+            {isByokActive && (
+              <View style={{ backgroundColor: '#3FB95020', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
+                <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>BYOK Mode Active</Text>
+              </View>
+            )}
+          </View>
 
           {loadingResources || !billingStats ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 12 }} />
@@ -168,49 +187,20 @@ export default function ActivityScreen() {
                 </View>
               </View>
 
-              {/* Workspaces */}
-              <View style={styles.meterItem}>
-                <View style={styles.meterHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Folder size={14} color="#3FB950" />
-                    <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>Workspace Containers</Text>
-                  </View>
-                  <Text style={[styles.meterVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                    {billingStats.workspacesUsed} / {billingStats.workspacesLimit}
+              {/* BYOK Suggestion */}
+              {!isByokActive ? (
+                <View style={{ backgroundColor: isDark ? '#1C2128' : '#EAECEF', padding: 10, borderRadius: 8, marginTop: 4 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>
+                    💡 **Suggest BYOK**: Configure your own API keys in Settings to bypass monthly token limits.
                   </Text>
                 </View>
-                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}>
-                  <View style={[
-                    styles.progressBarFill,
-                    {
-                      backgroundColor: '#3FB950',
-                      width: `${Math.min(100, (billingStats.workspacesUsed / billingStats.workspacesLimit) * 100)}%`
-                    }
-                  ]} />
-                </View>
-              </View>
-
-              {/* Storage */}
-              <View style={styles.meterItem}>
-                <View style={styles.meterHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <HardDrive size={14} color="#F2C94C" />
-                    <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>Disk Storage</Text>
-                  </View>
-                  <Text style={[styles.meterVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
-                    {billingStats.storageUsed.toFixed(1)} GB / {billingStats.storageLimit} GB
+              ) : (
+                <View style={{ backgroundColor: isDark ? '#1C2128' : '#EAECEF', padding: 10, borderRadius: 8, marginTop: 4 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>
+                    ✅ Using custom API keys. Monthly token quotas are bypassed.
                   </Text>
                 </View>
-                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}>
-                  <View style={[
-                    styles.progressBarFill,
-                    {
-                      backgroundColor: '#F2C94C',
-                      width: `${Math.min(100, (billingStats.storageUsed / billingStats.storageLimit) * 100)}%`
-                    }
-                  ]} />
-                </View>
-              </View>
+              )}
             </View>
           )}
         </View>
