@@ -8,10 +8,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useAIStore } from '@/store/ai'
 import { api } from '@/lib/api'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { ArrowLeft, Save, Check, ChevronDown, ChevronRight, X, File, Folder, FileCode, Code, Hash, FileJson, FileText, Settings, Columns, Sparkles } from 'lucide-react-native'
+import { 
+  ArrowLeft, Save, Check, ChevronDown, ChevronRight, X, File, Folder, 
+  FileCode, Code, Hash, FileJson, FileText, Settings, Columns, Sparkles, 
+  MoreVertical, ChevronLeft, Terminal, GitBranch, Globe, Play, Info 
+} from 'lucide-react-native'
 import { FileNode } from '@/types'
 import { WebView } from 'react-native-webview'
 import { getToken } from '@/lib/auth'
+import { BlurView } from 'expo-blur'
+import Reanimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated'
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
 
@@ -178,6 +184,160 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
 `;
 }
 
+// Bouncy spring-loaded "genie effect" animated menu bar item
+function AnimatedMenuItem({ name, activeMenu, onPress, colors, isDark }: {
+  name: string; activeMenu: string | null; onPress: () => void; colors: any; isDark: boolean;
+}) {
+  const scale = useSharedValue(1)
+  const bgOpacity = useSharedValue(0)
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    backgroundColor: `rgba(${isDark ? '255,255,255' : '0,0,0'}, ${bgOpacity.value})`
+  }))
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.9, { damping: 12, stiffness: 350 })
+    bgOpacity.value = withTiming(0.12, { duration: 80 })
+  }
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 350 })
+    bgOpacity.value = withTiming(0, { duration: 150 })
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={1}
+    >
+      <Reanimated.View style={[styles.menuBarItemAnimated, animatedStyle]}>
+        <Text style={[
+          styles.menuBarText, 
+          { 
+            color: activeMenu === name ? colors.primary : colors.textSecondary, 
+            fontFamily: 'Inter_500Medium' 
+          }
+        ]}>
+          {name}
+        </Text>
+      </Reanimated.View>
+    </TouchableOpacity>
+  )
+}
+
+// Premium animated glassmorphic dropdown card
+function AnimatedDropdownCard({
+  visible,
+  items,
+  onClose,
+  colors,
+  isDark,
+  left,
+  right,
+  top
+}: {
+  visible: boolean;
+  items: { label: string; onPress: () => void; divider?: boolean; danger?: boolean; icon?: any }[];
+  onClose: () => void;
+  colors: any;
+  isDark: boolean;
+  left?: number;
+  right?: number;
+  top: number;
+}) {
+  const scale = useSharedValue(0.9)
+  const opacity = useSharedValue(0)
+  const translateY = useSharedValue(-15)
+
+  useEffect(() => {
+    if (visible) {
+      scale.value = withSpring(1, { damping: 14, stiffness: 300 })
+      opacity.value = withTiming(1, { duration: 120 })
+      translateY.value = withSpring(0, { damping: 14, stiffness: 300 })
+    } else {
+      scale.value = withTiming(0.9, { duration: 100 })
+      opacity.value = withTiming(0, { duration: 100 })
+      translateY.value = withTiming(-15, { duration: 100 })
+    }
+  }, [visible])
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value }
+    ]
+  }))
+
+  const containerBg = isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.82)'
+
+  return (
+    <Reanimated.View
+      style={[
+        styles.dropdownMenuAnimated,
+        animatedStyle,
+        {
+          top,
+          left,
+          right,
+          borderColor: colors.border,
+          backgroundColor: containerBg,
+        }
+      ]}
+    >
+      {Platform.OS === 'ios' && (
+        <BlurView
+          intensity={65}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
+      <View style={styles.dropdownInner}>
+        {items.map((item, index) => {
+          const IconComponent = item.icon
+          return (
+            <View key={index}>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => {
+                  item.onPress()
+                  onClose()
+                }}
+                activeOpacity={0.6}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  {IconComponent && (
+                    <IconComponent 
+                      size={14} 
+                      color={item.danger ? '#F85149' : (colors.textSecondary)} 
+                      strokeWidth={2}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      {
+                        color: item.danger ? '#F85149' : colors.text,
+                        fontFamily: 'Inter_500Medium',
+                      }
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              {item.divider && <View style={[styles.dropdownDivider, { backgroundColor: colors.border }]} />}
+            </View>
+          )
+        })}
+      </View>
+    </Reanimated.View>
+  )
+}
+
 function FileRow({ node, depth, currentPath, onFilePress }: {
   node: FileNode; depth: number; currentPath: string; onFilePress: (path: string) => void;
 }) {
@@ -233,7 +393,7 @@ export default function EditorScreen() {
   const webViewRef = useRef<WebView>(null)
   const webViewRef2 = useRef<WebView>(null)
 
-  const { setActiveProject, setPendingPrompt } = useAIStore()
+  const { setActiveProject, setPendingPrompt, setPinnedFile } = useAIStore()
 
   const [content, setContent] = useState('')
   const [originalContent, setOriginalContent] = useState('')
@@ -245,6 +405,9 @@ export default function EditorScreen() {
   const [fileTree, setFileTree] = useState<FileNode[]>([])
   const [fetchingFiles, setFetchingFiles] = useState(false)
   const [editorReady, setEditorReady] = useState(false)
+
+  // Three-dot dropdown menu state
+  const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
 
   // Multi-File Tab System state
   const [openTabs, setOpenTabs] = useState<{ path: string; name: string }[]>(
@@ -280,6 +443,29 @@ export default function EditorScreen() {
       case 'Help': return 210
       default: return 16
     }
+  }
+
+  const handleAskAIAboutFile = () => {
+    const panePath = focusedPane === 1 ? currentPath : currentPath2
+    const paneContent = focusedPane === 1 ? content : content2
+    if (!panePath) return
+
+    const filename = panePath.split('/').pop() || 'File'
+
+    // 1. Pin file and content in store
+    setPinnedFile({
+      path: panePath,
+      content: paneContent
+    })
+
+    // 2. Set pending prompt for the AI tab
+    setPendingPrompt(`I have pinned the file \`${filename}\`. Can you explain how this file works and suggest improvements or optimizations?`)
+
+    // 3. Navigate directly to the AI Tab of the active project workspace
+    router.replace({
+      pathname: `/project/[id]`,
+      params: { id: id as string, tab: 'AI' }
+    })
   }
 
   const handleRunCurrentFile = async () => {
@@ -383,37 +569,41 @@ export default function EditorScreen() {
     switch (menu) {
       case 'File':
         return [
-          { label: 'Save', onPress: handleSave },
-          { label: 'Close File', onPress: () => closeTab(panePath || '') },
-          { label: 'Switch File', onPress: () => setShowFilePicker(true), divider: true },
-          { label: 'Exit Editor', onPress: () => router.back(), danger: true },
+          { label: 'Save', icon: Save, onPress: handleSave },
+          { label: 'Close File', icon: X, onPress: () => closeTab(panePath || '') },
+          { label: 'Switch File', icon: Folder, onPress: () => setShowFilePicker(true), divider: true },
+          { label: 'Exit Editor', icon: ArrowLeft, onPress: () => router.back(), danger: true },
         ]
       case 'Run':
         return [
-          { label: 'Run Current File', onPress: handleRunCurrentFile },
+          { label: 'Run Current File', icon: Play, onPress: handleRunCurrentFile },
         ]
       case 'Edit':
         return [
-          { label: 'Toggle Split View', onPress: toggleSplitMode },
-          { label: 'Focus Left/Top Pane', onPress: () => setFocusedPane(1) },
-          { label: 'Focus Right/Bottom Pane', onPress: () => setFocusedPane(2) },
+          { label: 'Toggle Split View', icon: Columns, onPress: toggleSplitMode },
+          { label: 'Focus Left/Top Pane', icon: ChevronLeft, onPress: () => setFocusedPane(1) },
+          { label: 'Focus Right/Bottom Pane', icon: ChevronRight, onPress: () => setFocusedPane(2) },
         ]
       case 'Go':
         return [
           {
             label: 'Go to Terminal',
+            icon: Terminal,
             onPress: () => router.replace({ pathname: `/project/[id]`, params: { id: id as string, tab: 'Terminal' } })
           },
           {
             label: 'Go to Files',
+            icon: Folder,
             onPress: () => router.replace({ pathname: `/project/[id]`, params: { id: id as string, tab: 'Files' } })
           },
           {
             label: 'Go to Git',
+            icon: GitBranch,
             onPress: () => router.replace({ pathname: `/project/[id]`, params: { id: id as string, tab: 'Git' } })
           },
           {
             label: 'Go to Preview',
+            icon: Globe,
             onPress: () => router.replace({ pathname: `/project/[id]`, params: { id: id as string, tab: 'Preview' } })
           },
         ]
@@ -421,12 +611,14 @@ export default function EditorScreen() {
         return [
           {
             label: 'About CloudCode',
+            icon: Info,
             onPress: () => {
               Alert.alert('About CloudCode', 'A premium, multi-tenant cloud workspace and IDE.')
             }
           },
           {
             label: 'Keyboard & Gesture Shortcuts',
+            icon: Settings,
             onPress: () => {
               Alert.alert(
                 'Shortcuts & Tips',
@@ -625,6 +817,15 @@ export default function EditorScreen() {
     }
   }, [editorReady2, content2, loading2, currentPath2])
 
+  // Three-dot menu list config
+  const threeDotItems = [
+    { label: 'Ask AI about file', icon: Sparkles, onPress: handleAskAIAboutFile },
+    { label: 'Save File', icon: Save, onPress: handleSave, divider: true },
+    { label: 'Split Editor', icon: Columns, onPress: toggleSplitMode },
+    { label: 'Close File', icon: X, onPress: () => closeTab(activePath), divider: true },
+    { label: 'Exit Editor', icon: ArrowLeft, onPress: () => router.back(), danger: true },
+  ]
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -641,13 +842,13 @@ export default function EditorScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           onPress={toggleSplitMode}
-          style={[styles.saveBtn, { marginRight: 8, backgroundColor: splitMode ? colors.primary + '20' : (isDark ? '#1C2128' : '#F6F8FA') }]}
+          style={[styles.saveBtn, { marginRight: 4, backgroundColor: splitMode ? colors.primary + '20' : (isDark ? '#1C2128' : '#F6F8FA') }]}
           activeOpacity={0.7}
         >
           <Columns size={16} color={splitMode ? colors.primary : colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: activeHasChanges ? colors.text : (isDark ? '#1C2128' : '#F6F8FA') }]}
+          style={[styles.saveBtn, { marginRight: 4, backgroundColor: activeHasChanges ? colors.text : (isDark ? '#1C2128' : '#F6F8FA') }]}
           onPress={handleSave} disabled={!activeHasChanges || saving} activeOpacity={0.8}
         >
           {saving ? (
@@ -658,25 +859,32 @@ export default function EditorScreen() {
             <Check size={18} color={colors.textSecondary} />
           )}
         </TouchableOpacity>
+        
+        {/* Three-Dot Menu Trigger */}
+        <TouchableOpacity
+          onPress={() => setShowThreeDotMenu(true)}
+          style={[styles.saveBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
+          activeOpacity={0.7}
+        >
+          <MoreVertical size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
-      {/* Menubar Row */}
-      <View style={[styles.menuBarRow, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderBottomColor: colors.border }]}>
+      {/* Menubar Row with bouncy spring-loaded Genie Effect items */}
+      <View style={[styles.menuBarRow, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderBottomColor: colors.border }]}>
         {MENUS.map((menu) => (
-          <TouchableOpacity
+          <AnimatedMenuItem 
             key={menu.name}
-            style={styles.menuBarItem}
+            name={menu.name}
+            activeMenu={activeMenu}
             onPress={() => setActiveMenu(menu.name)}
-            activeOpacity={0.6}
-          >
-            <Text style={[styles.menuBarText, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-              {menu.name}
-            </Text>
-          </TouchableOpacity>
+            colors={colors}
+            isDark={isDark}
+          />
         ))}
       </View>
 
-      {/* Horizontally scrollable Editor Tab Bar */}
+      {/* Redesigned Premium IDE Scrollable Editor Tab Bar */}
       <View style={[styles.tabBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBarScroll}>
           {openTabs.map((tab) => {
@@ -688,8 +896,12 @@ export default function EditorScreen() {
                 style={[
                   styles.tabItem,
                   { 
-                    backgroundColor: isActive ? (isDark ? '#0E1116' : '#FFFFFF') : 'transparent',
+                    backgroundColor: isActive 
+                      ? (isDark ? '#0E1116' : '#FFFFFF') 
+                      : (isDark ? '#11151D' : '#EAEDF0'),
                     borderColor: isActive ? colors.border : 'transparent',
+                    borderTopColor: isActive ? colors.primary : 'transparent',
+                    borderRightColor: colors.border,
                   }
                 ]}
                 activeOpacity={0.7}
@@ -866,54 +1078,27 @@ export default function EditorScreen() {
         </View>
       </Modal>
 
-      {/* Dropdown Menu Modal */}
-      <Modal
+      {/* Menubar Dropdown Menu Modal */}
+      <DropdownMenuModal
         visible={activeMenu !== null}
-        transparent
-        animationType="none"
-        onRequestClose={() => setActiveMenu(null)}
-      >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => setActiveMenu(null)}
-        >
-          <View
-            style={[
-              styles.dropdownMenu,
-              {
-                backgroundColor: isDark ? '#1E232E' : '#FFFFFF',
-                borderColor: colors.border,
-                left: getDropdownLeft(activeMenu),
-              }
-            ]}
-          >
-            {getMenuItems(activeMenu).map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.dropdownItem,
-                  item.divider && { borderBottomWidth: 1, borderBottomColor: colors.border }
-                ]}
-                onPress={() => {
-                  setActiveMenu(null)
-                  item.onPress()
-                }}
-                activeOpacity={0.6}
-              >
-                <Text
-                  style={[
-                    styles.dropdownItemText,
-                    { color: item.danger ? '#F85149' : colors.text, fontFamily: 'Inter_500Medium' }
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        onClose={() => setActiveMenu(null)}
+        items={getMenuItems(activeMenu)}
+        colors={colors}
+        isDark={isDark}
+        left={getDropdownLeft(activeMenu)}
+        top={130}
+      />
+
+      {/* Three-Dot Dropdown Menu Modal */}
+      <DropdownMenuModal
+        visible={showThreeDotMenu}
+        onClose={() => setShowThreeDotMenu(false)}
+        items={threeDotItems}
+        colors={colors}
+        isDark={isDark}
+        right={16}
+        top={104}
+      />
 
       {/* Floating Ask AI Button for Selection */}
       {selectedText.trim().length > 0 && (
@@ -946,6 +1131,53 @@ export default function EditorScreen() {
   )
 }
 
+// Wrapper component to handle modal overlay and animated dropdown card
+function DropdownMenuModal({
+  visible,
+  onClose,
+  items,
+  colors,
+  isDark,
+  left,
+  right,
+  top
+}: {
+  visible: boolean;
+  onClose: () => void;
+  items: any[];
+  colors: any;
+  isDark: boolean;
+  left?: number;
+  right?: number;
+  top: number;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
+        style={styles.menuOverlay}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <AnimatedDropdownCard
+          visible={visible}
+          items={items}
+          onClose={onClose}
+          colors={colors}
+          isDark={isDark}
+          left={left}
+          right={right}
+          top={top}
+        />
+      </TouchableOpacity>
+    </Modal>
+  )
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -971,21 +1203,25 @@ const styles = StyleSheet.create({
   activeIndicator: { width: 6, height: 6, borderRadius: 3, marginLeft: 8 },
   tabBar: {
     borderBottomWidth: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    height: 42,
   },
   tabBarScroll: {
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'flex-end',
+    height: 41,
+    paddingHorizontal: 8,
+    gap: 2,
   },
   tabItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    gap: 6,
+    paddingHorizontal: 14,
+    height: 36,
+    borderTopWidth: 2.5,
+    borderRightWidth: 1,
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    justifyContent: 'center',
+    gap: 8,
   },
   tabText: {
     fontSize: 12,
@@ -1020,31 +1256,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    gap: 20,
+    gap: 8,
     zIndex: 5,
   },
-  menuBarItem: {
-    paddingVertical: 2,
+  menuBarItemAnimated: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
   menuBarText: {
     fontSize: 13,
   },
   menuOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'transparent',
   },
-  dropdownMenu: {
+  dropdownMenuAnimated: {
     position: 'absolute',
-    top: 130, // Fits nicely under the menubar (header ~ 104px + menubar ~ 35px)
-    borderRadius: 4,
+    borderRadius: 8,
     borderWidth: 1,
-    paddingVertical: 4,
-    minWidth: 170,
+    overflow: 'hidden',
+    minWidth: 190,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  dropdownInner: {
+    paddingVertical: 6,
   },
   dropdownItem: {
     paddingHorizontal: 16,
@@ -1052,6 +1292,11 @@ const styles = StyleSheet.create({
   },
   dropdownItemText: {
     fontSize: 13,
+  },
+  dropdownDivider: {
+    height: 1,
+    marginVertical: 4,
+    marginHorizontal: 8,
   },
   floatingAskAIContainer: {
     position: 'absolute',
