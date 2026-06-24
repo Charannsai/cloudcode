@@ -318,20 +318,39 @@ const startServer = async () => {
 
   setInterval(async () => {
     try {
-      // Get all projects with running containers, joining users to get their tier
-      const { data: activeProjects } = await supabaseAdmin
+      // Get all projects with running containers
+      const { data: activeProjects, error: projectsError } = await supabaseAdmin
         .from('projects')
-        .select('id, name, container_id, status, user_github_id, users:users!projects_user_github_id_fkey(tier)')
+        .select('id, name, container_id, status, user_github_id')
         .not('container_id', 'is', null)
-        .in('status', ['ready', 'running']) as any
+        .in('status', ['ready', 'running'])
+
+      if (projectsError) {
+        console.error('[Idle Auto-Stop] Error fetching active projects:', projectsError)
+        return
+      }
 
       if (!activeProjects || activeProjects.length === 0) return
+
+      // Fetch the tiers for the unique users of these projects to avoid complex PostgREST join failures
+      const userGithubIds = Array.from(new Set(activeProjects.map(p => p.user_github_id)))
+      const { data: usersData, error: usersError } = await supabaseAdmin
+        .from('users')
+        .select('github_id, tier')
+        .in('github_id', userGithubIds)
+
+      if (usersError) {
+        console.error('[Idle Auto-Stop] Error fetching users for tier resolution:', usersError)
+        return
+      }
+
+      const userTierMap = new Map(usersData?.map(u => [u.github_id, u.tier]) || [])
 
       for (const project of activeProjects) {
         if (!project.container_id) continue
 
         // Resolve tier name and dynamic idle threshold
-        const userTier = project.users?.tier || 'free'
+        const userTier = userTierMap.get(project.user_github_id) || 'free'
         const tierConfig = getTierConfig(userTier)
         const idleMinutes = tierConfig.container.idleTimeoutMinutes
 
