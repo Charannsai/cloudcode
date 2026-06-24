@@ -599,8 +599,67 @@ export default function AIScreen() {
   const [isListening, setIsListening] = useState(false)
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
 
-  const modelAnim = useRef(new Animated.Value(0)).current
-  const historyAnim = useRef(new Animated.Value(0)).current
+  // Reanimated states for Model Selection Modal
+  const [renderModelModal, setRenderModelModal] = useState(false)
+  const modelProgress = useSharedValue(0)
+
+  useEffect(() => {
+    if (modelModalVisible) {
+      setRenderModelModal(true)
+      modelProgress.value = withTiming(1, { duration: 250, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+    } else {
+      modelProgress.value = withTiming(0, { duration: 200, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderModelModal)(false)
+        }
+      })
+    }
+  }, [modelModalVisible])
+
+  const modelBackdropStyle = useAnimatedStyle(() => ({
+    opacity: modelProgress.value,
+  }))
+
+  const modelCardStyle = useAnimatedStyle(() => {
+    const progress = modelProgress.value
+    const scale = 0.95 + 0.05 * progress
+    const translateY = (1 - progress) * 12
+    return {
+      opacity: progress,
+      transform: [{ scale }, { translateY }],
+    }
+  })
+
+  // Reanimated states for History Modal
+  const [renderHistoryModal, setRenderHistoryModal] = useState(false)
+  const historyProgress = useSharedValue(0)
+
+  useEffect(() => {
+    if (historyModalVisible) {
+      setRenderHistoryModal(true)
+      historyProgress.value = withTiming(1, { duration: 250, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) })
+    } else {
+      historyProgress.value = withTiming(0, { duration: 200, easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1) }, (finished) => {
+        if (finished) {
+          runOnJS(setRenderHistoryModal)(false)
+        }
+      })
+    }
+  }, [historyModalVisible])
+
+  const historyBackdropStyle = useAnimatedStyle(() => ({
+    opacity: historyProgress.value,
+  }))
+
+  const historyCardStyle = useAnimatedStyle(() => {
+    const progress = historyProgress.value
+    const scale = 0.95 + 0.05 * progress
+    const translateY = (1 - progress) * 12
+    return {
+      opacity: progress,
+      transform: [{ scale }, { translateY }],
+    }
+  })
 
   // Reanimated states for history dropdown menu
   const [renderMenu, setRenderMenu] = useState(false)
@@ -646,18 +705,6 @@ export default function AIScreen() {
       ]
     }
   })
-
-  useEffect(() => {
-    if (historyModalVisible) {
-      historyAnim.setValue(0)
-      Animated.timing(historyAnim, {
-        toValue: 1,
-        duration: 120,
-        easing: Easing.bezier(0.16, 1, 0.3, 1),
-        useNativeDriver: true,
-      }).start()
-    }
-  }, [historyModalVisible])
 
   // Speech and Voice listeners initialization
   useEffect(() => {
@@ -1079,177 +1126,171 @@ export default function AIScreen() {
       </View>
 
       {/* Model Selection Modal */}
-      <Modal
-        visible={modelModalVisible}
-        transparent
-        animationType="none"
-        statusBarTranslucent={true}
-        onRequestClose={() => setModelModalVisible(false)}
-      >
-        <View style={[styles.modalBackdrop, { backgroundColor: 'transparent' }]}>
-          <Animated.View 
-            style={[
-              StyleSheet.absoluteFill, 
-              { 
-                backgroundColor: 'rgba(0, 0, 0, 0.4)', 
-                opacity: modelAnim 
-              }
-            ]} 
-          />
-          <TouchableOpacity 
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setModelModalVisible(false)}
-          />
-          <Animated.View style={[
-            styles.modalContent, 
-            { 
-              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
-              borderColor: isDark ? '#21262D' : '#E5E7EB',
-              transform: [
-                {
-                  translateY: modelAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [150, 0],
-                  })
-                }
-              ]
-            }
-          ]}>
-            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                Select AI Model
-              </Text>
-              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                Choose which model powers your coding assistant.
-              </Text>
-            </View>
-
-            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
-              {/* Gemini Option */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  setSelectedModel('gemini')
-                  setModelModalVisible(false)
-                }}
-                style={[
-                  styles.projectOption,
-                  { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' },
-                  selectedModel === 'gemini' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' }
-                ]}
-              >
-                <View style={styles.projectOptionLeft}>
-                  <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(139, 92, 246, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    <Sparkles size={14} color="#8B5CF6" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Gemini Flash</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>Fast, default assistant with rich tool integration.</Text>
-                  </View>
-                </View>
-                {selectedModel === 'gemini' && <CheckCircle2 size={16} color="#8B5CF6" />}
-              </TouchableOpacity>
-
-              {/* OpenAI Option */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  if (userTier === 'free') {
-                    Alert.alert(
-                      'Premium Feature',
-                      'gpt-4o is restricted to Pro and Advanced tiers. Please upgrade your billing plan in Settings.'
-                    )
-                    return
-                  }
-                  setSelectedModel('openai')
-                  setModelModalVisible(false)
-                }}
-                style={[
-                  styles.projectOption,
-                  { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
-                  selectedModel === 'openai' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' },
-                  userTier === 'free' && { opacity: 0.6 }
-                ]}
-              >
-                <View style={styles.projectOptionLeft}>
-                  <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    <Cpu size={14} color="#10B981" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>gpt-4o</Text>
-                      {userTier === 'free' && (
-                        <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 }}>
-                          <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PRO</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>ChatGPT flagship model for high reasoning and logic.</Text>
-                  </View>
-                </View>
-                {userTier === 'free' ? (
-                  <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
-                ) : (
-                  selectedModel === 'openai' && <CheckCircle2 size={16} color="#10B981" />
-                )}
-              </TouchableOpacity>
-
-              {/* Anthropic Option */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  if (userTier === 'free') {
-                    Alert.alert(
-                      'Premium Feature',
-                      'Claude Opus 4.6 is restricted to Pro and Advanced tiers. Please upgrade your billing plan in Settings.'
-                    )
-                    return
-                  }
-                  setSelectedModel('anthropic')
-                  setModelModalVisible(false)
-                }}
-                style={[
-                  styles.projectOption,
-                  { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
-                  selectedModel === 'anthropic' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' },
-                  userTier === 'free' && { opacity: 0.6 }
-                ]}
-              >
-                <View style={styles.projectOptionLeft}>
-                  <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(217, 119, 6, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    <Shield size={14} color="#D97706" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Claude Opus 4.6</Text>
-                      {userTier === 'free' && (
-                        <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 }}>
-                          <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PRO</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>State of the art reasoning & code planning capabilities.</Text>
-                  </View>
-                </View>
-                {userTier === 'free' ? (
-                  <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
-                ) : (
-                  selectedModel === 'anthropic' && <CheckCircle2 size={16} color="#D97706" />
-                )}
-              </TouchableOpacity>
-            </ScrollView>
-
+      {renderModelModal && (
+        <Modal
+          visible={renderModelModal}
+          transparent
+          animationType="none"
+          statusBarTranslucent={true}
+          onRequestClose={() => setModelModalVisible(false)}
+        >
+          <View style={styles.centeredModalBackdrop}>
+            <Reanimated.View 
+              style={[
+                StyleSheet.absoluteFill, 
+                { 
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)'
+                },
+                modelBackdropStyle
+              ]} 
+            />
             <TouchableOpacity 
-              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
               onPress={() => setModelModalVisible(false)}
-            >
-            <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Cancel</Text>
-          </TouchableOpacity>
-        </Animated.View>
-        </View>
-      </Modal>
+            />
+            <Reanimated.View style={[
+              styles.centeredModalCard, 
+              { 
+                backgroundColor: isDark ? '#161B22' : '#FFFFFF', 
+                borderColor: isDark ? '#30363D' : '#E1E4E8',
+              },
+              modelCardStyle
+            ]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }]}>
+                  Select AI Model
+                </Text>
+                <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontSize: 12, marginTop: 4 }]}>
+                  Choose which model powers your coding assistant.
+                </Text>
+              </View>
+
+              <ScrollView style={[styles.modalList, { maxHeight: 300 }]} showsVerticalScrollIndicator={false}>
+                {/* Gemini Option */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setSelectedModel('gemini')
+                    setModelModalVisible(false)
+                  }}
+                  style={[
+                    styles.projectOption,
+                    { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' },
+                    selectedModel === 'gemini' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' }
+                  ]}
+                >
+                  <View style={styles.projectOptionLeft}>
+                    <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(139, 92, 246, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                      <Sparkles size={14} color="#8B5CF6" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Gemini Flash</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>Fast, default assistant with rich tool integration.</Text>
+                    </View>
+                  </View>
+                  {selectedModel === 'gemini' && <CheckCircle2 size={16} color="#8B5CF6" />}
+                </TouchableOpacity>
+
+                {/* OpenAI Option */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (userTier === 'free') {
+                      Alert.alert(
+                        'Premium Feature',
+                        'gpt-4o is restricted to Pro and Advanced tiers. Please upgrade your billing plan in Settings.'
+                      )
+                      return
+                    }
+                    setSelectedModel('openai')
+                    setModelModalVisible(false)
+                  }}
+                  style={[
+                    styles.projectOption,
+                    { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
+                    selectedModel === 'openai' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' },
+                    userTier === 'free' && { opacity: 0.6 }
+                  ]}
+                >
+                  <View style={styles.projectOptionLeft}>
+                    <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                      <Cpu size={14} color="#10B981" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>gpt-4o</Text>
+                        {userTier === 'free' && (
+                          <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 }}>
+                            <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PRO</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>ChatGPT flagship model for high reasoning and logic.</Text>
+                    </View>
+                  </View>
+                  {userTier === 'free' ? (
+                    <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                  ) : (
+                    selectedModel === 'openai' && <CheckCircle2 size={16} color="#10B981" />
+                  )}
+                </TouchableOpacity>
+
+                {/* Anthropic Option */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (userTier === 'free') {
+                      Alert.alert(
+                        'Premium Feature',
+                        'Claude Opus 4.6 is restricted to Pro and Advanced tiers. Please upgrade your billing plan in Settings.'
+                      )
+                      return
+                    }
+                    setSelectedModel('anthropic')
+                    setModelModalVisible(false)
+                  }}
+                  style={[
+                    styles.projectOption,
+                    { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', marginTop: 8 },
+                    selectedModel === 'anthropic' && { backgroundColor: isDark ? '#1C2128' : '#E6F4EA' },
+                    userTier === 'free' && { opacity: 0.6 }
+                  ]}
+                >
+                  <View style={styles.projectOptionLeft}>
+                    <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: 'rgba(217, 119, 6, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                      <Shield size={14} color="#D97706" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[styles.projectName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Claude Opus 4.6</Text>
+                        {userTier === 'free' && (
+                          <View style={{ backgroundColor: '#22c55e20', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4 }}>
+                            <Text style={{ color: '#22c55e', fontSize: 9, fontFamily: 'Inter_700Bold' }}>PRO</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>State of the art reasoning & code planning capabilities.</Text>
+                    </View>
+                  </View>
+                  {userTier === 'free' ? (
+                    <Lock size={14} color={colors.textSecondary} strokeWidth={1.5} />
+                  ) : (
+                    selectedModel === 'anthropic' && <CheckCircle2 size={16} color="#D97706" />
+                  )}
+                </TouchableOpacity>
+              </ScrollView>
+
+              <TouchableOpacity 
+                style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: isDark ? '#30363D' : '#E1E4E8', borderWidth: 1, borderRadius: 8, marginTop: 12 }]}
+                onPress={() => setModelModalVisible(false)}
+              >
+                <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }]}>Cancel</Text>
+              </TouchableOpacity>
+            </Reanimated.View>
+          </View>
+        </Modal>
+      )}
 
       {/* Dropdown Menu Modal */}
       {renderMenu && (
@@ -1370,139 +1411,132 @@ export default function AIScreen() {
           </View>
         </Modal>
       )}
-
-      {/* Past Conversations Modal */}
-      <Modal
-        visible={historyModalVisible}
-        transparent
-        animationType="none"
-        statusBarTranslucent={true}
-        onRequestClose={() => setHistoryModalVisible(false)}
-      >
-        <View style={[styles.modalBackdrop, { backgroundColor: 'transparent' }]}>
-          <Animated.View 
-            style={[
-              StyleSheet.absoluteFill, 
-              { 
-                backgroundColor: 'rgba(0, 0, 0, 0.4)', 
-                opacity: historyAnim 
-              }
-            ]} 
-          />
-          <TouchableOpacity 
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setHistoryModalVisible(false)}
-          />
-          <Animated.View style={[
-            styles.modalContent, 
-            { 
-              backgroundColor: isDark ? '#151922' : '#FFFFFF', 
-              borderColor: isDark ? '#21262D' : '#E5E7EB',
-              transform: [
-                {
-                  translateY: historyAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [150, 0],
-                  })
-                }
-              ]
-            }
-          ]}>
-            <View style={[styles.modalDragHandle, { backgroundColor: isDark ? '#30363D' : '#D1D5DB' }]} />
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                Past Conversations
-              </Text>
-              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                Restore previous chats or clear your history.
-              </Text>
-            </View>
-
-            <ScrollView 
-              style={[styles.modalList, { maxHeight: 350 }]} 
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 10 }}
-            >
-              {savedConversations.length === 0 ? (
-                <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                  <History size={32} color={colors.textSecondary} style={{ opacity: 0.5, marginBottom: 12 }} />
-                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13 }}>
-                    No saved conversations found.
-                  </Text>
-                </View>
-              ) : (
-                savedConversations.map((thread) => {
-                  const isCurrent = currentThreadId === thread.id
-                  const projName = thread.projectId === 'global' ? 'General Assistant' : (projects.find(p => p.id === thread.projectId)?.name || 'Workspace')
-
-                  return (
-                    <View
-                      key={thread.id}
-                      style={[
-                        styles.historyItemRow,
-                        {
-                          borderColor: colors.border,
-                          backgroundColor: isCurrent ? (isDark ? '#1C2128' : '#F0F2F5') : 'transparent'
-                        }
-                      ]}
-                    >
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        onPress={() => {
-                          loadConversation(thread.id)
-                          setHistoryModalVisible(false)
-                        }}
-                        style={{ flex: 1, paddingVertical: 10, paddingLeft: 12 }}
-                      >
-                        <Text style={[styles.historyItemTitle, { color: colors.text, fontFamily: isCurrent ? 'Inter_600SemiBold' : 'Inter_400Regular' }]} numberOfLines={1}>
-                          {thread.title}
-                        </Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                          <Text style={{ color: colors.textSecondary, fontSize: 10 }}>
-                            {formatTimestamp(thread.timestamp)}
-                          </Text>
-                          <Text style={{ color: colors.textSecondary, fontSize: 10 }}>•</Text>
-                          <Text style={{ color: colors.primary, fontSize: 10, fontFamily: 'Inter_500Medium' }}>
-                            {projName}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => {
-                          Alert.alert(
-                            'Delete Conversation',
-                            'Are you sure you want to permanently delete this conversation history?',
-                            [
-                              { text: 'Cancel', style: 'cancel' },
-                              { 
-                                text: 'Delete', 
-                                style: 'destructive',
-                                onPress: () => deleteConversation(thread.id)
-                              }
-                            ]
-                          )
-                        }}
-                        style={styles.historyDeleteBtn}
-                      >
-                        <Trash2 size={14} color="#F85149" strokeWidth={1.5} />
-                      </TouchableOpacity>
-                    </View>
-                  )
-                })
-              )}
-            </ScrollView>
-
+        {/* Past Conversations Modal */}
+      {renderHistoryModal && (
+        <Modal
+          visible={renderHistoryModal}
+          transparent
+          animationType="none"
+          statusBarTranslucent={true}
+          onRequestClose={() => setHistoryModalVisible(false)}
+        >
+          <View style={styles.centeredModalBackdrop}>
+            <Reanimated.View 
+              style={[
+                StyleSheet.absoluteFill, 
+                { 
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)'
+                },
+                historyBackdropStyle
+              ]} 
+            />
             <TouchableOpacity 
-              style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
               onPress={() => setHistoryModalVisible(false)}
-            >
-            <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Close</Text>
-          </TouchableOpacity>
-        </Animated.View>
-        </View>
-      </Modal>
+            />
+            <Reanimated.View style={[
+              styles.centeredModalCard, 
+              { 
+                backgroundColor: isDark ? '#161B22' : '#FFFFFF', 
+                borderColor: isDark ? '#30363D' : '#E1E4E8',
+              },
+              historyCardStyle
+            ]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }]}>
+                  Past Conversations
+                </Text>
+                <Text style={[styles.modalSubtitle, { color: colors.textSecondary, fontSize: 12, marginTop: 4 }]}>
+                  Restore previous chats or clear your history.
+                </Text>
+              </View>
+
+              <ScrollView 
+                style={[styles.modalList, { maxHeight: 300 }]} 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 6 }}
+              >
+                {savedConversations.length === 0 ? (
+                  <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                    <History size={32} color={colors.textSecondary} style={{ opacity: 0.5, marginBottom: 12 }} />
+                    <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13 }}>
+                      No saved conversations found.
+                    </Text>
+                  </View>
+                ) : (
+                  savedConversations.map((thread) => {
+                    const isCurrent = currentThreadId === thread.id
+                    const projName = thread.projectId === 'global' ? 'General Assistant' : (projects.find(p => p.id === thread.projectId)?.name || 'Workspace')
+
+                    return (
+                      <View
+                        key={thread.id}
+                        style={[
+                          styles.historyItemRow,
+                          {
+                            borderColor: colors.border,
+                            backgroundColor: isCurrent ? (isDark ? '#1C2128' : '#F0F2F5') : 'transparent'
+                          }
+                        ]}
+                      >
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            loadConversation(thread.id)
+                            setHistoryModalVisible(false)
+                          }}
+                          style={{ flex: 1, paddingVertical: 10, paddingLeft: 12 }}
+                        >
+                          <Text style={[styles.historyItemTitle, { color: colors.text, fontFamily: isCurrent ? 'Inter_600SemiBold' : 'Inter_400Regular' }]} numberOfLines={1}>
+                            {thread.title}
+                          </Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                            <Text style={{ color: colors.textSecondary, fontSize: 10 }}>
+                              {formatTimestamp(thread.timestamp)}
+                            </Text>
+                            <Text style={{ color: colors.textSecondary, fontSize: 10 }}>•</Text>
+                            <Text style={{ color: colors.primary, fontSize: 10, fontFamily: 'Inter_500Medium' }}>
+                              {projName}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() => {
+                            Alert.alert(
+                              'Delete Conversation',
+                              'Are you sure you want to permanently delete this conversation history?',
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                { 
+                                  text: 'Delete', 
+                                  style: 'destructive',
+                                  onPress: () => deleteConversation(thread.id)
+                                }
+                              ]
+                            )
+                          }}
+                          style={styles.historyDeleteBtn}
+                        >
+                          <Trash2 size={14} color="#F85149" strokeWidth={1.5} />
+                        </TouchableOpacity>
+                      </View>
+                    )
+                  })
+                )}
+              </ScrollView>
+
+              <TouchableOpacity 
+                style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: isDark ? '#30363D' : '#E1E4E8', borderWidth: 1, borderRadius: 8, marginTop: 12 }]}
+                onPress={() => setHistoryModalVisible(false)}
+              >
+                <Text style={[styles.modalCancelText, { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }]}>Close</Text>
+              </TouchableOpacity>
+            </Reanimated.View>
+          </View>
+        </Modal>
+      )}
     </KeyboardAvoidingView>
   )
 }
@@ -2090,5 +2124,23 @@ const styles = StyleSheet.create({
   },
   contextCardText: {
     fontSize: 11,
+  },
+  centeredModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centeredModalCard: {
+    width: '90%',
+    maxWidth: 345,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
 })
