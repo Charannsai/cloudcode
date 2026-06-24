@@ -203,7 +203,9 @@ export default function ActivityScreen() {
               )}
             </View>
           )}
-        </Vi        {/* 2. Historical Agent Runs */}
+        </View>
+
+        {/* 2. Historical Agent Runs */}
         <View>
           <View style={styles.sectionHeader}>
             <History size={16} color={colors.textSecondary} />
