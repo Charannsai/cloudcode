@@ -530,4 +530,40 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingLeft: 16,
   },
+  messageRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  userRow: {
+    justifyContent: 'flex-end',
+  },
+  modelRow: {
+    justifyContent: 'flex-start',
+  },
+  avatarCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  bubble: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    maxWidth: SCREEN_WIDTH * 0.8,
+  },
+  userBubble: {
+    borderBottomRightRadius: 2,
+  },
+  modelBubble: {
+    borderTopLeftRadius: 2,
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
 })
