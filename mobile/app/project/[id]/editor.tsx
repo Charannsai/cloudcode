@@ -1127,7 +1127,7 @@ export default function EditorScreen() {
         colors={colors}
         isDark={isDark}
         right={16}
-        top={104}
+        top={92}
       />
 
       {/* Floating Ask AI Button for Selection */}
