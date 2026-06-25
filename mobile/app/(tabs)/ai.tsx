@@ -575,7 +575,7 @@ export default function AIScreen() {
                         <Sparkles size={14} color="#3FB950" />
                       </View>
                     )}
-                    <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }] : [styles.modelBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: isDark ? 0 : 1 }]}>
+                    <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8 }]}>
                       {isUser ? (
                         <Text style={[styles.userBubbleText, { color: colors.text }]}>
                           {msg.text}
@@ -600,19 +600,19 @@ export default function AIScreen() {
               })}
 
               {/* Streaming AI response bubble */}
-              {isStreaming && (currentStreamText.trim() !== '' || currentToolCalls.length > 0) && (
+              {isStreaming && (
                 <View style={styles.modelBubbleWrapper}>
                   <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
                     <Sparkles size={14} color="#3FB950" />
                   </View>
-                  <View style={[styles.modelBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: isDark ? 0 : 1 }]}>
+                  <View style={[styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8 }]}>
                     <View style={{ width: '100%' }}>
                       {currentStreamText.trim() !== '' ? (
                         <Markdown style={mdStyles}>
                           {currentStreamText}
                         </Markdown>
                       ) : (
-                        <ActivityIndicator size="small" color={colors.primary} style={{ alignSelf: 'flex-start' }} />
+                        <TypingIndicator colors={colors} />
                       )}
                       {currentToolCalls.length > 0 && (
                         <View style={styles.toolCallsContainer}>
