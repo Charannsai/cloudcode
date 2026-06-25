@@ -274,10 +274,24 @@ export default function AIScreen() {
     }
   }
 
+  // Load conversation thread when project context changes
   useEffect(() => {
-    initConversations()
-    fetchByokAndTier()
-  }, [])
+    const syncThread = async () => {
+      await initConversations()
+      const allThreads = useAIStore.getState().savedConversations
+      const targetProjId = selectedProjectId === 'global' ? '' : selectedProjectId
+      
+      // Find the latest thread for this project
+      const matchingThread = allThreads.find(t => t.projectId === targetProjId)
+      if (matchingThread) {
+        await loadConversation(matchingThread.id)
+      } else {
+        startNewChat()
+      }
+      await fetchByokAndTier()
+    }
+    syncThread()
+  }, [selectedProjectId])
 
   // Sync projects on focus
   useFocusEffect(
@@ -387,7 +401,6 @@ export default function AIScreen() {
     const prompt = inputText.trim()
     setInputText('')
     setFriendlyError(null)
-    Keyboard.dismiss()
 
     const projId = selectedProjectId === 'global' ? '' : selectedProjectId
     try {
@@ -532,7 +545,10 @@ export default function AIScreen() {
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: 16 }}
+          contentContainerStyle={[
+            { padding: 16, paddingBottom: 16 },
+            messages.length > 0 && { flexGrow: 1, justifyContent: 'flex-end' }
+          ]}
           keyboardShouldPersistTaps="handled"
         >
           {messages.length === 0 ? (
@@ -570,12 +586,7 @@ export default function AIScreen() {
                 const isUser = msg.role === 'user'
                 return (
                   <View key={msg.id} style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
-                    {!isUser && (
-                      <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                        <Sparkles size={14} color="#3FB950" />
-                      </View>
-                    )}
-                    <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8 }]}>
+                    <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
                       {isUser ? (
                         <Text style={[styles.userBubbleText, { color: colors.text }]}>
                           {msg.text}
@@ -602,10 +613,7 @@ export default function AIScreen() {
               {/* Streaming AI response bubble */}
               {isStreaming && (
                 <View style={styles.modelBubbleWrapper}>
-                  <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                    <Sparkles size={14} color="#3FB950" />
-                  </View>
-                  <View style={[styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8 }]}>
+                  <View style={[styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
                     <View style={{ width: '100%' }}>
                       {currentStreamText.trim() !== '' ? (
                         <Markdown style={mdStyles}>
@@ -894,10 +902,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
   },
   modelBubbleWrapper: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
     width: '100%',
-    gap: 10,
   },
   userBubbleWrapper: {
     flexDirection: 'row',
