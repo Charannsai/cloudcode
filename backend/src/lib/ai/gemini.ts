@@ -43,7 +43,7 @@ if (!(global as any).pendingCommands) {
 }
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
-const GEMINI_MODEL = 'gemini-3-flash-preview'
+const GEMINI_MODEL = 'gemini-3.5-flash'
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
