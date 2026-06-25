@@ -1,5 +1,3 @@
--- CloudCode Database Schema
--- Run this in your Supabase SQL Editor
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -76,6 +74,3 @@ CREATE INDEX IF NOT EXISTS sessions_project_id_idx ON sessions(project_id);
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
 ALTER TABLE sessions DISABLE ROW LEVEL SECURITY;
-
--- All access goes through the backend service role key only.
--- The backend verifies our JWT before any DB operation.

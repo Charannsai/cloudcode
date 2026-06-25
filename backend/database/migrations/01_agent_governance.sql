@@ -1,5 +1,3 @@
--- CloudCode Agent Governance Migration
--- Run this in your Supabase SQL Editor (https://supabase.com dashboard)
 
 -- Enable UUID extension if not already present
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
