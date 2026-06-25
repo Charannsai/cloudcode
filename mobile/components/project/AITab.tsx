@@ -64,6 +64,55 @@ function AICoreLogo() {
   )
 }
 
+// Sequential Typing Indicator Component
+function TypingIndicator({ colors }: { colors: any }) {
+  const dot1 = useRef(new Animated.Value(0.3)).current
+  const dot2 = useRef(new Animated.Value(0.3)).current
+  const dot3 = useRef(new Animated.Value(0.3)).current
+
+  useEffect(() => {
+    const animateDot = (dot: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0.3,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    }
+
+    const a1 = animateDot(dot1, 0)
+    const a2 = animateDot(dot2, 150)
+    const a3 = animateDot(dot3, 300)
+
+    a1.start()
+    a2.start()
+    a3.start()
+
+    return () => {
+      a1.stop()
+      a2.stop()
+      a3.stop()
+    }
+  }, [])
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 4 }}>
+      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: dot1 }} />
+      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: dot2 }} />
+      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: dot3 }} />
+    </View>
+  )
+}
+
 // Minimalist Tool Call Badge Component
 function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: any; isDark: boolean }) {
   const name = tool.name
