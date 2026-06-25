@@ -1171,19 +1171,6 @@ export default function AITab({ projectId }: Props) {
               <Plus size={20} color={colors.textSecondary} />
             </TouchableOpacity>
 
-            {/* Context chip */}
-            <View style={[
-              styles.contextChip,
-              {
-                backgroundColor: isDark ? 'rgba(56, 139, 253, 0.1)' : 'rgba(9, 105, 218, 0.06)',
-                borderColor: isDark ? 'rgba(56, 139, 253, 0.22)' : 'rgba(9, 105, 218, 0.15)',
-                borderWidth: 1
-              }
-            ]}>
-              <Text style={[styles.contextChipText, { color: isDark ? '#58A6FF' : '#0969DA' }]}>
-                Project
-              </Text>
-            </View>
 
             {/* TextInput */}
             <TextInput
