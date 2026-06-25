@@ -814,50 +814,61 @@ export async function* chatWithGemini(
             }
 
             if (name === 'run_command') {
-              const command = args.command as string
-              const approvalId = uuidv4()
-
-              yield { 
-                type: 'tool_call', 
-                toolName: name, 
-                toolArgs: { ...args, approvalId, status: 'pending' } 
-              }
-
-              if (runCtx) {
-                await supabaseAdmin
-                  .from('agent_runs')
-                  .update({ status: 'waiting' })
-                  .eq('id', runCtx.runId)
-              }
-
-              const approvalPromise = new Promise<boolean>((resolve) => {
-                (global as any).pendingCommands.set(approvalId, { resolve, command })
-              })
-
-              const approved = await approvalPromise
-
-              if (approved) {
-                if (runCtx) {
-                  await supabaseAdmin
-                    .from('agent_runs')
-                    .update({ status: 'executing' })
-                    .eq('id', runCtx.runId)
-                }
+              // Auto-execute commands if the container was dynamically created in this session
+              // (user asked AI to create and set up a project — no need to approve each step)
+              const wasContainerSwitched = activeContainerId !== containerId
+              
+              if (wasContainerSwitched) {
+                // Auto-execute: container was just created by AI in this session
+                yield { type: 'tool_call', toolName: name, toolArgs: { ...args, status: 'running' } }
+                result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
+              } else {
+                // Existing container: require user approval
+                const command = args.command as string
+                const approvalId = uuidv4()
 
                 yield { 
                   type: 'tool_call', 
                   toolName: name, 
-                  toolArgs: { ...args, approvalId, status: 'running' } 
+                  toolArgs: { ...args, approvalId, status: 'pending' } 
                 }
-                result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
-              } else {
+
                 if (runCtx) {
                   await supabaseAdmin
                     .from('agent_runs')
-                    .update({ status: 'paused' })
+                    .update({ status: 'waiting' })
                     .eq('id', runCtx.runId)
                 }
-                result = { error: 'Command execution rejected by user.' }
+
+                const approvalPromise = new Promise<boolean>((resolve) => {
+                  (global as any).pendingCommands.set(approvalId, { resolve, command })
+                })
+
+                const approved = await approvalPromise
+
+                if (approved) {
+                  if (runCtx) {
+                    await supabaseAdmin
+                      .from('agent_runs')
+                      .update({ status: 'executing' })
+                      .eq('id', runCtx.runId)
+                  }
+
+                  yield { 
+                    type: 'tool_call', 
+                    toolName: name, 
+                    toolArgs: { ...args, approvalId, status: 'running' } 
+                  }
+                  result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
+                } else {
+                  if (runCtx) {
+                    await supabaseAdmin
+                      .from('agent_runs')
+                      .update({ status: 'paused' })
+                      .eq('id', runCtx.runId)
+                  }
+                  result = { error: 'Command execution rejected by user.' }
+                }
               }
             } else {
               yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
