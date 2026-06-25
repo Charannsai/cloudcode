@@ -538,10 +538,7 @@ export default function AIScreen() {
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={[
-            { padding: 16, paddingBottom: 16 },
-            messages.length > 0 && { flexGrow: 1, justifyContent: 'flex-end' }
-          ]}
+          contentContainerStyle={{ padding: 16, paddingBottom: 16 }}
           keyboardShouldPersistTaps="handled"
         >
           {messages.length === 0 ? (
