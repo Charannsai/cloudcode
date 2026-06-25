@@ -658,11 +658,11 @@ export default function AITab({ projectId }: Props) {
               value={inputText}
               onChangeText={setInputText}
               multiline
-              numberOfLines={1}
               maxLength={2000}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
-              textAlignVertical="center"
+              textAlignVertical="top"
+              scrollEnabled={true}
             />
 
             {/* Right actions: Mic / Send / Stop */}
@@ -985,6 +985,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
+    minHeight: 22,
     maxHeight: 110,
     paddingTop: Platform.OS === 'ios' ? 6 : 2,
     paddingBottom: Platform.OS === 'ios' ? 6 : 2,
