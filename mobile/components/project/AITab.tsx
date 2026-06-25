@@ -419,8 +419,8 @@ export default function AITab({ projectId }: Props) {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 160}
     >
       {/* Glowing Radial Background Gradient */}
       <View style={StyleSheet.absoluteFill}>
