@@ -517,10 +517,7 @@ export default function AITab({ projectId }: Props) {
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
-        contentContainerStyle={[
-          { padding: 12, paddingBottom: 16 },
-          projectMessages.length > 0 && { flexGrow: 1, justifyContent: 'flex-end' }
-        ]}
+        contentContainerStyle={{ padding: 12, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         {projectMessages.length === 0 ? (
