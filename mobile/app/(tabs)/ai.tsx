@@ -396,9 +396,8 @@ export default function AIScreen() {
     setInputText('')
     setFriendlyError(null)
 
-    const projId = selectedProjectId === 'global' ? '' : selectedProjectId
     try {
-      await sendMessage(prompt, projId, undefined, selectedModel)
+      await sendMessage(prompt, selectedProjectId, undefined, selectedModel)
     } catch (err) {
       const msg = (err as Error).message || ''
       if (msg.includes('LIMIT_EXCEEDED') || msg.includes('QUOTA_EXCEEDED') || msg.includes('monthly token limit exceeded')) {
