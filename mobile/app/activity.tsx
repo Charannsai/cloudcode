@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { useAgentStore } from '@/store/agentStore'
+import { useAIStore } from '@/store/ai'
 import Markdown from 'react-native-markdown-display'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
@@ -93,6 +94,15 @@ export default function ActivityScreen() {
       setSelectedRunId(null)
     } finally {
       setLoadingDetail(false)
+    }
+  }
+
+  const handleResumeRun = async (runId: string) => {
+    try {
+      await useAIStore.getState().loadStatefulConversation(runId)
+      router.replace('/(tabs)/ai')
+    } catch (e) {
+      Alert.alert('Error', 'Failed to resume conversation.')
     }
   }
 
@@ -226,7 +236,7 @@ export default function ActivityScreen() {
                 <TouchableOpacity
                   key={run.id}
                   style={[styles.runItem, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-                  onPress={() => handleOpenRunDetail(run.id)}
+                  onPress={() => handleResumeRun(run.id)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.runHeaderRow}>

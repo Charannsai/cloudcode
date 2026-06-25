@@ -343,6 +343,7 @@ export const api = {
       messages: { role: 'user' | 'model'; text: string }[],
       openFile?: { path: string; content: string },
       model?: string,
+      threadId?: string,
       onChunk?: (chunk: AIStreamChunk) => void
     ) => {
       const token = await getToken()
@@ -362,7 +363,7 @@ export const api = {
             ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
             ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
           },
-          body: JSON.stringify({ projectId, messages, openFile, model }),
+          body: JSON.stringify({ projectId, messages, openFile, model, threadId }),
         })
 
         const onAbort = () => {

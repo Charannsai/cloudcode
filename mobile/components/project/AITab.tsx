@@ -158,7 +158,7 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
   const handleApproveAction = async (action: 'approve' | 'reject') => {
     if (!args.approvalId) return
     try {
-      await api.ai.approve(args.approvalId as string, action)
+      await useAIStore.getState().submitApproval(args.approvalId as string, action)
     } catch (e) {
       Alert.alert('Error', 'Failed to submit approval.')
     }
@@ -562,15 +562,17 @@ export default function AITab({ projectId }: Props) {
                       </Text>
                     ) : (
                       <View style={{ width: '100%' }}>
-                        <Markdown style={mdStyles}>
-                          {msg.text}
-                        </Markdown>
                         {msg.toolCalls && msg.toolCalls.length > 0 && (
-                          <View style={styles.toolCallsContainer}>
+                          <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
                             {msg.toolCalls.map((tc, tcIdx) => (
                               <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
                             ))}
                           </View>
+                        )}
+                        {msg.text.trim() !== '' && (
+                          <Markdown style={mdStyles}>
+                            {msg.text}
+                          </Markdown>
                         )}
                       </View>
                     )}
@@ -584,19 +586,21 @@ export default function AITab({ projectId }: Props) {
               <View style={styles.modelBubbleWrapper}>
                 <View style={[styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
                   <View style={{ width: '100%' }}>
+                    {currentToolCalls.length > 0 && (
+                      <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
+                        {currentToolCalls.map((tc, tcIdx) => (
+                          <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
+                        ))}
+                      </View>
+                    )}
                     {currentStreamText.trim() !== '' ? (
                       <Markdown style={mdStyles}>
                         {currentStreamText}
                       </Markdown>
                     ) : (
-                      <TypingIndicator colors={colors} />
-                    )}
-                    {currentToolCalls.length > 0 && (
-                      <View style={styles.toolCallsContainer}>
-                        {currentToolCalls.map((tc, tcIdx) => (
-                          <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
-                        ))}
-                      </View>
+                      currentStreamText.trim() === '' && (
+                        <TypingIndicator colors={colors} />
+                      )
                     )}
                   </View>
                 </View>
