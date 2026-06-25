@@ -679,11 +679,11 @@ export default function AIScreen() {
                 value={inputText}
                 onChangeText={setInputText}
                 multiline
-                numberOfLines={1}
                 maxLength={2000}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
-                textAlignVertical="center"
+                textAlignVertical="top"
+                scrollEnabled={true}
               />
 
               {/* Right actions: Mic / Send / Stop */}
@@ -1011,6 +1011,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
+    minHeight: 24,
     maxHeight: 130,
     paddingTop: Platform.OS === 'ios' ? 8 : 4,
     paddingBottom: Platform.OS === 'ios' ? 8 : 4,
