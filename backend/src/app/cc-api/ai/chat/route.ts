@@ -17,11 +17,12 @@ export async function POST(req: NextRequest) {
   const customAnthropicKey = req.headers.get('x-anthropic-key') || undefined
 
   const body = await req.json()
-  const { projectId, messages, openFile, model } = body as {
+  const { projectId, messages, openFile, model, threadId } = body as {
     projectId: string
     messages: { role: 'user' | 'model'; text: string }[]
     openFile?: { path: string; content: string }
     model?: string
+    threadId?: string
   }
 
   if (!projectId || !messages || messages.length === 0) {
@@ -91,13 +92,73 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const getGenerator = (containerId: string, context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string }) => {
+  // Ensure stateful run exists if threadId is provided
+  if (threadId) {
+    try {
+      const { data: existingRun } = await supabaseAdmin
+        .from('agent_runs')
+        .select('id')
+        .eq('id', threadId)
+        .single()
+
+      if (!existingRun) {
+        await supabaseAdmin
+          .from('agent_runs')
+          .insert({
+            id: threadId,
+            user_github_id: user.id,
+            project_id: projectId === 'global' || !projectId ? null : projectId,
+            status: 'planning',
+            model: model || 'gemini',
+            budget_tokens: 100000,
+            budget_commands: 10,
+            budget_file_writes: 50,
+            budget_duration_sec: 1200
+          })
+      }
+
+      // Load existing steps to avoid inserting duplicate user messages
+      const { data: dbSteps } = await supabaseAdmin
+        .from('agent_steps')
+        .select('*')
+        .eq('run_id', threadId)
+        .order('step_index', { ascending: true })
+
+      const latestUserMsg = messages.filter(m => m.role === 'user').pop()
+      if (latestUserMsg) {
+        const hasUserMsgInDb = dbSteps?.some(
+          s => s.type === 'reasoning' && 
+          s.content.role === 'user' && 
+          s.content.text === latestUserMsg.text
+        )
+
+        if (!hasUserMsgInDb) {
+          const nextIndex = dbSteps ? dbSteps.length : 0
+          await supabaseAdmin
+            .from('agent_steps')
+            .insert({
+              run_id: threadId,
+              step_index: nextIndex,
+              type: 'reasoning',
+              content: {
+                role: 'user',
+                text: latestUserMsg.text
+              }
+            })
+        }
+      }
+    } catch (err) {
+      console.error('[AI Chat] Failed to initialize stateful run:', err)
+    }
+  }
+
+  const getGenerator = (containerId: string, context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string }) => {
     if (model === 'openai') {
-      return chatWithOpenAI(messages, containerId, context, customOpenaiKey)
+      return chatWithOpenAI(threadId ? [] : messages, containerId, context, customOpenaiKey)
     } else if (model === 'anthropic') {
-      return chatWithAnthropic(messages, containerId, context, customAnthropicKey)
+      return chatWithAnthropic(threadId ? [] : messages, containerId, context, customAnthropicKey)
     } else {
-      const geminiMessages: GeminiMessage[] = messages.map(m => ({
+      const geminiMessages: GeminiMessage[] = threadId ? [] : messages.map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.text }],
       }))
@@ -111,7 +172,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = getGenerator('global', { userId: user.id })
+          const generator = getGenerator('global', { userId: user.id, runId: threadId })
 
           for await (const chunk of generator) {
             const data = JSON.stringify(chunk) + '\n'
@@ -177,7 +238,7 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const generator = getGenerator(project.container_id!, { fileTree, openFile, userId: user.id })
+        const generator = getGenerator(project.container_id!, { fileTree, openFile, userId: user.id, runId: threadId })
 
         for await (const chunk of generator) {
           const data = JSON.stringify(chunk) + '\n'
