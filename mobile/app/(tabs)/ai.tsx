@@ -306,14 +306,8 @@ export default function AIScreen() {
     }, [selectedProjectId])
   )
 
-  // Automatically determine project context on load
-  useEffect(() => {
-    if (projects.length > 0) {
-      setSelectedProjectId(projects[0].id)
-    } else {
-      setSelectedProjectId('global')
-    }
-  }, [projects])
+  // Global AI screen remains in 'global' context by default to avoid activating containers.
+  // Project-specific contexts are handled inside the project detail's AI Tab.
 
   // Auto-scroll main timeline on updates
   useEffect(() => {
