@@ -128,11 +128,30 @@ export const useAIStore = create<AIState>((set, get) => ({
     set({ savedConversations: saved })
 
 
-    // Build message history for API (last 10 messages for context)
-    const history = [...get().messages].slice(-10).map((m) => ({
-      role: m.role,
-      text: m.text,
-    }))
+    // Build message history for API (last 20 messages for better context)
+    const history = [...get().messages].slice(-20).map((m) => {
+      let msgText = m.text
+      
+      // Enrich model messages with tool action summaries so the AI remembers what it did
+      if (m.role === 'model' && m.toolCalls && m.toolCalls.length > 0) {
+        const toolSummaries = m.toolCalls.map(tc => {
+          const argsStr = tc.args ? Object.entries(tc.args)
+            .filter(([k]) => k !== 'approvalId' && k !== 'status')
+            .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
+            .join(', ') : ''
+          const resultStr = tc.result 
+            ? (typeof tc.result === 'string' 
+              ? tc.result.slice(0, 500) 
+              : JSON.stringify(tc.result).slice(0, 500))
+            : '(no result)'
+          return `[Tool: ${tc.name}(${argsStr}) → ${tc.status}: ${resultStr}]`
+        }).join('\n')
+        
+        msgText = (msgText ? msgText + '\n\n' : '') + '--- Actions taken ---\n' + toolSummaries
+      }
+      
+      return { role: m.role, text: msgText }
+    })
 
     let fullText = ''
     const toolCalls: ToolCallInfo[] = []
