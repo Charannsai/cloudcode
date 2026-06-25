@@ -310,6 +310,19 @@ export const api = {
           try {
             const chunk = JSON.parse(event.data)
             onChunk?.(chunk)
+
+            // Reconnection Loop Fix: If a terminal quota or limit error is received, close the EventSource immediately
+            if (
+              chunk.type === 'error' && 
+              (chunk.content?.includes('LIMIT_EXCEEDED') || 
+               chunk.content?.includes('monthly token limit exceeded') ||
+               chunk.content?.includes('restricted to Pro'))
+            ) {
+              aborted = true
+              es.close()
+              cleanup()
+              resolve()
+            }
           } catch (e) {
             console.error('Failed to parse SSE data:', e)
           }
@@ -381,6 +394,19 @@ export const api = {
           try {
             const chunk = JSON.parse(event.data) as AIStreamChunk
             onChunk?.(chunk)
+
+            // Reconnection Loop Fix: If a terminal quota or limit error is received, close the EventSource immediately
+            if (
+              chunk.type === 'error' && 
+              (chunk.content?.includes('LIMIT_EXCEEDED') || 
+               chunk.content?.includes('monthly token limit exceeded') ||
+               chunk.content?.includes('restricted to Pro'))
+            ) {
+              aborted = true
+              es.close()
+              cleanup()
+              resolve()
+            }
           } catch (e) {
             console.error('Failed to parse SSE data:', e)
           }
