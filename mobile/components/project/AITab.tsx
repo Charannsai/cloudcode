@@ -1157,9 +1157,12 @@ export default function AITab({ projectId }: Props) {
                 borderColor: isInputFocused
                   ? (isDark ? '#388BFD' : '#0969DA')
                   : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
+                borderWidth: isInputFocused ? 1.5 : 1,
                 backgroundColor: isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.85)',
+                shadowColor: isInputFocused ? (isDark ? '#388BFD' : '#0969DA') : '#000000',
                 shadowOpacity: isInputFocused ? (isDark ? 0.22 : 0.1) : (isDark ? 0.1 : 0.05),
                 shadowRadius: isInputFocused ? 18 : 10,
+                overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
               }
             ]}
           >
@@ -1599,7 +1602,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
     maxHeight: 110,
-    paddingVertical: 2,
+    paddingTop: Platform.OS === 'ios' ? 6 : 2,
+    paddingBottom: Platform.OS === 'ios' ? 6 : 2,
+    paddingHorizontal: 0,
+    margin: 0,
     lineHeight: 18,
   },
   composerRightContainer: {
