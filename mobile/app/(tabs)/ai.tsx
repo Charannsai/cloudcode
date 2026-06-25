@@ -8,9 +8,9 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
-  Shield, Lock, Square, MoreVertical, Plus, Mic
+  Shield, Lock, Square, MoreVertical, Plus, Mic, ChevronLeft
 } from 'lucide-react-native'
-import Svg, { Circle, Path, Polyline, Line } from 'react-native-svg'
+import Svg, { Circle, Path, Polyline, Line, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
 import Voice from '@react-native-voice/voice'
 
@@ -139,6 +139,51 @@ function StatusIcon({ status, color }: StatusIconProps) {
     default:
       return null
   }
+}
+
+// Glowing Animated AI Core Orb Logo
+function AICoreLogo() {
+  const rotation = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(rotation, {
+        toValue: 1,
+        duration: 25000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start()
+  }, [])
+
+  const rotateStr = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  })
+
+  return (
+    <View style={styles.orbContainer}>
+      <Animated.View style={{ transform: [{ rotate: rotateStr }] }}>
+        <Svg width="72" height="72" viewBox="0 0 100 100">
+          <Defs>
+            <LinearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <Stop offset="0%" stopColor="#388BFD" stopOpacity="0.85" />
+              <Stop offset="60%" stopColor="#892CDC" stopOpacity="0.85" />
+              <Stop offset="100%" stopColor="#F43F5E" stopOpacity="0.85" />
+            </LinearGradient>
+          </Defs>
+          {/* Outer dashed orbital ring */}
+          <Circle cx="50" cy="50" r="45" stroke="url(#coreGrad)" strokeWidth="1.5" strokeDasharray="5 4" fill="none" opacity="0.35" />
+          {/* Inner solid ring */}
+          <Circle cx="50" cy="50" r="34" stroke="url(#coreGrad)" strokeWidth="1" fill="none" opacity="0.2" />
+          {/* Inner core circle */}
+          <Circle cx="50" cy="50" r="18" fill="url(#coreGrad)" opacity="0.15" />
+          {/* Sparkle star in the center */}
+          <Path d="M50 36 L53 45 L62 48 L53 51 L50 60 L47 51 L38 48 L47 45 Z" fill="url(#coreGrad)" />
+        </Svg>
+      </Animated.View>
+    </View>
+  )
 }
 
 // Convert raw technical logs and actions into clean, natural teammate language
@@ -633,6 +678,9 @@ export default function AIScreen() {
   const [isListening, setIsListening] = useState(false)
   const voicePulse = useRef(new Animated.Value(1)).current
 
+  // Text input focus state for border glow
+  const [isInputFocused, setIsInputFocused] = useState(false)
+
   const fetchByokAndTier = async () => {
     try {
       const byok = await AsyncStorage.getItem('byok_enabled')
@@ -808,18 +856,17 @@ export default function AIScreen() {
     return 'Ready to build together.'
   }
 
-  interface ChatTurn {
-    id: string
-    userPrompt: ReasoningEvent | null
-    agentReasoning: ReasoningEvent | null
-    events: ReasoningEvent[]
-    isLastTurn: boolean
-  }
-
   // Group timeline events into turns
   const groupTurns = () => {
-    const turns: ChatTurn[] = []
-    let currentTurn: ChatTurn | null = null
+    const turns: {
+      id: string
+      userPrompt: ReasoningEvent | null
+      agentReasoning: ReasoningEvent | null
+      events: ReasoningEvent[]
+      isLastTurn: boolean
+    }[] = []
+    
+    let currentTurn: typeof turns[0] | null = null
 
     for (const event of timeline) {
       if (event.title === 'User Prompt') {
@@ -872,14 +919,59 @@ export default function AIScreen() {
     paragraph: { marginTop: 6, marginBottom: 6 },
   }
 
+  interface ChatTurn {
+    id: string
+    userPrompt: ReasoningEvent | null
+    agentReasoning: ReasoningEvent | null
+    events: ReasoningEvent[]
+    isLastTurn: boolean
+  }
+
+  // Premium Quick Action Suggestions
+  const actionSuggestions = [
+    { text: "🚀 Deploy backend service", prompt: "Deploy a backend server for my app." },
+    { text: "🔍 Find authentication bugs", prompt: "Inspect authentication files to find errors." },
+    { text: "📦 Install Zustand state", prompt: "Add Zustand package and set up state store." },
+    { text: "🛠️ Add dark mode theme", prompt: "Modify components to support dark mode theme." }
+  ]
+
   return (
     <TabGenieWrapper index={3}>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
-        <View style={[styles.headerRow, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+        {/* Glowing Radial Background Gradient */}
+        <View style={StyleSheet.absoluteFill}>
+          <Svg width="100%" height="100%">
+            <Defs>
+              <RadialGradient
+                id="radialGrad"
+                cx="50%"
+                cy="0%"
+                rx="70%"
+                ry="60%"
+                fx="50%"
+                fy="0%"
+              >
+                <Stop offset="0%" stopColor={isDark ? '#1C2030' : '#E0E7FF'} stopOpacity="0.28" />
+                <Stop offset="100%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#radialGrad)" />
+          </Svg>
+        </View>
+
+        {/* Header (with requested back button to dashboard) */}
+        <View style={[styles.headerRow, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4', zIndex: 10 }]}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.replace('/(tabs)/dashboard')}
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={22} color={colors.text} />
+          </TouchableOpacity>
+
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={[styles.statusDot, { backgroundColor: isStreaming ? '#3FB950' : '#8B929A' }]} />
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
@@ -957,13 +1049,33 @@ export default function AIScreen() {
         >
           {chatTurns.length === 0 ? (
             <View style={styles.welcomeContainer}>
-              <Bot size={44} color={isDark ? '#484F58' : '#8C959F'} style={{ marginBottom: 16 }} />
+              {/* Premium Rotating orbital AI Core orb */}
+              <AICoreLogo />
               <Text style={[styles.welcomeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                What would you like to build?
+                What shall we build today?
               </Text>
               <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
-                I can modify your code, install libraries, run tests, and help you design new features right from this conversation.
+                Ask me to write code, design projects, install packages, or analyze files in your active workspace.
               </Text>
+
+              {/* Quick Actions Suggestions Grid */}
+              <View style={styles.suggestionsContainer}>
+                {actionSuggestions.map((sug, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[styles.suggestionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
+                    onPress={() => {
+                      setInputText(sug.prompt)
+                      inputRef.current?.focus()
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.suggestionCardText, { color: colors.text }]} numberOfLines={1}>
+                      {sug.text}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           ) : (
             <View style={{ gap: 24 }}>
@@ -985,10 +1097,10 @@ export default function AIScreen() {
                     )}
 
                     {/* Agent Teammate Response Card */}
-                    <View style={[styles.teammateCard, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}>
+                    <View style={[styles.teammateCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: isDark ? 0 : 1 }]}>
                       {/* Premium Teammate Header */}
                       <View style={styles.teammateHeader}>
-                        <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+                        <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
                           <Sparkles size={14} color="#3FB950" />
                         </View>
                         <View style={{ flex: 1 }}>
@@ -1048,7 +1160,7 @@ export default function AIScreen() {
           )}
         </ScrollView>
 
-        {/* Bottom container for tooltips and composer, keeping them in the normal flow for perfect keyboard avoidance */}
+        {/* Bottom Container for perfect flow-based keyboard avoidance */}
         <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {/* Friendly Error Display */}
           {friendlyError && (
@@ -1066,7 +1178,7 @@ export default function AIScreen() {
             </View>
           )}
 
-          {/* Modern Floating Input Composer */}
+          {/* Modern Floating Input Composer (with Focused Glow Border) */}
           <View style={styles.composerWrapper}>
             <BlurView
               intensity={Platform.OS === 'ios' ? 85 : 100}
@@ -1074,8 +1186,12 @@ export default function AIScreen() {
               style={[
                 styles.composerContainer,
                 {
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                  borderColor: isInputFocused
+                    ? (isDark ? '#388BFD' : '#0969DA')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
                   backgroundColor: isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.85)',
+                  shadowOpacity: isInputFocused ? (isDark ? 0.22 : 0.12) : (isDark ? 0.12 : 0.06),
+                  shadowRadius: isInputFocused ? 20 : 12,
                 }
               ]}
             >
@@ -1085,8 +1201,15 @@ export default function AIScreen() {
               </TouchableOpacity>
 
               {/* Context chip */}
-              <View style={[styles.contextChip, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' }]}>
-                <Text style={[styles.contextChipText, { color: colors.textSecondary }]}>
+              <View style={[
+                styles.contextChip,
+                {
+                  backgroundColor: isDark ? 'rgba(56, 139, 253, 0.1)' : 'rgba(9, 105, 218, 0.06)',
+                  borderColor: isDark ? 'rgba(56, 139, 253, 0.22)' : 'rgba(9, 105, 218, 0.15)',
+                  borderWidth: 1
+                }
+              ]}>
+                <Text style={[styles.contextChipText, { color: isDark ? '#58A6FF' : '#0969DA' }]}>
                   Workspace
                 </Text>
               </View>
@@ -1102,6 +1225,9 @@ export default function AIScreen() {
                 multiline
                 numberOfLines={1}
                 maxLength={2000}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                textAlignVertical="center"
               />
 
               {/* Right actions: Mic / Send / Stop */}
@@ -1184,7 +1310,7 @@ export default function AIScreen() {
                   if (userTier === 'free' && !isByokActive) {
                     Alert.alert(
                       'Premium Model Locked',
-                      'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) in settings to unlock.'
+                      'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
                     )
                   } else {
                     setSelectedModel('openai')
@@ -1207,7 +1333,7 @@ export default function AIScreen() {
                   if (userTier === 'free' && !isByokActive) {
                     Alert.alert(
                       'Premium Model Locked',
-                      'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) in settings to unlock.'
+                      'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
                     )
                   } else {
                     setSelectedModel('anthropic')
@@ -1238,9 +1364,13 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 14,
     borderBottomWidth: 1,
+  },
+  backBtn: {
+    padding: 6,
+    marginRight: 6,
   },
   headerTitle: {
     fontSize: 16,
@@ -1261,21 +1391,49 @@ const styles = StyleSheet.create({
   menuBtn: {
     padding: 4,
   },
+  orbContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   welcomeContainer: {
     flex: 1,
-    paddingTop: 100,
+    paddingTop: 80,
     alignItems: 'center',
     paddingHorizontal: 24,
   },
   welcomeTitle: {
-    fontSize: 20,
+    fontSize: 22,
     marginBottom: 8,
     textAlign: 'center',
   },
   welcomeSubtitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
+    maxWidth: '90%',
+  },
+  suggestionsContainer: {
+    width: '100%',
+    marginTop: 36,
+    gap: 10,
+  },
+  suggestionCard: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  suggestionCardText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
   },
   turnContainer: {
     gap: 12,
@@ -1451,12 +1609,10 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     borderWidth: 1,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 10,
+    paddingVertical: 10,
+    gap: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
   composerLeftBtn: {
@@ -1467,7 +1623,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contextChip: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
