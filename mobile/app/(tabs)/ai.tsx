@@ -8,7 +8,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
-  Shield, Lock, Square, MoreVertical, Plus, Mic, ChevronLeft
+  Shield, Lock, Square, MoreVertical, Plus, Mic, ChevronLeft, ArrowLeft
 } from 'lucide-react-native'
 import Svg, { Circle, Path, Polyline, Line, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
@@ -940,6 +940,7 @@ export default function AIScreen() {
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* Glowing Radial Background Gradient */}
         <View style={StyleSheet.absoluteFill}>
@@ -969,7 +970,7 @@ export default function AIScreen() {
             onPress={() => router.replace('/(tabs)/dashboard')}
             activeOpacity={0.7}
           >
-            <ChevronLeft size={22} color={colors.text} />
+            <ArrowLeft size={22} color={colors.text} />
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -1189,9 +1190,12 @@ export default function AIScreen() {
                   borderColor: isInputFocused
                     ? (isDark ? '#388BFD' : '#0969DA')
                     : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
+                  borderWidth: isInputFocused ? 1.5 : 1,
                   backgroundColor: isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.85)',
+                  shadowColor: isInputFocused ? (isDark ? '#388BFD' : '#0969DA') : '#000000',
                   shadowOpacity: isInputFocused ? (isDark ? 0.22 : 0.12) : (isDark ? 0.12 : 0.06),
                   shadowRadius: isInputFocused ? 20 : 12,
+                  overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
                 }
               ]}
             >
@@ -1636,7 +1640,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
     maxHeight: 130,
-    paddingVertical: 4,
+    paddingTop: Platform.OS === 'ios' ? 8 : 4,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
+    paddingHorizontal: 0,
+    margin: 0,
     lineHeight: 20,
   },
   composerRightContainer: {
