@@ -419,8 +419,8 @@ export default function AITab({ projectId }: Props) {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 160}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}
     >
       {/* Glowing Radial Background Gradient */}
       <View style={StyleSheet.absoluteFill}>
@@ -633,13 +633,13 @@ export default function AITab({ projectId }: Props) {
               styles.composerContainer,
               {
                 borderColor: isInputFocused
-                  ? (isDark ? '#388BFD' : '#0969DA')
+                  ? (isDark ? 'rgba(255, 255, 255, 0.24)' : 'rgba(0, 0, 0, 0.24)')
                   : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
                 borderWidth: isInputFocused ? 1.5 : 1,
                 backgroundColor: isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.85)',
-                shadowColor: isInputFocused ? (isDark ? '#388BFD' : '#0969DA') : '#000000',
-                shadowOpacity: isInputFocused ? (isDark ? 0.22 : 0.1) : (isDark ? 0.1 : 0.05),
-                shadowRadius: isInputFocused ? 18 : 10,
+                shadowColor: '#000000',
+                shadowOpacity: isInputFocused ? 0.15 : 0.05,
+                shadowRadius: isInputFocused ? 12 : 6,
                 overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
               }
             ]}

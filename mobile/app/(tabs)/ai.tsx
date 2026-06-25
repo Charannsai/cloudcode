@@ -432,8 +432,8 @@ export default function AIScreen() {
     <TabGenieWrapper index={3}>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         {/* Glowing Radial Background Gradient */}
         <View style={StyleSheet.absoluteFill}>
@@ -654,13 +654,13 @@ export default function AIScreen() {
                 styles.composerContainer,
                 {
                   borderColor: isInputFocused
-                    ? (isDark ? '#388BFD' : '#0969DA')
+                    ? (isDark ? 'rgba(255, 255, 255, 0.24)' : 'rgba(0, 0, 0, 0.24)')
                     : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
                   borderWidth: isInputFocused ? 1.5 : 1,
                   backgroundColor: isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.85)',
-                  shadowColor: isInputFocused ? (isDark ? '#388BFD' : '#0969DA') : '#000000',
-                  shadowOpacity: isInputFocused ? (isDark ? 0.22 : 0.12) : (isDark ? 0.12 : 0.06),
-                  shadowRadius: isInputFocused ? 20 : 12,
+                  shadowColor: '#000000',
+                  shadowOpacity: isInputFocused ? 0.15 : 0.06,
+                  shadowRadius: isInputFocused ? 12 : 6,
                   overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
                 }
               ]}
