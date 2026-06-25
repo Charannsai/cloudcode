@@ -8,135 +8,20 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
-  Shield, Lock, Square, MoreVertical, Plus, Mic
+  Shield, Lock, Square, MoreVertical, Plus, Mic, Folder
 } from 'lucide-react-native'
-import Svg, { Circle, Path, Polyline, Line, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
+import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
 import Voice from '@react-native-voice/voice'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
-import { useAgentStore, ReasoningEvent } from '@/store/agentStore'
+import { useAIStore, ChatMessage, ToolCallInfo } from '@/store/ai'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Markdown from 'react-native-markdown-display'
 import { api } from '@/lib/api'
 
-// Custom SVG Status Indicator Component
-interface StatusIconProps {
-  status: 'pending' | 'thinking' | 'working' | 'completed' | 'needs_attention'
-  color: string
-}
-
-function StatusIcon({ status, color }: StatusIconProps) {
-  const spinValue = useRef(new Animated.Value(0)).current
-  const pulseValue = useRef(new Animated.Value(1)).current
-
-  useEffect(() => {
-    let spinAnim: Animated.CompositeAnimation | null = null
-    let pulseAnim: Animated.CompositeAnimation | null = null
-
-    if (status === 'thinking' || status === 'working') {
-      spinValue.setValue(0)
-      spinAnim = Animated.loop(
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 3500,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      )
-      spinAnim.start()
-    } else {
-      spinValue.setValue(0)
-    }
-
-    if (status === 'needs_attention') {
-      pulseAnim = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseValue, {
-            toValue: 1.15,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseValue, {
-            toValue: 1.0,
-            duration: 900,
-            useNativeDriver: true,
-          })
-        ])
-      )
-      pulseAnim.start()
-    } else {
-      pulseValue.setValue(1)
-    }
-
-    return () => {
-      spinAnim?.stop()
-      pulseAnim?.stop()
-    }
-  }, [status])
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  })
-
-  const animatedStyle = {
-    transform: [
-      { rotate: spin },
-      { scale: pulseValue }
-    ]
-  }
-
-  switch (status) {
-    case 'pending':
-      return (
-        <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
-          <Circle cx="12" cy="12" r="10" strokeDasharray="3 3" />
-        </Svg>
-      )
-    case 'thinking':
-      return (
-        <Animated.View style={animatedStyle}>
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
-            <Circle cx="12" cy="12" r="10" opacity="0.25" />
-            <Path d="M12 12 L12 2 A10 10 0 0 1 22 12 Z" fill={color} stroke="none" />
-          </Svg>
-        </Animated.View>
-      )
-    case 'working':
-      return (
-        <Animated.View style={animatedStyle}>
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
-            <Circle cx="12" cy="12" r="10" opacity="0.25" />
-            <Path d="M12 12 L12 2 A10 10 0 0 1 12 22 Z" fill={color} stroke="none" />
-          </Svg>
-        </Animated.View>
-      )
-    case 'completed':
-      return (
-        <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <Circle cx="12" cy="12" r="10" />
-          <Polyline points="9 11 12 14 16 9" />
-        </Svg>
-      )
-    case 'needs_attention':
-      return (
-        <Animated.View style={animatedStyle}>
-          <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <Circle cx="12" cy="12" r="10" />
-            <Line x1="12" y1="8" x2="12" y2="12" />
-            <Line x1="12" y1="16" x2="12.01" y2="16" />
-          </Svg>
-        </Animated.View>
-      )
-    default:
-      return null
-  }
-}
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 // Glowing Animated AI Core Orb Logo
 function AICoreLogo() {
@@ -161,7 +46,7 @@ function AICoreLogo() {
   return (
     <View style={styles.orbContainer}>
       <Animated.View style={{ transform: [{ rotate: rotateStr }] }}>
-        <Svg width="72" height="72" viewBox="0 0 100 100">
+        <Svg width="64" height="64" viewBox="0 0 100 100">
           <Defs>
             <LinearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <Stop offset="0%" stopColor="#388BFD" stopOpacity="0.85" />
@@ -169,13 +54,9 @@ function AICoreLogo() {
               <Stop offset="100%" stopColor="#F43F5E" stopOpacity="0.85" />
             </LinearGradient>
           </Defs>
-          {/* Outer dashed orbital ring */}
           <Circle cx="50" cy="50" r="45" stroke="url(#coreGrad)" strokeWidth="1.5" strokeDasharray="5 4" fill="none" opacity="0.35" />
-          {/* Inner solid ring */}
           <Circle cx="50" cy="50" r="34" stroke="url(#coreGrad)" strokeWidth="1" fill="none" opacity="0.2" />
-          {/* Inner core circle */}
           <Circle cx="50" cy="50" r="18" fill="url(#coreGrad)" opacity="0.15" />
-          {/* Sparkle star in the center */}
           <Path d="M50 36 L53 45 L62 48 L53 51 L50 60 L47 51 L38 48 L47 45 Z" fill="url(#coreGrad)" />
         </Svg>
       </Animated.View>
@@ -183,458 +64,110 @@ function AICoreLogo() {
   )
 }
 
-// Convert raw technical logs and actions into clean, natural teammate language
-function translateTechnicalAction(title: string, message?: string): string {
-  if (!title) return "Preparing workspace..."
+// Minimalist Tool Call Badge Component
+function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: any; isDark: boolean }) {
+  const name = tool.name
+  const args = tool.args || {}
+  const status = tool.status
 
-  if (title.startsWith("Executing Action:")) {
-    const toolName = title.replace("Executing Action:", "").trim()
-    
-    switch (toolName) {
-      case 'list_dir':
-        return "Looking through your project structure."
-      case 'grep_search': {
-        if (message) {
-          const match = message.match(/Query:\s*['"]?([^'"]+)['"]?/)
-          const query = match ? match[1] : ""
-          return query ? `Searching for where "${query}" is implemented.` : "Searching your codebase for related logic."
-        }
-        return "Searching your codebase for related logic."
-      }
-      case 'read_file':
-      case 'view_file':
-      case 'view_file_content': {
-        const path = message || ""
-        const filename = path.split(/[\/\\]/).pop() || ""
-        if (filename === 'package.json' || filename === 'package-lock.json' || filename === 'app.json') {
-          return "Checking which technologies this project uses."
-        }
-        if (path.includes('components/') || path.includes('app/') || path.includes('screens/')) {
-          return `Inspecting the user interface code in ${filename}.`
-        }
-        if (path.includes('store/') || path.includes('context/') || path.includes('redux/')) {
-          return `Examining state management structure in ${filename}.`
-        }
-        return filename ? `Reviewing the contents of ${filename}.` : "Reading project files to gather context."
-      }
-      case 'write_to_file':
-      case 'replace_file_content':
-      case 'multi_replace_file_content': {
-        const path = message || ""
-        const filename = path.split(/[\/\\]/).pop() || ""
-        return filename ? `Integrating changes into ${filename}.` : "Writing code modifications to your project."
-      }
-      case 'run_command': {
-        const cmd = message || ""
-        if (cmd.includes('npm install') || cmd.includes('yarn install') || cmd.includes('pod install') || cmd.includes('npm i')) {
-          return "Installing required dependencies."
-        }
-        if (cmd.includes('npm run') || cmd.includes('expo start') || cmd.includes('metro')) {
-          return "Preparing the development environment."
-        }
-        if (cmd.includes('test') || cmd.includes('jest') || cmd.includes('mocha')) {
-          return "Running the test suite to verify changes."
-        }
-        if (cmd.includes('lint') || cmd.includes('eslint')) {
-          return "Checking code style and formatting."
-        }
-        return "Running development commands."
-      }
-      default:
-        return `Executing a helper task to advance the goal.`
-    }
+  const path = (args.path as string) || ''
+  const filename = path.split(/[\/\\]/).pop() || ''
+
+  let label = ''
+  let ToolIcon = Sparkles
+
+  if (name === 'run_command') {
+    label = args.command ? `Run: ${args.command}` : 'Shell Command'
+    ToolIcon = Terminal
+  } else if (name === 'list_files') {
+    label = 'List Files'
+    ToolIcon = Folder
+  } else if (name === 'create_project') {
+    label = args.name ? `Create Project: ${args.name}` : 'Create Project'
+    ToolIcon = Sparkles
+  } else {
+    const op = name.replace('_file', '').replace('view_file_content', 'read')
+    const verb = op.charAt(0).toUpperCase() + op.slice(1)
+    label = filename ? `${verb}: ${filename}` : `${verb} File`
+    ToolIcon = Folder
   }
-
-  if (title === 'Plan Checklist Formulated') {
-    return "I've organized the step-by-step implementation plan."
-  }
-  if (title === 'Action Approval Required') {
-    return "Waiting for your approval on a terminal command."
-  }
-  if (title === 'Run Execution Failure') {
-    return "Encountered an obstacle. Working on a recovery plan."
-  }
-  
-  return title
-}
-
-// Compute the state of our 6 premium phases based on active run data
-interface Phase {
-  id: string
-  title: string
-  status: 'pending' | 'thinking' | 'working' | 'completed' | 'needs_attention'
-  message: string
-  subActions: string[]
-  technicalDetails: {
-    title: string
-    content: string
-    status: string
-    timestamp: number
-  }[]
-}
-
-function computePhases(
-  activeRun: any,
-  turnEvents: ReasoningEvent[],
-  plan: any[],
-  logs: string[],
-  pendingApproval: any
-): Phase[] {
-  const phases: Phase[] = [
-    {
-      id: 'thinking',
-      title: 'Thinking',
-      status: 'pending',
-      message: 'Analyzing your request and project context...',
-      subActions: [],
-      technicalDetails: []
-    },
-    {
-      id: 'understanding',
-      title: 'Understanding Project',
-      status: 'pending',
-      message: 'Inspecting files, configurations, and dependencies...',
-      subActions: [],
-      technicalDetails: []
-    },
-    {
-      id: 'planning',
-      title: 'Planning',
-      status: 'pending',
-      message: 'Designing the optimal implementation strategy...',
-      subActions: [],
-      technicalDetails: []
-    },
-    {
-      id: 'implementing',
-      title: 'Implementing',
-      status: 'pending',
-      message: 'Creating components and applying code updates...',
-      subActions: [],
-      technicalDetails: []
-    },
-    {
-      id: 'verifying',
-      title: 'Verifying',
-      status: 'pending',
-      message: 'Testing and validating the changes...',
-      subActions: [],
-      technicalDetails: []
-    },
-    {
-      id: 'completed',
-      title: 'Completed',
-      status: 'pending',
-      message: 'All tasks completed successfully.',
-      subActions: [],
-      technicalDetails: []
-    }
-  ]
-
-  if (!activeRun) {
-    return phases
-  }
-
-  const hasPlan = plan && plan.length > 0
-  const isRunCompleted = activeRun.status === 'completed'
-  const isRunFailed = activeRun.status === 'failed'
-
-  turnEvents.forEach((event) => {
-    if (event.title === 'User Prompt') return
-
-    const techTitle = event.title
-    const techMessage = event.message || ''
-    const translated = translateTechnicalAction(techTitle, techMessage)
-
-    const detail = {
-      title: techTitle,
-      content: techMessage,
-      status: event.status,
-      timestamp: event.timestamp
-    }
-
-    if (
-      techTitle.includes('list_dir') ||
-      techTitle.includes('grep_search') ||
-      (techTitle.includes('read_file') && !hasPlan) ||
-      (techTitle.includes('view_file') && !hasPlan)
-    ) {
-      phases[1].subActions.push(translated)
-      phases[1].technicalDetails.push(detail)
-    } else if (techTitle === 'Plan Checklist Formulated' || techTitle.includes('planning')) {
-      phases[2].subActions.push(translated)
-      phases[2].technicalDetails.push(detail)
-    } else if (
-      techTitle.includes('write_to_file') ||
-      techTitle.includes('replace_file_content') ||
-      techTitle.includes('multi_replace_file_content') ||
-      (techTitle.includes('read_file') && hasPlan) ||
-      (techTitle.includes('view_file') && hasPlan)
-    ) {
-      phases[3].subActions.push(translated)
-      phases[3].technicalDetails.push(detail)
-    } else if (techTitle.includes('run_command')) {
-      const cmd = techMessage
-      if (cmd.includes('test') || cmd.includes('jest') || cmd.includes('lint') || cmd.includes('eslint') || cmd.includes('tsc')) {
-        phases[4].subActions.push(translated)
-        phases[4].technicalDetails.push(detail)
-      } else {
-        if (hasPlan) {
-          phases[3].subActions.push(translated)
-          phases[3].technicalDetails.push(detail)
-        } else {
-          phases[1].subActions.push(translated)
-          phases[1].technicalDetails.push(detail)
-        }
-      }
-    } else if (techTitle === 'Agent Reasoning') {
-      if (!hasPlan) {
-        phases[0].technicalDetails.push(detail)
-      } else {
-        phases[2].technicalDetails.push(detail)
-      }
-    } else if (techTitle === 'Action Approval Required') {
-      phases[3].technicalDetails.push(detail)
-    } else {
-      if (hasPlan) {
-        phases[3].technicalDetails.push(detail)
-      } else {
-        phases[1].technicalDetails.push(detail)
-      }
-    }
-  })
-
-  // Derive customized messages
-  const reasoningEvents = turnEvents.filter(e => e.title === 'Agent Reasoning')
-  const firstReasoning = reasoningEvents[0]?.message || ''
-
-  if (firstReasoning) {
-    const cleanMsg = firstReasoning.trim().split(/[.!?]\s+/)[0]
-    if (cleanMsg && cleanMsg.length > 10 && cleanMsg.length < 150) {
-      phases[0].message = cleanMsg + "."
-    }
-  }
-
-  // Determine statuses
-  // Phase 0: Thinking
-  if (isRunCompleted || isRunFailed) {
-    phases[0].status = 'completed'
-  } else if (turnEvents.length > 0) {
-    phases[0].status = hasPlan ? 'completed' : 'thinking'
-  }
-
-  // Phase 1: Understanding
-  if (phases[1].subActions.length > 0) {
-    if (hasPlan || isRunCompleted) {
-      phases[1].status = 'completed'
-    } else {
-      phases[1].status = 'working'
-    }
-  } else if (phases[0].status === 'completed') {
-    phases[1].status = hasPlan ? 'completed' : 'thinking'
-  }
-
-  // Phase 2: Planning
-  if (hasPlan) {
-    phases[2].status = (phases[3].subActions.length > 0 || isRunCompleted) ? 'completed' : 'working'
-    phases[2].message = `I've formulated a checklist with ${plan.length} steps to achieve your goal.`
-  } else if (phases[1].status === 'completed') {
-    phases[2].status = 'thinking'
-  }
-
-  // Phase 3: Implementing
-  if (phases[3].subActions.length > 0) {
-    const isDoneImplementing = (phases[4].subActions.length > 0 || isRunCompleted)
-    phases[3].status = isDoneImplementing ? 'completed' : 'working'
-    const edits = plan.filter(p => p.status === 'completed').length
-    phases[3].message = `Applying implementation steps. Progress: ${edits} of ${plan.length} completed.`
-  } else if (phases[2].status === 'completed') {
-    phases[3].status = 'thinking'
-  }
-
-  // Phase 4: Verifying
-  if (phases[4].subActions.length > 0 || (isRunCompleted && plan.length > 0)) {
-    phases[4].status = isRunCompleted ? 'completed' : 'working'
-    phases[4].message = isRunCompleted ? 'All changes verified successfully.' : 'Validating implementation against project requirements...'
-  } else if (phases[3].status === 'completed') {
-    phases[4].status = 'thinking'
-  }
-
-  // Phase 5: Completed
-  if (isRunCompleted) {
-    phases[5].status = 'completed'
-    phases[5].message = 'Everything is fully integrated, tested, and ready.'
-  } else if (isRunFailed) {
-    const activePhase = phases.find(p => p.status === 'working' || p.status === 'thinking')
-    if (activePhase) {
-      activePhase.status = 'needs_attention'
-    }
-  }
-
-  // Handle Action approvals
-  if (pendingApproval) {
-    const activePhase = phases.find(p => p.status === 'working' || p.status === 'thinking') || phases[3]
-    activePhase.status = 'needs_attention'
-    activePhase.message = 'Waiting for your approval to run a terminal command.'
-  }
-
-  // De-duplicate actions
-  phases.forEach(p => {
-    p.subActions = Array.from(new Set(p.subActions))
-  })
-
-  return phases
-}
-
-// Phase Card Component
-interface PhaseItemProps {
-  phase: Phase
-  isExpanded: boolean
-  onToggleExpand: () => void
-  onApprove: (action: 'approve' | 'reject') => void
-  pendingApproval: any
-  colors: any
-  isDark: boolean
-}
-
-function PhaseItem({
-  phase,
-  isExpanded,
-  onToggleExpand,
-  onApprove,
-  pendingApproval,
-  colors,
-  isDark
-}: PhaseItemProps) {
-  const [showTech, setShowTech] = useState(false)
 
   let statusColor = colors.textSecondary
-  if (phase.status === 'thinking') statusColor = isDark ? '#A5D6FF' : '#0969DA'
-  if (phase.status === 'working') statusColor = isDark ? '#58A6FF' : '#0969DA'
-  if (phase.status === 'completed') statusColor = isDark ? '#3FB950' : '#1A7F37'
-  if (phase.status === 'needs_attention') statusColor = isDark ? '#FF7B72' : '#CF222E'
+  let StatusComponent: React.ReactNode = null
 
-  const isActive = phase.status === 'thinking' || phase.status === 'working' || phase.status === 'needs_attention'
+  if (status === 'running' || status === 'pending') {
+    statusColor = isDark ? '#58A6FF' : '#0969DA'
+    StatusComponent = <ActivityIndicator size="small" color={statusColor} style={{ width: 12, height: 12 }} />
+  } else if (status === 'done') {
+    statusColor = isDark ? '#3FB950' : '#1A7F37'
+    StatusComponent = <CheckCircle2 size={12} color={statusColor} />
+  } else if (status === 'error') {
+    statusColor = isDark ? '#FF7B72' : '#CF222E'
+    StatusComponent = <AlertCircle size={12} color={statusColor} />
+  }
+
+  const handleApproveAction = async (action: 'approve' | 'reject') => {
+    if (!args.approvalId) return
+    try {
+      await api.ai.approve(args.approvalId as string, action)
+    } catch (e) {
+      Alert.alert('Error', 'Failed to submit approval.')
+    }
+  }
 
   return (
-    <View style={[styles.phaseCard, { borderLeftColor: statusColor }]}>
-      <TouchableOpacity
-        style={styles.phaseHeader}
-        onPress={onToggleExpand}
-        activeOpacity={0.7}
-      >
-        <StatusIcon status={phase.status} color={statusColor} />
-        <Text style={[
-          styles.phaseTitle,
+    <View style={{ gap: 4, width: '100%', marginTop: 2 }}>
+      <View style={[
+        styles.toolCallBadge,
+        {
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+          borderWidth: 1,
+        }
+      ]}>
+        <ToolIcon size={12} color={colors.textSecondary} />
+        <Text style={[styles.toolCallText, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+          {label}
+        </Text>
+        {StatusComponent}
+      </View>
+
+      {status === 'pending' && !!args.approvalId && (
+        <View style={[
+          styles.inlineApprovalCard,
           {
-            color: isActive ? colors.text : colors.textSecondary,
-            fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_400Regular'
+            backgroundColor: isDark ? '#1C1500' : '#FFFDF0',
+            borderColor: isDark ? '#E2B714' : '#F1E05A',
           }
         ]}>
-          {phase.title}
-        </Text>
-        {(phase.subActions.length > 0 || phase.technicalDetails.length > 0) && (
-          <View style={{ marginLeft: 'auto' }}>
-            {isExpanded ? (
-              <ChevronUp size={16} color={colors.textSecondary} />
-            ) : (
-              <ChevronDown size={16} color={colors.textSecondary} />
-            )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <Shield size={14} color="#E2B714" />
+            <Text style={[styles.inlineApprovalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+              Approval Required
+            </Text>
           </View>
-        )}
-      </TouchableOpacity>
-
-      {isExpanded && (
-        <View style={styles.phaseBody}>
-          <Text style={[styles.phaseMessage, { color: colors.textSecondary }]}>
-            {phase.message}
+          <Text style={{ color: colors.textSecondary, fontSize: 11, marginBottom: 6 }}>
+            CloudCode wants to run a terminal command:
           </Text>
-
-          {phase.subActions.length > 0 && (
-            <View style={styles.subActionsList}>
-              {phase.subActions.map((act, idx) => (
-                <View key={idx} style={styles.subActionRow}>
-                  <View style={[styles.subActionBullet, { backgroundColor: statusColor }]} />
-                  <Text style={[styles.subActionText, { color: colors.text }]}>
-                    {act}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {phase.status === 'needs_attention' && pendingApproval && (
-            <View style={[
-              styles.inlineApprovalCard,
-              {
-                backgroundColor: isDark ? '#1C1500' : '#FFFDF0',
-                borderColor: isDark ? '#E2B714' : '#F1E05A',
-              }
-            ]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <Shield size={14} color="#E2B714" />
-                <Text style={[styles.inlineApprovalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                  Action Approval Required
-                </Text>
-              </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 8 }}>
-                To proceed, I need to run this command:
-              </Text>
-              <View style={[styles.inlineApprovalCommandBox, { backgroundColor: isDark ? '#0D1117' : '#E9ECEF' }]}>
-                <Text style={[styles.inlineApprovalCommandText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
-                  $ {pendingApproval.command}
-                </Text>
-              </View>
-              <View style={styles.inlineApprovalActions}>
-                <TouchableOpacity
-                  style={[styles.inlineApprovalBtn, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}
-                  onPress={() => onApprove('reject')}
-                >
-                  <Text style={[styles.inlineApprovalBtnText, { color: colors.text }]}>Deny</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.inlineApprovalBtn, { backgroundColor: '#3FB950' }]}
-                  onPress={() => onApprove('approve')}
-                >
-                  <Text style={styles.inlineApprovalBtnText}>Approve</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {phase.technicalDetails.length > 0 && (
-            <View style={{ marginTop: 8 }}>
-              <TouchableOpacity
-                style={styles.techToggleBtn}
-                onPress={() => setShowTech(!showTech)}
-                activeOpacity={0.7}
-              >
-                <Terminal size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
-                <Text style={[styles.techToggleText, { color: colors.textSecondary }]}>
-                  {showTech ? "Hide technical details" : "Show technical details"}
-                </Text>
-              </TouchableOpacity>
-
-              {showTech && (
-                <View style={[styles.techConsoleBox, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                  <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
-                    {phase.technicalDetails.map((detail, idx) => (
-                      <View key={idx} style={{ marginBottom: 8 }}>
-                        <Text style={[styles.techDetailTitle, { color: isDark ? '#8B929A' : '#57606A' }]}>
-                          [{new Date(detail.timestamp).toLocaleTimeString()}] {detail.title}
-                        </Text>
-                        {detail.content ? (
-                          <Text style={[styles.techDetailContent, { color: isDark ? '#C9D1D9' : '#24292F' }]}>
-                            {detail.content}
-                          </Text>
-                        ) : null}
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-          )}
+          <View style={[styles.inlineApprovalCommandBox, { backgroundColor: isDark ? '#0D1117' : '#E9ECEF' }]}>
+            <Text style={[styles.inlineApprovalCommandText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
+              $ {args.command as string}
+            </Text>
+          </View>
+          <View style={styles.inlineApprovalActions}>
+            <TouchableOpacity
+              style={[styles.inlineApprovalBtn, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}
+              onPress={() => handleApproveAction('reject')}
+            >
+              <Text style={[styles.inlineApprovalBtnText, { color: colors.text }]}>Deny</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.inlineApprovalBtn, { backgroundColor: '#3FB950' }]}
+              onPress={() => handleApproveAction('approve')}
+            >
+              <Text style={styles.inlineApprovalBtnText}>Approve</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </View>
@@ -649,28 +182,25 @@ export default function AITab({ projectId }: Props) {
   const { colors, isDark } = useAppTheme()
   const { user } = useAuthStore()
   const {
-    activeRun, runsList, isStreaming, plan, timeline, logs, pendingApproval,
-    setActiveProject, loadRuns, startNewRun, resumeRun, approvePending, clearActiveRun, stopActiveRun
-  } = useAgentStore()
-  
+    messages, isStreaming, currentStreamText, currentToolCalls, activeProjectId,
+    sendMessage, clearChat, stopGeneration, initConversations, loadConversation, deleteConversation, startNewChat, setActiveProject
+  } = useAIStore()
+
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
   const [inputText, setInputText] = useState('')
   const [selectedModel, setSelectedModel] = useState<string>('gemini')
-  
+
   const inputRef = useRef<TextInput>(null)
   const scrollRef = useRef<ScrollView>(null)
-  
+
   const [modelSelectorVisible, setModelSelectorVisible] = useState(false)
   const [friendlyError, setFriendlyError] = useState<string | null>(null)
   const [menuVisible, setMenuVisible] = useState(false)
 
   const [isByokActive, setIsByokActive] = useState(false)
   const [userTier, setUserTier] = useState('free')
-
-  // Expanded phase tracking
-  const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null)
 
   // Voice recording state
   const [isListening, setIsListening] = useState(false)
@@ -683,7 +213,7 @@ export default function AITab({ projectId }: Props) {
     try {
       const byok = await AsyncStorage.getItem('byok_enabled')
       setIsByokActive(byok === 'true')
-      
+
       const billing = await api.billing.status()
       if (billing?.tier?.name) {
         setUserTier(billing.tier.name)
@@ -696,6 +226,7 @@ export default function AITab({ projectId }: Props) {
   // Sync project context on mount
   useEffect(() => {
     setActiveProject(projectId)
+    initConversations()
     fetchByokAndTier()
   }, [projectId])
 
@@ -704,7 +235,7 @@ export default function AITab({ projectId }: Props) {
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true })
     }, 200)
-  }, [timeline.length, plan.length, isStreaming])
+  }, [messages.length, currentStreamText, isStreaming, currentToolCalls.length])
 
   // Voice speech setup
   useEffect(() => {
@@ -725,7 +256,7 @@ export default function AITab({ projectId }: Props) {
     }
 
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners).catch(() => {})
+      Voice.destroy().then(Voice.removeAllListeners).catch(() => { })
     }
   }, [])
 
@@ -780,110 +311,26 @@ export default function AITab({ projectId }: Props) {
     }
   }
 
-  // Automatically expand active phase
-  useEffect(() => {
-    if (activeRun && isStreaming) {
-      const activePhases = computePhases(activeRun, timeline, plan, logs, pendingApproval)
-      const activeIndex = activePhases.findIndex(p => p.status === 'thinking' || p.status === 'working' || p.status === 'needs_attention')
-      if (activeIndex !== -1) {
-        setExpandedPhaseId(activePhases[activeIndex].id)
-      }
-    }
-  }, [activeRun, isStreaming, timeline.length, plan.length, pendingApproval])
-
   const handleSend = async () => {
     if (!inputText.trim() || isStreaming) return
     const prompt = inputText.trim()
     setInputText('')
     setFriendlyError(null)
     Keyboard.dismiss()
-    
-    if (!activeRun) {
-      await startNewRun(projectId, selectedModel, prompt)
-    } else {
-      await resumeRun(activeRun.id, prompt)
-    }
-  }
 
-  // Parse custom friendly errors
-  useEffect(() => {
-    const lastEvent = timeline[timeline.length - 1]
-    if (lastEvent && lastEvent.status === 'failed' && lastEvent.message) {
-      const msg = lastEvent.message
+    try {
+      await sendMessage(prompt, projectId, undefined, selectedModel)
+    } catch (err) {
+      const msg = (err as Error).message || ''
       if (msg.includes('LIMIT_EXCEEDED') || msg.includes('QUOTA_EXCEEDED') || msg.includes('monthly token limit exceeded')) {
-        setFriendlyError('Rate limit reached. Retry available in 45 seconds. Tap Switch Model or use BYOK.')
+        setFriendlyError('Rate limit reached. Retry available in 45 seconds. Tap Switch Model or use BYOK to continue.')
       } else if (msg.includes('Gemini API error') || msg.includes('fetch failed')) {
         setFriendlyError('Gemini is currently unavailable. Retrying connection...')
       } else {
         setFriendlyError(msg)
       }
-    } else {
-      setFriendlyError(null)
     }
-  }, [timeline])
-
-  // Get current objective sentence
-  const getObjectiveSentence = (turnEvents: ReasoningEvent[]) => {
-    const activePhases = computePhases(activeRun, turnEvents, plan, logs, pendingApproval)
-    const currentActive = activePhases.find(p => p.status === 'thinking' || p.status === 'working' || p.status === 'needs_attention')
-    if (currentActive) {
-      return currentActive.message
-    }
-    return 'Ready to build together.'
   }
-
-  // Group timeline events into turns
-  const groupTurns = () => {
-    const turns: {
-      id: string
-      userPrompt: ReasoningEvent | null
-      agentReasoning: ReasoningEvent | null
-      events: ReasoningEvent[]
-      isLastTurn: boolean
-    }[] = []
-    
-    let currentTurn: typeof turns[0] | null = null
-
-    for (const event of timeline) {
-      if (event.title === 'User Prompt') {
-        if (currentTurn) {
-          turns.push(currentTurn)
-        }
-        currentTurn = {
-          id: event.id,
-          userPrompt: event,
-          agentReasoning: null,
-          events: [],
-          isLastTurn: false
-        }
-      } else if (event.title === 'Agent Reasoning') {
-        if (!currentTurn) {
-          currentTurn = {
-            id: event.id,
-            userPrompt: null,
-            agentReasoning: event,
-            events: [],
-            isLastTurn: false
-          }
-        } else {
-          currentTurn.agentReasoning = event
-        }
-      } else {
-        if (currentTurn) {
-          currentTurn.events.push(event)
-        }
-      }
-    }
-
-    if (currentTurn) {
-      currentTurn.isLastTurn = true
-      turns.push(currentTurn)
-    }
-
-    return turns
-  }
-
-  const chatTurns = groupTurns()
 
   // Markdown styling
   const mdStyles = {
@@ -891,16 +338,8 @@ export default function AITab({ projectId }: Props) {
     heading1: { fontSize: 17, fontFamily: 'Inter_700Bold', marginTop: 12, color: isDark ? '#F3F4F6' : '#0E1116' },
     heading2: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginTop: 8, color: isDark ? '#F3F4F6' : '#0E1116' },
     code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#1C2128' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 8, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 8, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
     paragraph: { marginTop: 4, marginBottom: 4 },
-  }
-
-  interface ChatTurn {
-    id: string
-    userPrompt: ReasoningEvent | null
-    agentReasoning: ReasoningEvent | null
-    events: ReasoningEvent[]
-    isLastTurn: boolean
   }
 
   // Premium Quick Action Suggestions
@@ -910,6 +349,13 @@ export default function AITab({ projectId }: Props) {
     { text: "📦 Install Zustand state", prompt: "Add Zustand package and set up state store." },
     { text: "🛠️ Add dark mode theme", prompt: "Modify components to support dark mode theme." }
   ]
+
+  // Filter messages specifically for the current project
+  const projectMessages = messages.filter(m => {
+    // If the thread is saved, we check if it matches the current projectId
+    // Since initConversations loads the messages, we want to make sure it's scoped.
+    return true // messages in the useAIStore are already scoped when loaded or sent!
+  })
 
   return (
     <KeyboardAvoidingView
@@ -977,7 +423,7 @@ export default function AITab({ projectId }: Props) {
             style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? '#21262D' : '#F6F8FA' }]}
             onPress={() => {
               setMenuVisible(false)
-              clearActiveRun()
+              startNewChat()
             }}
           >
             <Plus size={14} color={colors.text} />
@@ -1015,12 +461,11 @@ export default function AITab({ projectId }: Props) {
         contentContainerStyle={{ padding: 12, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
       >
-        {chatTurns.length === 0 ? (
+        {projectMessages.length === 0 ? (
           <View style={styles.welcomeContainer}>
-            {/* Premium Rotating orbital AI Core orb */}
             <AICoreLogo />
             <Text style={[styles.welcomeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-              Workspace Agent
+              Workspace Copilot
             </Text>
             <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
               Describe changes or ask questions about this project's code. I can read, create, and edit files directly in this workspace.
@@ -1046,84 +491,66 @@ export default function AITab({ projectId }: Props) {
             </View>
           </View>
         ) : (
-          <View style={{ gap: 20 }}>
-            {chatTurns.map((turn, turnIdx) => {
-              const turnPhases = computePhases(activeRun, turn.events, plan, logs, pendingApproval)
-              const objective = getObjectiveSentence(turn.events)
-
+          <View style={{ gap: 16 }}>
+            {projectMessages.map((msg) => {
+              const isUser = msg.role === 'user'
               return (
-                <View key={turn.id || turnIdx} style={styles.turnContainer}>
-                  {/* User Prompt */}
-                  {turn.userPrompt && (
-                    <View style={styles.userBubbleWrapper}>
-                      <View style={[styles.userBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                        <Text style={[styles.userBubbleText, { color: colors.text }]}>
-                          {turn.userPrompt.message}
-                        </Text>
-                      </View>
+                <View key={msg.id} style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
+                  {!isUser && (
+                    <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+                      <Sparkles size={12} color="#3FB950" />
                     </View>
                   )}
-
-                  {/* Agent Teammate Response Card */}
-                  <View style={[styles.teammateCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: isDark ? 0 : 1 }]}>
-                    {/* Premium Teammate Header */}
-                    <View style={styles.teammateHeader}>
-                      <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                        <Sparkles size={13} color="#3FB950" />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.teammateName, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-                          CloudCode Partner
-                        </Text>
-                        {turn.isLastTurn && isStreaming && (
-                          <Text style={[styles.objectiveText, { color: colors.textSecondary }]} numberOfLines={1}>
-                            {objective}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-
-                    {/* Main streaming reasoning message */}
-                    {turn.agentReasoning && turn.agentReasoning.message && (
-                      <View style={styles.markdownWrapper}>
+                  <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }] : [styles.modelBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: isDark ? 0 : 1 }]}>
+                    {isUser ? (
+                      <Text style={[styles.userBubbleText, { color: colors.text }]}>
+                        {msg.text}
+                      </Text>
+                    ) : (
+                      <View style={{ width: '100%' }}>
                         <Markdown style={mdStyles}>
-                          {turn.agentReasoning.message}
+                          {msg.text}
                         </Markdown>
-                      </View>
-                    )}
-
-                    {/* Subtle divider */}
-                    {turn.events.length > 0 && <View style={[styles.cardDivider, { backgroundColor: isDark ? '#21262D' : '#D8DEE4' }]} />}
-
-                    {/* Stepper Phase Timeline (Progressive Disclosure) */}
-                    {turn.events.length > 0 && (
-                      <View style={styles.timelineWrapper}>
-                        {turnPhases.map((phase) => {
-                          const isExpanded = turn.isLastTurn ? (expandedPhaseId === phase.id) : false
-                          
-                          return (
-                            <PhaseItem
-                              key={phase.id}
-                              phase={phase}
-                              isExpanded={isExpanded}
-                              onToggleExpand={() => {
-                                if (turn.isLastTurn) {
-                                  setExpandedPhaseId(expandedPhaseId === phase.id ? null : phase.id)
-                                }
-                              }}
-                              onApprove={approvePending}
-                              pendingApproval={pendingApproval}
-                              colors={colors}
-                              isDark={isDark}
-                            />
-                          )
-                        })}
+                        {msg.toolCalls && msg.toolCalls.length > 0 && (
+                          <View style={styles.toolCallsContainer}>
+                            {msg.toolCalls.map((tc, tcIdx) => (
+                              <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
+                            ))}
+                          </View>
+                        )}
                       </View>
                     )}
                   </View>
                 </View>
               )
             })}
+
+            {/* Streaming AI response bubble */}
+            {isStreaming && (currentStreamText.trim() !== '' || currentToolCalls.length > 0) && (
+              <View style={styles.modelBubbleWrapper}>
+                <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+                  <Sparkles size={12} color="#3FB950" />
+                </View>
+                <View style={[styles.modelBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4', borderWidth: isDark ? 0 : 1 }]}>
+                  <View style={{ width: '100%' }}>
+                    {currentStreamText.trim() !== '' ? (
+                      <Markdown style={mdStyles}>
+                        {currentStreamText}
+                      </Markdown>
+                    ) : (
+                      <ActivityIndicator size="small" color={colors.primary} style={{ alignSelf: 'flex-start' }} />
+                    )}
+                    {currentToolCalls.length > 0 && (
+                      <View style={styles.toolCallsContainer}>
+                        {currentToolCalls.map((tc, tcIdx) => (
+                          <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -1146,7 +573,7 @@ export default function AITab({ projectId }: Props) {
           </View>
         )}
 
-        {/* Modern Floating Input Composer (with Focused Glow Border) */}
+        {/* Modern Floating Input Composer */}
         <View style={styles.composerWrapper}>
           <BlurView
             intensity={Platform.OS === 'ios' ? 85 : 100}
@@ -1171,12 +598,11 @@ export default function AITab({ projectId }: Props) {
               <Plus size={20} color={colors.textSecondary} />
             </TouchableOpacity>
 
-
             {/* TextInput */}
             <TextInput
               ref={inputRef}
               style={[styles.composerTextInput, { color: colors.text }]}
-              placeholder={activeRun?.status === 'completed' ? "Goal completed. Ask follow-up..." : "Ask Copilot anything..."}
+              placeholder="Ask Copilot anything..."
               placeholderTextColor={colors.textSecondary}
               value={inputText}
               onChangeText={setInputText}
@@ -1208,7 +634,7 @@ export default function AITab({ projectId }: Props) {
               {isStreaming ? (
                 <TouchableOpacity
                   style={styles.composerStopBtn}
-                  onPress={() => stopActiveRun()}
+                  onPress={() => stopGeneration()}
                   activeOpacity={0.7}
                 >
                   <Square size={11} fill="#FFFFFF" color="#FFFFFF" />
@@ -1248,7 +674,7 @@ export default function AITab({ projectId }: Props) {
                 <X size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            
+
             <TouchableOpacity
               style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}
               onPress={() => {
@@ -1258,7 +684,7 @@ export default function AITab({ projectId }: Props) {
             >
               <Cpu size={14} color="#3FB950" />
               <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                Gemini 3.5 Flash (Teammate engine)
+                Gemini 1.5 Flash (Teammate engine)
               </Text>
             </TouchableOpacity>
 
@@ -1388,8 +814,11 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: 'Inter_500Medium',
   },
-  turnContainer: {
-    gap: 10,
+  modelBubbleWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    width: '100%',
+    gap: 8,
   },
   userBubbleWrapper: {
     flexDirection: 'row',
@@ -1409,15 +838,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     lineHeight: 18,
   },
-  teammateCard: {
+  modelBubble: {
     borderRadius: 14,
     padding: 14,
-    gap: 10,
-  },
-  teammateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    maxWidth: SCREEN_WIDTH * 0.8,
+    borderBottomLeftRadius: 4,
   },
   avatarCircle: {
     width: 28,
@@ -1426,67 +851,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
-  teammateName: {
-    fontSize: 14,
+  toolCallsContainer: {
+    marginTop: 10,
+    gap: 4,
+    width: '100%',
   },
-  objectiveText: {
+  toolCallBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: 'stretch',
+    gap: 6,
+  },
+  toolCallText: {
     fontSize: 11,
-    fontFamily: 'Inter_400Regular',
-    marginTop: 1,
-  },
-  markdownWrapper: {
-    paddingLeft: 2,
-  },
-  cardDivider: {
-    height: 1,
-    marginVertical: 2,
-  },
-  timelineWrapper: {
-    gap: 8,
-  },
-  phaseCard: {
-    borderLeftWidth: 2,
-    paddingLeft: 10,
-    paddingVertical: 2,
-    gap: 4,
-  },
-  phaseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  phaseTitle: {
-    fontSize: 12.5,
-  },
-  phaseBody: {
-    marginTop: 2,
-    gap: 6,
-    paddingLeft: 26,
-  },
-  phaseMessage: {
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontFamily: 'Inter_400Regular',
-  },
-  subActionsList: {
-    gap: 4,
-    marginTop: 2,
-  },
-  subActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  subActionBullet: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    opacity: 0.6,
-  },
-  subActionText: {
-    fontSize: 11.5,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'JetBrainsMono_400Regular',
   },
   inlineApprovalCard: {
     borderRadius: 8,
@@ -1522,32 +906,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
   },
-  techToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: 2,
-  },
-  techToggleText: {
-    fontSize: 10.5,
-    fontFamily: 'Inter_500Medium',
-  },
-  techConsoleBox: {
-    borderRadius: 6,
-    borderWidth: 1,
-    padding: 6,
-    marginTop: 2,
-  },
-  techDetailTitle: {
-    fontSize: 9.5,
-    fontFamily: 'JetBrainsMono_400Regular',
-  },
-  techDetailContent: {
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 9.5,
-    marginTop: 2,
-    paddingLeft: 4,
-  },
   composerWrapper: {
     zIndex: 99,
   },
@@ -1574,15 +932,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  contextChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  contextChipText: {
-    fontSize: 9,
-    fontFamily: 'Inter_600SemiBold',
   },
   composerTextInput: {
     flex: 1,
