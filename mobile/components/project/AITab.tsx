@@ -564,7 +564,11 @@ export default function AITab({ projectId }: Props) {
                         {msg.text}
                       </Text>
                     ) : (
-                      <View style={{ width: '100%' }}>
+                      <View style={{ width: '100%', paddingLeft: 14, borderLeftWidth: 2, borderLeftColor: isDark ? '#892CDC' : '#6366F1' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, marginLeft: -2 }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3FB950' }} />
+                          <Text style={{ fontSize: 10, fontFamily: 'Inter_600SemiBold', color: isDark ? '#892CDC' : '#6366F1', textTransform: 'uppercase', letterSpacing: 0.5 }}>Teammate</Text>
+                        </View>
                         <Markdown style={mdStyles}>
                           {msg.text}
                         </Markdown>
@@ -586,7 +590,11 @@ export default function AITab({ projectId }: Props) {
             {isStreaming && (
               <View style={styles.modelBubbleWrapper}>
                 <View style={[styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
-                  <View style={{ width: '100%' }}>
+                  <View style={{ width: '100%', paddingLeft: 14, borderLeftWidth: 2, borderLeftColor: isDark ? '#892CDC' : '#6366F1' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, marginLeft: -2 }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3FB950' }} />
+                      <Text style={{ fontSize: 10, fontFamily: 'Inter_600SemiBold', color: isDark ? '#892CDC' : '#6366F1', textTransform: 'uppercase', letterSpacing: 0.5 }}>Teammate</Text>
+                    </View>
                     {currentStreamText.trim() !== '' ? (
                       <Markdown style={mdStyles}>
                         {currentStreamText}
