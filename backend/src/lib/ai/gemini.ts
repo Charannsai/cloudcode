@@ -199,7 +199,26 @@ export async function executeTool(
         const name = args.name as string
         const type = args.type as any
         const project = await createProjectInternal(userId, name, type)
-        return { success: true, project }
+        
+        // Wait for the container to be provisioned so the AI can use it immediately
+        let projectContainerId: string | null = null
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 1000))
+          const { data: updatedProject } = await supabaseAdmin
+            .from('projects')
+            .select('container_id, status')
+            .eq('id', project.id)
+            .single()
+          if (updatedProject?.container_id && updatedProject.status === 'ready') {
+            projectContainerId = updatedProject.container_id
+            break
+          }
+          if (updatedProject?.status === 'error') {
+            return { success: true, project, container_id: null, message: 'Project created but container failed to provision.' }
+          }
+        }
+        
+        return { success: true, project, container_id: projectContainerId }
       } catch (err) {
         return { error: `Failed to create project: ${(err as Error).message}` }
       }
@@ -532,6 +551,7 @@ export async function* chatWithGemini(
 ): AsyncGenerator<StreamChunk> {
   let totalTokens = 0
   const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
+  let activeContainerId = containerId  // mutable — updated after create_project
 
   let runCtx: AgentRunContext | null = null
   if (context?.runId && context?.userId) {
@@ -598,7 +618,7 @@ export async function* chatWithGemini(
     while (loopCount < MAX_LOOPS) {
       loopCount++
 
-      const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
+      const hasContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
       const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : GEMINI_API_KEY
       const toolsToProvide = hasContainer 
         ? TOOL_DECLARATIONS 
@@ -637,7 +657,7 @@ export async function* chatWithGemini(
             parts: [{
               text: (hasContainer 
                 ? SYSTEM_INSTRUCTION 
-                : 'You are CloudCode AI — an autonomous coding agent. You act, you don\'t ask. When the user wants a project, create it immediately using the create_project tool. Never ask for confirmation. If they want file operations but have no project, create the project first, then tell them to open it.')
+                : 'You are CloudCode AI — an autonomous coding agent. You act, you don\'t ask. When the user wants a project, create it immediately using the create_project tool. Never ask for confirmation. After creating a project, you will automatically gain access to all file and command tools — use them to set up the project exactly as the user requested.')
                 + '\n' + capabilityPrompt
             }]
           },
@@ -829,7 +849,7 @@ export async function* chatWithGemini(
                   toolName: name, 
                   toolArgs: { ...args, approvalId, status: 'running' } 
                 }
-                result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
+                result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
               } else {
                 if (runCtx) {
                   await supabaseAdmin
@@ -841,7 +861,7 @@ export async function* chatWithGemini(
               }
             } else {
               yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
-              result = await executeTool(containerId, name, args as Record<string, unknown>, context?.userId)
+              result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
             }
 
             yield { 
@@ -849,6 +869,12 @@ export async function* chatWithGemini(
               toolName: name, 
               toolResult: result,
               toolArgs: { approvalId: (args as any).approvalId }
+            }
+
+            // After create_project succeeds, switch to the new container so AI gets full tools
+            if (name === 'create_project' && result && (result as any).success && (result as any).container_id) {
+              activeContainerId = (result as any).container_id
+              console.log(`[Gemini Loop] Switched to new container: ${activeContainerId}`)
             }
 
             if (runCtx) {
