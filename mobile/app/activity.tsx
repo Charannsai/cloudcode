@@ -14,6 +14,7 @@ import { api } from '@/lib/api'
 import { useAgentStore } from '@/store/agentStore'
 import { useAIStore } from '@/store/ai'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { ConfirmModal } from '@/components/ConfirmModal'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -41,6 +42,12 @@ export default function ActivityScreen() {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set())
   const [activeMenuRunId, setActiveMenuRunId] = useState<string | null>(null)
+  
+  // Custom Delete Confirmation Modal States
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [runIdToDelete, setRunIdToDelete] = useState<string | null>(null)
+  const [isBulkDelete, setIsBulkDelete] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Skeleton shimmer animation
   const shimmerTranslate = useRef(new Animated.Value(-150)).current
@@ -111,52 +118,39 @@ export default function ActivityScreen() {
   }
 
   const handleDeleteSingle = (runId: string) => {
-    Alert.alert(
-      'Delete Chat',
-      'Are you sure you want to clear this conversation history? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteRuns([runId])
-              if (runsList.length <= 6) {
-                setVisibleCount(5)
-              }
-            } catch (e) {
-              Alert.alert('Error', 'Failed to delete conversation.')
-            }
-          }
-        }
-      ]
-    )
+    setRunIdToDelete(runId)
+    setIsBulkDelete(false)
+    setDeleteModalVisible(true)
   }
 
   const handleBulkDelete = () => {
     if (selectedRunIds.size === 0) return
-    Alert.alert(
-      'Delete Selected Chats',
-      `Are you sure you want to delete the ${selectedRunIds.size} selected conversations? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteRuns(Array.from(selectedRunIds))
-              setSelectedRunIds(new Set())
-              setIsSelectionMode(false)
-              setVisibleCount(5)
-            } catch (e) {
-              Alert.alert('Error', 'Failed to delete conversations.')
-            }
-          }
+    setIsBulkDelete(true)
+    setRunIdToDelete(null)
+    setDeleteModalVisible(true)
+  }
+
+  const onConfirmDelete = async () => {
+    setIsDeleting(true)
+    try {
+      if (isBulkDelete) {
+        await deleteRuns(Array.from(selectedRunIds))
+        setSelectedRunIds(new Set())
+        setIsSelectionMode(false)
+        setVisibleCount(5)
+      } else if (runIdToDelete) {
+        await deleteRuns([runIdToDelete])
+        if (runsList.length <= 6) {
+          setVisibleCount(5)
         }
-      ]
-    )
+      }
+      setDeleteModalVisible(false)
+    } catch (e) {
+      Alert.alert('Error', isBulkDelete ? 'Failed to delete conversations.' : 'Failed to delete conversation.')
+    } finally {
+      setIsDeleting(false)
+      setRunIdToDelete(null)
+    }
   }
 
   const handleToggleSelectAll = () => {
@@ -516,6 +510,22 @@ export default function ActivityScreen() {
           )}
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        title={isBulkDelete ? 'Delete Selected Chats' : 'Delete Chat'}
+        message={
+          isBulkDelete
+            ? `Are you sure you want to clear these ${selectedRunIds.size} conversations? This action cannot be undone.`
+            : 'Are you sure you want to clear this conversation history? This action cannot be undone.'
+        }
+        confirmText={isBulkDelete ? 'Delete All' : 'Delete'}
+        cancelText="Cancel"
+        onConfirm={onConfirmDelete}
+        onCancel={() => setDeleteModalVisible(false)}
+        isLoading={isDeleting}
+        type="danger"
+      />
     </View>
   )
 }
