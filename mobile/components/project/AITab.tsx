@@ -113,11 +113,13 @@ function TypingIndicator({ colors }: { colors: any }) {
   )
 }
 
-// Minimalist Tool Call Badge Component
+// Minimalist Collapsible Tool Call Badge Component
 function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: any; isDark: boolean }) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const name = tool.name
   const args = tool.args || {}
   const status = tool.status
+  const result = tool.result as any
 
   const path = (args.path as string) || ''
   const filename = path.split(/[\/\\]/).pop() || ''
@@ -129,30 +131,198 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
     label = args.command ? `Run: ${args.command}` : 'Shell Command'
     ToolIcon = Terminal
   } else if (name === 'list_files') {
-    label = 'List Files'
+    label = args.path && args.path !== '.' ? `List Files: ${args.path}` : 'List Files'
     ToolIcon = Folder
   } else if (name === 'create_project') {
     label = args.name ? `Create Project: ${args.name}` : 'Create Project'
     ToolIcon = Sparkles
+  } else if (name === 'select_workspace') {
+    const wsName = (args.workspaceIdOrName as string) || ''
+    label = wsName ? `Select Workspace: ${wsName}` : 'Select Workspace'
+    ToolIcon = Folder
+  } else if (name === 'list_workspaces') {
+    label = 'List Workspaces'
+    ToolIcon = Folder
   } else {
+    // Elegant fallback for file tools or other future tools
+    const isFileTool = name.endsWith('_file') || name.includes('file')
     const op = name.replace('_file', '').replace('view_file_content', 'read')
-    const verb = op.charAt(0).toUpperCase() + op.slice(1)
-    label = filename ? `${verb}: ${filename}` : `${verb} File`
+    // Replace underscores with spaces and capitalize each word
+    const prettyOp = op.split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+
+    if (filename) {
+      label = `${prettyOp}: ${filename}`
+    } else {
+      label = isFileTool ? `${prettyOp} File` : prettyOp
+    }
     ToolIcon = Folder
   }
 
-  let statusColor = colors.textSecondary
-  let StatusComponent: React.ReactNode = null
+  // Pulsing animation for active/running state (Blink label design)
+  const pulseAnim = useRef(new Animated.Value(1)).current
+
+  useEffect(() => {
+    let anim: Animated.CompositeAnimation | null = null
+    if (status === 'running' || status === 'pending') {
+      anim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.4,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1.0,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          })
+        ])
+      )
+      anim.start()
+    } else {
+      pulseAnim.setValue(1)
+    }
+    return () => {
+      anim?.stop()
+    }
+  }, [status])
+
+  let StatusIcon: React.ReactNode = null
+  let textStyle = { color: colors.text }
 
   if (status === 'running' || status === 'pending') {
-    statusColor = isDark ? '#58A6FF' : '#0969DA'
-    StatusComponent = <ActivityIndicator size="small" color={statusColor} style={{ width: 12, height: 12 }} />
+    const activeColor = isDark ? '#58A6FF' : '#0969DA'
+    StatusIcon = <ActivityIndicator size="small" color={activeColor} style={{ width: 14, height: 14 }} />
   } else if (status === 'done') {
-    statusColor = isDark ? '#3FB950' : '#1A7F37'
-    StatusComponent = <CheckCircle2 size={12} color={statusColor} />
+    const successColor = isDark ? '#3FB950' : '#1A7F37'
+    StatusIcon = <CheckCircle2 size={14} color={successColor} />
   } else if (status === 'error') {
-    statusColor = isDark ? '#FF7B72' : '#CF222E'
-    StatusComponent = <AlertCircle size={12} color={statusColor} />
+    const errorColor = isDark ? '#FF7B72' : '#CF222E'
+    StatusIcon = <AlertCircle size={14} color={errorColor} />
+    textStyle = { color: errorColor }
+  }
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded)
+  }
+
+  // Deduce expanded details content
+  const renderDetails = () => {
+    if (!isExpanded) return null
+
+    let detailsContent: React.ReactNode = null
+    const codeBg = isDark ? '#0D1117' : '#F6F8FA'
+    const codeBorder = isDark ? '#21262D' : '#D8DEE4'
+
+    if (name === 'run_command') {
+      const outputText = result?.output || (status === 'running' ? 'Executing command...' : '(No terminal output)')
+      detailsContent = (
+        <View style={{ gap: 4 }}>
+          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Command executed:</Text>
+          <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
+            <Text style={[styles.detailCodeText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
+              $ {args.command as string}
+            </Text>
+          </View>
+          {result?.output && (
+            <>
+              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary, marginTop: 4 }]}>Terminal stdout:</Text>
+              <ScrollView style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder, maxHeight: 150 }]} nestedScrollEnabled>
+                <Text style={[styles.detailCodeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
+                  {outputText}
+                </Text>
+              </ScrollView>
+            </>
+          )}
+        </View>
+      )
+    } else if (name === 'read_file' || name === 'view_file_content') {
+      const fileContent = result?.content || (status === 'running' ? 'Reading file...' : '(Empty file)')
+      detailsContent = (
+        <View style={{ gap: 4 }}>
+          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>File path:</Text>
+          <Text style={[styles.detailCodeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular', marginBottom: 4 }]}>
+            {args.path as string}
+          </Text>
+          {result?.content && (
+            <>
+              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>File content preview:</Text>
+              <ScrollView style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder, maxHeight: 150 }]} nestedScrollEnabled>
+                <Text style={[styles.detailCodeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
+                  {fileContent}
+                </Text>
+              </ScrollView>
+            </>
+          )}
+        </View>
+      )
+    } else if (name === 'edit_file') {
+      detailsContent = (
+        <View style={{ gap: 6 }}>
+          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>File path: <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }}>{args.path as string}</Text></Text>
+          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Target to replace:</Text>
+          <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
+            <Text style={[styles.detailCodeText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
+              {args.target as string}
+            </Text>
+          </View>
+          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Replacement content:</Text>
+          <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
+            <Text style={[styles.detailCodeText, { color: isDark ? '#3FB950' : '#1A7F37' }]}>
+              {args.replacement as string}
+            </Text>
+          </View>
+        </View>
+      )
+    } else {
+      // General arguments & result presentation
+      const hasArgs = Object.keys(args).length > 0
+      const hasResult = !!result
+      detailsContent = (
+        <View style={{ gap: 6 }}>
+          {hasArgs && (
+            <View>
+              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Parameters:</Text>
+              <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
+                <Text style={[styles.detailCodeText, { color: colors.text }]}>
+                  {JSON.stringify(args, null, 2)}
+                </Text>
+              </View>
+            </View>
+          )}
+          {hasResult && (
+            <View>
+              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Result:</Text>
+              <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
+                <Text style={[styles.detailCodeText, { color: colors.text }]}>
+                  {typeof result === 'string' ? result : JSON.stringify(result, null, 2)}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+      )
+    }
+
+    return (
+      <View style={[
+        styles.detailCollapseContainer,
+        {
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+          borderLeftWidth: 1.5,
+          marginLeft: 7,
+          paddingLeft: 12,
+          marginTop: 6,
+          marginBottom: 4
+        }
+      ]}>
+        {detailsContent}
+      </View>
+    )
   }
 
   const handleApproveAction = async (action: 'approve' | 'reject') => {
@@ -164,22 +334,67 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
     }
   }
 
+  const isBlinking = status === 'running' || status === 'pending'
+
   return (
-    <View style={{ gap: 4, width: '100%', marginTop: 2 }}>
-      <View style={[
-        styles.toolCallBadge,
-        {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-          borderWidth: 1,
-        }
-      ]}>
-        <ToolIcon size={12} color={colors.textSecondary} />
-        <Text style={[styles.toolCallText, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-          {label}
-        </Text>
-        {StatusComponent}
-      </View>
+    <View style={{ width: '100%', paddingVertical: 2 }}>
+      <TouchableOpacity
+        style={[
+          styles.toolCallBadgeCompact,
+          {
+            backgroundColor: 'transparent',
+            borderWidth: 0,
+            paddingVertical: 4,
+            paddingHorizontal: 0,
+          }
+        ]}
+        onPress={toggleExpand}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+          {StatusIcon}
+          {isBlinking ? (
+            <Animated.Text
+              style={[
+                styles.toolCallText,
+                textStyle,
+                {
+                  fontFamily: 'Inter_500Medium',
+                  fontSize: 13,
+                  opacity: pulseAnim,
+                  flex: 1
+                }
+              ]}
+              numberOfLines={1}
+            >
+              {label}
+            </Animated.Text>
+          ) : (
+            <Text
+              style={[
+                styles.toolCallText,
+                textStyle,
+                {
+                  fontFamily: 'Inter_500Medium',
+                  fontSize: 13,
+                  flex: 1
+                }
+              ]}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          )}
+        </View>
+
+        {isExpanded ? (
+          <ChevronUp size={14} color={colors.textSecondary} />
+        ) : (
+          <ChevronDown size={14} color={colors.textSecondary} />
+        )}
+      </TouchableOpacity>
+
+      {renderDetails()}
 
       {status === 'pending' && !!args.approvalId && (
         <View style={[
@@ -187,6 +402,8 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
           {
             backgroundColor: isDark ? '#1C1500' : '#FFFDF0',
             borderColor: isDark ? '#E2B714' : '#F1E05A',
+            marginLeft: 22,
+            marginTop: 4,
           }
         ]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
@@ -906,23 +1123,37 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   toolCallsContainer: {
-    marginTop: 10,
+    marginTop: 8,
     gap: 4,
     width: '100%',
   },
-  toolCallBadge: {
+  toolCallBadgeCompact: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
     alignSelf: 'stretch',
-    gap: 6,
+    justifyContent: 'space-between',
   },
   toolCallText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+  },
+  detailCollapseContainer: {
+    width: '100%',
+  },
+  detailMetaLabel: {
     fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  detailCodeBox: {
+    borderRadius: 6,
+    borderWidth: 1,
+    padding: 8,
+    marginTop: 2,
+  },
+  detailCodeText: {
     fontFamily: 'JetBrainsMono_400Regular',
+    fontSize: 11,
+    lineHeight: 15,
   },
   inlineApprovalCard: {
     borderRadius: 8,
