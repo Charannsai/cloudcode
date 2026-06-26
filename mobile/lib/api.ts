@@ -250,6 +250,13 @@ export const api = {
     },
     getRun: (runId: string) =>
       apiFetch<{ run: any; steps: any[]; events: any[] }>(`/cc-api/ai/runs/${runId}`),
+    deleteRun: (runId: string) =>
+      apiFetch<{ success: boolean }>(`/cc-api/ai/runs/${runId}`, { method: 'DELETE' }),
+    deleteRuns: (runIds: string[]) =>
+      apiFetch<{ success: boolean }>('/cc-api/ai/runs', {
+        method: 'DELETE',
+        body: JSON.stringify({ runIds }),
+      }),
     approveRun: (runId: string, approvalId: string, action: 'approve' | 'reject') =>
       apiFetch<{ success: boolean; status: string }>(`/cc-api/ai/runs/${runId}/approve`, {
         method: 'POST',

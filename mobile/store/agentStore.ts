@@ -44,6 +44,7 @@ interface AgentState {
 
   setActiveProject: (projectId: string | null) => void
   loadRuns: (projectId?: string) => Promise<void>
+  deleteRuns: (runIds: string[]) => Promise<void>
   startNewRun: (projectId: string | null, model: string, prompt: string) => Promise<void>
   resumeRun: (runId: string, prompt?: string) => Promise<void>
   approvePending: (action: 'approve' | 'reject') => Promise<void>
@@ -73,6 +74,16 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       set({ runsList: runs || [] })
     } catch (err) {
       console.error('[AgentStore] Failed to load runs:', err)
+    }
+  },
+
+  deleteRuns: async (runIds) => {
+    try {
+      await api.ai.deleteRuns(runIds)
+      await get().loadRuns(get().activeProjectId || undefined)
+    } catch (err) {
+      console.error('[AgentStore] Failed to delete runs:', err)
+      throw err
     }
   },
 

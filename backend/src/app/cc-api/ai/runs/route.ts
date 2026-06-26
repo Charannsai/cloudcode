@@ -86,8 +86,14 @@ export async function GET(req: NextRequest) {
   try {
     let query = supabaseAdmin
       .from('agent_runs')
-      .select('*')
+      .select(`
+        *,
+        agent_steps (
+          content
+        )
+      `)
       .eq('user_github_id', user.id)
+      .eq('agent_steps.step_index', 0)
       .order('created_at', { ascending: false })
 
     if (projectId) {
@@ -105,6 +111,36 @@ export async function GET(req: NextRequest) {
     }
 
     return successResponse({ runs })
+  } catch (err) {
+    return errorResponse((err as Error).message, 500)
+  }
+}
+
+// DELETE /cc-api/ai/runs - Bulk delete agent runs for the user
+export async function DELETE(req: NextRequest) {
+  const user = getUserFromRequest(req)
+  if (!user) return errorResponse('Unauthorized', 401)
+
+  try {
+    const body = await req.json()
+    const { runIds } = body as { runIds: string[] }
+
+    if (!runIds || !Array.isArray(runIds) || runIds.length === 0) {
+      return errorResponse('Missing or invalid runIds array', 400)
+    }
+
+    // Delete runs that belong to the authenticated user
+    const { error } = await supabaseAdmin
+      .from('agent_runs')
+      .delete()
+      .eq('user_github_id', user.id)
+      .in('id', runIds)
+
+    if (error) {
+      return errorResponse(`Failed to delete agent runs: ${error.message}`, 500)
+    }
+
+    return successResponse({ success: true, message: 'Conversations deleted successfully' })
   } catch (err) {
     return errorResponse((err as Error).message, 500)
   }
