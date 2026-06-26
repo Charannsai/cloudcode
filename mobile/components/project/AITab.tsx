@@ -1025,13 +1025,7 @@ export default function AITab({ projectId }: Props) {
 
       {/* Bottom Container for perfect flow-based keyboard avoidance */}
       <View style={[styles.bottomContainer, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 12 }]}>
-        {/* Friendly Error Display */}
-        {friendlyError && (
-          <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#3D1117' : '#FFEBE9', borderColor: '#F85149' }]}>
-            <AlertCircle size={16} color="#EB5757" />
-            <Text style={{ color: isDark ? '#FF7B72' : '#CF222E', fontSize: 12, flex: 1 }}>{friendlyError}</Text>
-          </View>
-        )}
+
 
         {/* Floating Speech/Listening Tooltip */}
         {isListening && (
@@ -1140,11 +1134,82 @@ export default function AITab({ projectId }: Props) {
           </BlurView>
         </View>
       </View>
+        {/* Sleek, Compact Error Popup Modal */}
+        <Modal
+          visible={friendlyError !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setFriendlyError(null)}
+        >
+          <TouchableWithoutFeedback onPress={() => setFriendlyError(null)}>
+            <View style={styles.errorModalBackdrop}>
+              <TouchableWithoutFeedback>
+                <Animated.View 
+                  style={[
+                    styles.errorModalContent, 
+                    { 
+                      backgroundColor: isDark ? 'rgba(30, 20, 25, 0.95)' : 'rgba(255, 240, 240, 0.98)',
+                      borderColor: isDark ? '#FF7B72' : '#F85149',
+                      borderWidth: 1,
+                    }
+                  ]}
+                >
+                  <View style={styles.errorModalHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <AlertCircle size={18} color="#FF7B72" />
+                      <Text style={[styles.errorModalTitle, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
+                        Service Alert
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setFriendlyError(null)} activeOpacity={0.7} style={styles.errorModalCloseBtn}>
+                      <X size={16} color={isDark ? '#8B949E' : '#57606A'} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <Text style={[styles.errorModalText, { color: isDark ? '#E6EDF3' : '#24292F' }]}>
+                    {friendlyError ? getFriendlyErrorMessage(friendlyError) : ''}
+                  </Text>
+                  
+                  <View style={styles.errorModalActions}>
+                    <TouchableOpacity 
+                      style={[styles.errorModalActionBtn, { backgroundColor: isDark ? 'rgba(255, 123, 114, 0.15)' : 'rgba(207, 34, 46, 0.1)' }]}
+                      onPress={() => setFriendlyError(null)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.errorModalActionBtnText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
+                        Dismiss
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
 
-
-    </KeyboardAvoidingView>
-  )
-}
+      </KeyboardAvoidingView>
+    )
+  }
+  
+  // Sleek client-side error normalizer for 400/500/403/401 API errors
+  function getFriendlyErrorMessage(msg: string) {
+    if (msg.includes('LIMIT_EXCEEDED') || msg.includes('QUOTA_EXCEEDED') || msg.includes('monthly token limit exceeded')) {
+      return 'Rate limit reached. Retry available in 45 seconds. Tap Switch Model or use BYOK to continue.'
+    }
+    if (msg.includes('500') || msg.toLowerCase().includes('internal server error')) {
+      return 'Server Error (500): The AI service encountered an internal error. Please try again in a few moments.'
+    }
+    if (msg.includes('400') || msg.toLowerCase().includes('bad request')) {
+      return 'Request Error (400): Invalid request configuration. Please check your prompt or switch models.'
+    }
+    if (msg.includes('403') || msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('unauthorized') || msg.includes('401')) {
+      return 'Authentication Error: Access denied. Please check your API key or subscription tier.'
+    }
+    if (msg.includes('Gemini API error') || msg.includes('fetch failed')) {
+      return 'Connection Error: Gemini is currently unavailable. Retrying connection...'
+    }
+    return msg
+  }
 
 const styles = StyleSheet.create({
   container: {
@@ -1526,5 +1591,60 @@ const styles = StyleSheet.create({
   inlineModelLabel: {
     fontSize: 12.5,
     fontFamily: 'Inter_500Medium',
+  },
+  errorModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorModalContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  errorModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  errorModalTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.1,
+  },
+  errorModalCloseBtn: {
+    padding: 4,
+  },
+  errorModalText: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 19,
+  },
+  errorModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    width: '100%',
+    marginTop: 4,
+  },
+  errorModalActionBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorModalActionBtnText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
 })
