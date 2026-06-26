@@ -1,9 +1,16 @@
-import { execInContainer } from '../docker'
+import { execInContainer, ensureContainerRunning } from '../docker'
 import { v4 as uuidv4 } from 'uuid'
 import { createProjectInternal } from '../projects'
 import { supabaseAdmin } from '../supabase'
 import { PlanningGuard } from './planningGuard'
 import { ExecutionGuard } from './governance'
+import { z } from 'zod'
+import { tool } from '@langchain/core/tools'
+import { BaseMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage } from '@langchain/core/messages'
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
+import { ChatOpenAI } from '@langchain/openai'
+import { ChatAnthropic } from '@langchain/anthropic'
+import { Annotation, StateGraph, START, END } from '@langchain/langgraph'
 
 export function estimateTokens(text: string): number {
   if (!text) return 0
@@ -44,131 +51,21 @@ if (!(global as any).pendingCommands) {
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = 'gemini-2.5-flash'
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
-
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 
-export interface GeminiMessage {
-  role: 'user' | 'model'
-  parts: GeminiPart[]
-}
-
-export type GeminiPart =
-  | { text: string }
-  | { functionCall: { name: string; args: Record<string, unknown> } }
-  | { functionResponse: { name: string; response: { content: unknown } } }
-
-const TOOL_DECLARATIONS = [
-  {
-    name: 'read_file',
-    description: 'Read the contents of a file in the project workspace. Use this to understand existing code before making changes.',
-    parameters: {
-      type: 'OBJECT',
-      properties: {
-        path: { type: 'STRING', description: 'Relative path to the file from workspace root, e.g. "src/index.ts"' },
-      },
-      required: ['path'],
-    },
-  },
-  {
-    name: 'edit_file',
-    description: 'Edit an existing file by replacing specific target content with new content. Always read the file first to know the exact content to replace.',
-    parameters: {
-      type: 'OBJECT',
-      properties: {
-        path: { type: 'STRING', description: 'Relative path to the file' },
-        target: { type: 'STRING', description: 'The exact existing content to find and replace (must match exactly)' },
-        replacement: { type: 'STRING', description: 'The new content to replace the target with' },
-      },
-      required: ['path', 'target', 'replacement'],
-    },
-  },
-  {
-    name: 'create_file',
-    description: 'Create a new file with the given content. Will overwrite if already exists.',
-    parameters: {
-      type: 'OBJECT',
-      properties: {
-        path: { type: 'STRING', description: 'Relative path for the new file' },
-        content: { type: 'STRING', description: 'Full content for the new file' },
-      },
-      required: ['path', 'content'],
-    },
-  },
-  {
-    name: 'delete_file',
-    description: 'Delete a file from the project workspace.',
-    parameters: {
-      type: 'OBJECT',
-      properties: {
-        path: { type: 'STRING', description: 'Relative path to the file to delete' },
-      },
-      required: ['path'],
-    },
-  },
-  {
-    name: 'run_command',
-    description: 'Run a shell command in the project workspace terminal. Use for installing packages, running scripts, git commands, etc.',
-    parameters: {
-      type: 'OBJECT',
-      properties: {
-        command: { type: 'STRING', description: 'The shell command to execute, e.g. "npm install express"' },
-      },
-      required: ['command'],
-    },
-  },
-  {
-    name: 'list_files',
-    description: 'List files and directories in the project workspace. Returns a tree structure.',
-    parameters: {
-      type: 'OBJECT',
-      properties: {
-        path: { type: 'STRING', description: 'Relative path to list. Use "." for root.' },
-      },
-      required: ['path'],
-    },
-  },
-  {
-    name: 'create_project',
-    description: 'Create a new project/workspace with the given name and template type. Use this when the user asks you to create a workspace or project. Valid templates are "node", "react", "empty", "flask", "fastapi", "rust", "gin", "nextjs". Default to "empty" if type is not specified.',
-    parameters: {
-      type: 'OBJECT',
-      properties: {
-        name: { type: 'STRING', description: 'The name of the project/workspace to create' },
-        type: {
-          type: 'STRING',
-          description: 'The template type. Allowed values: "node", "react", "empty", "flask", "fastapi", "rust", "gin", "nextjs"',
-          enum: ['node', 'react', 'empty', 'flask', 'fastapi', 'rust', 'gin', 'nextjs']
-        },
-      },
-      required: ['name', 'type'],
-    },
-  },
-]
-
 const SYSTEM_INSTRUCTION = `You are CloudCode AI — an autonomous coding agent embedded in a cloud IDE. You have full access to the user's project files inside a Docker container. You are NOT a chatbot. You are an AGENT.
 
-CORE IDENTITY:
-You act, you don't ask. When the user gives you a task, you execute it immediately and completely. You never ask for confirmation, permission, or "would you like me to…?" — you just do it.
-
-CAPABILITIES:
-- Read, create, edit, and delete files in the project.
-- Run terminal commands (npm install, git, build, test, etc.)
-- Understand project structure and architecture.
-- Debug errors by reading code and terminal output.
-- Create new projects/workspaces from templates.
-
-AGENT RULES:
-1. ACT IMMEDIATELY — When given a task, start executing it right away. Do NOT ask "Would you like me to…?" or "Shall I proceed?" — just do the work.
-2. ALWAYS read a file before editing it to understand its current content.
-3. When editing, use the exact target content that exists in the file.
-4. Execute ALL steps needed to complete the task in a single conversation turn. If the task requires creating files, installing packages, and running commands — do all of them.
-5. If a command fails, read the error output and fix it automatically.
-6. Keep text responses SHORT and action-focused. Show what you did, not what you plan to do.
-7. For multi-file changes, execute them all sequentially without pausing for user input.
+CORE IDENTITY & AGENTIC BEHAVIOR:
+1. ACT IMMEDIATELY — When given a task, execute it immediately and completely. You don't ask for permission or confirmation (unless a tool specifically requires approval) — you just do the work.
+2. PLAN FIRST — At the very beginning of your response, before calling any tools, you MUST write a clear, step-by-step checklist of the tasks you will perform to accomplish the user's request. Format this checklist as a standard markdown list (e.g., "- [ ] Read existing code", "- [ ] Create new component", "- [ ] Run tests"). This plan will be parsed and displayed as a progress checklist in the UI.
+3. REASON OUT LOUD — You must explain your reasoning and thoughts progressively in real-time. Before every single tool call, output a short, action-focused sentence explaining *why* you are calling that tool and what you expect to achieve (e.g., "Reading src/App.tsx to understand the current layout...", "Running npm run build to verify our changes...").
+4. STREAM PROGRESSIVELY — Output your thoughts and explanations continuously word-by-word. This provides a smooth, real-time streaming experience for the user. Do not remain silent or output sudden leaps of action.
+5. ALWAYS read a file before editing it to understand its current content.
+6. When editing, use the exact target content that exists in the file.
+7. Execute ALL steps needed to complete the task in a single conversation turn. If a command fails, read the error output and fix it automatically.
 8. NEVER say things like "Here's how you can do it" or "You can run this command" — YOU run the command, YOU make the change.
-9. After completing all actions, give a brief summary of what was accomplished.`
+9. After completing all actions, mark the plan items as completed and give a brief, factual summary of what was accomplished.`
 
 export interface StreamChunk {
   type: 'text' | 'tool_call' | 'tool_result' | 'error' | 'done' | 'reasoning_event' | 'plan_event'
@@ -180,7 +77,7 @@ export interface StreamChunk {
 }
 
 /**
- * Execute a tool call inside the Docker container
+ * Execute a tool call inside the Docker container (Used directly by approve route)
  */
 export async function executeTool(
   containerId: string,
@@ -196,7 +93,6 @@ export async function executeTool(
         return { error: 'Unauthorized: User context is missing' }
       }
       try {
-        // Enforce workspace limit check
         const resourceCtx = await PlanningGuard.loadContext(userId)
         if (resourceCtx.workspacesLimit !== 0 && resourceCtx.workspacesUsed >= resourceCtx.workspacesLimit) {
           return { error: `Workspace limit exceeded. You have already used ${resourceCtx.workspacesUsed} out of ${resourceCtx.workspacesLimit} workspaces. Please upgrade your plan in settings or delete existing workspaces.` }
@@ -206,7 +102,6 @@ export async function executeTool(
         const type = args.type as any
         const project = await createProjectInternal(userId, name, type)
         
-        // Wait for the container to be provisioned so the AI can use it immediately
         let projectContainerId: string | null = null
         for (let i = 0; i < 30; i++) {
           await new Promise(r => setTimeout(r, 1000))
@@ -238,7 +133,6 @@ export async function executeTool(
 
     case 'edit_file': {
       const filePath = `${WORKSPACE}/${args.path}`
-      // Read current content
       let current = ''
       await execInContainer(containerId, ['cat', filePath], (data) => { current += data })
 
@@ -250,7 +144,6 @@ export async function executeTool(
       }
 
       const newContent = current.replace(target, replacement)
-      // Write via heredoc to handle special chars
       await execInContainer(containerId, ['sh', '-c', `cat > '${filePath}' << 'CLOUDCODE_EOF'\n${newContent}\nCLOUDCODE_EOF`], () => {})
       return { success: true, path: args.path, message: `File edited successfully` }
     }
@@ -258,7 +151,6 @@ export async function executeTool(
     case 'create_file': {
       const filePath = `${WORKSPACE}/${args.path}`
       const dirPath = filePath.substring(0, filePath.lastIndexOf('/'))
-      // Create directory if needed
       if (dirPath) {
         await execInContainer(containerId, ['mkdir', '-p', dirPath], () => {})
       }
@@ -281,7 +173,6 @@ export async function executeTool(
       } catch (e) {
         output += `\nCommand error: ${(e as Error).message}`
       }
-      // Truncate if too long  
       if (output.length > 4000) {
         output = output.substring(0, 2000) + '\n...(truncated)...\n' + output.substring(output.length - 1500)
       }
@@ -300,15 +191,11 @@ export async function executeTool(
   }
 }
 
-/**
- * Extracts list items from markdown plan/checklist text
- */
 function extractPlanItems(text: string): string[] {
   const lines = text.split('\n')
   const items: string[] = []
   for (const line of lines) {
     const trimmed = line.trim()
-    // Match "- [ ] task", "- task", "1. task", "* task"
     const match = trimmed.match(/^(?:-\s*\[\s*\]|-\s*|\*\s*|\d+\.\s*)(.+)$/)
     if (match) {
       const itemText = match[1].trim()
@@ -320,9 +207,6 @@ function extractPlanItems(text: string): string[] {
   return items
 }
 
-/**
- * Stateful run context helper to manage DB storage and re-hydration
- */
 export class AgentRunContext {
   runId: string
   userId: string
@@ -353,21 +237,20 @@ export class AgentRunContext {
     this.dbSteps = dbSteps || []
     this.stepIndex = this.dbSteps.length
 
-    // Pair tool calls and results
-    for (let i = 0; i < this.dbSteps.length; i++) {
-      const step = this.dbSteps[i]
+    for (const step of this.dbSteps) {
       if (step.type === 'tool_call') {
-        const resultStep = this.dbSteps.find((s, idx) => idx > i && s.type === 'tool_result' && s.content.name === step.content.name)
+        const resultStep = this.dbSteps.find(
+          (s) => s.type === 'tool_result' && s.content.name === step.content.name
+        )
         if (resultStep) {
           this.completedTools.push({
             name: step.content.name,
             args: step.content.args,
-            response: resultStep.content.response
+            response: resultStep.content.response,
           })
         }
       }
     }
-    console.log(`[AgentRunContext] Initialized run ${this.runId} with ${this.dbSteps.length} steps. Found ${this.completedTools.length} pre-recorded tool executions.`)
   }
 
   async saveStep(type: 'plan' | 'reasoning' | 'tool_call' | 'tool_result' | 'error', content: any) {
@@ -377,10 +260,12 @@ export class AgentRunContext {
         .from('agent_steps')
         .insert({
           run_id: this.runId,
-          step_index: this.stepIndex++,
+          step_index: this.stepIndex,
           type,
-          content
+          content,
         })
+      this.stepIndex++
+      console.log(`[AgentRunContext] Saved ${type} step for run ${this.runId}`)
     } catch (err) {
       console.error('[AgentRunContext] Failed to save step:', err)
     }
@@ -396,10 +281,7 @@ export class AgentRunContext {
   }
 
   rehydrateGeminiHistory(initialMessages: GeminiMessage[]): GeminiMessage[] {
-    if (this.dbSteps.length === 0) {
-      return initialMessages
-    }
-
+    if (this.dbSteps.length === 0) return initialMessages
     const contents: GeminiMessage[] = []
     
     for (const step of this.dbSteps) {
@@ -449,15 +331,11 @@ export class AgentRunContext {
         })
       }
     }
-
     return contents
   }
 
   rehydrateOpenAIHistory(initialMessages: any[]): any[] {
-    if (this.dbSteps.length === 0) {
-      return initialMessages
-    }
-
+    if (this.dbSteps.length === 0) return initialMessages
     const messages: any[] = []
     for (const step of this.dbSteps) {
       if (step.type === 'reasoning') {
@@ -499,10 +377,7 @@ export class AgentRunContext {
   }
 
   rehydrateAnthropicHistory(initialMessages: any[]): any[] {
-    if (this.dbSteps.length === 0) {
-      return initialMessages
-    }
-
+    if (this.dbSteps.length === 0) return initialMessages
     const messages: any[] = []
     for (const step of this.dbSteps) {
       if (step.type === 'reasoning') {
@@ -521,23 +396,27 @@ export class AgentRunContext {
       } else if (step.type === 'tool_call') {
         messages.push({
           role: 'assistant',
-          content: [{
-            type: 'tool_use',
-            id: step.content.toolCallId || 'call_' + step.id,
-            name: step.content.name,
-            input: step.content.args
-          }]
+          content: [
+            {
+              type: 'tool_use',
+              id: step.content.toolCallId || 'call_' + step.id,
+              name: step.content.name,
+              input: step.content.args
+            }
+          ]
         })
       } else if (step.type === 'tool_result') {
         const callStep = this.dbSteps.find(s => s.type === 'tool_call' && s.content.name === step.content.name)
         const toolCallId = callStep?.content?.toolCallId || 'call_' + (callStep?.id || step.id)
         messages.push({
           role: 'user',
-          content: [{
-            type: 'tool_result',
-            tool_use_id: toolCallId,
-            content: JSON.stringify(step.content.response)
-          }]
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: toolCallId,
+              content: JSON.stringify(step.content.response)
+            }
+          ]
         })
       }
     }
@@ -545,9 +424,572 @@ export class AgentRunContext {
   }
 }
 
+export interface GeminiMessage {
+  role: 'user' | 'model'
+  parts: GeminiPart[]
+}
+
+export type GeminiPart =
+  | { text: string }
+  | { functionCall: { name: string; args: Record<string, unknown> } }
+  | { functionResponse: { name: string; response: { content: unknown } } }
+
+function rehydrateLangChainHistory(dbSteps: any[]): BaseMessage[] {
+  const messages: BaseMessage[] = []
+  for (const step of dbSteps) {
+    if (step.type === 'reasoning') {
+      const role = step.content.role || 'model'
+      const text = step.content.text || ''
+      if (role === 'user') {
+        messages.push(new HumanMessage(text))
+      } else {
+        messages.push(new AIMessage(text))
+      }
+    } else if (step.type === 'plan') {
+      const text = step.content.plan || ''
+      messages.push(new AIMessage(text))
+    } else if (step.type === 'tool_call') {
+      const lastMsg = messages[messages.length - 1]
+      const toolCall = {
+        name: step.content.name,
+        args: step.content.args,
+        id: step.content.toolCallId || 'call_' + step.id,
+      }
+      if (lastMsg && lastMsg instanceof AIMessage) {
+        const existingCalls = (lastMsg.tool_calls || []) as any[]
+        lastMsg.tool_calls = [...existingCalls, toolCall]
+      } else {
+        messages.push(new AIMessage({
+          content: '',
+          tool_calls: [toolCall],
+        }))
+      }
+    } else if (step.type === 'tool_result') {
+      const toolCallId = step.content.toolCallId || 'call_' + step.id
+      messages.push(new ToolMessage({
+        content: typeof step.content.response === 'string' 
+          ? step.content.response 
+          : JSON.stringify(step.content.response),
+        name: step.content.name,
+        tool_call_id: toolCallId,
+      }))
+    }
+  }
+  return messages
+}
+
+function getModelInstance(
+  provider: 'gemini' | 'openai' | 'anthropic',
+  customApiKey?: string
+) {
+  if (provider === 'openai') {
+    return new ChatOpenAI({
+      apiKey: customApiKey || OPENAI_API_KEY,
+      modelName: 'gpt-4o',
+      temperature: 0.7,
+    })
+  } else if (provider === 'anthropic') {
+    return new ChatAnthropic({
+      apiKey: customApiKey || ANTHROPIC_API_KEY,
+      modelName: 'claude-3-5-sonnet-latest',
+      temperature: 0.7,
+    })
+  } else {
+    return new ChatGoogleGenerativeAI({
+      apiKey: customApiKey || GEMINI_API_KEY,
+      model: 'gemini-2.5-flash',
+      temperature: 0.7,
+    })
+  }
+}
+
 /**
- * Chat with Gemini using function calling (non-streaming for reliability)
- * Returns an async generator of StreamChunks
+ * Core LangGraph Shared Executor
+ */
+export async function* executeLangGraph(
+  modelProvider: 'gemini' | 'openai' | 'anthropic',
+  rawMessages: any[],
+  containerId: string,
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
+  customApiKey?: string
+): AsyncGenerator<StreamChunk> {
+  let activeContainerId = containerId
+  
+  let runCtx: AgentRunContext | null = null
+  if (context?.runId && context?.userId) {
+    runCtx = new AgentRunContext(context.runId, context.userId)
+    await runCtx.init()
+  }
+
+  // 1. Gather resource context
+  let capabilityPrompt = ''
+  if (context?.userId) {
+    const resourceCtx = await PlanningGuard.loadContext(context.userId)
+    capabilityPrompt = PlanningGuard.buildSystemPrompt(resourceCtx)
+    yield { 
+      type: 'reasoning_event', 
+      content: `Available resources: ${resourceCtx.tokensRemaining === 999999999 ? 'Unlimited' : resourceCtx.tokensRemaining} tokens, ${resourceCtx.workspacesLimit - resourceCtx.workspacesUsed} workspace slots remaining.` 
+    }
+  }
+
+  // 2. Rehydrate history
+  let initialMessages: BaseMessage[] = []
+  if (runCtx && runCtx.dbSteps.length > 0) {
+    initialMessages = rehydrateLangChainHistory(runCtx.dbSteps)
+    const planStep = runCtx.dbSteps.find(s => s.type === 'plan')
+    if (planStep) {
+      yield { type: 'plan_event', items: planStep.content.items }
+    }
+  } else {
+    // Convert rawMessages from frontend to LangChain messages
+    for (const m of rawMessages) {
+      const text = m.text || m.parts?.[0]?.text || ''
+      if (m.role === 'user') {
+        initialMessages.push(new HumanMessage(text))
+      } else {
+        initialMessages.push(new AIMessage(text))
+      }
+    }
+    
+    // Inject file tree & open file context into the first user message if present
+    if (context && initialMessages.length > 0) {
+      const firstMsg = initialMessages[0]
+      if (firstMsg instanceof HumanMessage) {
+        let contextPrefix = ''
+        if (context.fileTree) {
+          contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
+        }
+        if (context.openFile) {
+          contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
+        }
+        firstMsg.content = contextPrefix + firstMsg.content
+        
+        if (runCtx) {
+          await runCtx.saveStep('reasoning', { text: firstMsg.content as string, role: 'user' })
+        }
+      }
+    }
+  }
+
+  // Set run status to executing in DB
+  if (runCtx) {
+    await supabaseAdmin
+      .from('agent_runs')
+      .update({ status: 'executing' })
+      .eq('id', runCtx.runId)
+  }
+
+  // 3. Initialize model & tools
+  const model = getModelInstance(modelProvider, customApiKey)
+  
+  // Define tools dynamically bound to activeContainerId and contexts
+  const createProject = tool(
+    async ({ name, type }) => {
+      if (!context?.userId) return JSON.stringify({ error: 'Unauthorized: User context missing' })
+      try {
+        const resourceCtx = await PlanningGuard.loadContext(context.userId)
+        if (resourceCtx.workspacesLimit !== 0 && resourceCtx.workspacesUsed >= resourceCtx.workspacesLimit) {
+          return JSON.stringify({ error: `Workspace limit exceeded. You have already used ${resourceCtx.workspacesUsed} out of ${resourceCtx.workspacesLimit} workspaces.` })
+        }
+        const project = await createProjectInternal(context.userId, name, type as any)
+        
+        let projectContainerId: string | null = null
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 1000))
+          const { data: updatedProject } = await supabaseAdmin
+            .from('projects')
+            .select('container_id, status')
+            .eq('id', project.id)
+            .single()
+          if (updatedProject?.container_id && updatedProject.status === 'ready') {
+            projectContainerId = updatedProject.container_id
+            break
+          }
+        }
+        return JSON.stringify({ success: true, project, container_id: projectContainerId })
+      } catch (err) {
+        return JSON.stringify({ error: (err as Error).message })
+      }
+    },
+    {
+      name: 'create_project',
+      description: 'Create a new project/workspace with the given name and template type. Valid templates are "node", "react", "empty", "flask", "fastapi", "rust", "gin", "nextjs".',
+      schema: z.object({
+        name: z.string().describe('The name of the project to create'),
+        type: z.enum(['node', 'react', 'empty', 'flask', 'fastapi', 'rust', 'gin', 'nextjs']).describe('The template type'),
+      })
+    }
+  );
+
+  const readFile = tool(
+    async ({ path }) => {
+      const WORKSPACE = '/workspace'
+      const filePath = `${WORKSPACE}/${path}`
+      let content = ''
+      await execInContainer(activeContainerId, ['cat', filePath], (data) => { content += data })
+      return JSON.stringify({ content: content || '(empty file)' })
+    },
+    {
+      name: 'read_file',
+      description: 'Read the contents of a file in the project workspace.',
+      schema: z.object({
+        path: z.string().describe('Relative path to the file from workspace root, e.g. "src/index.ts"'),
+      })
+    }
+  );
+
+  const editFile = tool(
+    async ({ path, target, replacement }) => {
+      const WORKSPACE = '/workspace'
+      const filePath = `${WORKSPACE}/${path}`
+      let current = ''
+      await execInContainer(activeContainerId, ['cat', filePath], (data) => { current += data })
+      if (!current.includes(target)) {
+        return JSON.stringify({ error: `Target content not found in ${path}. File content may have changed. Read the file again.` })
+      }
+      const newContent = current.replace(target, replacement)
+      await execInContainer(activeContainerId, ['sh', '-c', `cat > '${filePath}' << 'CLOUDCODE_EOF'\n${newContent}\nCLOUDCODE_EOF`], () => {})
+      return JSON.stringify({ success: true, path, message: 'File edited successfully' })
+    },
+    {
+      name: 'edit_file',
+      description: 'Edit an existing file by replacing specific target content with new content.',
+      schema: z.object({
+        path: z.string().describe('Relative path to the file'),
+        target: z.string().describe('The exact existing content to find and replace'),
+        replacement: z.string().describe('The new content to replace the target with'),
+      })
+    }
+  );
+
+  const createFile = tool(
+    async ({ path, content }) => {
+      const WORKSPACE = '/workspace'
+      const filePath = `${WORKSPACE}/${path}`
+      const dirPath = filePath.substring(0, filePath.lastIndexOf('/'))
+      if (dirPath) {
+        await execInContainer(activeContainerId, ['mkdir', '-p', dirPath], () => {})
+      }
+      await execInContainer(activeContainerId, ['sh', '-c', `cat > '${filePath}' << 'CLOUDCODE_EOF'\n${content}\nCLOUDCODE_EOF`], () => {})
+      return JSON.stringify({ success: true, path, message: 'File created' })
+    },
+    {
+      name: 'create_file',
+      description: 'Create a new file with the given content. Overwrites if it already exists.',
+      schema: z.object({
+        path: z.string().describe('Relative path for the new file'),
+        content: z.string().describe('Full content for the new file'),
+      })
+    }
+  );
+
+  const deleteFile = tool(
+    async ({ path }) => {
+      const WORKSPACE = '/workspace'
+      const filePath = `${WORKSPACE}/${path}`
+      await execInContainer(activeContainerId, ['rm', '-f', filePath], () => {})
+      return JSON.stringify({ success: true, path, message: 'File deleted' })
+    },
+    {
+      name: 'delete_file',
+      description: 'Delete a file from the project workspace.',
+      schema: z.object({
+        path: z.string().describe('Relative path to the file to delete'),
+      })
+    }
+  );
+
+  const listFiles = tool(
+    async ({ path }) => {
+      const WORKSPACE = '/workspace'
+      const dirPath = `${WORKSPACE}/${path === '.' ? '' : path}`
+      let output = ''
+      await execInContainer(activeContainerId, ['find', dirPath, '-maxdepth', '3', '-not', '-path', '*/node_modules/*', '-not', '-path', '*/.git/*'], (data) => { output += data })
+      return JSON.stringify({ files: output.trim().split('\n').map(f => f.replace(WORKSPACE + '/', '')) })
+    },
+    {
+      name: 'list_files',
+      description: 'List files and directories in the project workspace. Returns a tree structure.',
+      schema: z.object({
+        path: z.string().describe('Relative path to list. Use "." for root.'),
+      })
+    }
+  );
+
+  const runCommand = tool(
+    async ({ command }) => {
+      // 1. STATEFUL MODE INTERRUPT (SAVES STEP AND PAUSES GRAPH)
+      if (runCtx && context?.userId) {
+        const approvalId = uuidv4()
+        await supabaseAdmin.from('agent_runs').update({ status: 'paused' }).eq('id', runCtx.runId)
+        await runCtx.saveStep('tool_call', { name: 'run_command', args: { command, approvalId, status: 'pending' } })
+        await supabaseAdmin.from('agent_events').insert({
+          run_id: runCtx.runId,
+          event_type: 'info',
+          message: `Command execution paused waiting for user approval: "${command}".`
+        })
+        throw new Error(`AGENT_PAUSED:${JSON.stringify({ approvalId, command })}`)
+      }
+
+      // 2. STATELESS MODE BLOCKING APPROVAL (STALLS GRAPH THREAD IN MEMORY)
+      const approvalId = uuidv4()
+      const approvalPromise = new Promise<boolean>((resolve) => {
+        (global as any).pendingCommands.set(approvalId, { 
+          resolve: (global as any).pendingCommands.get(approvalId)?.resolve || (() => {}), 
+          command 
+        })
+      })
+
+      const approved = await approvalPromise
+      if (!approved) {
+        return JSON.stringify({ error: 'Command execution rejected by user.' })
+      }
+
+      const WORKSPACE = '/workspace'
+      let output = ''
+      try {
+        await execInContainer(activeContainerId, ['sh', '-c', `cd ${WORKSPACE} && ${command}`], (data) => { output += data })
+      } catch (e) {
+        output += `\nCommand error: ${(e as Error).message}`
+      }
+      if (output.length > 4000) {
+        output = output.substring(0, 2000) + '\n...(truncated)...\n' + output.substring(output.length - 1500)
+      }
+      return JSON.stringify({ output: output || '(no output)' })
+    },
+    {
+      name: 'run_command',
+      description: 'Run a shell command in the project workspace terminal.',
+      schema: z.object({
+        command: z.string().describe('The shell command to execute, e.g. "npm install express"'),
+      })
+    }
+  );
+
+  const hasContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
+  const tools = hasContainer 
+    ? [createProject, readFile, editFile, createFile, deleteFile, listFiles, runCommand]
+    : [createProject]
+
+  const modelWithTools = model.bindTools(tools)
+
+  // 4. State Graph Assembly
+  const agentNode = async (state: typeof AgentState.State) => {
+    const currentMessages = [...state.messages]
+    const systemPromptText = hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant.'
+    const systemMessage = new SystemMessage(systemPromptText + '\n' + capabilityPrompt)
+    
+    const response = await modelWithTools.invoke([systemMessage, ...currentMessages])
+    return { messages: [response] }
+  }
+
+  const toolsNode = async (state: typeof AgentState.State) => {
+    const lastMessage = state.messages[state.messages.length - 1]
+    const toolCalls = lastMessage.additional_kwargs.tool_calls || (lastMessage as any).tool_calls || []
+    const newMessages: BaseMessage[] = []
+    
+    for (const toolCall of toolCalls) {
+      const toolInstance = tools.find(t => t.name === toolCall.name)
+      if (!toolInstance) {
+        newMessages.push(new ToolMessage({
+          content: JSON.stringify({ error: `Tool ${toolCall.name} not found` }),
+          name: toolCall.name,
+          tool_call_id: toolCall.id || '',
+        }))
+        continue
+      }
+      
+      try {
+        if (runCtx && context?.userId) {
+          await ExecutionGuard.validate(runCtx.runId, toolCall.name, toolCall.args, context.userId)
+        }
+
+        const result = await (toolInstance as any).invoke(toolCall.args)
+        
+        if (toolCall.name === 'create_project') {
+          const resObj = JSON.parse(result)
+          if (resObj.success && resObj.container_id) {
+            activeContainerId = resObj.container_id
+          }
+        }
+
+        newMessages.push(new ToolMessage({
+          content: result,
+          name: toolCall.name,
+          tool_call_id: toolCall.id || '',
+        }))
+      } catch (err) {
+        const msg = (err as Error).message
+        if (msg.startsWith('AGENT_PAUSED:')) {
+          throw err // Bubble up stateful pause interrupts
+        }
+        newMessages.push(new ToolMessage({
+          content: JSON.stringify({ error: msg }),
+          name: toolCall.name,
+          tool_call_id: toolCall.id || '',
+        }))
+      }
+    }
+    return { messages: newMessages }
+  }
+
+  const shouldContinue = (state: typeof AgentState.State) => {
+    const lastMessage = state.messages[state.messages.length - 1]
+    const toolCalls = lastMessage.additional_kwargs.tool_calls || (lastMessage as any).tool_calls || []
+    if (toolCalls.length > 0) {
+      return "continue"
+    }
+    return "end"
+  }
+
+  const AgentState = Annotation.Root({
+    messages: Annotation<BaseMessage[]>({
+      reducer: (x, y) => x.concat(y),
+      default: () => [],
+    }),
+  })
+
+  const workflow = new StateGraph(AgentState)
+    .addNode("agent", agentNode)
+    .addNode("tools", toolsNode)
+    .addEdge(START, "agent")
+    .addConditionalEdges("agent", shouldContinue, {
+      continue: "tools",
+      end: END,
+    })
+    .addEdge("tools", "agent")
+
+  const graph = workflow.compile()
+
+  // 5. Run Graph and progressive SSE streaming
+  let fullText = ''
+
+  try {
+    const eventStream = graph.streamEvents(
+      { messages: initialMessages },
+      { version: "v2" }
+    )
+
+    for await (const event of eventStream) {
+      // 5a. Stream Text Tokens
+      if (event.event === "on_chat_model_stream") {
+        const chunk = event.data.chunk
+        const text = chunk.content || ''
+        if (text) {
+          fullText += text
+          yield { type: 'text', content: text }
+        }
+      }
+      
+      // 5b. Stream Tool Calls
+      else if (event.event === "on_tool_start") {
+        const name = event.name
+        const args = event.data.input
+        const toolCallId = event.run_id
+        
+        // Save thoughts/plan checklist as steps before starting tool
+        if (fullText.trim() && runCtx) {
+          await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
+          const planItems = extractPlanItems(fullText)
+          if (planItems.length > 0) {
+            await runCtx.saveStep('plan', { items: planItems, plan: fullText })
+            yield { type: 'plan_event', items: planItems }
+          }
+          fullText = ''
+        }
+
+        if (runCtx) {
+          await runCtx.saveStep('tool_call', { name, args, toolCallId })
+        }
+
+        // For stateless run_command, hook up approvalId so blocking works
+        if (name === 'run_command' && !runCtx) {
+          const approvalId = uuidv4()
+          args.approvalId = approvalId
+          const existingResolve = (global as any).pendingCommands.get(approvalId)?.resolve
+          ;(global as any).pendingCommands.set(approvalId, { 
+            resolve: existingResolve || (() => {}), 
+            command: args.command 
+          })
+          yield {
+            type: 'tool_call',
+            toolName: name,
+            toolArgs: { ...args, approvalId, status: 'pending' }
+          }
+        } else {
+          yield {
+            type: 'tool_call',
+            toolName: name,
+            toolArgs: { ...args, status: 'running' }
+          }
+        }
+      }
+      
+      // 5c. Stream Tool Results
+      else if (event.event === "on_tool_end") {
+        const name = event.name
+        let result = event.data.output
+        try {
+          result = JSON.parse(result)
+        } catch {}
+
+        if (runCtx) {
+          await runCtx.saveStep('tool_result', { name, response: result })
+        }
+
+        yield {
+          type: 'tool_result',
+          toolName: name,
+          toolResult: result
+        }
+      }
+    }
+
+    // Graph completed successfully
+    if (fullText.trim() && runCtx) {
+      await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
+      const planItems = extractPlanItems(fullText)
+      if (planItems.length > 0) {
+        await runCtx.saveStep('plan', { items: planItems, plan: fullText })
+        yield { type: 'plan_event', items: planItems }
+      }
+    }
+
+    if (runCtx) {
+      await supabaseAdmin
+        .from('agent_runs')
+        .update({ status: 'completed' })
+        .eq('id', runCtx.runId)
+    }
+
+  } catch (err) {
+    const msg = (err as Error).message
+    
+    // Handle stateful agent pause interrupt
+    if (msg.startsWith('AGENT_PAUSED:')) {
+      const { approvalId, command } = JSON.parse(msg.substring(13))
+      yield {
+        type: 'tool_call',
+        toolName: 'run_command',
+        toolArgs: { command, approvalId, status: 'pending' }
+      }
+      return // Exit stream cleanly
+    }
+
+    // Capture standard error
+    yield { type: 'error', content: msg }
+    if (runCtx) {
+      await runCtx.saveStep('error', { message: msg })
+      await supabaseAdmin
+        .from('agent_runs')
+        .update({ status: 'failed' })
+        .eq('id', runCtx.runId)
+    }
+  }
+}
+
+/**
+ * Backward-compatible wrapper for Gemini
  */
 export async function* chatWithGemini(
   messages: GeminiMessage[],
@@ -555,1243 +997,53 @@ export async function* chatWithGemini(
   context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
-  let totalTokens = 0
-  const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
-  let activeContainerId = containerId  // mutable — updated after create_project
+  const mappedHistory = messages.map(m => ({
+    role: m.role === 'model' ? 'model' : 'user',
+    text: m.parts?.[0] && 'text' in m.parts[0] ? m.parts[0].text : ''
+  }))
 
-  let runCtx: AgentRunContext | null = null
-  if (context?.runId && context?.userId) {
-    runCtx = new AgentRunContext(context.runId, context.userId)
-    await runCtx.init()
+  const generator = executeLangGraph('gemini', mappedHistory, containerId, context, customApiKey)
+  for await (const chunk of generator) {
+    yield chunk
   }
-
-  try {
-    // 1. Pre-Planning: Gather resource context & inject capability system prompt
-    let capabilityPrompt = ''
-    if (context?.userId) {
-      const resourceCtx = await PlanningGuard.loadContext(context.userId)
-      capabilityPrompt = PlanningGuard.buildSystemPrompt(resourceCtx)
-      
-      // Stream initial resource allocation event to user
-      yield { 
-        type: 'reasoning_event', 
-        content: `Available resources: ${resourceCtx.tokensRemaining === 999999999 ? 'Unlimited' : resourceCtx.tokensRemaining} tokens, ${resourceCtx.workspacesLimit - resourceCtx.workspacesUsed} workspace slots remaining.` 
-      }
-    }
-
-    // 2. Re-hydrate contents from runCtx if resuming, otherwise use passed messages
-    let contents: GeminiMessage[] = []
-    if (runCtx && runCtx.dbSteps.length > 0) {
-      contents = runCtx.rehydrateGeminiHistory(messages)
-      // If we are resuming, stream the rehydrated plan to client
-      const planStep = runCtx.dbSteps.find(s => s.type === 'plan')
-      if (planStep) {
-        yield { type: 'plan_event', items: planStep.content.items }
-      }
-    } else {
-      contents = [...messages]
-      // Inject context into the first user message
-      if (context && contents.length > 0 && contents[0].role === 'user') {
-        let contextPrefix = ''
-        if (context.fileTree) {
-          contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
-        }
-        if (context.openFile) {
-          contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
-        }
-        const firstPart = contents[0].parts[0]
-        if ('text' in firstPart) {
-          firstPart.text = contextPrefix + firstPart.text
-          // Save initial user message step inside the narrowed scope
-          if (runCtx) {
-            await runCtx.saveStep('reasoning', { text: firstPart.text, role: 'user' })
-          }
-        }
-      }
-    }
-
-    // Update run status in DB to executing
-    if (runCtx) {
-      await supabaseAdmin
-        .from('agent_runs')
-        .update({ status: 'executing' })
-        .eq('id', runCtx.runId)
-    }
-
-    let loopCount = 0
-    const MAX_LOOPS = 10
-
-    while (loopCount < MAX_LOOPS) {
-      loopCount++
-
-      const hasContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
-      const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : GEMINI_API_KEY
-      const toolsToProvide = hasContainer 
-        ? TOOL_DECLARATIONS 
-        : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
-
-      // Calculate input prompt tokens
-      let inputPromptText = ''
-      inputPromptText += hasContainer 
-        ? SYSTEM_INSTRUCTION 
-        : 'You are CloudCode AI, a general helpful developer assistant.'
-      inputPromptText += '\n' + capabilityPrompt
-      
-      for (const content of contents) {
-        for (const part of content.parts) {
-          if ('text' in part) {
-            inputPromptText += part.text
-          } else if ('functionCall' in part) {
-            inputPromptText += JSON.stringify(part.functionCall)
-          } else if ('functionResponse' in part) {
-            inputPromptText += JSON.stringify(part.functionResponse)
-          }
-        }
-      }
-      if (toolsToProvide.length > 0) {
-        inputPromptText += JSON.stringify(toolsToProvide)
-      }
-      totalTokens += estimateTokens(inputPromptText)
-
-      const response = await fetch(`${GEMINI_API_URL.replace('generateContent', 'streamGenerateContent')}?alt=sse&key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          ...(toolsToProvide.length > 0 ? { tools: [{ functionDeclarations: toolsToProvide }] } : {}),
-          systemInstruction: {
-            parts: [{
-              text: (hasContainer 
-                ? SYSTEM_INSTRUCTION 
-                : 'You are CloudCode AI — an autonomous coding agent. You act, you don\'t ask. When the user wants a project, create it immediately using the create_project tool. Never ask for confirmation. After creating a project, you will automatically gain access to all file and command tools — use them to set up the project exactly as the user requested.')
-                + '\n' + capabilityPrompt
-            }]
-          },
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 8192,
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        const errText = await response.text()
-        yield { type: 'error', content: `Gemini API error: ${response.status} - ${errText}` }
-        if (runCtx) {
-          await runCtx.saveStep('error', { message: `Gemini API error: ${response.status}` })
-          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-        }
-        return
-      }
-
-      if (!response.body) {
-        yield { type: 'error', content: 'No response body from Gemini' }
-        return
-      }
-
-      const reader = (response.body as any).getReader()
-      const decoder = new TextDecoder('utf-8')
-      let buffer = ''
-      let fullText = ''
-      const parts: GeminiPart[] = []
-
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed.startsWith('data:')) continue
-          
-          const jsonStr = trimmed.substring(5).trim()
-          if (!jsonStr) continue
-          
-          try {
-            const chunkData = JSON.parse(jsonStr)
-            const chunkParts = chunkData.candidates?.[0]?.content?.parts
-            if (chunkParts && Array.isArray(chunkParts)) {
-              for (const part of chunkParts) {
-                if ('text' in part && part.text) {
-                  const chunkText = part.text
-                  fullText += chunkText
-                  yield { type: 'text', content: chunkText }
-                }
-                if ('functionCall' in part) {
-                  parts.push(part)
-                }
-              }
-            }
-          } catch (e) {
-            // Ignore incomplete JSON errors in chunk boundaries
-          }
-        }
-      }
-
-      if (buffer.trim()) {
-        const trimmed = buffer.trim()
-        if (trimmed.startsWith('data:')) {
-          const jsonStr = trimmed.substring(5).trim()
-          try {
-            const chunkData = JSON.parse(jsonStr)
-            const chunkParts = chunkData.candidates?.[0]?.content?.parts
-            if (chunkParts && Array.isArray(chunkParts)) {
-              for (const part of chunkParts) {
-                if ('text' in part && part.text) {
-                  const chunkText = part.text
-                  fullText += chunkText
-                  yield { type: 'text', content: chunkText }
-                }
-                if ('functionCall' in part) {
-                  parts.push(part)
-                }
-              }
-            }
-          } catch {}
-        }
-      }
-
-      if (fullText) {
-        parts.unshift({ text: fullText })
-        
-        if (runCtx) {
-          await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
-          
-          const planItems = extractPlanItems(fullText)
-          if (planItems.length > 0) {
-            await runCtx.saveStep('plan', { items: planItems, plan: fullText })
-            yield { type: 'plan_event', items: planItems }
-          }
-        }
-      }
-
-      let hasFunctionCall = false
-      if (parts.some(p => 'functionCall' in p)) {
-        hasFunctionCall = true
-      }
-
-      // Calculate output completion tokens
-      let outputCompletionText = ''
-      for (const part of parts) {
-        if ('text' in part && part.text) {
-          outputCompletionText += part.text
-        } else if ('functionCall' in part) {
-          outputCompletionText += JSON.stringify(part.functionCall)
-        }
-      }
-      totalTokens += estimateTokens(outputCompletionText)
-
-      // Add model response to history
-      contents.push({
-        role: 'model',
-        parts,
-      })
-
-      for (const part of parts) {
-        if ('functionCall' in part) {
-          const { name, args } = part.functionCall
-
-          let result: any
-
-          const preRecorded = runCtx ? runCtx.getPreRecordedTool(name) : null
-          if (preRecorded !== null) {
-            console.log(`[Gemini Loop] Reusing pre-recorded result for tool ${name}`)
-            result = preRecorded
-            yield { type: 'tool_call', toolName: name, toolArgs: args }
-            yield { type: 'tool_result', toolName: name, toolResult: result }
-          } else {
-            // Generate approvalId for run_command before saving step
-            const approvalId = name === 'run_command' ? uuidv4() : undefined
-            if (approvalId) {
-              args.approvalId = approvalId
-            }
-
-            if (runCtx && context?.userId) {
-              try {
-                await ExecutionGuard.validate(runCtx.runId, name, args, context.userId)
-              } catch (validationErr) {
-                const errMsg = (validationErr as Error).message
-                yield { type: 'error', content: errMsg }
-                await runCtx.saveStep('error', { message: errMsg })
-                await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-                return
-              }
-            }
-
-            if (runCtx) {
-              await runCtx.saveStep('tool_call', { name, args })
-            }
-
-            // Global Mode Container Guard
-            const requiresContainer = name !== 'create_project'
-            const hasActiveContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
-            
-            if (requiresContainer && !hasActiveContainer) {
-              result = { error: 'No active project container. You must create a project first using create_project.' }
-              yield { type: 'tool_call', toolName: name, toolArgs: args }
-              yield { type: 'tool_result', toolName: name, toolResult: result }
-            } else if (name === 'run_command') {
-              // Auto-execute commands if the container was dynamically created in this session
-              // (user asked AI to create and set up a project — no need to approve each step)
-              const wasContainerSwitched = activeContainerId !== containerId
-              
-              if (wasContainerSwitched) {
-                // Auto-execute: container was just created by AI in this session
-                yield { type: 'tool_call', toolName: name, toolArgs: { ...args, status: 'running' } }
-                result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
-              } else {
-                if (runCtx) {
-                  // Stateful non-blocking approval
-                  await supabaseAdmin
-                    .from('agent_runs')
-                    .update({ status: 'paused' })
-                    .eq('id', runCtx.runId)
-                  
-                  yield { 
-                    type: 'tool_call', 
-                    toolName: name, 
-                    toolArgs: { ...args, approvalId, status: 'pending' } 
-                  }
-                  return // End the stream cleanly!
-                } else {
-                  // Stateless blocking approval
-                  const command = args.command as string
-                  const approvalPromise = new Promise<boolean>((resolve) => {
-                    (global as any).pendingCommands.set(approvalId, { resolve, command })
-                  })
-
-                  const approved = await approvalPromise
-
-                  if (approved) {
-                    yield { 
-                      type: 'tool_call', 
-                      toolName: name, 
-                      toolArgs: { ...args, approvalId, status: 'running' } 
-                    }
-                    result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
-                  } else {
-                    result = { error: 'Command execution rejected by user.' }
-                  }
-                }
-              }
-            } else {
-              yield { type: 'tool_call', toolName: name, toolArgs: args as Record<string, unknown> }
-              result = await executeTool(activeContainerId, name, args as Record<string, unknown>, context?.userId)
-            }
-
-            yield { 
-              type: 'tool_result', 
-              toolName: name, 
-              toolResult: result,
-              toolArgs: { approvalId: (args as any).approvalId }
-            }
-
-            // After create_project succeeds, switch to the new container so AI gets full tools
-            if (name === 'create_project' && result && (result as any).success && (result as any).container_id) {
-              activeContainerId = (result as any).container_id
-              console.log(`[Gemini Loop] Switched to new container: ${activeContainerId}`)
-            }
-
-            if (runCtx) {
-              await runCtx.saveStep('tool_result', { name, response: result })
-              
-              const tokensCost = estimateTokens(JSON.stringify(result))
-              const commandsCost = name === 'run_command' ? 1 : 0
-              const writesCost = (name === 'edit_file' || name === 'create_file') ? 1 : 0
-              
-              await ExecutionGuard.recordExecution(runCtx.runId, name, {
-                tokens: tokensCost,
-                commands: commandsCost,
-                writes: writesCost
-              }, args)
-            }
-          }
-
-          contents.push({
-            role: 'user',
-            parts: [{
-              functionResponse: {
-                name,
-                response: { content: result },
-              },
-            }],
-          })
-        }
-      }
-
-      if (!hasFunctionCall) {
-        break
-      }
-    }
-
-    if (runCtx) {
-      await supabaseAdmin
-        .from('agent_runs')
-        .update({ status: 'completed' })
-        .eq('id', runCtx.runId)
-    }
-  } catch (err) {
-    yield { type: 'error', content: `Error: ${(err as Error).message}` }
-    if (runCtx) {
-      await runCtx.saveStep('error', { message: (err as Error).message })
-      await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-    }
-    return
-  } finally {
-    if (context?.userId && totalTokens > 0) {
-      await recordTokens(context.userId, isBYOK, totalTokens)
-    }
-  }
-
-  yield { type: 'done' }
 }
 
-function convertSchemaToLowercase(schema: any): any {
-  if (!schema) return schema
-  const newSchema = { ...schema }
-  if (typeof newSchema.type === 'string') {
-    newSchema.type = newSchema.type.toLowerCase()
-  }
-  if (newSchema.properties) {
-    const newProps: any = {}
-    for (const key of Object.keys(newSchema.properties)) {
-      newProps[key] = convertSchemaToLowercase(newSchema.properties[key])
-    }
-    newSchema.properties = newProps
-  }
-  return newSchema
-}
-
+/**
+ * Backward-compatible wrapper for OpenAI
+ */
 export async function* chatWithOpenAI(
-  messages: { role: 'user' | 'model'; text: string }[],
+  messages: { role: 'user' | 'model' | 'assistant'; text: string }[],
   containerId: string,
   context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
-  const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
-  const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : OPENAI_API_KEY
-
-  if (!apiKey) {
-    yield { type: 'error', content: 'OpenAI API key not configured. Please add it under AI API Keys (BYOK) in settings.' }
-    return
-  }
-
-  let runCtx: AgentRunContext | null = null
-  if (context?.runId && context?.userId) {
-    runCtx = new AgentRunContext(context.runId, context.userId)
-    await runCtx.init()
-  }
-
-  const toolsToProvide = hasContainer 
-    ? TOOL_DECLARATIONS 
-    : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
-
-  const openAITools = toolsToProvide.map(tool => ({
-    type: 'function',
-    function: {
-      name: tool.name,
-      description: tool.description,
-      parameters: convertSchemaToLowercase(tool.parameters)
-    }
+  const mappedHistory = messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    text: m.text
   }))
 
-  let capabilityPrompt = ''
-  if (context?.userId) {
-    const resourceCtx = await PlanningGuard.loadContext(context.userId)
-    capabilityPrompt = PlanningGuard.buildSystemPrompt(resourceCtx)
-    yield { 
-      type: 'reasoning_event', 
-      content: `Available resources: ${resourceCtx.tokensRemaining === 999999999 ? 'Unlimited' : resourceCtx.tokensRemaining} tokens, ${resourceCtx.workspacesLimit - resourceCtx.workspacesUsed} workspace slots remaining.` 
-    }
+  const generator = executeLangGraph('openai', mappedHistory, containerId, context, customApiKey)
+  for await (const chunk of generator) {
+    yield chunk
   }
-
-  let openAIMessages: any[] = []
-  
-  if (runCtx && runCtx.dbSteps.length > 0) {
-    openAIMessages = runCtx.rehydrateOpenAIHistory([])
-    const planStep = runCtx.dbSteps.find(s => s.type === 'plan')
-    if (planStep) {
-      yield { type: 'plan_event', items: planStep.content.items }
-    }
-  } else {
-    openAIMessages.push({
-      role: 'system',
-      content: (hasContainer 
-        ? SYSTEM_INSTRUCTION 
-        : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.')
-        + '\n' + capabilityPrompt
-    })
-
-    let firstUserProcessed = false
-    for (const m of messages) {
-      let content = m.text
-      if (!firstUserProcessed && m.role === 'user' && context) {
-        firstUserProcessed = true
-        let contextPrefix = ''
-        if (context.fileTree) {
-          contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
-        }
-        if (context.openFile) {
-          contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
-        }
-        content = contextPrefix + content
-      }
-      openAIMessages.push({
-        role: m.role === 'user' ? 'user' : 'assistant',
-        content: content
-      })
-      
-      if (runCtx && m.role === 'user') {
-        await runCtx.saveStep('reasoning', { text: content, role: 'user' })
-      }
-    }
-  }
-
-  if (runCtx) {
-    await supabaseAdmin
-      .from('agent_runs')
-      .update({ status: 'executing' })
-      .eq('id', runCtx.runId)
-  }
-
-  let totalTokens = 0
-  const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
-
-  try {
-    let loopCount = 0
-    const MAX_LOOPS = 10
-
-    while (loopCount < MAX_LOOPS) {
-      loopCount++
-
-      let inputPromptText = ''
-      for (const msg of openAIMessages) {
-        if (typeof msg.content === 'string') {
-          inputPromptText += msg.content
-        } else if (Array.isArray(msg.content)) {
-          inputPromptText += JSON.stringify(msg.content)
-        }
-        if (msg.tool_calls) {
-          inputPromptText += JSON.stringify(msg.tool_calls)
-        }
-      }
-      if (toolsToProvide.length > 0) {
-        inputPromptText += JSON.stringify(openAITools)
-      }
-      totalTokens += estimateTokens(inputPromptText)
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: openAIMessages,
-          ...(toolsToProvide.length > 0 ? { tools: openAITools, tool_choice: 'auto' } : {}),
-          temperature: 0.7,
-          stream: true
-        })
-      })
-
-      if (!response.ok) {
-        const errText = await response.text()
-        yield { type: 'error', content: `OpenAI API error: ${response.status} - ${errText}` }
-        if (runCtx) {
-          await runCtx.saveStep('error', { message: `OpenAI API error: ${response.status}` })
-          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-        }
-        return
-      }
-
-      if (!response.body) {
-        yield { type: 'error', content: 'No response body from OpenAI' }
-        return
-      }
-
-      const reader = (response.body as any).getReader()
-      const decoder = new TextDecoder('utf-8')
-      let buffer = ''
-      let fullText = ''
-      const toolCalls: any[] = []
-
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed.startsWith('data:')) continue
-          
-          const jsonStr = trimmed.substring(5).trim()
-          if (jsonStr === '[DONE]') continue
-          if (!jsonStr) continue
-          
-          try {
-            const chunkData = JSON.parse(jsonStr)
-            const choice = chunkData.choices?.[0]
-            if (choice && choice.delta) {
-              if (choice.delta.content) {
-                const chunkText = choice.delta.content
-                fullText += chunkText
-                yield { type: 'text', content: chunkText }
-              }
-              if (choice.delta.tool_calls) {
-                for (const tc of choice.delta.tool_calls) {
-                  const idx = tc.index
-                  if (idx === undefined) continue
-                  if (!toolCalls[idx]) {
-                    toolCalls[idx] = {
-                      id: tc.id || '',
-                      type: tc.type || 'function',
-                      function: { name: '', arguments: '' }
-                    }
-                  }
-                  if (tc.id) toolCalls[idx].id = tc.id
-                  if (tc.type) toolCalls[idx].type = tc.type
-                  if (tc.function) {
-                    if (tc.function.name) toolCalls[idx].function.name = tc.function.name
-                    if (tc.function.arguments) toolCalls[idx].function.arguments += tc.function.arguments
-                  }
-                }
-              }
-            }
-          } catch (e) {
-            // Ignore incomplete JSON errors in chunk boundaries
-          }
-        }
-      }
-
-      if (buffer.trim()) {
-        const trimmed = buffer.trim()
-        if (trimmed.startsWith('data:')) {
-          const jsonStr = trimmed.substring(5).trim()
-          if (jsonStr !== '[DONE]') {
-            try {
-              const chunkData = JSON.parse(jsonStr)
-              const choice = chunkData.choices?.[0]
-              if (choice && choice.delta) {
-                if (choice.delta.content) {
-                  const chunkText = choice.delta.content
-                  fullText += chunkText
-                  yield { type: 'text', content: chunkText }
-                }
-                if (choice.delta.tool_calls) {
-                  for (const tc of choice.delta.tool_calls) {
-                    const idx = tc.index
-                    if (idx === undefined) continue
-                    if (!toolCalls[idx]) {
-                      toolCalls[idx] = {
-                        id: tc.id || '',
-                        type: tc.type || 'function',
-                        function: { name: '', arguments: '' }
-                      }
-                    }
-                    if (tc.id) toolCalls[idx].id = tc.id
-                    if (tc.type) toolCalls[idx].type = tc.type
-                    if (tc.function) {
-                      if (tc.function.name) toolCalls[idx].function.name = tc.function.name
-                      if (tc.function.arguments) toolCalls[idx].function.arguments += tc.function.arguments
-                    }
-                  }
-                }
-              }
-            } catch {}
-          }
-        }
-      }
-
-      const finalToolCalls = toolCalls.filter(Boolean)
-
-      const assistantMsg: any = { role: 'assistant' }
-      if (fullText) {
-        assistantMsg.content = fullText
-        
-        if (runCtx) {
-          await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
-          
-          const planItems = extractPlanItems(fullText)
-          if (planItems.length > 0) {
-            await runCtx.saveStep('plan', { items: planItems, plan: fullText })
-            yield { type: 'plan_event', items: planItems }
-          }
-        }
-      }
-      if (finalToolCalls.length > 0) {
-        assistantMsg.tool_calls = finalToolCalls
-      }
-
-      let outputCompletionText = ''
-      if (fullText) outputCompletionText += fullText
-      if (finalToolCalls.length > 0) outputCompletionText += JSON.stringify(finalToolCalls)
-      totalTokens += estimateTokens(outputCompletionText)
-
-      openAIMessages.push(assistantMsg)
-
-      if (finalToolCalls.length === 0) {
-        break
-      }
-
-      for (const tc of finalToolCalls) {
-        const name = tc.function.name
-        let args: Record<string, unknown> = {}
-        try {
-          args = JSON.parse(tc.function.arguments)
-        } catch (e) {
-          console.error('Failed to parse tool arguments:', e)
-        }
-
-        let result: any
-
-        const preRecorded = runCtx ? runCtx.getPreRecordedTool(name) : null
-        if (preRecorded !== null) {
-          console.log(`[OpenAI Loop] Reusing pre-recorded result for tool ${name}`)
-          result = preRecorded
-          yield { type: 'tool_call', toolName: name, toolArgs: args }
-          yield { type: 'tool_result', toolName: name, toolResult: result }
-        } else {
-          // Generate approvalId for run_command before saving step
-          const approvalId = name === 'run_command' ? uuidv4() : undefined
-          if (approvalId) {
-            args.approvalId = approvalId
-          }
-
-          if (runCtx && context?.userId) {
-            try {
-              await ExecutionGuard.validate(runCtx.runId, name, args, context.userId)
-            } catch (validationErr) {
-              const errMsg = (validationErr as Error).message
-              yield { type: 'error', content: errMsg }
-              await runCtx.saveStep('error', { message: errMsg })
-              await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-              return
-            }
-          }
-
-          if (runCtx) {
-            await runCtx.saveStep('tool_call', { name, args, toolCallId: tc.id })
-          }
-
-          // Global Mode Container Guard
-          const requiresContainer = name !== 'create_project'
-          const hasActiveContainer = containerId && containerId !== 'global' && containerId !== 'none'
-          
-          if (requiresContainer && !hasActiveContainer) {
-            result = { error: 'No active project container. You must create a project first using create_project.' }
-            yield { type: 'tool_call', toolName: name, toolArgs: args }
-            yield { type: 'tool_result', toolName: name, toolResult: result }
-          } else if (name === 'run_command') {
-            if (runCtx) {
-              // Stateful non-blocking approval
-              await supabaseAdmin
-                .from('agent_runs')
-                .update({ status: 'paused' })
-                .eq('id', runCtx.runId)
-              
-              yield { 
-                type: 'tool_call', 
-                toolName: name, 
-                toolArgs: { ...args, approvalId, status: 'pending' } 
-              }
-              return // End the stream cleanly!
-            } else {
-              // Stateless blocking approval
-              const command = args.command as string
-              const approvalPromise = new Promise<boolean>((resolve) => {
-                (global as any).pendingCommands.set(approvalId, { resolve, command })
-              })
-
-              const approved = await approvalPromise
-
-              if (approved) {
-                yield { 
-                  type: 'tool_call', 
-                  toolName: name, 
-                  toolArgs: { ...args, approvalId, status: 'running' } 
-                }
-                result = await executeTool(containerId, name, args, context?.userId)
-              } else {
-                result = { error: 'Command execution rejected by user.' }
-              }
-            }
-          } else {
-            yield { type: 'tool_call', toolName: name, toolArgs: args }
-            result = await executeTool(containerId, name, args, context?.userId)
-          }
-
-          yield { 
-            type: 'tool_result', 
-            toolName: name, 
-            toolResult: result,
-            toolArgs: { approvalId: (args as any).approvalId }
-          }
-
-          if (runCtx) {
-            await runCtx.saveStep('tool_result', { name, response: result })
-            
-            const tokensCost = estimateTokens(JSON.stringify(result))
-            const commandsCost = name === 'run_command' ? 1 : 0
-            const writesCost = (name === 'edit_file' || name === 'create_file') ? 1 : 0
-            
-            await ExecutionGuard.recordExecution(runCtx.runId, name, {
-              tokens: tokensCost,
-              commands: commandsCost,
-              writes: writesCost
-            }, args)
-          }
-        }
-
-        openAIMessages.push({
-          role: 'tool',
-          tool_call_id: tc.id,
-          content: JSON.stringify(result)
-        })
-      }
-    }
-
-    if (runCtx) {
-      await supabaseAdmin
-        .from('agent_runs')
-        .update({ status: 'completed' })
-        .eq('id', runCtx.runId)
-    }
-  } catch (err) {
-    yield { type: 'error', content: `Error: ${(err as Error).message}` }
-    if (runCtx) {
-      await runCtx.saveStep('error', { message: (err as Error).message })
-      await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-    }
-    return
-  } finally {
-    if (context?.userId && totalTokens > 0) {
-      await recordTokens(context.userId, isBYOK, totalTokens)
-    }
-  }
-
-  yield { type: 'done' }
 }
 
+/**
+ * Backward-compatible wrapper for Anthropic
+ */
 export async function* chatWithAnthropic(
-  messages: { role: 'user' | 'model'; text: string }[],
+  messages: { role: 'user' | 'model' | 'assistant'; text: string }[],
   containerId: string,
   context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
-  const hasContainer = containerId && containerId !== 'global' && containerId !== 'none'
-  const apiKey = customApiKey && customApiKey.trim() !== '' ? customApiKey.trim() : ANTHROPIC_API_KEY
-
-  if (!apiKey) {
-    yield { type: 'error', content: 'Anthropic API key not configured. Please add it under AI API Keys (BYOK) in settings.' }
-    return
-  }
-
-  let runCtx: AgentRunContext | null = null
-  if (context?.runId && context?.userId) {
-    runCtx = new AgentRunContext(context.runId, context.userId)
-    await runCtx.init()
-  }
-
-  const toolsToProvide = hasContainer 
-    ? TOOL_DECLARATIONS 
-    : TOOL_DECLARATIONS.filter(t => t.name === 'create_project')
-
-  const anthropicTools = toolsToProvide.map(tool => ({
-    name: tool.name,
-    description: tool.description,
-    input_schema: convertSchemaToLowercase(tool.parameters)
+  const mappedHistory = messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    text: m.text
   }))
 
-  let capabilityPrompt = ''
-  if (context?.userId) {
-    const resourceCtx = await PlanningGuard.loadContext(context.userId)
-    capabilityPrompt = PlanningGuard.buildSystemPrompt(resourceCtx)
-    yield { 
-      type: 'reasoning_event', 
-      content: `Available resources: ${resourceCtx.tokensRemaining === 999999999 ? 'Unlimited' : resourceCtx.tokensRemaining} tokens, ${resourceCtx.workspacesLimit - resourceCtx.workspacesUsed} workspace slots remaining.` 
-    }
+  const generator = executeLangGraph('anthropic', mappedHistory, containerId, context, customApiKey)
+  for await (const chunk of generator) {
+    yield chunk
   }
-
-  let anthropicMessages: any[] = []
-  
-  if (runCtx && runCtx.dbSteps.length > 0) {
-    anthropicMessages = runCtx.rehydrateAnthropicHistory([])
-    const planStep = runCtx.dbSteps.find(s => s.type === 'plan')
-    if (planStep) {
-      yield { type: 'plan_event', items: planStep.content.items }
-    }
-  } else {
-    let firstUserProcessed = false
-    for (const m of messages) {
-      let content = m.text
-      if (!firstUserProcessed && m.role === 'user' && context) {
-        firstUserProcessed = true
-        let contextPrefix = ''
-        if (context.fileTree) {
-          contextPrefix += `[Project files:\n${context.fileTree}]\n\n`
-        }
-        if (context.openFile) {
-          contextPrefix += `[Currently open file: ${context.openFile.path}]\n\`\`\`\n${context.openFile.content}\n\`\`\`\n\n`
-        }
-        content = contextPrefix + content
-      }
-      anthropicMessages.push({
-        role: m.role === 'user' ? 'user' : 'assistant',
-        content: content
-      })
-      
-      if (runCtx && m.role === 'user') {
-        await runCtx.saveStep('reasoning', { text: content, role: 'user' })
-      }
-    }
-  }
-
-  if (runCtx) {
-    await supabaseAdmin
-      .from('agent_runs')
-      .update({ status: 'executing' })
-      .eq('id', runCtx.runId)
-  }
-
-  let totalTokens = 0
-  const isBYOK = !!(customApiKey && customApiKey.trim() !== '')
-
-  try {
-    let loopCount = 0
-    const MAX_LOOPS = 10
-
-    while (loopCount < MAX_LOOPS) {
-      loopCount++
-
-      let inputPromptText = ''
-      inputPromptText += hasContainer 
-        ? SYSTEM_INSTRUCTION 
-        : 'You are CloudCode AI, a general helpful developer assistant.'
-      inputPromptText += '\n' + capabilityPrompt
-      
-      for (const msg of anthropicMessages) {
-        if (typeof msg.content === 'string') {
-          inputPromptText += msg.content
-        } else {
-          inputPromptText += JSON.stringify(msg.content)
-        }
-      }
-      if (toolsToProvide.length > 0) {
-        inputPromptText += JSON.stringify(anthropicTools)
-      }
-      totalTokens += estimateTokens(inputPromptText)
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-opus-20240229',
-          max_tokens: 4096,
-          system: (hasContainer 
-            ? SYSTEM_INSTRUCTION 
-            : 'You are CloudCode AI, a general helpful developer assistant. You can create a new project/workspace using the create_project tool when the user requests it. If they ask to read, edit, or run commands on files, advise them to select or create a project first.')
-            + '\n' + capabilityPrompt,
-          messages: anthropicMessages,
-          ...(toolsToProvide.length > 0 ? { tools: anthropicTools } : {}),
-          temperature: 0.7,
-          stream: true
-        })
-      })
-
-      if (!response.ok) {
-        const errText = await response.text()
-        yield { type: 'error', content: `Anthropic API error: ${response.status} - ${errText}` }
-        if (runCtx) {
-          await runCtx.saveStep('error', { message: `Anthropic API error: ${response.status}` })
-          await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-        }
-        return
-      }
-
-      if (!response.body) {
-        yield { type: 'error', content: 'No response body from Anthropic' }
-        return
-      }
-
-      const reader = (response.body as any).getReader()
-      const decoder = new TextDecoder('utf-8')
-      let buffer = ''
-      let fullText = ''
-      const contentBlocks: any[] = []
-
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed.startsWith('data:')) continue
-          
-          const jsonStr = trimmed.substring(5).trim()
-          if (!jsonStr) continue
-          
-          try {
-            const chunkData = JSON.parse(jsonStr)
-            if (chunkData.type === 'content_block_start') {
-              const idx = chunkData.index
-              if (chunkData.content_block) {
-                contentBlocks[idx] = chunkData.content_block
-                if (contentBlocks[idx].type === 'tool_use') {
-                  contentBlocks[idx].input = ''
-                }
-              }
-            } else if (chunkData.type === 'content_block_delta') {
-              const idx = chunkData.index
-              const delta = chunkData.delta
-              if (delta) {
-                if (delta.type === 'text_delta' && delta.text) {
-                  fullText += delta.text
-                  yield { type: 'text', content: delta.text }
-                  if (!contentBlocks[idx]) {
-                    contentBlocks[idx] = { type: 'text', text: '' }
-                  }
-                  contentBlocks[idx].text = (contentBlocks[idx].text || '') + delta.text
-                } else if (delta.type === 'input_json_delta' && delta.partial_json) {
-                  if (!contentBlocks[idx]) {
-                    contentBlocks[idx] = { type: 'tool_use', name: '', input: '' }
-                  }
-                  contentBlocks[idx].input += delta.partial_json
-                }
-              }
-            }
-          } catch (e) {
-            // Ignore incomplete JSON errors in chunk boundaries
-          }
-        }
-      }
-
-      if (buffer.trim()) {
-        const trimmed = buffer.trim()
-        if (trimmed.startsWith('data:')) {
-          const jsonStr = trimmed.substring(5).trim()
-          try {
-            const chunkData = JSON.parse(jsonStr)
-            if (chunkData.type === 'content_block_delta') {
-              const idx = chunkData.index
-              const delta = chunkData.delta
-              if (delta) {
-                if (delta.type === 'text_delta' && delta.text) {
-                  fullText += delta.text
-                  yield { type: 'text', content: delta.text }
-                  if (!contentBlocks[idx]) {
-                    contentBlocks[idx] = { type: 'text', text: '' }
-                  }
-                  contentBlocks[idx].text = (contentBlocks[idx].text || '') + delta.text
-                } else if (delta.type === 'input_json_delta' && delta.partial_json) {
-                  if (!contentBlocks[idx]) {
-                    contentBlocks[idx] = { type: 'tool_use', name: '', input: '' }
-                  }
-                  contentBlocks[idx].input += delta.partial_json
-                }
-              }
-            }
-          } catch {}
-        }
-      }
-
-      const finalContent = contentBlocks.filter(Boolean)
-      for (const block of finalContent) {
-        if (block.type === 'tool_use' && typeof block.input === 'string') {
-          try {
-            block.input = JSON.parse(block.input)
-          } catch (e) {
-            block.input = {}
-          }
-        }
-      }
-
-      if (fullText) {
-        if (runCtx) {
-          await runCtx.saveStep('reasoning', { text: fullText, role: 'model' })
-          
-          const planItems = extractPlanItems(fullText)
-          if (planItems.length > 0) {
-            await runCtx.saveStep('plan', { items: planItems, plan: fullText })
-            yield { type: 'plan_event', items: planItems }
-          }
-        }
-      }
-
-      let outputCompletionText = ''
-      for (const block of finalContent) {
-        if (block.type === 'text') {
-          outputCompletionText += block.text
-        } else if (block.type === 'tool_use') {
-          outputCompletionText += JSON.stringify(block)
-        }
-      }
-      totalTokens += estimateTokens(outputCompletionText)
-
-      anthropicMessages.push({
-        role: 'assistant',
-        content: finalContent
-      })
-
-      const toolResultBlocks: any[] = []
-      let hasToolUse = false
-
-      for (const block of finalContent) {
-        if (block.type === 'tool_use') {
-          hasToolUse = true
-          const name = block.name
-          const args = block.input || {}
-          
-          let result: any
-
-          const preRecorded = runCtx ? runCtx.getPreRecordedTool(name) : null
-          if (preRecorded !== null) {
-            console.log(`[Anthropic Loop] Reusing pre-recorded result for tool ${name}`)
-            result = preRecorded
-            yield { type: 'tool_call', toolName: name, toolArgs: args }
-            yield { type: 'tool_result', toolName: name, toolResult: result }
-          } else {
-            // Generate approvalId for run_command before saving step
-            const approvalId = name === 'run_command' ? uuidv4() : undefined
-            if (approvalId) {
-              args.approvalId = approvalId
-            }
-
-            if (runCtx && context?.userId) {
-              try {
-                await ExecutionGuard.validate(runCtx.runId, name, args, context.userId)
-              } catch (validationErr) {
-                const errMsg = (validationErr as Error).message
-                yield { type: 'error', content: errMsg }
-                await runCtx.saveStep('error', { message: errMsg })
-                await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-                return
-              }
-            }
-
-            if (runCtx) {
-              await runCtx.saveStep('tool_call', { name, args, toolCallId: block.id })
-            }
-
-            // Global Mode Container Guard
-            const requiresContainer = name !== 'create_project'
-            const hasActiveContainer = containerId && containerId !== 'global' && containerId !== 'none'
-            
-            if (requiresContainer && !hasActiveContainer) {
-              result = { error: 'No active project container. You must create a project first using create_project.' }
-              yield { type: 'tool_call', toolName: name, toolArgs: args }
-              yield { type: 'tool_result', toolName: name, toolResult: result }
-            } else if (name === 'run_command') {
-              if (runCtx) {
-                // Stateful non-blocking approval
-                await supabaseAdmin
-                  .from('agent_runs')
-                  .update({ status: 'paused' })
-                  .eq('id', runCtx.runId)
-                
-                yield { 
-                  type: 'tool_call', 
-                  toolName: name, 
-                  toolArgs: { ...args, approvalId, status: 'pending' } 
-                }
-                return // End the stream cleanly!
-              } else {
-                // Stateless blocking approval
-                const command = args.command as string
-                const approvalPromise = new Promise<boolean>((resolve) => {
-                  (global as any).pendingCommands.set(approvalId, { resolve, command })
-                })
-
-                const approved = await approvalPromise
-
-                if (approved) {
-                  yield { 
-                    type: 'tool_call', 
-                    toolName: name, 
-                    toolArgs: { ...args, approvalId, status: 'running' } 
-                  }
-                  result = await executeTool(containerId, name, args, context?.userId)
-                } else {
-                  result = { error: 'Command execution rejected by user.' }
-                }
-              }
-            } else {
-              yield { type: 'tool_call', toolName: name, toolArgs: args }
-              result = await executeTool(containerId, name, args, context?.userId)
-            }
-
-            yield { 
-              type: 'tool_result', 
-              toolName: name, 
-              toolResult: result,
-              toolArgs: { approvalId: (args as any).approvalId }
-            }
-
-            if (runCtx) {
-              await runCtx.saveStep('tool_result', { name, response: result })
-              
-              const tokensCost = estimateTokens(JSON.stringify(result))
-              const commandsCost = name === 'run_command' ? 1 : 0
-              const writesCost = (name === 'edit_file' || name === 'create_file') ? 1 : 0
-              
-              await ExecutionGuard.recordExecution(runCtx.runId, name, {
-                tokens: tokensCost,
-                commands: commandsCost,
-                writes: writesCost
-              }, args)
-            }
-          }
-
-          toolResultBlocks.push({
-            type: 'tool_result',
-            tool_use_id: block.id,
-            content: JSON.stringify(result)
-          })
-        }
-      }
-
-      if (!hasToolUse) {
-        break
-      }
-
-      anthropicMessages.push({
-        role: 'user',
-        content: toolResultBlocks
-      })
-    }
-
-    if (runCtx) {
-      await supabaseAdmin
-        .from('agent_runs')
-        .update({ status: 'completed' })
-        .eq('id', runCtx.runId)
-    }
-  } catch (err) {
-    yield { type: 'error', content: `Error: ${(err as Error).message}` }
-    if (runCtx) {
-      await runCtx.saveStep('error', { message: (err as Error).message })
-      await supabaseAdmin.from('agent_runs').update({ status: 'failed' }).eq('id', runCtx.runId)
-    }
-    return
-  } finally {
-    if (context?.userId && totalTokens > 0) {
-      await recordTokens(context.userId, isBYOK, totalTokens)
-    }
-  }
-
-  yield { type: 'done' }
 }
