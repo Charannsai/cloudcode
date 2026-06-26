@@ -1282,7 +1282,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   composerTextInput: {
-    flex: 1,
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
     minHeight: 28,
