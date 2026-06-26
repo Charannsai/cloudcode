@@ -468,10 +468,15 @@ export default function ActivityScreen() {
           {/* Faded pagination button */}
           {runsList.length > visibleCount && (
             <View style={styles.paginationContainer}>
-              <LinearGradient
-                colors={isDark ? ['rgba(14,17,22,0)', 'rgba(14,17,22,0.95)'] : ['rgba(246,248,250,0)', 'rgba(246,248,250,0.98)']}
-                style={styles.fadeOverlay}
-              />
+              <Svg style={styles.fadeOverlay} width="100%" height="100%">
+                <Defs>
+                  <LinearGradient id="fadeOverlayGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0" />
+                    <Stop offset="100%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0.98" />
+                  </LinearGradient>
+                </Defs>
+                <Rect width="100%" height="100%" fill="url(#fadeOverlayGrad)" />
+              </Svg>
               <TouchableOpacity
                 style={[
                   styles.showMoreBtn,
