@@ -1,21 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal, Platform, Dimensions, Alert, Animated, Easing, TouchableWithoutFeedback
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Platform, Dimensions, Alert, Animated, Easing, TouchableWithoutFeedback
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
-  ArrowLeft, Cpu, Folder, History, CheckCircle2, AlertCircle,
-  Clock, ChevronDown, Sparkles, X, MoreVertical
+  ArrowLeft, Cpu, Folder, History, Clock, ChevronDown, X, MoreVertical
 } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
-import { BlurView } from 'expo-blur'
 import { api } from '@/lib/api'
 import { useAgentStore } from '@/store/agentStore'
 import { useAIStore } from '@/store/ai'
-import Markdown from 'react-native-markdown-display'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -38,11 +35,6 @@ export default function ActivityScreen() {
   const [billingStats, setBillingStats] = useState<BillingStats | null>(null)
   const [loadingResources, setLoadingResources] = useState(true)
   const [isByokActive, setIsByokActive] = useState(false)
-  
-  // Detail Modal state
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
-  const [runDetail, setRunDetail] = useState<any>(null)
-  const [loadingDetail, setLoadingDetail] = useState(false)
 
   // New Selection & Pagination State
   const [visibleCount, setVisibleCount] = useState(5)
@@ -106,21 +98,6 @@ export default function ActivityScreen() {
       console.warn('Failed to load billing usage:', err)
     } finally {
       setLoadingResources(false)
-    }
-  }
-
-  const handleOpenRunDetail = async (runId: string) => {
-    setSelectedRunId(runId)
-    setLoadingDetail(true)
-    
-    try {
-      const data = await api.ai.getRun(runId)
-      setRunDetail(data)
-    } catch (err) {
-      Alert.alert('Error', 'Failed to load run details')
-      setSelectedRunId(null)
-    } finally {
-      setLoadingDetail(false)
     }
   }
 
@@ -240,15 +217,6 @@ export default function ActivityScreen() {
     )
   }
 
-  const mdStyles = {
-    body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22 },
-    heading1: { fontSize: 17, fontFamily: 'Inter_700Bold', marginTop: 12, marginBottom: 4, color: isDark ? '#F3F4F6' : '#0E1116' },
-    heading2: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginTop: 8, marginBottom: 4, color: isDark ? '#F3F4F6' : '#0E1116' },
-    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#1C2128' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 8, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
-    paragraph: { marginTop: 4, marginBottom: 4 },
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}>
       {/* Glowing Radial Background Gradient */}
@@ -364,7 +332,8 @@ export default function ActivityScreen() {
                           }
                           setSelectedRunIds(newSelected)
                         } else {
-                          handleOpenRunDetail(run.id)
+                          // DIRECTLY RESUME CONVERSATION
+                          handleResumeRun(run.id)
                         }
                       }}
                       activeOpacity={0.7}
@@ -411,25 +380,23 @@ export default function ActivityScreen() {
                       </View>
                     </TouchableOpacity>
 
-                    {/* Inline Glassmorphic Action Dropdown */}
+                    {/* Inline Glassmorphic Solid Action Dropdown (No BlurView to prevent border shadow glitches) */}
                     {isMenuOpen && (
                       <>
                         <TouchableWithoutFeedback onPress={() => setActiveMenuRunId(null)}>
                           <View style={styles.dropdownBackdrop} />
                         </TouchableWithoutFeedback>
-                        <BlurView
-                          intensity={Platform.OS === 'ios' ? 75 : 100}
-                          tint={isDark ? 'dark' : 'light'}
+                        <View
                           style={[
                             styles.inlineDropdownCard,
                             {
-                              borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                              backgroundColor: isDark ? 'rgba(21, 25, 34, 0.9)' : 'rgba(255, 255, 255, 0.92)'
+                              borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                              backgroundColor: isDark ? '#1C1F26' : '#FFFFFF'
                             }
                           ]}
                         >
                           <TouchableOpacity
-                            style={[styles.dropdownRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}
+                            style={[styles.dropdownRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
                             onPress={() => {
                               setActiveMenuRunId(null)
                               handleResumeRun(run.id)
@@ -438,7 +405,7 @@ export default function ActivityScreen() {
                             <Text style={[styles.dropdownLabel, { color: colors.text }]}>Open Convo</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
-                            style={[styles.dropdownRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}
+                            style={[styles.dropdownRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
                             onPress={() => {
                               setActiveMenuRunId(null)
                               setIsSelectionMode(true)
@@ -456,7 +423,7 @@ export default function ActivityScreen() {
                           >
                             <Text style={[styles.dropdownLabel, { color: '#FF7B72' }]}>Clear Convo</Text>
                           </TouchableOpacity>
-                        </BlurView>
+                        </View>
                       </>
                     )}
                   </View>
@@ -549,104 +516,6 @@ export default function ActivityScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Run Detail Modal */}
-      <Modal
-        visible={!!selectedRunId}
-        transparent
-        animationType="slide"
-        statusBarTranslucent
-        onRequestClose={() => setSelectedRunId(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 85 : 100}
-            tint={isDark ? 'dark' : 'light'}
-            style={[
-              styles.modalContent,
-              {
-                backgroundColor: isDark ? 'rgba(14, 17, 22, 0.95)' : 'rgba(255, 255, 255, 0.97)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-                borderWidth: 1,
-              }
-            ]}
-          >
-            {loadingDetail || !runDetail ? (
-              <View style={styles.modalLoading}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ color: colors.textSecondary, marginTop: 10, fontFamily: 'Inter_500Medium' }}>Loading conversation history...</Text>
-              </View>
-            ) : (
-              <View style={{ flex: 1 }}>
-                {/* Modal Header */}
-                <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }]}>
-                      {getConversationTitle(runDetail.run)}
-                    </Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_500Medium', marginTop: 2 }}>
-                      Model: {runDetail.run.model === 'gemini' ? 'Gemini' : runDetail.run.model === 'openai' ? 'GPT-4o' : 'Claude'} • Status: {runDetail.run.status}
-                    </Text>
-                  </View>
-                  
-                  {/* Resume Button */}
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: colors.text,
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 14,
-                      marginRight: 10
-                    }}
-                    onPress={() => {
-                      setSelectedRunId(null)
-                      handleResumeRun(runDetail.run.id)
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontSize: 11.5, fontFamily: 'Inter_700Bold' }}>Resume</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => setSelectedRunId(null)} style={styles.closeBtn} activeOpacity={0.7}>
-                    <X size={20} color={colors.text} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Modal Scroll Content */}
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}>
-                  <View style={{ gap: 20 }}>
-                    {runDetail.steps
-                      .filter((step: any) => step.type === 'reasoning')
-                      .map((step: any) => {
-                        const isUser = step.content.role === 'user'
-                        const msgText = step.content.text || step.content.message || ''
-                        if (!msgText) return null
-
-                        return (
-                          <View key={step.id} style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
-                            <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderWidth: 1 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 4, maxWidth: '100%' }]}>
-                              {isUser ? (
-                                <Text style={[styles.userBubbleText, { color: colors.text }]}>
-                                  {msgText}
-                                </Text>
-                              ) : (
-                                <View style={{ width: '100%' }}>
-                                  <Markdown style={mdStyles}>
-                                    {msgText}
-                                  </Markdown>
-                                </View>
-                              )}
-                            </View>
-                          </View>
-                        )
-                      })}
-                  </View>
-                </ScrollView>
-              </View>
-            )}
-          </BlurView>
-        </View>
-      </Modal>
     </View>
   )
 }
@@ -741,63 +610,6 @@ const styles = StyleSheet.create({
   },
   runMetaText: {
     fontSize: 11,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    height: '88%',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    overflow: 'hidden',
-  },
-  modalLoading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontSize: 15,
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  userBubbleWrapper: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    width: '100%',
-  },
-  modelBubbleWrapper: {
-    width: '100%',
-  },
-  userBubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderBottomRightRadius: 2,
-    maxWidth: SCREEN_WIDTH * 0.8,
-  },
-  modelBubble: {
-    borderRadius: 16,
-    padding: 16,
-    maxWidth: SCREEN_WIDTH * 0.8,
-    borderBottomLeftRadius: 2,
-  },
-  userBubbleText: {
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 19,
   },
 
   // New Selection Styles
