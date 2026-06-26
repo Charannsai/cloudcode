@@ -481,6 +481,8 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
       )}
     </View>
   )
+}
+
 function AnimatedDropdown({ visible, children, style }: { visible: boolean; children: React.ReactNode; style?: any }) {
   const [shouldRender, setShouldRender] = useState(visible)
   const anim = useRef(new Animated.Value(0)).current
