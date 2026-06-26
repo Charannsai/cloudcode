@@ -738,7 +738,7 @@ export default function AIScreen() {
     <TabGenieWrapper index={3}>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         {/* Glowing Radial Background Gradient */}
@@ -1041,7 +1041,7 @@ export default function AIScreen() {
         </ScrollView>
 
         {/* Bottom Container for perfect flow-based keyboard avoidance */}
-        <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <View style={[styles.bottomContainer, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 12 }]}>
           {/* Friendly Error Display */}
           {friendlyError && (
             <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#3D1117' : '#FFEBE9', borderColor: '#F85149' }]}>
