@@ -251,20 +251,26 @@ export const useAIStore = create<AIState>((set, get) => ({
       })
 
       if (streamError) {
-        throw new Error(streamError)
+        fullText += fullText.trim() ? '\n\n' : ''
+        fullText += `Something went wrong. Please try again.`
       }
     } catch (err) {
       const errMsg = (err as Error).message || ''
       if (errMsg.includes('LIMIT_EXCEEDED')) {
         useUIStore.getState().showLimitModal('ai')
       }
-      
-      set({ isStreaming: false })
 
       if (errMsg === 'Generation stopped by user.') {
-        fullText += `\n\n■ Generation stopped by user.`
+        fullText += `\n\n■ Generation stopped.`
+      } else if (errMsg.includes('LIMIT_EXCEEDED') || errMsg.includes('QUOTA_EXCEEDED')) {
+        fullText += fullText.trim() ? '\n\n' : ''
+        fullText += `Token limit reached. Switch model or try again later.`
+      } else if (errMsg.includes('fetch failed') || errMsg.includes('network') || errMsg.includes('ECONNREFUSED')) {
+        fullText += fullText.trim() ? '\n\n' : ''
+        fullText += `Connection lost. Please check your network and retry.`
       } else {
-        throw err
+        fullText += fullText.trim() ? '\n\n' : ''
+        fullText += `Something went wrong. Please try again.`
       }
     }
 
