@@ -9,7 +9,7 @@ import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
   Shield, Lock, Square, MoreVertical, Plus, Mic, Folder,
-  Plug, MessageSquare
+  Plug, MessageSquare, Check
 } from 'lucide-react-native'
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
@@ -477,6 +477,53 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
         </View>
       )}
     </View>
+  )
+function AnimatedDropdown({ visible, children, style }: { visible: boolean; children: React.ReactNode; style?: any }) {
+  const [shouldRender, setShouldRender] = useState(visible)
+  const anim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (visible) {
+      setShouldRender(true)
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.back(0.8)),
+        useNativeDriver: true,
+      }).start()
+    } else {
+      Animated.timing(anim, {
+        toValue: 0,
+        duration: 120,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => {
+        setShouldRender(false)
+      })
+    }
+  }, [visible])
+
+  if (!shouldRender) return null
+
+  const opacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1]
+  })
+
+  const scale = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.95, 1]
+  })
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-8, 0]
+  })
+
+  return (
+    <Animated.View style={[style, { opacity, transform: [{ scale }, { translateY }] }]}>
+      {children}
+    </Animated.View>
   )
 }
 

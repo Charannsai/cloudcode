@@ -9,7 +9,7 @@ import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
   Shield, Lock, Square, MoreVertical, Plus, Mic, ArrowLeft, Folder,
-  Plug, MessageSquare
+  Plug, MessageSquare, Check
 } from 'lucide-react-native'
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
@@ -481,6 +481,53 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
       )}
     </View>
   )
+function AnimatedDropdown({ visible, children, style }: { visible: boolean; children: React.ReactNode; style?: any }) {
+  const [shouldRender, setShouldRender] = useState(visible)
+  const anim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    if (visible) {
+      setShouldRender(true)
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.back(0.8)),
+        useNativeDriver: true,
+      }).start()
+    } else {
+      Animated.timing(anim, {
+        toValue: 0,
+        duration: 120,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => {
+        setShouldRender(false)
+      })
+    }
+  }, [visible])
+
+  if (!shouldRender) return null
+
+  const opacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1]
+  })
+
+  const scale = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.95, 1]
+  })
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-8, 0]
+  })
+
+  return (
+    <Animated.View style={[style, { opacity, transform: [{ scale }, { translateY }] }]}>
+      {children}
+    </Animated.View>
+  )
 }
 
 export default function AIScreen() {
@@ -746,75 +793,92 @@ export default function AIScreen() {
 
         {/* Clean Stylish Inline Model Dropdown */}
         {modelSelectorVisible && (
-          <>
-            <TouchableWithoutFeedback onPress={() => setModelSelectorVisible(false)}>
-              <View style={styles.dropdownBackdrop} />
-            </TouchableWithoutFeedback>
-            <View
-              style={[
-                styles.inlineModelDropdown,
-                {
-                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                  backgroundColor: isDark ? '#1C1F26' : '#FFFFFF',
-                  top: insets.top + 52,
-                }
-              ]}
-            >
-              <TouchableOpacity
-                style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
-                onPress={() => {
-                  setSelectedModel('gemini')
-                  setModelSelectorVisible(false)
-                }}
-              >
+          <TouchableWithoutFeedback onPress={() => setModelSelectorVisible(false)}>
+            <View style={styles.dropdownBackdrop} />
+          </TouchableWithoutFeedback>
+        )}
+
+        <AnimatedDropdown
+          visible={modelSelectorVisible}
+          style={[
+            styles.inlineModelDropdown,
+            {
+              borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+              backgroundColor: isDark ? 'rgba(28, 31, 38, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+              top: insets.top + 52,
+              width: 220,
+              borderRadius: 14,
+            }
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingHorizontal: 16 }]}
+            onPress={() => {
+              setSelectedModel('gemini')
+              setModelSelectorVisible(false)
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Cpu size={14} color="#3FB950" />
                 <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
                   Gemini 1.5 Flash
                 </Text>
-              </TouchableOpacity>
+              </View>
+              {selectedModel === 'gemini' && <Check size={14} color="#3FB950" />}
+            </View>
+          </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
-                onPress={() => {
-                  if (userTier === 'free' && !isByokActive) {
-                    Alert.alert(
-                      'Premium Model Locked',
-                      'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
-                    )
-                  } else {
-                    setSelectedModel('openai')
-                    setModelSelectorVisible(false)
-                  }
-                }}
-              >
+          <TouchableOpacity
+            style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingHorizontal: 16, opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
+            onPress={() => {
+              if (userTier === 'free' && !isByokActive) {
+                Alert.alert(
+                  'Premium Model Locked',
+                  'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
+                )
+              } else {
+                setSelectedModel('openai')
+                setModelSelectorVisible(false)
+              }
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Shield size={14} color="#2F80ED" />
                 <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
                   GPT-4o Premium
                 </Text>
-              </TouchableOpacity>
+              </View>
+              {selectedModel === 'openai' && <Check size={14} color="#2F80ED" />}
+            </View>
+          </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.inlineModelItem, { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
-                onPress={() => {
-                  if (userTier === 'free' && !isByokActive) {
-                    Alert.alert(
-                      'Premium Model Locked',
-                      'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
-                    )
-                  } else {
-                    setSelectedModel('anthropic')
-                    setModelSelectorVisible(false)
-                  }
-                }}
-              >
+          <TouchableOpacity
+            style={[styles.inlineModelItem, { borderBottomWidth: 0, paddingHorizontal: 16, opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
+            onPress={() => {
+              if (userTier === 'free' && !isByokActive) {
+                Alert.alert(
+                  'Premium Model Locked',
+                  'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
+                )
+              } else {
+                setSelectedModel('anthropic')
+                setModelSelectorVisible(false)
+              }
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Lock size={14} color="#9B51E0" />
                 <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
                   Claude 3.6 Opus
                 </Text>
-              </TouchableOpacity>
+              </View>
+              {selectedModel === 'anthropic' && <Check size={14} color="#9B51E0" />}
             </View>
-          </>
-        )}
+          </TouchableOpacity>
+        </AnimatedDropdown>
 
         {/* Action Dropdown Menu */}
         {menuVisible && (
@@ -823,61 +887,59 @@ export default function AIScreen() {
           </TouchableWithoutFeedback>
         )}
 
-        {menuVisible && (
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 75 : 100}
-            tint={isDark ? 'dark' : 'light'}
-            style={[
-              styles.dropdownMenuCard,
-              {
-                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                borderWidth: 1,
-                overflow: 'hidden',
-                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-                borderRadius: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.12,
-                shadowRadius: 10,
-                elevation: 6,
-                paddingVertical: 4,
-              }
-            ]}
+        <AnimatedDropdown
+          visible={menuVisible}
+          style={[
+            styles.dropdownMenuCard,
+            {
+              borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+              borderWidth: 1,
+              backgroundColor: isDark ? 'rgba(28, 31, 38, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+              borderRadius: 14,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.12,
+              shadowRadius: 10,
+              elevation: 6,
+              paddingVertical: 4,
+              width: 190,
+              top: insets.top + 52,
+            }
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+            onPress={() => {
+              setMenuVisible(false)
+              startNewChat()
+            }}
           >
-            <TouchableOpacity
-              style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
-              onPress={() => {
-                setMenuVisible(false)
-                startNewChat()
-              }}
-            >
-              <Plus size={16} color={colors.text} />
-              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>New Chat</Text>
-            </TouchableOpacity>
+            <Plus size={16} color={colors.text} />
+            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>New Chat</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
-              onPress={() => {
-                setMenuVisible(false)
-                setModelSelectorVisible(true)
-              }}
-            >
-              <Cpu size={16} color={colors.text} />
-              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>Switch Model</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+            onPress={() => {
+              setMenuVisible(false)
+              setModelSelectorVisible(true)
+            }}
+          >
+            <Cpu size={16} color={colors.text} />
+            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>Switch Model</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.dropdownMenuItemRow, { paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
-              onPress={() => {
-                setMenuVisible(false)
-                router.push('/activity')
-              }}
-            >
-              <History size={16} color={colors.text} />
-              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>History & Limits</Text>
-            </TouchableOpacity>
-          </BlurView>
-        )}
+          <TouchableOpacity
+            style={[styles.dropdownMenuItemRow, { borderBottomWidth: 0, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+            onPress={() => {
+              setMenuVisible(false)
+              router.push('/activity')
+            }}
+          >
+            <History size={16} color={colors.text} />
+            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>History & Limits</Text>
+          </TouchableOpacity>
+        </AnimatedDropdown>
 
         {/* Conversation flow */}
         <ScrollView
