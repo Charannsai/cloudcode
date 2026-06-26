@@ -728,20 +728,7 @@ export default function AIScreen() {
     if (!inputText.trim() || isStreaming) return
     const prompt = inputText.trim()
     setInputText('')
-    setFriendlyError(null)
-
-    try {
-      await sendMessage(prompt, selectedProjectId, undefined, selectedModel)
-    } catch (err) {
-      const msg = (err as Error).message || ''
-      if (msg.includes('LIMIT_EXCEEDED') || msg.includes('QUOTA_EXCEEDED') || msg.includes('monthly token limit exceeded')) {
-        setFriendlyError('Rate limit reached. Retry available in 45 seconds. Tap Switch Model or use BYOK to continue.')
-      } else if (msg.includes('Gemini API error') || msg.includes('fetch failed')) {
-        setFriendlyError('Gemini is currently unavailable. Retrying connection...')
-      } else {
-        setFriendlyError(msg)
-      }
-    }
+    await sendMessage(prompt, selectedProjectId, undefined, selectedModel)
   }
 
   // Markdown styling
