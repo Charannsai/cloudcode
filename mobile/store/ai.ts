@@ -154,6 +154,7 @@ export const useAIStore = create<AIState>((set, get) => ({
 
     let fullText = ''
     const toolCalls: ToolCallInfo[] = []
+    let streamError: string | null = null
 
     try {
       await api.ai.chat(projectId, history, openFile, model, threadId, (chunk: AIStreamChunk) => {
@@ -244,20 +245,26 @@ export const useAIStore = create<AIState>((set, get) => ({
             if (errMsg.includes('LIMIT_EXCEEDED')) {
               useUIStore.getState().showLimitModal('ai')
             }
-            fullText += `\n⚠️ Error: ${errMsg}`
-            set({ currentStreamText: fullText })
+            streamError = errMsg
             break
         }
       })
+
+      if (streamError) {
+        throw new Error(streamError)
+      }
     } catch (err) {
       const errMsg = (err as Error).message || ''
       if (errMsg.includes('LIMIT_EXCEEDED')) {
         useUIStore.getState().showLimitModal('ai')
       }
+      
+      set({ isStreaming: false })
+
       if (errMsg === 'Generation stopped by user.') {
         fullText += `\n\n■ Generation stopped by user.`
       } else {
-        fullText += `\n⚠️ ${errMsg}`
+        throw err
       }
     }
 
