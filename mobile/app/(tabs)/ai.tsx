@@ -609,7 +609,7 @@ export default function AIScreen() {
       return () => {
         setTabBarVisible(true)
       }
-    }, [selectedProjectId])
+    }, [])
   )
 
   // Global AI screen remains in 'global' context by default to avoid activating containers.
@@ -970,7 +970,12 @@ export default function AIScreen() {
                   let greet = 'Good evening'
                   if (hours >= 5 && hours < 12) greet = 'Good morning'
                   else if (hours >= 12 && hours < 17) greet = 'Good afternoon'
-                  return `${greet}.\nWhat can I do for you?`
+                  
+                  const rawName = user?.name || user?.login || ''
+                  const firstName = rawName ? rawName.trim().split(' ')[0] : ''
+                  const nameStr = firstName ? `, ${firstName}` : ''
+                  
+                  return `${greet}${nameStr}.\nWhat can I do for you?`
                 })()}
               </Text>
             </View>
