@@ -1167,82 +1167,9 @@ export default function AIScreen() {
           </View>
         </View>
 
-        {/* Sleek, Compact Error Popup Modal */}
-        <Modal
-          visible={friendlyError !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setFriendlyError(null)}
-        >
-          <TouchableWithoutFeedback onPress={() => setFriendlyError(null)}>
-            <View style={styles.errorModalBackdrop}>
-              <TouchableWithoutFeedback>
-                <Animated.View 
-                  style={[
-                    styles.errorModalContent, 
-                    { 
-                      backgroundColor: isDark ? 'rgba(30, 20, 25, 0.95)' : 'rgba(255, 240, 240, 0.98)',
-                      borderColor: isDark ? '#FF7B72' : '#F85149',
-                      borderWidth: 1,
-                    }
-                  ]}
-                >
-                  <View style={styles.errorModalHeader}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <AlertCircle size={18} color="#FF7B72" />
-                      <Text style={[styles.errorModalTitle, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
-                        Service Alert
-                      </Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setFriendlyError(null)} activeOpacity={0.7} style={styles.errorModalCloseBtn}>
-                      <X size={16} color={isDark ? '#8B949E' : '#57606A'} />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <Text style={[styles.errorModalText, { color: isDark ? '#E6EDF3' : '#24292F' }]}>
-                    {friendlyError ? getFriendlyErrorMessage(friendlyError) : ''}
-                  </Text>
-                  
-                  <View style={styles.errorModalActions}>
-                    <TouchableOpacity 
-                      style={[styles.errorModalActionBtn, { backgroundColor: isDark ? 'rgba(255, 123, 114, 0.15)' : 'rgba(207, 34, 46, 0.1)' }]}
-                      onPress={() => setFriendlyError(null)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.errorModalActionBtnText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
-                        Dismiss
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </Animated.View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-
       </KeyboardAvoidingView>
     </TabGenieWrapper>
   )
-}
-
-// Sleek client-side error normalizer for 400/500/403/401 API errors
-function getFriendlyErrorMessage(msg: string) {
-  if (msg.includes('LIMIT_EXCEEDED') || msg.includes('QUOTA_EXCEEDED') || msg.includes('monthly token limit exceeded')) {
-    return 'Rate limit reached. Retry available in 45 seconds. Tap Switch Model or use BYOK to continue.'
-  }
-  if (msg.includes('500') || msg.toLowerCase().includes('internal server error')) {
-    return 'Server Error (500): The AI service encountered an internal error. Please try again in a few moments.'
-  }
-  if (msg.includes('400') || msg.toLowerCase().includes('bad request')) {
-    return 'Request Error (400): Invalid request configuration. Please check your prompt or switch models.'
-  }
-  if (msg.includes('403') || msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('unauthorized') || msg.includes('401')) {
-    return 'Authentication Error: Access denied. Please check your API key or subscription tier.'
-  }
-  if (msg.includes('Gemini API error') || msg.includes('fetch failed')) {
-    return 'Connection Error: Gemini is currently unavailable. Retrying connection...'
-  }
-  return msg
 }
 
 const styles = StyleSheet.create({
