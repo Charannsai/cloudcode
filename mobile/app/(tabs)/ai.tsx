@@ -831,7 +831,7 @@ export default function AIScreen() {
                 {actionSuggestions.map((sug, idx) => (
                   <TouchableOpacity
                     key={idx}
-                    style={[styles.suggestionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
+                    style={[styles.suggestionCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' }]}
                     onPress={() => {
                       setInputText(sug.prompt)
                       inputRef.current?.focus()
@@ -851,7 +851,7 @@ export default function AIScreen() {
                 const isUser = msg.role === 'user'
                 return (
                   <View key={msg.id} style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
-                    <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
+                    <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9ECEF', borderColor: 'transparent', borderWidth: 0 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
                       {isUser ? (
                         <Text style={[styles.userBubbleText, { color: colors.text }]}>
                           {msg.text}
@@ -1184,7 +1184,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderBottomRightRadius: 4,
     maxWidth: SCREEN_WIDTH * 0.8,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   userBubbleText: {
     fontSize: 15,
