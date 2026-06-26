@@ -738,7 +738,7 @@ export default function AIScreen() {
     <TabGenieWrapper index={3}>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         {/* Glowing Radial Background Gradient */}
