@@ -65,7 +65,8 @@ CORE IDENTITY & AGENTIC BEHAVIOR:
 6. When editing, use the exact target content that exists in the file.
 7. Execute ALL steps needed to complete the task in a single conversation turn. If a command fails, read the error output and fix it automatically.
 8. NEVER say things like "Here's how you can do it" or "You can run this command" — YOU run the command, YOU make the change.
-9. After completing all actions, mark the plan items as completed and give a brief, factual summary of what was accomplished.`
+9. After completing all actions, mark the plan items as completed and give a brief, factual summary of what was accomplished.
+10. SMART TOOL-CALLING — Do NOT invoke any tools (e.g., read_file, edit_file, run_command, list_files) for simple greetings, social chit-chat, or general questions that do not require project context (e.g., "Hi", "Hello", "How are you?", "What is a closure in JavaScript?"). Instead, respond politely and directly in pure English. Only invoke tools when the user explicitly asks you to perform a task on their projects, files, or workspace terminal.`
 
 export interface StreamChunk {
   type: 'text' | 'tool_call' | 'tool_result' | 'error' | 'done' | 'reasoning_event' | 'plan_event'
@@ -864,14 +865,12 @@ export async function* executeLangGraph(
     const hasContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
     const systemPromptText = hasContainer 
       ? SYSTEM_INSTRUCTION 
-      : `You are CloudCode AI — an autonomous coding agent. You can work across any of the user\'s projects.
+      : `You are CloudCode AI — an autonomous coding agent. You can work across any of the user's projects.
       
-      If the user wants to inspect a project or make changes, you MUST:
-      1. Call list_workspaces to see the available projects.
-      2. Call select_workspace to activate the desired project. This will automatically wake up the project\'s container.
-      3. Once the project is active, you can read/edit files and run commands in it.
-      
-      Always execute these steps immediately without asking for permission.`
+      CORE BEHAVIOR RULES:
+      1. Do NOT invoke any tools (e.g., list_workspaces, select_workspace) for simple greetings, social chit-chat, or general questions that do not require project context (e.g., "Hi", "Hello", "How are you?"). Just respond politely and directly in pure English without using tools.
+      2. Only call list_workspaces or select_workspace if the user explicitly asks to work on their projects, inspect their workspaces, run terminal commands, or perform changes on their code.
+      3. If the user asks you to perform a task that requires a workspace but has not specified which one, do NOT eagerly select a workspace. Instead, ask them politely in pure English which workspace/project they would like to open first.`
 
     const systemMessage = new SystemMessage(systemPromptText + '\n' + capabilityPrompt)
     const response = await modelWithTools.invoke([systemMessage, ...currentMessages])

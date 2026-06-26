@@ -64,53 +64,179 @@ function AICoreLogo() {
   )
 }
 
-// Sequential Typing Indicator Component
-function TypingIndicator({ colors }: { colors: any }) {
-  const dot1 = useRef(new Animated.Value(0.3)).current
-  const dot2 = useRef(new Animated.Value(0.3)).current
-  const dot3 = useRef(new Animated.Value(0.3)).current
+// Sleek and Trendy AI Thinking Wave Loader Component
+function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean }) {
+  const rotation = useRef(new Animated.Value(0)).current
+  const pulse = useRef(new Animated.Value(1)).current
+  const shimmer = useRef(new Animated.Value(-100)).current
 
   useEffect(() => {
-    const animateDot = (dot: Animated.Value, delay: number) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(dot, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(dot, {
-            toValue: 0.3,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ])
-      )
-    }
+    // 1. Rotation animation
+    Animated.loop(
+      Animated.timing(rotation, {
+        toValue: 1,
+        duration: 4000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start()
 
-    const a1 = animateDot(dot1, 0)
-    const a2 = animateDot(dot2, 150)
-    const a3 = animateDot(dot3, 300)
+    // 2. Pulsing fade animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 0.5,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1.0,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start()
 
-    a1.start()
-    a2.start()
-    a3.start()
-
-    return () => {
-      a1.stop()
-      a2.stop()
-      a3.stop()
-    }
+    // 3. Shimmer wave animation
+    Animated.loop(
+      Animated.timing(shimmer, {
+        toValue: 100,
+        duration: 1500,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start()
   }, [])
 
+  const rotateStr = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  })
+
+  const translateX = shimmer.interpolate({
+    inputRange: [-100, 100],
+    outputRange: [-150, 150],
+  })
+
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 4 }}>
-      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: dot1 }} />
-      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: dot2 }} />
-      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary, opacity: dot3 }} />
+    <View style={{ gap: 8, paddingVertical: 12, paddingHorizontal: 4, width: '100%' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {/* Rotating Micro AI Core Orb */}
+        <Animated.View style={{ transform: [{ rotate: rotateStr }] }}>
+          <Svg width="18" height="18" viewBox="0 0 100 100">
+            <Defs>
+              <LinearGradient id="microCoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <Stop offset="0%" stopColor="#388BFD" stopOpacity="0.9" />
+                <Stop offset="60%" stopColor="#892CDC" stopOpacity="0.9" />
+                <Stop offset="100%" stopColor="#F43F5E" stopOpacity="0.9" />
+              </LinearGradient>
+            </Defs>
+            <Circle cx="50" cy="50" r="42" stroke="url(#microCoreGrad)" strokeWidth="8" fill="none" />
+            <Path d="M50 25 L54 42 L71 46 L54 50 L50 67 L46 50 L29 46 L46 42 Z" fill="url(#microCoreGrad)" />
+          </Svg>
+        </Animated.View>
+
+        {/* Pulsing Sleek Label */}
+        <Animated.Text
+          style={{
+            fontSize: 13,
+            fontFamily: 'Inter_600SemiBold',
+            color: colors.textSecondary,
+            opacity: pulse,
+          }}
+        >
+          CloudCode is thinking...
+        </Animated.Text>
+      </View>
+
+      {/* Shimmering Wave Skeleton Bar */}
+      <View
+        style={{
+          height: 3,
+          width: 180,
+          borderRadius: 1.5,
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+          overflow: 'hidden',
+          marginTop: 4,
+        }}
+      >
+        <Animated.View
+          style={{
+            height: '100%',
+            width: '60%',
+            position: 'absolute',
+            transform: [{ translateX }],
+          }}
+        >
+          <Svg width="100%" height="100%">
+            <Defs>
+              <LinearGradient id="shimmerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor={isDark ? '#1F2937' : '#E5E7EB'} stopOpacity="0" />
+                <Stop offset="50%" stopColor={isDark ? '#374151' : '#D1D5DB'} stopOpacity="0.8" />
+                <Stop offset="100%" stopColor={isDark ? '#1F2937' : '#E5E7EB'} stopOpacity="0" />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#shimmerGrad)" />
+          </Svg>
+        </Animated.View>
+      </View>
     </View>
   )
+}
+
+// Tool call reasoning generator mapping to plain English
+const getToolReasoning = (name: string, args: any, result: any, status: string) => {
+  const wsName = args.workspaceIdOrName || args.name || ''
+  const path = args.path || ''
+  const filename = path.split(/[\/\\]/).pop() || ''
+
+  if (name === 'select_workspace') {
+    if (status === 'error') {
+      return `Attempted to open and activate the workspace '${wsName || 'project'}', but encountered a container startup issue. Waking up a sleeping workspace container can sometimes experience temporary timeouts.`
+    }
+    return `Successfully woke up and activated the project workspace '${wsName || 'project'}'. This container is now warm and ready to compile files, run shell terminal commands, and perform development operations.`
+  }
+
+  if (name === 'list_workspaces') {
+    return `Scanned your account projects to retrieve a fresh list of available workspaces, verifying which project environments are currently ready or sleeping.`
+  }
+
+  if (name === 'list_files') {
+    const targetDir = args.path === '.' ? 'root' : `'${args.path}'`
+    return `Examined the directory contents at the ${targetDir} folder of the workspace to inspect the project skeleton, helping locate files and map the workspace layout.`
+  }
+
+  if (name === 'read_file') {
+    return `Opened and read the contents of the file '${filename || path || 'file'}' to inspect its implementation, configuration parameters, or code structure.`
+  }
+
+  if (name === 'edit_file') {
+    return `Updated specific code snippets within the file '${filename || path || 'file'}' to integrate modifications, fix bugs, or add requested logic.`
+  }
+
+  if (name === 'create_file') {
+    return `Created a new file at '${filename || path || 'file'}' and populated it with the required code structure or initial configurations.`
+  }
+
+  if (name === 'delete_file') {
+    return `Removed the file '${filename || path || 'file'}' from the workspace directory to clean up or delete unused code assets.`
+  }
+
+  if (name === 'create_project') {
+    return `Provisioned and initialized a new project named '${wsName}' with the requested template configuration and workspace dependencies.`
+  }
+
+  if (name === 'run_command') {
+    const cmdStr = args.command || ''
+    if (status === 'error') {
+      return `Attempted to run the terminal command '${cmdStr}', but the process returned a non-zero exit code or failed to execute. Expand the activity logs to see execution warnings.`
+    }
+    return `Executed the terminal command '${cmdStr}' inside the workspace shell environment to run build tasks, install package dependencies, or start active services.`
+  }
+
+  return `Performed the action '${name.replace(/_/g, ' ')}' inside the workspace to fulfill the requested task.`
 }
 
 // Minimalist Collapsible Tool Call Badge Component
@@ -213,101 +339,7 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
   // Deduce expanded details content
   const renderDetails = () => {
     if (!isExpanded) return null
-
-    let detailsContent: React.ReactNode = null
-    const codeBg = isDark ? '#0D1117' : '#F6F8FA'
-    const codeBorder = isDark ? '#21262D' : '#D8DEE4'
-
-    if (name === 'run_command') {
-      const outputText = result?.output || (status === 'running' ? 'Executing command...' : '(No terminal output)')
-      detailsContent = (
-        <View style={{ gap: 4 }}>
-          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Command executed:</Text>
-          <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
-            <Text style={[styles.detailCodeText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
-              $ {args.command as string}
-            </Text>
-          </View>
-          {result?.output && (
-            <>
-              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary, marginTop: 4 }]}>Terminal stdout:</Text>
-              <ScrollView style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder, maxHeight: 150 }]} nestedScrollEnabled>
-                <Text style={[styles.detailCodeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {outputText}
-                </Text>
-              </ScrollView>
-            </>
-          )}
-        </View>
-      )
-    } else if (name === 'read_file' || name === 'view_file_content') {
-      const fileContent = result?.content || (status === 'running' ? 'Reading file...' : '(Empty file)')
-      detailsContent = (
-        <View style={{ gap: 4 }}>
-          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>File path:</Text>
-          <Text style={[styles.detailCodeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular', marginBottom: 4 }]}>
-            {args.path as string}
-          </Text>
-          {result?.content && (
-            <>
-              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>File content preview:</Text>
-              <ScrollView style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder, maxHeight: 150 }]} nestedScrollEnabled>
-                <Text style={[styles.detailCodeText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {fileContent}
-                </Text>
-              </ScrollView>
-            </>
-          )}
-        </View>
-      )
-    } else if (name === 'edit_file') {
-      detailsContent = (
-        <View style={{ gap: 6 }}>
-          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>File path: <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }}>{args.path as string}</Text></Text>
-          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Target to replace:</Text>
-          <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
-            <Text style={[styles.detailCodeText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
-              {args.target as string}
-            </Text>
-          </View>
-          <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Replacement content:</Text>
-          <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
-            <Text style={[styles.detailCodeText, { color: isDark ? '#3FB950' : '#1A7F37' }]}>
-              {args.replacement as string}
-            </Text>
-          </View>
-        </View>
-      )
-    } else {
-      // General arguments & result presentation
-      const hasArgs = Object.keys(args).length > 0
-      const hasResult = !!result
-      detailsContent = (
-        <View style={{ gap: 6 }}>
-          {hasArgs && (
-            <View>
-              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Parameters:</Text>
-              <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
-                <Text style={[styles.detailCodeText, { color: colors.text }]}>
-                  {JSON.stringify(args, null, 2)}
-                </Text>
-              </View>
-            </View>
-          )}
-          {hasResult && (
-            <View>
-              <Text style={[styles.detailMetaLabel, { color: colors.textSecondary }]}>Result:</Text>
-              <View style={[styles.detailCodeBox, { backgroundColor: codeBg, borderColor: codeBorder }]}>
-                <Text style={[styles.detailCodeText, { color: colors.text }]}>
-                  {typeof result === 'string' ? result : JSON.stringify(result, null, 2)}
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
-      )
-    }
-
+    const textReasoning = getToolReasoning(name, args, result, status)
     return (
       <View style={[
         styles.detailCollapseContainer,
@@ -316,11 +348,18 @@ function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: a
           borderLeftWidth: 1.5,
           marginLeft: 7,
           paddingLeft: 12,
-          marginTop: 6,
-          marginBottom: 4
+          marginTop: 4,
+          marginBottom: 6
         }
       ]}>
-        {detailsContent}
+        <Text style={{
+          color: colors.textSecondary,
+          fontSize: 12.5,
+          lineHeight: 19,
+          fontFamily: 'Inter_400Regular'
+        }}>
+          {textReasoning}
+        </Text>
       </View>
     )
   }
@@ -684,51 +723,70 @@ export default function AITab({ projectId }: Props) {
             <MoreVertical size={16} color={colors.text} />
           </TouchableOpacity>
         </View>
+
+        {/* Action Dropdown Menu */}
+        {menuVisible && (
+          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+            <View style={styles.menuBackdrop} />
+          </TouchableWithoutFeedback>
+        )}
+
+        {menuVisible && (
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 75 : 100}
+            tint={isDark ? 'dark' : 'light'}
+            style={[
+              styles.dropdownMenuCard,
+              {
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                borderWidth: 1,
+                overflow: 'hidden',
+                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                borderRadius: 12,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.12,
+                shadowRadius: 10,
+                elevation: 6,
+                paddingVertical: 4,
+              }
+            ]}
+          >
+            <TouchableOpacity
+              style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+              onPress={() => {
+                setMenuVisible(false)
+                startNewChat()
+              }}
+            >
+              <Plus size={14} color={colors.text} />
+              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>New Chat</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+              onPress={() => {
+                setMenuVisible(false)
+                setModelSelectorVisible(true)
+              }}
+            >
+              <Cpu size={14} color={colors.text} />
+              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>Switch Model</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.dropdownMenuItemRow, { paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+              onPress={() => {
+                setMenuVisible(false)
+                router.push('/activity')
+              }}
+            >
+              <History size={14} color={colors.text} />
+              <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>History & Limits</Text>
+            </TouchableOpacity>
+          </BlurView>
+        )}
       </View>
-
-      {/* Action Dropdown Menu */}
-      {menuVisible && (
-        <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-          <View style={styles.menuBackdrop} />
-        </TouchableWithoutFeedback>
-      )}
-
-      {menuVisible && (
-        <View style={[styles.dropdownMenuCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-          <TouchableOpacity
-            style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? '#21262D' : '#F6F8FA' }]}
-            onPress={() => {
-              setMenuVisible(false)
-              startNewChat()
-            }}
-          >
-            <Plus size={14} color={colors.text} />
-            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>New Chat</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? '#21262D' : '#F6F8FA' }]}
-            onPress={() => {
-              setMenuVisible(false)
-              setModelSelectorVisible(true)
-            }}
-          >
-            <Cpu size={14} color={colors.text} />
-            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>Switch Model</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.dropdownMenuItemRow}
-            onPress={() => {
-              setMenuVisible(false)
-              router.push('/activity')
-            }}
-          >
-            <History size={14} color={colors.text} />
-            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>History & Limits</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* Conversation flow */}
       <ScrollView
@@ -816,7 +874,7 @@ export default function AITab({ projectId }: Props) {
                       </Markdown>
                     ) : (
                       currentStreamText.trim() === '' && (
-                        <TypingIndicator colors={colors} />
+                        <ThinkingIndicator colors={colors} isDark={isDark} />
                       )
                     )}
                   </View>
