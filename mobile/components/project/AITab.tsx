@@ -701,38 +701,109 @@ export default function AITab({ projectId }: Props) {
       </View>
 
       {/* Subheader */}
-      <View style={[styles.subheaderRow, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4', zIndex: 10 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={[styles.statusDot, { backgroundColor: isStreaming ? '#3FB950' : '#8B929A' }]} />
-          <Text style={[styles.subheaderTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-            Workspace Copilot
+      <View style={[styles.subheaderRow, { borderBottomColor: 'transparent', borderBottomWidth: 0, backgroundColor: 'transparent', zIndex: 100, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 14 }]}>
+        {/* Left spacer to balance the menu button on the right for perfect centering */}
+        <View style={{ width: 24 }} />
+
+        <View style={{ alignItems: 'center', flex: 1 }}>
+          <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }]}>
+            CloudCodeAI
           </Text>
-        </View>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
           <TouchableOpacity
-            style={[styles.modelBadge, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-            onPress={() => setModelSelectorVisible(true)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}
+            onPress={() => setModelSelectorVisible(!modelSelectorVisible)}
+            activeOpacity={0.7}
           >
-            <Cpu size={10} color="#3FB950" />
-            <Text style={[styles.modelBadgeText, { color: colors.text }]}>
-              {selectedModel === 'gemini' ? 'Gemini' : selectedModel === 'openai' ? 'GPT-4o' : 'Claude'}
+            <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_600SemiBold' }}>
+              {selectedModel === 'gemini' ? 'Gemini 1.5 Flash' : selectedModel === 'openai' ? 'GPT-4o' : 'Claude 3.6 Opus'}
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)} style={styles.menuBtn}>
-            <MoreVertical size={16} color={colors.text} />
+            <ChevronDown size={11} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        {/* Action Dropdown Menu */}
-        {menuVisible && (
+        <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)} style={[styles.menuBtn, { marginLeft: 'auto' }]}>
+          <MoreVertical size={20} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Clean Stylish Inline Model Dropdown */}
+      {modelSelectorVisible && (
+        <>
+          <TouchableWithoutFeedback onPress={() => setModelSelectorVisible(false)}>
+            <View style={styles.dropdownBackdrop} />
+          </TouchableWithoutFeedback>
+          <View
+            style={[
+              styles.inlineModelDropdown,
+              {
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                backgroundColor: isDark ? '#1C1F26' : '#FFFFFF',
+                top: 56,
+              }
+            ]}
+          >
+            <TouchableOpacity
+              style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+              onPress={() => {
+                setSelectedModel('gemini')
+                setModelSelectorVisible(false)
+              }}
+            >
+              <Cpu size={14} color="#3FB950" />
+              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
+                Gemini 1.5 Flash
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
+              onPress={() => {
+                if (userTier === 'free' && !isByokActive) {
+                  Alert.alert(
+                    'Premium Model Locked',
+                    'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
+                  )
+                } else {
+                  setSelectedModel('openai')
+                  setModelSelectorVisible(false)
+                }
+              }}
+            >
+              <Shield size={14} color="#2F80ED" />
+              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
+                GPT-4o Premium
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.inlineModelItem, { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
+              onPress={() => {
+                if (userTier === 'free' && !isByokActive) {
+                  Alert.alert(
+                    'Premium Model Locked',
+                    'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
+                  )
+                } else {
+                  setSelectedModel('anthropic')
+                  setModelSelectorVisible(false)
+                }
+              }}
+            >
+              <Lock size={14} color="#9B51E0" />
+              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
+                Claude 3.6 Opus
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+      {/* Action Dropdown Menu */}
+      {menuVisible && (
+        <>
           <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
             <View style={styles.menuBackdrop} />
           </TouchableWithoutFeedback>
-        )}
-
-        {menuVisible && (
           <BlurView
             intensity={Platform.OS === 'ios' ? 75 : 100}
             tint={isDark ? 'dark' : 'light'}
@@ -750,6 +821,7 @@ export default function AITab({ projectId }: Props) {
                 shadowRadius: 10,
                 elevation: 6,
                 paddingVertical: 4,
+                top: 56,
               }
             ]}
           >
@@ -760,7 +832,7 @@ export default function AITab({ projectId }: Props) {
                 startNewChat()
               }}
             >
-              <Plus size={14} color={colors.text} />
+              <Plus size={16} color={colors.text} />
               <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>New Chat</Text>
             </TouchableOpacity>
 
@@ -771,7 +843,7 @@ export default function AITab({ projectId }: Props) {
                 setModelSelectorVisible(true)
               }}
             >
-              <Cpu size={14} color={colors.text} />
+              <Cpu size={16} color={colors.text} />
               <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>Switch Model</Text>
             </TouchableOpacity>
 
@@ -782,12 +854,12 @@ export default function AITab({ projectId }: Props) {
                 router.push('/activity')
               }}
             >
-              <History size={14} color={colors.text} />
+              <History size={16} color={colors.text} />
               <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>History & Limits</Text>
             </TouchableOpacity>
           </BlurView>
-        )}
-      </View>
+        </>
+      )}
 
       {/* Conversation flow */}
       <ScrollView
@@ -999,87 +1071,7 @@ export default function AITab({ projectId }: Props) {
         </View>
       </View>
 
-      {/* Model Selection Modal */}
-      <Modal
-        visible={modelSelectorVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModelSelectorVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setModelSelectorVisible(false)}
-        >
-          <View style={[styles.selectorDropdownCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-            <View style={styles.dropdownHeader}>
-              <Text style={[styles.dropdownTitle, { color: colors.text }]}>Select LLM Model</Text>
-              <TouchableOpacity onPress={() => setModelSelectorVisible(false)}>
-                <X size={16} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
 
-            <TouchableOpacity
-              style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}
-              onPress={() => {
-                setSelectedModel('gemini')
-                setModelSelectorVisible(false)
-              }}
-            >
-              <Cpu size={14} color="#3FB950" />
-              <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                Gemini 1.5 Flash (Teammate engine)
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
-              onPress={() => {
-                if (userTier === 'free' && !isByokActive) {
-                  Alert.alert(
-                    'Premium Model Locked',
-                    'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
-                  )
-                } else {
-                  setSelectedModel('openai')
-                  setModelSelectorVisible(false)
-                }
-              }}
-            >
-              <Shield size={14} color="#2F80ED" />
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular', flex: 1 }]}>
-                  GPT-4o (Premium reasoning)
-                </Text>
-                {userTier === 'free' && !isByokActive && <Lock size={12} color={colors.textSecondary} />}
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.dropdownItem, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB', opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
-              onPress={() => {
-                if (userTier === 'free' && !isByokActive) {
-                  Alert.alert(
-                    'Premium Model Locked',
-                    'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
-                  )
-                } else {
-                  setSelectedModel('anthropic')
-                  setModelSelectorVisible(false)
-                }
-              }}
-            >
-              <Lock size={14} color="#9B51E0" />
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <Text style={[styles.dropdownItemText, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular', flex: 1 }]}>
-                  Claude 3.6 Opus (Advanced synthesis)
-                </Text>
-                {userTier === 'free' && !isByokActive && <Lock size={12} color={colors.textSecondary} />}
-              </View>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </KeyboardAvoidingView>
   )
 }
@@ -1426,6 +1418,43 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
   },
   dropdownMenuItemLabel: {
+    fontSize: 12.5,
+    fontFamily: 'Inter_500Medium',
+  },
+  headerTitle: {
+    fontSize: 16,
+  },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: -1000,
+    bottom: -1000,
+    left: -1000,
+    right: -1000,
+    zIndex: 98,
+  },
+  inlineModelDropdown: {
+    position: 'absolute',
+    alignSelf: 'center',
+    width: 200,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 6,
+    zIndex: 9999,
+  },
+  inlineModelItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  inlineModelLabel: {
     fontSize: 12.5,
     fontFamily: 'Inter_500Medium',
   },
