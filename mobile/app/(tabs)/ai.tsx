@@ -8,7 +8,8 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
-  Shield, Lock, Square, MoreVertical, Plus, Mic, ArrowLeft, Folder
+  Shield, Lock, Square, MoreVertical, Plus, Mic, ArrowLeft, Folder,
+  Plug, MessageSquare
 } from 'lucide-react-native'
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
@@ -818,32 +819,27 @@ export default function AIScreen() {
         >
           {messages.length === 0 ? (
             <View style={styles.welcomeContainer}>
-              <AICoreLogo />
-              <Text style={[styles.welcomeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-                What shall we build today?
+              <Text style={[
+                styles.welcomeGreeting,
+                {
+                  color: colors.text,
+                  fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+                  fontSize: 26,
+                  fontWeight: '300',
+                  textAlign: 'center',
+                  lineHeight: 36,
+                  opacity: 0.95,
+                  letterSpacing: -0.2,
+                }
+              ]}>
+                {(() => {
+                  const hours = new Date().getHours()
+                  let greet = 'Good evening'
+                  if (hours >= 5 && hours < 12) greet = 'Good morning'
+                  else if (hours >= 12 && hours < 17) greet = 'Good afternoon'
+                  return `${greet}.\nWhat can I do for you?`
+                })()}
               </Text>
-              <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
-                Ask me to write code, design projects, install packages, or analyze files in your active workspace.
-              </Text>
-
-              {/* Quick Actions Suggestions Grid */}
-              <View style={styles.suggestionsContainer}>
-                {actionSuggestions.map((sug, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={[styles.suggestionCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' }]}
-                    onPress={() => {
-                      setInputText(sug.prompt)
-                      inputRef.current?.focus()
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.suggestionCardText, { color: colors.text }]} numberOfLines={1}>
-                      {sug.text}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
             </View>
           ) : (
             <View style={{ gap: 20 }}>
@@ -924,7 +920,7 @@ export default function AIScreen() {
             </View>
           )}
 
-          {/* Modern Floating Input Composer */}
+          {/* Modern Floating Input Composer - Stacked Manus AI Style */}
           <View style={styles.composerWrapper}>
             <BlurView
               intensity={Platform.OS === 'ios' ? 85 : 100}
@@ -933,28 +929,29 @@ export default function AIScreen() {
                 styles.composerContainer,
                 {
                   borderColor: isInputFocused
-                    ? (isDark ? 'rgba(255, 255, 255, 0.24)' : 'rgba(0, 0, 0, 0.24)')
-                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
-                  borderWidth: isInputFocused ? 1.5 : 1,
-                  backgroundColor: isDark ? 'rgba(21, 25, 34, 0.82)' : 'rgba(255, 255, 255, 0.85)',
+                    ? (isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.14)')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+                  borderWidth: 1,
+                  backgroundColor: isDark ? 'rgba(26, 29, 36, 0.88)' : 'rgba(255, 255, 255, 0.92)',
                   shadowColor: '#000000',
-                  shadowOpacity: isInputFocused ? 0.15 : 0.06,
-                  shadowRadius: isInputFocused ? 12 : 6,
+                  shadowOpacity: isInputFocused ? 0.12 : 0.05,
+                  shadowRadius: isInputFocused ? 10 : 5,
                   overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
+                  borderRadius: 28,
+                  paddingHorizontal: 10,
+                  paddingTop: 12,
+                  paddingBottom: 10,
+                  flexDirection: 'column',
+                  alignItems: 'stretch',
                 }
               ]}
             >
-              {/* Attachment Button */}
-              <TouchableOpacity style={styles.composerLeftBtn} activeOpacity={0.7}>
-                <Plus size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-
-              {/* TextInput */}
+              {/* Row 1: borderless TextInput */}
               <TextInput
                 ref={inputRef}
                 style={[styles.composerTextInput, { color: colors.text }]}
-                placeholder="Ask CloudCode anything..."
-                placeholderTextColor={colors.textSecondary}
+                placeholder="Assign a task or ask anything..."
+                placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}
                 value={inputText}
                 onChangeText={setInputText}
                 multiline
@@ -965,42 +962,59 @@ export default function AIScreen() {
                 scrollEnabled={true}
               />
 
-              {/* Right actions: Mic / Send / Stop */}
-              <View style={styles.composerRightContainer}>
-                {inputText.trim() === '' && !isStreaming && (
-                  <TouchableOpacity
-                    style={[
-                      styles.composerMicBtn,
-                      isListening && { backgroundColor: 'rgba(235, 87, 87, 0.15)' }
-                    ]}
-                    onPress={toggleListening}
-                    activeOpacity={0.7}
-                  >
-                    <Animated.View style={[isListening && { transform: [{ scale: voicePulse }] }]}>
-                      <Mic size={18} color={isListening ? '#EB5757' : colors.textSecondary} />
-                    </Animated.View>
+              {/* Row 2: stacked Toolbar Actions */}
+              <View style={styles.composerToolbar}>
+                {/* Left Actions */}
+                <View style={styles.toolbarLeft}>
+                  <TouchableOpacity style={styles.toolbarBtn} activeOpacity={0.7}>
+                    <Plus size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
-                )}
+                  <TouchableOpacity style={styles.toolbarBtn} activeOpacity={0.7}>
+                    <Plug size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
 
-                {isStreaming ? (
-                  <TouchableOpacity
-                    style={styles.composerStopBtn}
-                    onPress={() => stopGeneration()}
-                    activeOpacity={0.7}
-                  >
-                    <Square size={11} fill="#FFFFFF" color="#FFFFFF" />
+                {/* Right Actions */}
+                <View style={styles.toolbarRight}>
+                  <TouchableOpacity style={styles.toolbarBtn} activeOpacity={0.7}>
+                    <MessageSquare size={18} color={colors.textSecondary} />
                   </TouchableOpacity>
-                ) : (
-                  inputText.trim() !== '' && (
+
+                  {inputText.trim() === '' && !isStreaming ? (
                     <TouchableOpacity
-                      style={[styles.composerSendBtn, { backgroundColor: colors.text }]}
-                      onPress={handleSend}
+                      style={[
+                        styles.toolbarBtn,
+                        isListening && { backgroundColor: 'rgba(235, 87, 87, 0.1)' }
+                      ]}
+                      onPress={toggleListening}
                       activeOpacity={0.7}
                     >
-                      <ArrowUp size={15} color={isDark ? '#0E1116' : '#FFFFFF'} />
+                      <Animated.View style={[isListening && { transform: [{ scale: voicePulse }] }]}>
+                        <Mic size={18} color={isListening ? '#EB5757' : colors.textSecondary} />
+                      </Animated.View>
                     </TouchableOpacity>
-                  )
-                )}
+                  ) : null}
+
+                  {isStreaming ? (
+                    <TouchableOpacity
+                      style={styles.composerStopBtn}
+                      onPress={() => stopGeneration()}
+                      activeOpacity={0.7}
+                    >
+                      <Square size={10} fill="#FFFFFF" color="#FFFFFF" />
+                    </TouchableOpacity>
+                  ) : (
+                    inputText.trim() !== '' && (
+                      <TouchableOpacity
+                        style={[styles.composerSendBtn, { backgroundColor: colors.text }]}
+                        onPress={handleSend}
+                        activeOpacity={0.7}
+                      >
+                        <ArrowUp size={14} color={isDark ? '#0E1116' : '#FFFFFF'} />
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
               </View>
             </BlurView>
           </View>
@@ -1133,20 +1147,12 @@ const styles = StyleSheet.create({
   },
   welcomeContainer: {
     flex: 1,
-    paddingTop: 80,
+    paddingTop: Dimensions.get('window').height * 0.28,
     alignItems: 'center',
     paddingHorizontal: 24,
   },
-  welcomeTitle: {
-    fontSize: 22,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  welcomeSubtitle: {
-    fontSize: 13.5,
-    textAlign: 'center',
-    lineHeight: 19,
-    maxWidth: '90%',
+  welcomeGreeting: {
+    fontSize: 26,
   },
   suggestionsContainer: {
     width: '100%',
@@ -1282,40 +1288,46 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   composerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 30,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
-  },
-  composerLeftBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   composerTextInput: {
     flex: 1,
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    minHeight: 24,
+    minHeight: 28,
     maxHeight: 130,
-    paddingTop: Platform.OS === 'ios' ? 8 : 4,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
-    paddingHorizontal: 0,
+    paddingTop: Platform.OS === 'ios' ? 6 : 4,
+    paddingBottom: Platform.OS === 'ios' ? 6 : 4,
+    paddingHorizontal: 12,
     margin: 0,
     lineHeight: 20,
   },
-  composerRightContainer: {
+  composerToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 10,
+    paddingHorizontal: 6,
+  },
+  toolbarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 14,
+  },
+  toolbarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  toolbarBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   composerMicBtn: {
     width: 28,
