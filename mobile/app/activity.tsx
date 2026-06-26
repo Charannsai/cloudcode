@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal, Platform, Dimensions, Alert
+  Modal, Platform, Dimensions, Alert, Animated, Easing
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
@@ -10,6 +10,8 @@ import {
 } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
+import { BlurView } from 'expo-blur'
 import { api } from '@/lib/api'
 import { useAgentStore } from '@/store/agentStore'
 import { useAIStore } from '@/store/ai'
@@ -41,9 +43,7 @@ export default function ActivityScreen() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
   const [runDetail, setRunDetail] = useState<any>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
-  const [showConsoleLogs, setShowConsoleLogs] = useState(false)
-  const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
-
+  
   const checkByok = async () => {
     try {
       const byok = await AsyncStorage.getItem('byok_enabled')
@@ -83,8 +83,6 @@ export default function ActivityScreen() {
   const handleOpenRunDetail = async (runId: string) => {
     setSelectedRunId(runId)
     setLoadingDetail(true)
-    setShowConsoleLogs(false)
-    setExpandedStepId(null)
     
     try {
       const data = await api.ai.getRun(runId)
@@ -106,51 +104,47 @@ export default function ActivityScreen() {
     }
   }
 
-  const formatRunId = (id: string) => {
-    return id.substring(0, 8).toUpperCase()
-  }
-
   const formatTokens = (num: number) => {
     if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
     return num.toString()
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return '#3FB950'
-      case 'executing': return '#2F80ED'
-      case 'waiting': return '#F2C94C'
-      case 'failed': return '#EB5757'
-      case 'planning': return '#9B51E0'
-      case 'paused': return '#828282'
-      default: return colors.textSecondary
-    }
-  }
-
-  // Compile stdout logs from past run steps
-  const extractPastLogs = (steps: any[]): string => {
-    if (!steps) return ''
-    return steps
-      .filter(s => s.type === 'tool_result' && s.content?.name === 'run_command' && s.content?.response?.output)
-      .map(s => `\n$ ${steps.find(prev => prev.type === 'tool_call' && prev.content?.name === 'run_command' && prev.step_index < s.step_index)?.content?.args?.command || 'command'}\n${s.content.response.output}`)
-      .join('\n')
-  }
-
   const mdStyles = {
-    body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 18 },
-    heading1: { fontSize: 14, fontFamily: 'Inter_700Bold', marginTop: 8, marginBottom: 2, color: isDark ? '#F3F4F6' : '#0E1116' },
-    heading2: { fontSize: 12, fontFamily: 'Inter_600SemiBold', marginTop: 6, marginBottom: 2, color: isDark ? '#F3F4F6' : '#0E1116' },
-    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#1C2128' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 2, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#161B22' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 6, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
-    paragraph: { marginTop: 2, marginBottom: 2 },
+    body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22 },
+    heading1: { fontSize: 17, fontFamily: 'Inter_700Bold', marginTop: 12, marginBottom: 4, color: isDark ? '#F3F4F6' : '#0E1116' },
+    heading2: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginTop: 8, marginBottom: 4, color: isDark ? '#F3F4F6' : '#0E1116' },
+    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#1C2128' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 8, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
+    paragraph: { marginTop: 4, marginBottom: 4 },
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0D1117' : '#FFFFFF', paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}>
+      {/* Glowing Radial Background Gradient */}
+      <View style={StyleSheet.absoluteFill}>
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient
+              id="radialGrad"
+              cx="50%"
+              cy="0%"
+              rx="70%"
+              ry="60%"
+              fx="50%"
+              fy="0%"
+            >
+              <Stop offset="0%" stopColor={isDark ? '#1C2030' : '#E0E7FF'} stopOpacity="0.28" />
+              <Stop offset="100%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill="url(#radialGrad)" />
+        </Svg>
+      </View>
+
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft size={20} color={colors.text} />
+      <View style={[styles.header, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <ArrowLeft size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
           Activity & Governance
@@ -159,34 +153,43 @@ export default function ActivityScreen() {
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 20 }}>
         {/* 1. Resource Consumption Ledger */}
-        <View style={[styles.card, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold', marginBottom: 0 }]}>
+        <View style={[
+          styles.card,
+          {
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            borderWidth: 1,
+            borderRadius: 16,
+            padding: 18,
+          }
+        ]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }]}>
               Plan & Quota Limits
             </Text>
             {isByokActive && (
-              <View style={{ backgroundColor: '#3FB95020', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
-                <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>BYOK Mode Active</Text>
+              <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
+                <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>BYOK Active</Text>
               </View>
             )}
           </View>
 
           {loadingResources || !billingStats ? (
-            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 12 }} />
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 16 }} />
           ) : (
             <View style={styles.metersList}>
               {/* Tokens */}
               <View style={styles.meterItem}>
                 <View style={styles.meterHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Cpu size={14} color="#2F80ED" />
-                    <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>AI Monthly Tokens</Text>
+                    <Cpu size={15} color="#2F80ED" />
+                    <Text style={[styles.meterLabel, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>AI Monthly Tokens</Text>
                   </View>
                   <Text style={[styles.meterVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
                     {formatTokens(billingStats.tokensUsed)} / {formatTokens(billingStats.tokensLimit)}
                   </Text>
                 </View>
-                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}>
+                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}>
                   <View style={[
                     styles.progressBarFill,
                     {
@@ -197,17 +200,39 @@ export default function ActivityScreen() {
                 </View>
               </View>
 
+              {/* Workspaces */}
+              <View style={styles.meterItem}>
+                <View style={styles.meterHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Folder size={15} color="#3FB950" />
+                    <Text style={[styles.meterLabel, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>Active Workspaces</Text>
+                  </View>
+                  <Text style={[styles.meterVal, { color: colors.text, fontFamily: 'JetBrainsMono_700Bold' }]}>
+                    {billingStats.workspacesUsed} / {billingStats.workspacesLimit}
+                  </Text>
+                </View>
+                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}>
+                  <View style={[
+                    styles.progressBarFill,
+                    {
+                      backgroundColor: '#3FB950',
+                      width: `${Math.min(100, (billingStats.workspacesUsed / billingStats.workspacesLimit) * 100)}%`
+                    }
+                  ]} />
+                </View>
+              </View>
+
               {/* BYOK Suggestion */}
               {!isByokActive ? (
-                <View style={{ backgroundColor: isDark ? '#1C2128' : '#EAECEF', padding: 10, borderRadius: 8, marginTop: 4 }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>
-                    💡 **Suggest BYOK**: Configure your own API keys in Settings to bypass monthly token limits.
+                <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', borderWidth: 1, padding: 12, borderRadius: 10, marginTop: 8 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 17, fontFamily: 'Inter_400Regular' }}>
+                    💡 Configure your own API keys in **Settings** to bypass monthly token limits and run premium models.
                   </Text>
                 </View>
               ) : (
-                <View style={{ backgroundColor: isDark ? '#1C2128' : '#EAECEF', padding: 10, borderRadius: 8, marginTop: 4 }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>
-                    ✅ Using custom API keys. Monthly token quotas are bypassed.
+                <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.05)', borderColor: 'rgba(63, 185, 80, 0.15)', borderWidth: 1, padding: 12, borderRadius: 10, marginTop: 8 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 17, fontFamily: 'Inter_400Regular' }}>
+                    ✅ Custom API keys are active. Monthly token quotas are bypassed.
                   </Text>
                 </View>
               )}
@@ -219,14 +244,14 @@ export default function ActivityScreen() {
         <View>
           <View style={styles.sectionHeader}>
             <History size={16} color={colors.textSecondary} />
-            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-              Past Conversations
+            <Text style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }]}>
+              Conversation History
             </Text>
           </View>
 
           {runsList.length === 0 ? (
-            <View style={[styles.emptyBox, { borderColor: isDark ? '#21262D' : '#E5E7EB' }]}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
+            <View style={[styles.emptyBox, { borderColor: isDark ? '#21262D' : '#D8DEE4', backgroundColor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)' }]}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', fontFamily: 'Inter_400Regular' }}>
                 No past conversations found.
               </Text>
             </View>
@@ -235,22 +260,38 @@ export default function ActivityScreen() {
               {runsList.map((run) => (
                 <TouchableOpacity
                   key={run.id}
-                  style={[styles.runItem, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}
-                  onPress={() => handleResumeRun(run.id)}
+                  style={[
+                    styles.runItem,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                      borderWidth: 1,
+                      borderRadius: 12,
+                      padding: 14,
+                    }
+                  ]}
+                  onPress={() => handleOpenRunDetail(run.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.runHeaderRow}>
-                    <Text style={[styles.runTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }]}>
-                      Chat Conversation
-                    </Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
-                      {new Date(run.created_at).toLocaleDateString()} {new Date(run.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <View style={[styles.runAvatarCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }]}>
+                      <Clock size={16} color={colors.textSecondary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.runHeaderRow}>
+                        <Text style={[styles.runTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }]} numberOfLines={1}>
+                          Chat Conversation
+                        </Text>
+                        <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_400Regular' }}>
+                          {new Date(run.created_at).toLocaleDateString()}
+                        </Text>
+                      </View>
+                      <Text style={[styles.runMetaText, { color: colors.textSecondary, marginTop: 2, fontFamily: 'Inter_500Medium', fontSize: 11.5 }]}>
+                        Model: {run.model === 'gemini' ? 'Gemini' : run.model === 'openai' ? 'GPT-4o' : 'Claude'} • {run.tokens_used.toLocaleString()} tokens
+                      </Text>
+                    </View>
+                    <ChevronRight size={16} color={colors.textSecondary} style={{ marginLeft: 4 }} />
                   </View>
-                  <Text style={[styles.runMetaText, { color: colors.textSecondary, marginTop: 2 }]}>
-                    Model: {run.model === 'gemini' ? 'Gemini' : run.model === 'openai' ? 'GPT-4o' : 'Claude'} • {run.tokens_used.toLocaleString()} tokens
-                  </Text>
-                  <ChevronRight size={16} color={colors.textSecondary} style={styles.arrowIcon} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -267,32 +308,62 @@ export default function ActivityScreen() {
         onRequestClose={() => setSelectedRunId(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#0D1117' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#E5E7EB' }]}>
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 85 : 100}
+            tint={isDark ? 'dark' : 'light'}
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: isDark ? 'rgba(14, 17, 22, 0.95)' : 'rgba(255, 255, 255, 0.97)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                borderWidth: 1,
+              }
+            ]}
+          >
             {loadingDetail || !runDetail ? (
               <View style={styles.modalLoading}>
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Loading conversation history...</Text>
+                <Text style={{ color: colors.textSecondary, marginTop: 10, fontFamily: 'Inter_500Medium' }}>Loading conversation history...</Text>
               </View>
             ) : (
               <View style={{ flex: 1 }}>
                 {/* Modal Header */}
-                <View style={[styles.modalHeader, { borderBottomColor: isDark ? '#21262D' : '#E5E7EB' }]}>
+                <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                    <Text style={[styles.modalTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 16 }]}>
                       Past Conversation
                     </Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_500Medium', marginTop: 2 }}>
                       Model: {runDetail.run.model === 'gemini' ? 'Gemini' : runDetail.run.model === 'openai' ? 'GPT-4o' : 'Claude'} • Status: {runDetail.run.status}
                     </Text>
                   </View>
-                  <TouchableOpacity onPress={() => setSelectedRunId(null)} style={styles.closeBtn}>
+                  
+                  {/* Resume Button */}
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: colors.text,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 14,
+                      marginRight: 10
+                    }}
+                    onPress={() => {
+                      setSelectedRunId(null)
+                      handleResumeRun(runDetail.run.id)
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontSize: 11.5, fontFamily: 'Inter_700Bold' }}>Resume</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => setSelectedRunId(null)} style={styles.closeBtn} activeOpacity={0.7}>
                     <X size={20} color={colors.text} />
                   </TouchableOpacity>
                 </View>
 
                 {/* Modal Scroll Content */}
                 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}>
-                  <View style={{ gap: 18 }}>
+                  <View style={{ gap: 20 }}>
                     {runDetail.steps
                       .filter((step: any) => step.type === 'reasoning')
                       .map((step: any) => {
@@ -301,27 +372,18 @@ export default function ActivityScreen() {
                         if (!msgText) return null
 
                         return (
-                          <View key={step.id} style={[styles.messageRow, isUser ? styles.userRow : styles.modelRow]}>
-                            {!isUser && (
-                              <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
-                                <Sparkles size={11} color={isDark ? '#D2A8FF' : '#8250DF'} />
-                              </View>
-                            )}
-                            
-                            <View style={[
-                              styles.bubble,
-                              isUser
-                                ? [styles.userBubble, { backgroundColor: isDark ? '#21262D' : '#F0F2F5' }]
-                                : styles.modelBubble
-                            ]}>
+                          <View key={step.id} style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
+                            <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderWidth: 1 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 4, maxWidth: '100%' }]}>
                               {isUser ? (
-                                <Text style={[styles.messageText, { color: isDark ? '#FFFFFF' : '#1F2328', fontFamily: 'Inter_400Regular' }]}>
+                                <Text style={[styles.userBubbleText, { color: colors.text }]}>
                                   {msgText}
                                 </Text>
                               ) : (
-                                <Markdown style={mdStyles}>
-                                  {msgText}
-                                </Markdown>
+                                <View style={{ width: '100%' }}>
+                                  <Markdown style={mdStyles}>
+                                    {msgText}
+                                  </Markdown>
+                                </View>
                               )}
                             </View>
                           </View>
@@ -331,7 +393,7 @@ export default function ActivityScreen() {
                 </ScrollView>
               </View>
             )}
-          </View>
+          </BlurView>
         </View>
       </Modal>
     </View>
@@ -345,25 +407,25 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    gap: 12,
+    gap: 8,
+    zIndex: 10,
   },
   backBtn: {
-    padding: 4,
+    padding: 6,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
   },
   card: {
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
   },
   cardTitle: {
     fontSize: 14,
-    marginBottom: 14,
   },
   metersList: {
     gap: 14,
@@ -377,24 +439,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   meterLabel: {
-    fontSize: 12,
+    fontSize: 12.5,
   },
   meterVal: {
-    fontSize: 12,
+    fontSize: 12.5,
   },
   progressBarBg: {
-    height: 6,
-    borderRadius: 3,
+    height: 5,
+    borderRadius: 2.5,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 2.5,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    marginTop: 8,
     marginBottom: 12,
   },
   sectionTitle: {
@@ -402,49 +465,38 @@ const styles = StyleSheet.create({
   },
   emptyBox: {
     padding: 32,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderStyle: 'dashed',
     alignItems: 'center',
   },
   runsList: {
-    gap: 8,
+    gap: 10,
   },
   runItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    position: 'relative',
+  },
+  runAvatarCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   runHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
   },
   runTitle: {
     fontSize: 13,
   },
-  statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 8,
-  },
   runMetaText: {
     fontSize: 11,
-    marginBottom: 2,
-  },
-  runUsageText: {
-    fontSize: 11,
-    paddingRight: 24,
-  },
-  arrowIcon: {
-    position: 'absolute',
-    right: 12,
-    top: 22,
   },
   modalBackdrop: {
     flex: 1,
@@ -453,10 +505,11 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     height: '88%',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
     borderWidth: 1,
     borderBottomWidth: 0,
+    overflow: 'hidden',
   },
   modalLoading: {
     flex: 1,
@@ -474,108 +527,32 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   closeBtn: {
-    padding: 4,
+    padding: 6,
   },
-  detailPanel: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  panelTitle: {
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  panelGrid: {
+  userBubbleWrapper: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  panelItem: {
-    width: '46%',
-    gap: 2,
-  },
-  panelLabel: {
-    fontSize: 10,
-  },
-  panelVal: {
-    fontSize: 13,
-  },
-  consoleToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-  },
-  consolePanel: {
-    backgroundColor: '#0D1117',
-    borderRadius: 8,
-    borderWidth: 1,
-    height: 180,
-    padding: 8,
-  },
-  consoleText: {
-    color: '#C9D1D9',
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 10,
-  },
-  eventRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  auditTimeline: {
-    gap: 6,
-  },
-  auditStep: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#30363D',
-    paddingBottom: 6,
-  },
-  auditStepHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  auditStepTitle: {
-    fontSize: 13,
-  },
-  auditStepContent: {
-    marginTop: 4,
-    paddingLeft: 16,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'flex-end',
     width: '100%',
   },
-  userRow: {
-    justifyContent: 'flex-end',
-  },
-  modelRow: {
-    justifyContent: 'flex-start',
-  },
-  avatarCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  bubble: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    maxWidth: SCREEN_WIDTH * 0.8,
+  modelBubbleWrapper: {
+    width: '100%',
   },
   userBubble: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
     borderBottomRightRadius: 2,
+    maxWidth: SCREEN_WIDTH * 0.8,
   },
   modelBubble: {
-    borderTopLeftRadius: 2,
+    borderRadius: 16,
+    padding: 16,
+    maxWidth: SCREEN_WIDTH * 0.8,
+    borderBottomLeftRadius: 2,
   },
-  messageText: {
+  userBubbleText: {
     fontSize: 14,
-    lineHeight: 20,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 19,
   },
 })
