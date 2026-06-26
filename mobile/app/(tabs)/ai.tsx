@@ -1070,13 +1070,7 @@ export default function AIScreen() {
 
         {/* Bottom Container for perfect flow-based keyboard avoidance */}
         <View style={[styles.bottomContainer, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 12 }]}>
-          {/* Friendly Error Display */}
-          {friendlyError && (
-            <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#3D1117' : '#FFEBE9', borderColor: '#F85149' }]}>
-              <AlertCircle size={16} color="#EB5757" />
-              <Text style={{ color: isDark ? '#FF7B72' : '#CF222E', fontSize: 12, flex: 1 }}>{friendlyError}</Text>
-            </View>
-          )}
+
 
           {/* Floating Speech/Listening Tooltip */}
           {isListening && (
@@ -1645,5 +1639,60 @@ const styles = StyleSheet.create({
   inlineModelLabel: {
     fontSize: 12.5,
     fontFamily: 'Inter_500Medium',
+  },
+  errorModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorModalContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  errorModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  errorModalTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.1,
+  },
+  errorModalCloseBtn: {
+    padding: 4,
+  },
+  errorModalText: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 19,
+  },
+  errorModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    width: '100%',
+    marginTop: 4,
+  },
+  errorModalActionBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorModalActionBtnText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
 })
