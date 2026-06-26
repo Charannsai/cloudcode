@@ -9,6 +9,7 @@ import { recordAppSession } from '@/lib/appAudit'
 import * as SplashScreen from 'expo-splash-screen'
 import FloatingMic from '@/components/FloatingMic'
 import LimitExceededModal from '@/components/LimitExceededModal'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { 
   useFonts, 
   Inter_400Regular, 
@@ -93,25 +94,27 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar style={isDark ? 'light' : 'dark'} translucent />
-      <Stack screenOptions={{ 
-        headerShown: false, 
-        contentStyle: { backgroundColor: colors.background },
-        animation: 'slide_from_right',
-      }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="new-project" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="project/[id]/index" />
-        <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
-        <Stack.Screen name="billing/success" />
-      </Stack>
-    {/*
-      Floating Voice Assistant
-    */}
-      <FloatingMic />
-      <LimitExceededModal />
-    </View>
+    <KeyboardProvider>
+      <View style={{ flex: 1 }}>
+        <StatusBar style={isDark ? 'light' : 'dark'} translucent />
+        <Stack screenOptions={{ 
+          headerShown: false, 
+          contentStyle: { backgroundColor: colors.background },
+          animation: 'slide_from_right',
+        }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="new-project" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="project/[id]/index" />
+          <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
+          <Stack.Screen name="billing/success" />
+        </Stack>
+      {/*
+        Floating Voice Assistant
+      */}
+        <FloatingMic />
+        <LimitExceededModal />
+      </View>
+    </KeyboardProvider>
   )
 }
