@@ -402,7 +402,7 @@ export default function ActivityScreen() {
                               handleResumeRun(run.id)
                             }}
                           >
-                            <Text style={[styles.dropdownLabel, { color: colors.text }]}>Open Convo</Text>
+                            <Text style={[styles.dropdownLabel, { color: colors.text }]}>Open Conversation</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.dropdownRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
@@ -412,7 +412,7 @@ export default function ActivityScreen() {
                               setSelectedRunIds(new Set([run.id]))
                             }}
                           >
-                            <Text style={[styles.dropdownLabel, { color: colors.text }]}>Select Convo</Text>
+                            <Text style={[styles.dropdownLabel, { color: colors.text }]}>Select Conversation</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.dropdownRow}
@@ -421,7 +421,7 @@ export default function ActivityScreen() {
                               handleDeleteSingle(run.id)
                             }}
                           >
-                            <Text style={[styles.dropdownLabel, { color: '#FF7B72' }]}>Clear Convo</Text>
+                            <Text style={[styles.dropdownLabel, { color: '#FF7B72' }]}>Clear Conversation</Text>
                           </TouchableOpacity>
                         </View>
                       </>

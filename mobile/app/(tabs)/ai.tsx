@@ -586,8 +586,35 @@ export default function AIScreen() {
     const syncThread = async () => {
       await initConversations()
       const allThreads = useAIStore.getState().savedConversations
-      const targetProjId = selectedProjectId === 'global' ? '' : selectedProjectId
       
+      // Check if we already have an active/resumed thread in the store
+      const currentThreadId = useAIStore.getState().currentThreadId
+      if (currentThreadId) {
+        const currentThread = allThreads.find(t => t.id === currentThreadId)
+        if (currentThread) {
+          const activeProjId = currentThread.projectId === 'global' ? '' : currentThread.projectId
+          const targetProjId = selectedProjectId === 'global' ? '' : selectedProjectId
+          
+          if (activeProjId === targetProjId) {
+            // The active thread already belongs to the selected project, keep it!
+            await fetchByokAndTier()
+            return
+          } else {
+            // The active thread project does not match the selected project dropdown.
+            // This happens when the thread was just resumed from the history screen
+            // or when the user explicitly switched the project dropdown.
+            // If the thread was just loaded, we should update the dropdown to match the thread's project!
+            const threadProjNormalized = currentThread.projectId || 'global'
+            if (threadProjNormalized !== selectedProjectId) {
+              setSelectedProjectId(threadProjNormalized)
+              await fetchByokAndTier()
+              return
+            }
+          }
+        }
+      }
+
+      const targetProjId = selectedProjectId === 'global' ? '' : selectedProjectId
       // Find the latest thread for this project
       const matchingThread = allThreads.find(t => t.projectId === targetProjId)
       if (matchingThread) {
