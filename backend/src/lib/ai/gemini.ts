@@ -621,8 +621,81 @@ export async function* executeLangGraph(
     }
   );
 
+  const listWorkspaces = tool(
+    async () => {
+      if (!context?.userId) return JSON.stringify({ error: 'Unauthorized: User context missing' })
+      try {
+        const { data: projects } = await supabaseAdmin
+          .from('projects')
+          .select('id, name, status, container_id')
+          .eq('user_github_id', context.userId)
+        return JSON.stringify({ success: true, workspaces: projects || [] })
+      } catch (err) {
+        return JSON.stringify({ error: (err as Error).message })
+      }
+    },
+    {
+      name: 'list_workspaces',
+      description: 'List all of the user\'s project workspaces, including their names, IDs, and current statuses (ready, sleeping). Use this to discover which projects are available.',
+      schema: z.object({}),
+    }
+  );
+
+  const selectWorkspace = tool(
+    async ({ workspaceIdOrName }) => {
+      if (!context?.userId) return JSON.stringify({ error: 'Unauthorized: User context missing' })
+      try {
+        // Find project by ID or Name
+        const { data: project } = await supabaseAdmin
+          .from('projects')
+          .select('*')
+          .eq('user_github_id', context.userId)
+          .or(`id.eq.${workspaceIdOrName},name.eq.${workspaceIdOrName}`)
+          .maybeSingle()
+
+        if (!project) {
+          return JSON.stringify({ error: `Workspace '${workspaceIdOrName}' not found.` })
+        }
+
+        // Auto-wake container if asleep/sleeping
+        await ensureContainerRunning(project.id)
+
+        // Re-fetch to get the active container ID
+        const { data: updatedProject } = await supabaseAdmin
+          .from('projects')
+          .select('container_id')
+          .eq('id', project.id)
+          .single()
+
+        if (!updatedProject?.container_id) {
+          return JSON.stringify({ error: 'Failed to boot workspace container.' })
+        }
+
+        // Update the active container ID in the outer scope
+        activeContainerId = updatedProject.container_id
+
+        return JSON.stringify({ 
+          success: true, 
+          message: `Workspace '${project.name}' is now active and its container is running. You can now read/edit its files and run commands in it.` 
+        })
+      } catch (err) {
+        return JSON.stringify({ error: (err as Error).message })
+      }
+    },
+    {
+      name: 'select_workspace',
+      description: 'Select and activate a project workspace. This will automatically wake up the container if it is sleeping.',
+      schema: z.object({
+        workspaceIdOrName: z.string().describe('The ID or Name of the project workspace to activate'),
+      }),
+    }
+  );
+
   const readFile = tool(
     async ({ path }) => {
+      if (!activeContainerId || activeContainerId === 'global' || activeContainerId === 'none') {
+        return JSON.stringify({ error: "No active workspace selected. You must first use list_workspaces to see your projects, and select_workspace to activate one." })
+      }
       const WORKSPACE = '/workspace'
       const filePath = `${WORKSPACE}/${path}`
       let content = ''
@@ -640,6 +713,9 @@ export async function* executeLangGraph(
 
   const editFile = tool(
     async ({ path, target, replacement }) => {
+      if (!activeContainerId || activeContainerId === 'global' || activeContainerId === 'none') {
+        return JSON.stringify({ error: "No active workspace selected. You must first use list_workspaces to see your projects, and select_workspace to activate one." })
+      }
       const WORKSPACE = '/workspace'
       const filePath = `${WORKSPACE}/${path}`
       let current = ''
@@ -664,6 +740,9 @@ export async function* executeLangGraph(
 
   const createFile = tool(
     async ({ path, content }) => {
+      if (!activeContainerId || activeContainerId === 'global' || activeContainerId === 'none') {
+        return JSON.stringify({ error: "No active workspace selected. You must first use list_workspaces to see your projects, and select_workspace to activate one." })
+      }
       const WORKSPACE = '/workspace'
       const filePath = `${WORKSPACE}/${path}`
       const dirPath = filePath.substring(0, filePath.lastIndexOf('/'))
@@ -685,6 +764,9 @@ export async function* executeLangGraph(
 
   const deleteFile = tool(
     async ({ path }) => {
+      if (!activeContainerId || activeContainerId === 'global' || activeContainerId === 'none') {
+        return JSON.stringify({ error: "No active workspace selected. You must first use list_workspaces to see your projects, and select_workspace to activate one." })
+      }
       const WORKSPACE = '/workspace'
       const filePath = `${WORKSPACE}/${path}`
       await execInContainer(activeContainerId, ['rm', '-f', filePath], () => {})
@@ -701,6 +783,9 @@ export async function* executeLangGraph(
 
   const listFiles = tool(
     async ({ path }) => {
+      if (!activeContainerId || activeContainerId === 'global' || activeContainerId === 'none') {
+        return JSON.stringify({ error: "No active workspace selected. You must first use list_workspaces to see your projects, and select_workspace to activate one." })
+      }
       const WORKSPACE = '/workspace'
       const dirPath = `${WORKSPACE}/${path === '.' ? '' : path}`
       let output = ''
@@ -718,6 +803,9 @@ export async function* executeLangGraph(
 
   const runCommand = tool(
     async ({ command }) => {
+      if (!activeContainerId || activeContainerId === 'global' || activeContainerId === 'none') {
+        return JSON.stringify({ error: "No active workspace selected. You must first use list_workspaces to see your projects, and select_workspace to activate one." })
+      }
       // 1. STATEFUL MODE INTERRUPT (SAVES STEP AND PAUSES GRAPH)
       if (runCtx && context?.userId) {
         const approvalId = uuidv4()
@@ -766,19 +854,26 @@ export async function* executeLangGraph(
     }
   );
 
-  const hasContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
-  const tools = hasContainer 
-    ? [createProject, readFile, editFile, createFile, deleteFile, listFiles, runCommand]
-    : [createProject]
+  const tools = [createProject, listWorkspaces, selectWorkspace, readFile, editFile, createFile, deleteFile, listFiles, runCommand]
 
   const modelWithTools = model.bindTools(tools)
 
   // 4. State Graph Assembly
   const agentNode = async (state: typeof AgentState.State) => {
     const currentMessages = [...state.messages]
-    const systemPromptText = hasContainer ? SYSTEM_INSTRUCTION : 'You are CloudCode AI, a general helpful developer assistant.'
+    const hasContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
+    const systemPromptText = hasContainer 
+      ? SYSTEM_INSTRUCTION 
+      : `You are CloudCode AI — an autonomous coding agent. You can work across any of the user\'s projects.
+      
+      If the user wants to inspect a project or make changes, you MUST:
+      1. Call list_workspaces to see the available projects.
+      2. Call select_workspace to activate the desired project. This will automatically wake up the project\'s container.
+      3. Once the project is active, you can read/edit files and run commands in it.
+      
+      Always execute these steps immediately without asking for permission.`
+
     const systemMessage = new SystemMessage(systemPromptText + '\n' + capabilityPrompt)
-    
     const response = await modelWithTools.invoke([systemMessage, ...currentMessages])
     return { messages: [response] }
   }
