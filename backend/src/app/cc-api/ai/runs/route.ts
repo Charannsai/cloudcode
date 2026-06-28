@@ -41,6 +41,22 @@ export async function POST(req: NextRequest) {
     const customAnthropicKey = req.headers.get('x-anthropic-key') || undefined
     const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey)
 
+    const byokEnabledHeader = req.headers.get('x-byok-enabled') === 'true'
+    if (byokEnabledHeader) {
+      let missingKeyModel = ''
+      if (model === 'openai' && !customOpenaiKey) {
+        missingKeyModel = 'ChatGPT 5.5'
+      } else if (model === 'anthropic' && !customAnthropicKey) {
+        missingKeyModel = 'Claude 4.6 Opus'
+      } else if ((model === 'gemini' || !model) && !customGeminiKey) {
+        missingKeyModel = 'Gemini 3.5 Flash'
+      }
+
+      if (missingKeyModel) {
+        return errorResponse(`API key for ${missingKeyModel} is missing. Please configure it in Settings.`, 400)
+      }
+    }
+
     if ((model === 'openai' || model === 'anthropic') && userTier === 'free' && !isBYOK) {
       return errorResponse(`LIMIT_EXCEEDED: ${model === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'} is a premium model restricted to Pro and Advanced subscriptions. Please upgrade your billing plan in Settings.`, 403)
     }

@@ -82,6 +82,39 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
 
     const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey)
 
+    const byokEnabledHeader = req.headers.get('x-byok-enabled') === 'true'
+    if (byokEnabledHeader) {
+      let missingKeyModel = ''
+      if (model === 'openai' && !customOpenaiKey) {
+        missingKeyModel = 'ChatGPT 5.5'
+      } else if (model === 'anthropic' && !customAnthropicKey) {
+        missingKeyModel = 'Claude 4.6 Opus'
+      } else if ((model === 'gemini' || !model) && !customGeminiKey) {
+        missingKeyModel = 'Gemini 3.5 Flash'
+      }
+
+      if (missingKeyModel) {
+        const encoder = new TextEncoder()
+        const errMsg = JSON.stringify({
+          type: 'error',
+          content: `API key for ${missingKeyModel} is missing. Please configure it in Settings.`
+        })
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`))
+            controller.close()
+          }
+        })
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        })
+      }
+    }
+
     if ((model === 'openai' || model === 'anthropic') && userTier === 'free' && !isBYOK) {
       const encoder = new TextEncoder()
       const errMsg = JSON.stringify({

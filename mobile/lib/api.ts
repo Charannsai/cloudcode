@@ -9,11 +9,20 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = await getToken()
+  const byokEnabled = await AsyncStorage.getItem('byok_enabled')
+  const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
+  const customOpenaiKey = await AsyncStorage.getItem('custom_openai_key')
+  const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'x-byok-enabled': byokEnabled || 'false',
+      ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
+      ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
+      ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
       ...(options.headers as Record<string, string> || {}),
     },
   })
@@ -281,6 +290,7 @@ export const api = {
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            'x-byok-enabled': byokEnabled || 'false',
             ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
             ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
             ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
@@ -366,6 +376,7 @@ export const api = {
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            'x-byok-enabled': byokEnabled || 'false',
             ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
             ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
             ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
