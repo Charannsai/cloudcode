@@ -13,6 +13,13 @@ interface PRState {
   
   fetchPRs: (projectId: string) => Promise<void>
   fetchPRDetail: (projectId: string, number: number) => Promise<void>
+  createPR: (
+    projectId: string,
+    title: string,
+    body: string,
+    head: string,
+    base: string
+  ) => Promise<void>
   submitReview: (
     projectId: string,
     number: number,
@@ -52,6 +59,24 @@ export const usePRStore = create<PRState>((set, get) => ({
       set({ activePR: detail, loading: false })
     } catch (err: any) {
       set({ error: err.message || 'Failed to fetch PR details', loading: false })
+    }
+  },
+
+  createPR: async (
+    projectId: string,
+    title: string,
+    body: string,
+    head: string,
+    base: string
+  ) => {
+    set({ loading: true, error: null })
+    try {
+      await api.prs.create(projectId, title, body, head, base)
+      const prs = await api.prs.list(projectId)
+      set({ prs, loading: false })
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to create PR', loading: false })
+      throw err
     }
   },
 
