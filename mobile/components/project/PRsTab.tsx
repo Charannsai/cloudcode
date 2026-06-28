@@ -77,7 +77,8 @@ export default function PRsTab({ projectId }: PRsTabProps) {
   }>({ visible: false, title: '', message: '', type: 'info' })
 
   // Create PR Modal State
-  const [createModalVisible, setCreateModalVisible] = useState(false)
+  // Create PR State
+  const [viewMode, setViewMode] = useState<'list' | 'detail' | 'create'>('list')
   const [newPrTitle, setNewPrTitle] = useState('')
   const [newPrBody, setNewPrBody] = useState('')
   const [newPrHead, setNewPrHead] = useState('')
@@ -93,6 +94,12 @@ export default function PRsTab({ projectId }: PRsTabProps) {
     fetchPRDetail(projectId, number)
     setActiveSubTab('conversation')
     setAiReviewText('')
+    setViewMode('detail')
+  }
+
+  const handleBackToList = () => {
+    clearActivePR()
+    setViewMode('list')
   }
 
   const handleRefresh = () => {
@@ -103,8 +110,8 @@ export default function PRsTab({ projectId }: PRsTabProps) {
     }
   }
 
-  const handleOpenCreateModal = async () => {
-    setCreateModalVisible(true)
+  const handleOpenCreate = async () => {
+    setViewMode('create')
     setNewPrTitle('')
     setNewPrBody('')
     setNewPrBase('main')
@@ -128,7 +135,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
     setCreatingPr(true)
     try {
       await usePRStore.getState().createPR(projectId, newPrTitle.trim(), newPrBody.trim(), newPrHead.trim(), newPrBase.trim())
-      setCreateModalVisible(false)
+      setViewMode('list')
       showAlert('Success', 'Pull Request created successfully!', 'success')
     } catch (err: any) {
       showAlert('Error', err.message || 'Failed to create PR', 'error')
@@ -329,7 +336,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
       <View style={{ flex: 1 }}>
         {/* Header */}
         <View style={[styles.detailHeader, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={clearActivePR} style={styles.backBtn}>
+          <TouchableOpacity onPress={handleBackToList} style={styles.backBtn}>
             <ArrowLeft size={20} color={colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1, marginLeft: 12 }}>
@@ -645,15 +652,117 @@ export default function PRsTab({ projectId }: PRsTabProps) {
     )
   }
 
+  const renderCreatePRView = () => {
+    return (
+      <View style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={[styles.detailHeader, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={() => setViewMode('list')} style={styles.backBtn}>
+            <ArrowLeft size={20} color={colors.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={[styles.detailTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+              New Pull Request
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+              Create a new review for your branch
+            </Text>
+          </View>
+        </View>
+
+        {/* Form */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
+          <View style={styles.formSection}>
+            <Text style={[styles.formLabel, { color: colors.textSecondary }]}>PULL REQUEST TITLE</Text>
+            <TextInput
+              style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.card }]}
+              placeholder="e.g., Implement OAuth user login flow"
+              placeholderTextColor={colors.textSecondary + '80'}
+              value={newPrTitle}
+              onChangeText={setNewPrTitle}
+            />
+          </View>
+
+          <View style={[styles.formSection, { marginTop: 20 }]}>
+            <Text style={[styles.formLabel, { color: colors.textSecondary }]}>DESCRIPTION (OPTIONAL)</Text>
+            <TextInput
+              style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.card, height: 120, textAlignVertical: 'top' }]}
+              placeholder="Describe the changes made, fixed issues, or testing steps..."
+              placeholderTextColor={colors.textSecondary + '80'}
+              value={newPrBody}
+              onChangeText={setNewPrBody}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 16, marginTop: 20 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>SOURCE BRANCH (HEAD)</Text>
+              <View style={[styles.branchInputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <GitBranch size={14} color={colors.textSecondary} />
+                <TextInput
+                  style={[styles.branchInput, { color: colors.text }]}
+                  placeholder="feature-branch"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  value={newPrHead}
+                  onChangeText={setNewPrHead}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+            
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.formLabel, { color: colors.textSecondary }]}>BASE BRANCH</Text>
+              <View style={[styles.branchInputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <GitBranch size={14} color={colors.textSecondary} />
+                <TextInput
+                  style={[styles.branchInput, { color: colors.text }]}
+                  placeholder="main"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  value={newPrBase}
+                  onChangeText={setNewPrBase}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.submitPrBtn, { backgroundColor: colors.text, marginTop: 32, opacity: creatingPr ? 0.7 : 1 }]}
+            onPress={handleCreatePR}
+            disabled={creatingPr}
+            activeOpacity={0.8}
+          >
+            {creatingPr ? (
+              <ActivityIndicator color={colors.background} size="small" />
+            ) : (
+              <>
+                <Sparkles size={16} color={colors.background} style={{ marginRight: 8 }} />
+                <Text style={[styles.submitPrBtnText, { color: colors.background }]}>
+                  Create Pull Request
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    )
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {loading && !activePR && prs.length === 0 ? (
+      {loading && viewMode === 'list' && prs.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={colors.text} size="large" />
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading Pull Requests...</Text>
         </View>
-      ) : activePR ? (
+      ) : viewMode === 'detail' ? (
         renderActivePRDetail()
+      ) : viewMode === 'create' ? (
+        renderCreatePRView()
       ) : (
         <View style={{ flex: 1 }}>
           {/* Header */}
@@ -661,7 +770,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
             <GitPullRequest size={20} color={colors.text} />
             <Text style={[styles.headerTitle, { color: colors.text }]}>Pull Requests</Text>
             <TouchableOpacity
-              onPress={handleOpenCreateModal}
+              onPress={handleOpenCreate}
               style={[styles.newPrHeaderBtn, { backgroundColor: colors.text }]}
               activeOpacity={0.8}
             >
@@ -689,81 +798,6 @@ export default function PRsTab({ projectId }: PRsTabProps) {
           )}
         </View>
       )}
-
-      {/* Create PR Modal */}
-      <Modal visible={createModalVisible} animationType="slide" transparent>
-        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-          <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitleText, { color: colors.text }]}>Create Pull Request</Text>
-
-            <TextInput
-              style={[styles.textInput, { borderColor: colors.border, color: colors.text }]}
-              placeholder="PR Title"
-              placeholderTextColor={colors.textSecondary + '80'}
-              value={newPrTitle}
-              onChangeText={setNewPrTitle}
-            />
-
-            <TextInput
-              style={[styles.textInput, { borderColor: colors.border, color: colors.text, marginTop: 12, height: 80, textAlignVertical: 'top' }]}
-              placeholder="Description (Optional)"
-              placeholderTextColor={colors.textSecondary + '80'}
-              value={newPrBody}
-              onChangeText={setNewPrBody}
-              multiline
-              numberOfLines={3}
-            />
-
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, marginBottom: 4, fontFamily: 'Inter_500Medium' }}>SOURCE BRANCH (HEAD)</Text>
-                <TextInput
-                  style={[styles.textInput, { borderColor: colors.border, color: colors.text }]}
-                  placeholder="feature-branch"
-                  placeholderTextColor={colors.textSecondary + '80'}
-                  value={newPrHead}
-                  onChangeText={setNewPrHead}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, marginBottom: 4, fontFamily: 'Inter_500Medium' }}>BASE BRANCH</Text>
-                <TextInput
-                  style={[styles.textInput, { borderColor: colors.border, color: colors.text }]}
-                  placeholder="main"
-                  placeholderTextColor={colors.textSecondary + '80'}
-                  value={newPrBase}
-                  onChangeText={setNewPrBase}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.modalActions, { marginTop: 20 }]}>
-              <TouchableOpacity
-                style={[styles.modalCancelBtn, { borderColor: colors.border }]}
-                onPress={() => setCreateModalVisible(false)}
-              >
-                <Text style={{ color: colors.text }}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalConfirmBtn, { backgroundColor: colors.text }]}
-                onPress={handleCreatePR}
-                disabled={creatingPr}
-              >
-                {creatingPr ? (
-                  <ActivityIndicator color={colors.background} size="small" />
-                ) : (
-                  <Text style={{ color: colors.background, fontWeight: '600' }}>Create PR</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
 
       {/* Custom Alert Modal */}
       <ConfirmModal
@@ -989,6 +1023,40 @@ const styles = StyleSheet.create({
   },
   newPrHeaderBtnText: {
     fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  formSection: {
+    marginBottom: 4,
+  },
+  formLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  branchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
+    gap: 8,
+  },
+  branchInput: {
+    flex: 1,
+    fontSize: 13,
+    height: '100%',
+  },
+  submitPrBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 48,
+    borderRadius: 10,
+  },
+  submitPrBtnText: {
+    fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
   },
 })
