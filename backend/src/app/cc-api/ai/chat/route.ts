@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  if ((model === 'openai' || model === 'anthropic') && userTier === 'free') {
+  if ((model === 'openai' || model === 'anthropic') && userTier === 'free' && !isBYOK) {
     const encoder = new TextEncoder()
     const errMsg = JSON.stringify({
       type: 'error',

@@ -1,0 +1,103 @@
+# Shifting Payment Integration to Google Play Billing (via RevenueCat)
+
+This plan outlines the migration from **Dodo Payments** (web checkout) to **Google Play Billing** (native Android In-App Purchases/Subscriptions) using **RevenueCat** as the subscription management platform.
+
+Using RevenueCat allows us to handle receipt validation, subscription state changes, and webhook delivery reliably without writing a custom Google Play billing API wrapper.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **RevenueCat Dashboard Configuration Required**
+> Before deploying this change, you will need to:
+> 1. Set up a **Google Play Console Developer Account** and a **Merchant Account**.
+> 2. Create your subscription products (`pro_monthly` and `advanced_monthly`) in the Google Play Console under **Monetization > Subscriptions**.
+> 3. Create a **Google Cloud Service Account** with "Google Play Financial" or billing permissions, download its JSON key, and upload it to the **RevenueCat Dashboard**.
+> 4. Add the **RevenueCat API Key** (`goog_...`) to your mobile app configuration.
+> 5. Add a **RevenueCat Webhook Secret** (or authorization token) to your backend environment variables (`REVENUECAT_WEBHOOK_SECRET`) to secure the webhook endpoint.
+
+---
+
+## Proposed Changes
+
+We will modify both the `mobile` (Expo) and `backend` (Next.js) directories.
+
+### Mobile App (Expo)
+
+#### [MODIFY] [package.json](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/package.json)
+- Add `react-native-purchases` as a dependency.
+
+#### [MODIFY] [app.json](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/app.json)
+- Ensure the Android package name is correctly set (currently `com.cloudcode.app`).
+- Add any required RevenueCat plugins/configurations if necessary.
+
+#### [MODIFY] [app/_layout.tsx](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/app/_layout.tsx)
+- Initialize the RevenueCat SDK on app startup:
+  ```typescript
+  import Purchases from 'react-native-purchases';
+  // ...
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      Purchases.configure({ apiKey: "goog_YOUR_REVENUECAT_PLAY_API_KEY" });
+    }
+  }, []);
+  ```
+- Listen to auth state changes:
+  - When a user logs in (`useAuthStore.getState().user`), call `Purchases.logIn(user.id)`.
+  - When they log out, call `Purchases.logOut()`.
+
+#### [MODIFY] [settings.tsx](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/app/%28tabs%29/settings.tsx)
+- Replace the web-based `api.billing.checkout` call in `handleUpgradeTierDirect` with native billing via RevenueCat:
+  ```typescript
+  const offerings = await Purchases.getOfferings();
+  const packageToBuy = offerings.current?.availablePackages.find(p => p.identifier === (tierName === 'pro' ? 'pro_monthly' : 'advanced_monthly'));
+  if (packageToBuy) {
+    const { customerInfo } = await Purchases.purchasePackage(packageToBuy);
+    if (customerInfo.entitlements.active[tierName]?.isActive) {
+      // Navigate to success page
+      router.push({
+        pathname: '/billing/success',
+        params: {
+          subscription_id: customerInfo.originalAppUserId,
+          email: user?.email || '',
+          status: 'active'
+        }
+      });
+    }
+  }
+  ```
+
+#### [MODIFY] [LimitExceededModal.tsx](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/mobile/components/LimitExceededModal.tsx)
+- Replace the Stripe/Dodo Payments web redirect checkout flow with the native RevenueCat checkout flow.
+
+---
+
+### Backend (Next.js)
+
+#### [MODIFY] [route.ts](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/backend/src/app/cc-api/billing/webhook/route.ts)
+- Replace the Dodo Payments webhook handler with a **RevenueCat webhook handler**.
+- The handler will process the following events:
+  - `INITIAL_PURCHASE` / `RENEWAL` / `TRANSFER`: Parse the active entitlements (`pro` or `advanced`) and upgrade the user's tier in the Supabase `users` table.
+  - `EXPIRATION`: If no active entitlements remain, downgrade the user's tier to `free` in Supabase.
+  - `CANCELLATION`: If the cancellation reason is a refund, downgrade immediately. If it's a standard unsubscribe, let it run until `EXPIRATION` triggers.
+- Secure the endpoint by verifying the `Authorization` header against the `REVENUECAT_WEBHOOK_SECRET` environment variable.
+
+#### [MODIFY] [route.ts](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/backend/src/app/cc-api/billing/checkout/route.ts)
+- Deprecate or remove this route, returning a message that native billing should be used instead of web checkout.
+
+---
+
+## Verification Plan
+
+### Manual Verification
+1. **RevenueCat Sandbox Testing**:
+   - Run the Expo app on an Android Emulator.
+   - Log in with a Google Play Sandbox Tester account.
+   - Trigger the upgrade flow from settings or the limit exceeded modal.
+   - Verify that the native Google Play Billing sheet appears and allows completing a test purchase.
+   - Verify that the app redirects to the `/billing/success` screen.
+2. **Webhook Verification**:
+   - Use a tool like Ngrok to expose the backend locally.
+   - Use the **RevenueCat Dashboard's Webhook Test Tool** to send mock events (`INITIAL_PURCHASE`, `EXPIRATION`) to the webhook endpoint.
+   - Verify that the user's `tier` and `subscription_status` in Supabase are updated correctly.
