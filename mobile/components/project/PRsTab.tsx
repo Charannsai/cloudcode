@@ -76,6 +76,14 @@ export default function PRsTab({ projectId }: PRsTabProps) {
     type: 'success' | 'error' | 'warning' | 'info'
   }>({ visible: false, title: '', message: '', type: 'info' })
 
+  // Create PR Modal State
+  const [createModalVisible, setCreateModalVisible] = useState(false)
+  const [newPrTitle, setNewPrTitle] = useState('')
+  const [newPrBody, setNewPrBody] = useState('')
+  const [newPrHead, setNewPrHead] = useState('')
+  const [newPrBase, setNewPrBase] = useState('main')
+  const [creatingPr, setCreatingPr] = useState(false)
+
   useEffect(() => {
     fetchPRs(projectId)
     return () => clearActivePR()
@@ -92,6 +100,40 @@ export default function PRsTab({ projectId }: PRsTabProps) {
       fetchPRDetail(projectId, activePR.pr.number)
     } else {
       fetchPRs(projectId)
+    }
+  }
+
+  const handleOpenCreateModal = async () => {
+    setCreateModalVisible(true)
+    setNewPrTitle('')
+    setNewPrBody('')
+    setNewPrBase('main')
+    setNewPrHead('')
+    
+    // Try to auto-fetch current branch from git status
+    try {
+      const status = await api.git.status(projectId)
+      if (status.branch) {
+        setNewPrHead(status.branch)
+        setNewPrTitle(`Merge ${status.branch} into main`)
+      }
+    } catch (_) {}
+  }
+
+  const handleCreatePR = async () => {
+    if (!newPrTitle.trim() || !newPrHead.trim()) {
+      showAlert('Validation Error', 'PR Title and Source Branch (Head) are required.', 'warning')
+      return
+    }
+    setCreatingPr(true)
+    try {
+      await usePRStore.getState().createPR(projectId, newPrTitle.trim(), newPrBody.trim(), newPrHead.trim(), newPrBase.trim())
+      setCreateModalVisible(false)
+      showAlert('Success', 'Pull Request created successfully!', 'success')
+    } catch (err: any) {
+      showAlert('Error', err.message || 'Failed to create PR', 'error')
+    } finally {
+      setCreatingPr(false)
     }
   }
 
@@ -618,7 +660,14 @@ export default function PRsTab({ projectId }: PRsTabProps) {
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <GitPullRequest size={20} color={colors.text} />
             <Text style={[styles.headerTitle, { color: colors.text }]}>Pull Requests</Text>
-            <TouchableOpacity onPress={handleRefresh} style={styles.refreshBtn}>
+            <TouchableOpacity
+              onPress={handleOpenCreateModal}
+              style={[styles.newPrHeaderBtn, { backgroundColor: colors.text }]}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.newPrHeaderBtnText, { color: colors.background }]}>New PR</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleRefresh} style={[styles.refreshBtn, { marginLeft: 8 }]}>
               <RefreshCw size={16} color={colors.text} />
             </TouchableOpacity>
           </View>
@@ -640,6 +689,81 @@ export default function PRsTab({ projectId }: PRsTabProps) {
           )}
         </View>
       )}
+
+      {/* Create PR Modal */}
+      <Modal visible={createModalVisible} animationType="slide" transparent>
+        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+          <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitleText, { color: colors.text }]}>Create Pull Request</Text>
+
+            <TextInput
+              style={[styles.textInput, { borderColor: colors.border, color: colors.text }]}
+              placeholder="PR Title"
+              placeholderTextColor={colors.textSecondary + '80'}
+              value={newPrTitle}
+              onChangeText={setNewPrTitle}
+            />
+
+            <TextInput
+              style={[styles.textInput, { borderColor: colors.border, color: colors.text, marginTop: 12, height: 80, textAlignVertical: 'top' }]}
+              placeholder="Description (Optional)"
+              placeholderTextColor={colors.textSecondary + '80'}
+              value={newPrBody}
+              onChangeText={setNewPrBody}
+              multiline
+              numberOfLines={3}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginBottom: 4, fontFamily: 'Inter_500Medium' }}>SOURCE BRANCH (HEAD)</Text>
+                <TextInput
+                  style={[styles.textInput, { borderColor: colors.border, color: colors.text }]}
+                  placeholder="feature-branch"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  value={newPrHead}
+                  onChangeText={setNewPrHead}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, marginBottom: 4, fontFamily: 'Inter_500Medium' }}>BASE BRANCH</Text>
+                <TextInput
+                  style={[styles.textInput, { borderColor: colors.border, color: colors.text }]}
+                  placeholder="main"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  value={newPrBase}
+                  onChangeText={setNewPrBase}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.modalActions, { marginTop: 20 }]}>
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, { borderColor: colors.border }]}
+                onPress={() => setCreateModalVisible(false)}
+              >
+                <Text style={{ color: colors.text }}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, { backgroundColor: colors.text }]}
+                onPress={handleCreatePR}
+                disabled={creatingPr}
+              >
+                {creatingPr ? (
+                  <ActivityIndicator color={colors.background} size="small" />
+                ) : (
+                  <Text style={{ color: colors.background, fontWeight: '600' }}>Create PR</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
 
       {/* Custom Alert Modal */}
       <ConfirmModal
@@ -857,5 +981,14 @@ const styles = StyleSheet.create({
     minWidth: 100,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  newPrHeaderBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  newPrHeaderBtnText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
 })
