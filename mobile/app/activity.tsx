@@ -358,9 +358,6 @@ export default function ActivityScreen() {
                               {new Date(run.created_at).toLocaleDateString()}
                             </Text>
                           </View>
-                          <Text style={[styles.runMetaText, { color: colors.textSecondary, marginTop: 2, fontFamily: 'Inter_500Medium', fontSize: 11.5 }]}>
-                            Model: {run.model === 'gemini' ? 'Gemini' : run.model === 'openai' ? 'GPT-4o' : 'Claude'} • {run.tokens_used.toLocaleString()} tokens
-                          </Text>
                         </View>
 
                         {!isSelectionMode && (
