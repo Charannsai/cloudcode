@@ -65,6 +65,44 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     const model = run.model
     const projectId = run.project_id
 
+    // Check user tier if calling premium models (openai / anthropic)
+    let userTier = 'free'
+    try {
+      const { data: dbUser } = await supabaseAdmin
+        .from('users')
+        .select('tier')
+        .eq('github_id', user.id)
+        .single()
+      if (dbUser) {
+        userTier = dbUser.tier || 'free'
+      }
+    } catch (err) {
+      console.error('[Stateful AI Chat] Failed to fetch user tier:', err)
+    }
+
+    const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey)
+
+    if ((model === 'openai' || model === 'anthropic') && userTier === 'free' && !isBYOK) {
+      const encoder = new TextEncoder()
+      const errMsg = JSON.stringify({
+        type: 'error',
+        content: `LIMIT_EXCEEDED: ${model === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'} is a premium model restricted to Pro and Advanced subscriptions. Please upgrade your billing plan in Settings.`
+      })
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`))
+          controller.close()
+        }
+      })
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      })
+    }
+
     // Setup project container if associated
     let containerId = 'none'
     let fileTree = ''

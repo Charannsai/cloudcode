@@ -835,7 +835,11 @@ export default function AITab({ projectId }: Props) {
                 GPT-4o Premium
               </Text>
             </View>
-            {selectedModel === 'openai' && <Check size={14} color="#2F80ED" />}
+            {(userTier === 'free' && !isByokActive) ? (
+              <Lock size={13} color={colors.textSecondary} />
+            ) : (
+              selectedModel === 'openai' && <Check size={14} color="#2F80ED" />
+            )}
           </View>
         </TouchableOpacity>
 
@@ -855,12 +859,16 @@ export default function AITab({ projectId }: Props) {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Lock size={14} color="#9B51E0" />
+              <Sparkles size={14} color="#9B51E0" />
               <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
                 Claude 3.6 Opus
               </Text>
             </View>
-            {selectedModel === 'anthropic' && <Check size={14} color="#9B51E0" />}
+            {(userTier === 'free' && !isByokActive) ? (
+              <Lock size={13} color={colors.textSecondary} />
+            ) : (
+              selectedModel === 'anthropic' && <Check size={14} color="#9B51E0" />
+            )}
           </View>
         </TouchableOpacity>
       </AnimatedDropdown>

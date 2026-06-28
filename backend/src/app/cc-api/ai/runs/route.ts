@@ -21,6 +21,30 @@ export async function POST(req: NextRequest) {
       return errorResponse('Missing model type')
     }
 
+    // Check user tier if calling premium models (openai / anthropic)
+    let userTier = 'free'
+    try {
+      const { data: dbUser } = await supabaseAdmin
+        .from('users')
+        .select('tier')
+        .eq('github_id', user.id)
+        .single()
+      if (dbUser) {
+        userTier = dbUser.tier || 'free'
+      }
+    } catch (err) {
+      console.error('[AI Runs] Failed to fetch user tier:', err)
+    }
+
+    const customGeminiKey = req.headers.get('x-gemini-key') || undefined
+    const customOpenaiKey = req.headers.get('x-openai-key') || undefined
+    const customAnthropicKey = req.headers.get('x-anthropic-key') || undefined
+    const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey)
+
+    if ((model === 'openai' || model === 'anthropic') && userTier === 'free' && !isBYOK) {
+      return errorResponse(`LIMIT_EXCEEDED: ${model === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'} is a premium model restricted to Pro and Advanced subscriptions. Please upgrade your billing plan in Settings.`, 403)
+    }
+
     // 1. Create agent run record
     const { data: run, error: runErr } = await supabaseAdmin
       .from('agent_runs')
