@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
-    scope: 'read:user user:email',
+    scope: 'repo read:user user:email',
     allow_signup: 'true',
     state: appRedirectUri || '', // Store the mobile app's deep link in the state
   })
