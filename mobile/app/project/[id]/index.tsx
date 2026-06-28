@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch, Sparkles } from 'lucide-react-native'
+import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch, Sparkles, GitPullRequest } from 'lucide-react-native'
 import Animated, { useAnimatedStyle, withSpring, withTiming, Easing, useSharedValue } from 'react-native-reanimated'
 
 // Lazy-load tab screens
@@ -15,12 +15,14 @@ import TerminalTab from '@/components/project/TerminalTab'
 import PreviewTab from '@/components/project/PreviewTab'
 import GitTab from '@/components/project/GitTab'
 import AITab from '@/components/project/AITab'
+import PRsTab from '@/components/project/PRsTab'
 import VoiceOverlay from '@/components/VoiceOverlay'
 
 const TABS = [
   { id: 'Terminal', icon: Terminal },
   { id: 'Files', icon: Folder },
   { id: 'Git', icon: GitBranch },
+  { id: 'PRs', icon: GitPullRequest },
   { id: 'Preview', icon: Globe },
   { id: 'AI', icon: Sparkles },
 ] as const
@@ -187,6 +189,9 @@ export default function ProjectScreen() {
         </View>
         <View style={{ flex: 1, display: activeTab === 'Git' ? 'flex' : 'none' }}>
           <GitTab projectId={project.id} isActive={activeTab === 'Git'} />
+        </View>
+        <View style={{ flex: 1, display: activeTab === 'PRs' ? 'flex' : 'none' }}>
+          <PRsTab projectId={project.id} />
         </View>
         <View style={{ flex: 1, display: activeTab === 'Preview' ? 'flex' : 'none' }}>
           <PreviewTab projectId={project.id} port={project.port || 3000} ports={project.ports} />
