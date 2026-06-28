@@ -71,7 +71,7 @@ export const api = {
     get: (projectId: string, number: number) =>
       apiFetch<{ pr: any; conversation: any[]; files: any[] }>(`/cc-api/git/prs/${number}?projectId=${projectId}`),
     create: (projectId: string, title: string, body: string, head: string, base = 'main') =>
-      apiFetch<any>('/cc-api/git/prs/create', {
+      apiFetch<any>('/cc-api/git/prs', {
         method: 'POST',
         body: JSON.stringify({ projectId, title, body, head, base }),
       }),
