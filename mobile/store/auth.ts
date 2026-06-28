@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { CloudCodeUser, getToken, saveToken, deleteToken, decodeToken } from '@/lib/auth'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface AuthState {
   user: CloudCodeUser | null
@@ -35,6 +36,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     const user = decodeToken(token)
     if (user) {
       saveToken(token).catch(console.error)
+      
+      // Auto-populate Git Author info using GitHub profile
+      if (user.name) {
+        AsyncStorage.setItem('git_author_name', user.name).catch(console.error)
+      }
+      if (user.email) {
+        AsyncStorage.setItem('git_author_email', user.email).catch(console.error)
+      }
+      
       set({ user, token })
     }
   },
