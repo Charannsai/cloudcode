@@ -611,6 +611,7 @@ export default function SettingsScreen() {
   const [customOpenaiKey, setCustomOpenaiKey] = useState('')
   const [customAnthropicKey, setCustomAnthropicKey] = useState('')
   const [savingAiKeys, setSavingAiKeys] = useState(false)
+  const [selectedByokModel, setSelectedByokModel] = useState<'gemini' | 'openai' | 'anthropic'>('gemini')
 
   const fetchRuntimesData = useCallback(async (silent = false) => {
     const shouldShowLoader = !silent || runtimesList.length === 0
@@ -3223,110 +3224,150 @@ export default function SettingsScreen() {
                   </TouchableOpacity>
                 )}
 
-                <View style={{ gap: 16 }}>
+                <View style={{ gap: 18 }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>API KEYS CONFIGURATION</Text>
                   
-                  {/* Gemini API Key */}
-                  <View style={{ gap: 6 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Sparkles size={14} color="#475569" />
-                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Gemini API Key</Text>
-                    </View>
-                    <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
-                      <TextInput
-                        value={customGeminiKey}
-                        onChangeText={setCustomGeminiKey}
-                        secureTextEntry={!showGeminiKey}
-                        placeholder="Enter Gemini API Key..."
-                        placeholderTextColor={colors.textSecondary + '70'}
-                        style={[styles.textInput, { color: colors.text }]}
-                        autoCapitalize="none"
-                        autoComplete="off"
-                        autoCorrect={false}
-                      />
-                      {customGeminiKey.length > 0 && (
-                        <TouchableOpacity 
-                          onPress={() => setShowGeminiKey(!showGeminiKey)}
-                          style={styles.eyeBtn}
-                          activeOpacity={0.7}
+                  {/* Model Selector */}
+                  <View style={{ flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 12, padding: 4, borderWidth: 1, borderColor: colors.border }}>
+                    {(['gemini', 'openai', 'anthropic'] as const).map((m) => {
+                      const isActive = selectedByokModel === m
+                      const label = m === 'gemini' ? 'Gemini 3.5 Flash' : m === 'openai' ? 'ChatGPT 5.5' : 'Claude 4.6 Opus'
+                      return (
+                        <TouchableOpacity
+                          key={m}
+                          onPress={() => setSelectedByokModel(m)}
+                          style={{
+                            flex: 1,
+                            paddingVertical: 8,
+                            alignItems: 'center',
+                            borderRadius: 9,
+                            backgroundColor: isActive ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                            shadowColor: isActive ? '#000' : 'transparent',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: isActive ? 0.1 : 0,
+                            shadowRadius: 2,
+                            elevation: isActive ? 2 : 0,
+                          }}
                         >
-                          {showGeminiKey ? (
-                            <EyeOff size={16} color={colors.textSecondary} />
-                          ) : (
-                            <Eye size={16} color={colors.textSecondary} />
-                          )}
+                          <Text style={{
+                            color: isActive ? colors.text : colors.textSecondary,
+                            fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                            fontSize: 10.5,
+                          }}>
+                            {label}
+                          </Text>
                         </TouchableOpacity>
-                      )}
-                    </View>
+                      )
+                    })}
                   </View>
+
+                  {/* Gemini API Key */}
+                  {selectedByokModel === 'gemini' && (
+                    <View style={{ gap: 6 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Cpu size={14} color="#3FB950" />
+                        <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Gemini 3.5 Flash API Key</Text>
+                      </View>
+                      <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                        <TextInput
+                          value={customGeminiKey}
+                          onChangeText={setCustomGeminiKey}
+                          secureTextEntry={!showGeminiKey}
+                          placeholder="Enter Gemini 3.5 Flash API Key..."
+                          placeholderTextColor={colors.textSecondary + '70'}
+                          style={[styles.textInput, { color: colors.text }]}
+                          autoCapitalize="none"
+                          autoComplete="off"
+                          autoCorrect={false}
+                        />
+                        {customGeminiKey.length > 0 && (
+                          <TouchableOpacity 
+                            onPress={() => setShowGeminiKey(!showGeminiKey)}
+                            style={styles.eyeBtn}
+                            activeOpacity={0.7}
+                          >
+                            {showGeminiKey ? (
+                              <EyeOff size={16} color={colors.textSecondary} />
+                            ) : (
+                              <Eye size={16} color={colors.textSecondary} />
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  )}
 
                   {/* OpenAI API Key */}
-                  <View style={{ gap: 6 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Cpu size={14} color="#10B981" />
-                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>OpenAI API Key</Text>
+                  {selectedByokModel === 'openai' && (
+                    <View style={{ gap: 6 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Shield size={14} color="#2F80ED" />
+                        <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>ChatGPT 5.5 API Key</Text>
+                      </View>
+                      <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                        <TextInput
+                          value={customOpenaiKey}
+                          onChangeText={setCustomOpenaiKey}
+                          secureTextEntry={!showOpenaiKey}
+                          placeholder="Enter ChatGPT 5.5 API Key..."
+                          placeholderTextColor={colors.textSecondary + '70'}
+                          style={[styles.textInput, { color: colors.text }]}
+                          autoCapitalize="none"
+                          autoComplete="off"
+                          autoCorrect={false}
+                        />
+                        {customOpenaiKey.length > 0 && (
+                          <TouchableOpacity 
+                            onPress={() => setShowOpenaiKey(!showOpenaiKey)}
+                            style={styles.eyeBtn}
+                            activeOpacity={0.7}
+                          >
+                            {showOpenaiKey ? (
+                              <EyeOff size={16} color={colors.textSecondary} />
+                            ) : (
+                              <Eye size={16} color={colors.textSecondary} />
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
-                    <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
-                      <TextInput
-                        value={customOpenaiKey}
-                        onChangeText={setCustomOpenaiKey}
-                        secureTextEntry={!showOpenaiKey}
-                        placeholder="Enter OpenAI API Key..."
-                        placeholderTextColor={colors.textSecondary + '70'}
-                        style={[styles.textInput, { color: colors.text }]}
-                        autoCapitalize="none"
-                        autoComplete="off"
-                        autoCorrect={false}
-                      />
-                      {customOpenaiKey.length > 0 && (
-                        <TouchableOpacity 
-                          onPress={() => setShowOpenaiKey(!showOpenaiKey)}
-                          style={styles.eyeBtn}
-                          activeOpacity={0.7}
-                        >
-                          {showOpenaiKey ? (
-                            <EyeOff size={16} color={colors.textSecondary} />
-                          ) : (
-                            <Eye size={16} color={colors.textSecondary} />
-                          )}
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
+                  )}
 
                   {/* Anthropic API Key */}
-                  <View style={{ gap: 6 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Shield size={14} color="#D97706" />
-                      <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Anthropic API Key</Text>
+                  {selectedByokModel === 'anthropic' && (
+                    <View style={{ gap: 6 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Sparkles size={14} color="#9B51E0" />
+                        <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Claude 4.6 Opus API Key</Text>
+                      </View>
+                      <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                        <TextInput
+                          value={customAnthropicKey}
+                          onChangeText={setCustomAnthropicKey}
+                          secureTextEntry={!showAnthropicKey}
+                          placeholder="Enter Claude 4.6 Opus API Key..."
+                          placeholderTextColor={colors.textSecondary + '70'}
+                          style={[styles.textInput, { color: colors.text }]}
+                          autoCapitalize="none"
+                          autoComplete="off"
+                          autoCorrect={false}
+                        />
+                        {customAnthropicKey.length > 0 && (
+                          <TouchableOpacity 
+                            onPress={() => setShowAnthropicKey(!showAnthropicKey)}
+                            style={styles.eyeBtn}
+                            activeOpacity={0.7}
+                          >
+                            {showAnthropicKey ? (
+                              <EyeOff size={16} color={colors.textSecondary} />
+                            ) : (
+                              <Eye size={16} color={colors.textSecondary} />
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
-                    <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
-                      <TextInput
-                        value={customAnthropicKey}
-                        onChangeText={setCustomAnthropicKey}
-                        secureTextEntry={!showAnthropicKey}
-                        placeholder="Enter Anthropic API Key..."
-                        placeholderTextColor={colors.textSecondary + '70'}
-                        style={[styles.textInput, { color: colors.text }]}
-                        autoCapitalize="none"
-                        autoComplete="off"
-                        autoCorrect={false}
-                      />
-                      {customAnthropicKey.length > 0 && (
-                        <TouchableOpacity 
-                          onPress={() => setShowAnthropicKey(!showAnthropicKey)}
-                          style={styles.eyeBtn}
-                          activeOpacity={0.7}
-                        >
-                          {showAnthropicKey ? (
-                            <EyeOff size={16} color={colors.textSecondary} />
-                          ) : (
-                            <Eye size={16} color={colors.textSecondary} />
-                          )}
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
+                  )}
                 </View>
               </>
             )}

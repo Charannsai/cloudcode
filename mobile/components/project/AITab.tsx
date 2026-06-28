@@ -557,6 +557,9 @@ export default function AITab({ projectId }: Props) {
 
   const [isByokActive, setIsByokActive] = useState(false)
   const [userTier, setUserTier] = useState('free')
+  const [hasGeminiKey, setHasGeminiKey] = useState(false)
+  const [hasOpenaiKey, setHasOpenaiKey] = useState(false)
+  const [hasAnthropicKey, setHasAnthropicKey] = useState(false)
 
   // Voice recording state
   const [isListening, setIsListening] = useState(false)
@@ -569,6 +572,13 @@ export default function AITab({ projectId }: Props) {
     try {
       const byok = await AsyncStorage.getItem('byok_enabled')
       setIsByokActive(byok === 'true')
+
+      const geminiKey = await AsyncStorage.getItem('custom_gemini_key')
+      const openaiKey = await AsyncStorage.getItem('custom_openai_key')
+      const anthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
+      setHasGeminiKey(!!(geminiKey && geminiKey.trim()))
+      setHasOpenaiKey(!!(openaiKey && openaiKey.trim()))
+      setHasAnthropicKey(!!(anthropicKey && anthropicKey.trim()))
 
       const billing = await api.billing.status()
       if (billing?.tier?.name) {
@@ -680,6 +690,23 @@ export default function AITab({ projectId }: Props) {
 
   const handleSend = async () => {
     if (!inputText.trim() || isStreaming) return
+
+    // Verify BYOK keys if BYOK is active
+    if (isByokActive) {
+      if (selectedModel === 'gemini' && !hasGeminiKey) {
+        Alert.alert('API Key Required', 'Please configure your Gemini 3.5 Flash API key in Settings to use this model.')
+        return
+      }
+      if (selectedModel === 'openai' && !hasOpenaiKey) {
+        Alert.alert('API Key Required', 'Please configure your ChatGPT 5.5 API key in Settings to use this model.')
+        return
+      }
+      if (selectedModel === 'anthropic' && !hasAnthropicKey) {
+        Alert.alert('API Key Required', 'Please configure your Claude 4.6 Opus API key in Settings to use this model.')
+        return
+      }
+    }
+
     const prompt = inputText.trim()
     setInputText('')
     setFriendlyError(null)
@@ -765,7 +792,7 @@ export default function AITab({ projectId }: Props) {
             activeOpacity={0.7}
           >
             <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_600SemiBold' }}>
-              {selectedModel === 'gemini' ? 'Gemini 1.5 Flash' : selectedModel === 'openai' ? 'GPT-4o' : 'Claude 3.6 Opus'}
+              {selectedModel === 'gemini' ? 'Gemini 3.5 Flash' : selectedModel === 'openai' ? 'ChatGPT 5.5' : 'Claude 4.6 Opus'}
             </Text>
             <ChevronDown size={11} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -799,15 +826,22 @@ export default function AITab({ projectId }: Props) {
         <TouchableOpacity
           style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingHorizontal: 16 }]}
           onPress={() => {
-            setSelectedModel('gemini')
-            setModelSelectorVisible(false)
+            if (isByokActive && !hasGeminiKey) {
+              Alert.alert(
+                'API Key Required',
+                'Please configure your Gemini 3.5 Flash API key in Settings to use this model.'
+              )
+            } else {
+              setSelectedModel('gemini')
+              setModelSelectorVisible(false)
+            }
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Cpu size={14} color="#3FB950" />
               <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                Gemini 1.5 Flash
+                Gemini 3.5 Flash
               </Text>
             </View>
             {selectedModel === 'gemini' && <Check size={14} color="#3FB950" />}
@@ -822,6 +856,11 @@ export default function AITab({ projectId }: Props) {
                 'Premium Model Locked',
                 'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
               )
+            } else if (isByokActive && !hasOpenaiKey) {
+              Alert.alert(
+                'API Key Required',
+                'Please configure your ChatGPT 5.5 API key in Settings to use this model.'
+              )
             } else {
               setSelectedModel('openai')
               setModelSelectorVisible(false)
@@ -832,7 +871,7 @@ export default function AITab({ projectId }: Props) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Shield size={14} color="#2F80ED" />
               <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                GPT-4o Premium
+                ChatGPT 5.5
               </Text>
             </View>
             {(userTier === 'free' && !isByokActive) ? (
@@ -851,6 +890,11 @@ export default function AITab({ projectId }: Props) {
                 'Premium Model Locked',
                 'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
               )
+            } else if (isByokActive && !hasAnthropicKey) {
+              Alert.alert(
+                'API Key Required',
+                'Please configure your Claude 4.6 Opus API key in Settings to use this model.'
+              )
             } else {
               setSelectedModel('anthropic')
               setModelSelectorVisible(false)
@@ -861,7 +905,7 @@ export default function AITab({ projectId }: Props) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Sparkles size={14} color="#9B51E0" />
               <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
-                Claude 3.6 Opus
+                Claude 4.6 Opus
               </Text>
             </View>
             {(userTier === 'free' && !isByokActive) ? (
