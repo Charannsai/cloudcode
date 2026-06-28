@@ -15,6 +15,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { recordAppCommit } from '@/lib/appAudit'
 import { ConfirmModal } from '@/components/ConfirmModal'
+import PRsTab from './PRsTab'
 
 interface Props {
   projectId: string
@@ -43,6 +44,7 @@ export default function GitTab({ projectId, isActive }: Props) {
   const [commitMessage, setCommitMessage] = useState('')
   const [committing, setCommitting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [gitSubTab, setGitSubTab] = useState<'changes' | 'prs'>('changes')
   const [syncAction, setSyncAction] = useState<'push' | 'pull' | null>(null)
   const [conflicts, setConflicts] = useState<string[]>([])
   const [expandedSections, setExpandedSections] = useState({
@@ -443,8 +445,28 @@ export default function GitTab({ projectId, isActive }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Branch & Sync Header Panel */}
-      <View style={[styles.branchBar, { backgroundColor: isDark ? '#161B22' : '#FFFFFF', borderBottomColor: colors.border }]}>
+      {/* Top Tab Selector */}
+      <View style={[styles.tabSelectorContainer, { borderBottomColor: colors.border, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}>
+        <TouchableOpacity
+          style={[styles.tabSelectorBtn, gitSubTab === 'changes' && { borderBottomColor: colors.text, borderBottomWidth: 2 }]}
+          onPress={() => setGitSubTab('changes')}
+        >
+          <Text style={[styles.tabSelectorText, { color: gitSubTab === 'changes' ? colors.text : colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>Changes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabSelectorBtn, gitSubTab === 'prs' && { borderBottomColor: colors.text, borderBottomWidth: 2 }]}
+          onPress={() => setGitSubTab('prs')}
+        >
+          <Text style={[styles.tabSelectorText, { color: gitSubTab === 'prs' ? colors.text : colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>Pull Requests</Text>
+        </TouchableOpacity>
+      </View>
+
+      {gitSubTab === 'prs' ? (
+        <PRsTab projectId={projectId} />
+      ) : (
+        <>
+          {/* Branch & Sync Header Panel */}
+          <View style={[styles.branchBar, { backgroundColor: isDark ? '#161B22' : '#FFFFFF', borderBottomColor: colors.border }]}>
         <TouchableOpacity style={[styles.branchSelector, { backgroundColor: isDark ? '#21262D' : '#F3F4F6' }]} onPress={handleLoadBranches}>
           <GitBranch size={13} color={isDark ? '#58A6FF' : '#0969da'} />
           <Text style={[styles.branchName, { color: isDark ? '#C9D1D9' : '#1F2328' }]}>
@@ -794,6 +816,8 @@ export default function GitTab({ projectId, isActive }: Props) {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </>
+      )}
 
       {/* Global reusable ConfirmModal */}
       <ConfirmModal
@@ -813,6 +837,19 @@ export default function GitTab({ projectId, isActive }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  tabSelectorContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    height: 44,
+  },
+  tabSelectorBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabSelectorText: {
+    fontSize: 13,
+  },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   loadingText: { fontSize: 13, fontFamily: 'Inter_500Medium' },
   errorTitle: { fontSize: 16, fontFamily: 'Inter_700Bold', marginTop: 8 },

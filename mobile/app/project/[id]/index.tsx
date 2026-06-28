@@ -22,7 +22,6 @@ const TABS = [
   { id: 'Terminal', icon: Terminal },
   { id: 'Files', icon: Folder },
   { id: 'Git', icon: GitBranch },
-  { id: 'PRs', icon: GitPullRequest },
   { id: 'Preview', icon: Globe },
   { id: 'AI', icon: Sparkles },
 ] as const
@@ -189,9 +188,6 @@ export default function ProjectScreen() {
         </View>
         <View style={{ flex: 1, display: activeTab === 'Git' ? 'flex' : 'none' }}>
           <GitTab projectId={project.id} isActive={activeTab === 'Git'} />
-        </View>
-        <View style={{ flex: 1, display: activeTab === 'PRs' ? 'flex' : 'none' }}>
-          <PRsTab projectId={project.id} />
         </View>
         <View style={{ flex: 1, display: activeTab === 'Preview' ? 'flex' : 'none' }}>
           <PreviewTab projectId={project.id} port={project.port || 3000} ports={project.ports} />
