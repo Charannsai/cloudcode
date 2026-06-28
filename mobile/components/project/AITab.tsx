@@ -22,6 +22,7 @@ import { useAIStore, ChatMessage, ToolCallInfo } from '@/store/ai'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Markdown from 'react-native-markdown-display'
 import { api } from '@/lib/api'
+import { ConfirmModal } from '@/components/ConfirmModal'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -561,6 +562,35 @@ export default function AITab({ projectId }: Props) {
   const [hasOpenaiKey, setHasOpenaiKey] = useState(false)
   const [hasAnthropicKey, setHasAnthropicKey] = useState(false)
 
+  const [modalConfig, setModalConfig] = useState<{
+    visible: boolean
+    title: string
+    message: string
+    confirmText?: string
+    cancelText?: string
+    type?: 'danger' | 'warning' | 'info' | 'logout' | 'success' | 'error'
+    singleButton?: boolean
+    onConfirm: () => void
+    onCancel?: () => void
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  })
+
+  const showAlert = (title: string, message: string, type: 'info' | 'warning' | 'error' = 'info') => {
+    setModalConfig({
+      visible: true,
+      title,
+      message,
+      confirmText: 'OK',
+      type,
+      singleButton: true,
+      onConfirm: () => setModalConfig(prev => ({ ...prev, visible: false }))
+    })
+  }
+
   // Voice recording state
   const [isListening, setIsListening] = useState(false)
   const voicePulse = useRef(new Animated.Value(1)).current
@@ -694,15 +724,15 @@ export default function AITab({ projectId }: Props) {
     // Verify BYOK keys if BYOK is active
     if (isByokActive) {
       if (selectedModel === 'gemini' && !hasGeminiKey) {
-        Alert.alert('API Key Required', 'Please configure your Gemini 3.5 Flash API key in Settings to use this model.')
+        showAlert('API Key Required', 'Please configure your Gemini 3.5 Flash API key in Settings to use this model.', 'warning')
         return
       }
       if (selectedModel === 'openai' && !hasOpenaiKey) {
-        Alert.alert('API Key Required', 'Please configure your ChatGPT 5.5 API key in Settings to use this model.')
+        showAlert('API Key Required', 'Please configure your ChatGPT 5.5 API key in Settings to use this model.', 'warning')
         return
       }
       if (selectedModel === 'anthropic' && !hasAnthropicKey) {
-        Alert.alert('API Key Required', 'Please configure your Claude 4.6 Opus API key in Settings to use this model.')
+        showAlert('API Key Required', 'Please configure your Claude 4.6 Opus API key in Settings to use this model.', 'warning')
         return
       }
     }
@@ -827,9 +857,10 @@ export default function AITab({ projectId }: Props) {
           style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingHorizontal: 16 }]}
           onPress={() => {
             if (isByokActive && !hasGeminiKey) {
-              Alert.alert(
+              showAlert(
                 'API Key Required',
-                'Please configure your Gemini 3.5 Flash API key in Settings to use this model.'
+                'Please configure your Gemini 3.5 Flash API key in Settings to use this model.',
+                'warning'
               )
             } else {
               setSelectedModel('gemini')
@@ -852,14 +883,16 @@ export default function AITab({ projectId }: Props) {
           style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingHorizontal: 16, opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
           onPress={() => {
             if (userTier === 'free' && !isByokActive) {
-              Alert.alert(
+              showAlert(
                 'Premium Model Locked',
-                'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
+                'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.',
+                'warning'
               )
             } else if (isByokActive && !hasOpenaiKey) {
-              Alert.alert(
+              showAlert(
                 'API Key Required',
-                'Please configure your ChatGPT 5.5 API key in Settings to use this model.'
+                'Please configure your ChatGPT 5.5 API key in Settings to use this model.',
+                'warning'
               )
             } else {
               setSelectedModel('openai')
@@ -886,14 +919,16 @@ export default function AITab({ projectId }: Props) {
           style={[styles.inlineModelItem, { borderBottomWidth: 0, paddingHorizontal: 16, opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
           onPress={() => {
             if (userTier === 'free' && !isByokActive) {
-              Alert.alert(
+              showAlert(
                 'Premium Model Locked',
-                'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.'
+                'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.',
+                'warning'
               )
             } else if (isByokActive && !hasAnthropicKey) {
-              Alert.alert(
+              showAlert(
                 'API Key Required',
-                'Please configure your Claude 4.6 Opus API key in Settings to use this model.'
+                'Please configure your Claude 4.6 Opus API key in Settings to use this model.',
+                'warning'
               )
             } else {
               setSelectedModel('anthropic')
@@ -1187,6 +1222,18 @@ export default function AITab({ projectId }: Props) {
         </View>
       </View>
 
+        {/* Custom Alert/Confirm Modal */}
+        <ConfirmModal
+          visible={modalConfig.visible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          type={modalConfig.type}
+          singleButton={modalConfig.singleButton}
+          onConfirm={modalConfig.onConfirm}
+          onCancel={modalConfig.onCancel}
+        />
       </KeyboardAvoidingView>
     )
   }
