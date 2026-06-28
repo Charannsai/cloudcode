@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { createContainer, getWorkspacePath } from '@/lib/docker'
+import { createContainer, getWorkspacePath, execInContainer } from '@/lib/docker'
 import path from 'path'
 import { spawnSync } from 'child_process'
 import fs from 'fs'
@@ -73,29 +73,61 @@ export async function POST(req: NextRequest) {
 
   if (dbError) return errorResponse(dbError.message, 500)
 
-  cloneAndProvision(projectId, githubUrl).catch(console.error)
+  cloneAndProvision(projectId, githubUrl, user.id).catch(console.error)
 
   return successResponse(project, 201)
 }
 
-async function cloneAndProvision(projectId: string, githubUrl: string) {
+async function cloneAndProvision(projectId: string, githubUrl: string, userGithubId: string) {
   const workspacePath = getWorkspacePath(projectId)
   try {
+    // 1. Fetch user's GitHub token (if any)
+    const { data: dbUser } = await supabaseAdmin
+      .from('users')
+      .select('github_token')
+      .eq('github_id', userGithubId)
+      .single()
+
+    const githubToken = dbUser?.github_token || undefined
+
+    // 2. Create workspace directory on host
     fs.mkdirSync(workspacePath, { recursive: true })
-    // SECURITY: Use spawnSync with array args to prevent shell injection via githubUrl
-    const cloneResult = spawnSync('git', ['clone', '--depth=1', githubUrl, workspacePath], {
-      timeout: 60000,
-      stdio: 'pipe',
-    })
-    if (cloneResult.status !== 0) {
-      throw new Error(`git clone failed: ${cloneResult.stderr?.toString() || 'unknown error'}`)
-    }
-    
-    // Grant full permissions recursively so the Docker "coder" user can read/write the cloned code!
-    // SECURITY: Use spawnSync with array args to prevent shell injection via workspacePath
     spawnSync('chmod', ['-R', '777', workspacePath], { stdio: 'ignore' })
 
+    // 3. Provision the container first (with empty workspace mounted)
     const { containerId, port } = await createContainer(projectId)
+
+    // 4. Determine clone URL (OAuth HTTPS or SSH fallback)
+    let cloneUrl = githubUrl
+    if (githubToken) {
+      const cleanUrl = githubUrl.replace(/^https?:\/\//, '')
+      cloneUrl = `https://${githubToken}@${cleanUrl}`
+    } else {
+      // Fallback: Translate to SSH if no token is available
+      const match = githubUrl.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/)
+      if (match) {
+        const owner = match[1]
+        const repo = match[2]
+        cloneUrl = `git@github.com:${owner}/${repo}.git`
+      }
+    }
+
+    // 5. Clone the repository inside the container
+    let cloneOutput = ''
+    const exitCode = await execInContainer(
+      containerId,
+      ['git', 'clone', '--depth=1', cloneUrl, '/workspace'],
+      (data) => {
+        cloneOutput += data
+      },
+      'coder' // Run as 'coder' so it uses the SSH volume mounted at /home/coder/.ssh
+    )
+
+    if (exitCode !== 0) {
+      throw new Error(`git clone failed inside container (exit code ${exitCode}): ${cloneOutput}`)
+    }
+
+    // 6. Mark project as ready
     await supabaseAdmin
       .from('projects')
       .update({ 

@@ -103,6 +103,7 @@ export async function GET(req: NextRequest) {
           email: primaryEmail,
           name: ghUser.name,
           avatar_url: ghUser.avatar_url,
+          github_token: ghToken,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'github_id' }

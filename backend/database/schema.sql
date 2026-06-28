@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   email       TEXT,
   name        TEXT,
   avatar_url  TEXT,
+  github_token TEXT,
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );

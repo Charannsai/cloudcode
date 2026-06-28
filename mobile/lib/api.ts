@@ -65,6 +65,28 @@ export const api = {
       }),
   },
 
+  prs: {
+    list: (projectId: string) =>
+      apiFetch<any[]>(`/cc-api/git/prs?projectId=${projectId}`),
+    get: (projectId: string, number: number) =>
+      apiFetch<{ pr: any; conversation: any[]; files: any[] }>(`/cc-api/git/prs/${number}?projectId=${projectId}`),
+    create: (projectId: string, title: string, body: string, head: string, base = 'main') =>
+      apiFetch<any>('/cc-api/git/prs/create', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, title, body, head, base }),
+      }),
+    review: (projectId: string, number: number, event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT', body: string) =>
+      apiFetch<any>(`/cc-api/git/prs/${number}/review?projectId=${projectId}`, {
+        method: 'POST',
+        body: JSON.stringify({ event, body }),
+      }),
+    merge: (projectId: string, number: number, mergeMethod: 'merge' | 'squash' | 'rebase', commitTitle?: string, commitMessage?: string) =>
+      apiFetch<any>(`/cc-api/git/prs/${number}/merge?projectId=${projectId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ merge_method: mergeMethod, commit_title: commitTitle, commit_message: commitMessage }),
+      }),
+  },
+
   files: {
     list: (projectId: string) =>
       apiFetch<FileNode[]>(`/cc-api/projects/${projectId}/files`),
