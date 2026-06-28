@@ -11,6 +11,8 @@ import {
   TextInput,
   Modal,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native'
 import {
   GitPullRequest,
@@ -515,8 +517,12 @@ export default function PRsTab({ projectId }: PRsTabProps) {
 
         {/* Review Modal */}
         <Modal visible={reviewModalVisible} animationType="slide" transparent>
-          <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-            <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <KeyboardAvoidingView 
+            style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]} 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={{ flex: 1, justifyContent: 'flex-end', width: '100%' }}>
+              <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
               <Text style={[styles.modalTitleText, { color: colors.text }]}>Submit Review</Text>
               
               {/* Event selector */}
@@ -574,12 +580,17 @@ export default function PRsTab({ projectId }: PRsTabProps) {
               </View>
             </Animated.View>
           </View>
+          </KeyboardAvoidingView>
         </Modal>
 
         {/* Merge Modal */}
         <Modal visible={mergeModalVisible} animationType="slide" transparent>
-          <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-            <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <KeyboardAvoidingView 
+            style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]} 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={{ flex: 1, justifyContent: 'flex-end', width: '100%' }}>
+              <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
               <Text style={[styles.modalTitleText, { color: colors.text }]}>Merge Pull Request</Text>
 
               {/* Merge method selector */}
@@ -645,6 +656,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
               </View>
             </Animated.View>
           </View>
+          </KeyboardAvoidingView>
         </Modal>
 
         {renderDiffViewer()}
@@ -654,7 +666,11 @@ export default function PRsTab({ projectId }: PRsTabProps) {
 
   const renderCreatePRView = () => {
     return (
-      <View style={{ flex: 1 }}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+      >
         {/* Header */}
         <View style={[styles.detailHeader, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => setViewMode('list')} style={styles.backBtn}>
@@ -748,7 +764,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
             )}
           </TouchableOpacity>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     )
   }
 
