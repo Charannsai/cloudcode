@@ -709,13 +709,13 @@ export default function SettingsScreen() {
       // 1. Load Git author info from cache
       const cachedName = await AsyncStorage.getItem('git_author_name')
       const cachedEmail = await AsyncStorage.getItem('git_author_email')
-      const initialName = cachedName || user?.name || user?.login || ''
-      const initialEmail = cachedEmail || user?.email || ''
+      const defaultGitName = cachedName || user?.name || user?.login || ''
+      const defaultGitEmail = cachedEmail || user?.email || ''
 
-      setGitName(initialName)
-      setInitialGitName(initialName)
-      setGitEmail(initialEmail)
-      setInitialGitEmail(initialEmail)
+      setGitName(defaultGitName)
+      setInitialGitName(defaultGitName)
+      setGitEmail(defaultGitEmail)
+      setInitialGitEmail(defaultGitEmail)
 
       // 2. Load AI Keys
       const cachedByok = await AsyncStorage.getItem('byok_enabled')
