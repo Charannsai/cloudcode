@@ -847,7 +847,8 @@ export default function AIScreen() {
           <View style={{ alignItems: 'center', flex: 1, marginRight: 22 }}>
             <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }]}>
               CloudCodeAI
-                  <TouchableOpacity
+            </Text>
+            <TouchableOpacity
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}
               onPress={() => setModelSelectorVisible(!modelSelectorVisible)}
               activeOpacity={0.7}
