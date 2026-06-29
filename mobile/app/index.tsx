@@ -404,30 +404,24 @@ const Screen1Illustration = () => {
         </Animated.View>
       </View>
 
-      {/* Top edge fade overlay */}
-      <View style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 80, zIndex: 20, pointerEvents: 'none' }}>
-        <Svg width="100%" height={80}>
-          <Defs>
-            <LinearGradient id="topFade" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#05070B" stopOpacity="1" />
-              <Stop offset="1" stopColor="#05070B" stopOpacity="0" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="80" fill="url(#topFade)" />
-        </Svg>
+      {/* Top edge fade overlay - stacked solid layers */}
+      <View style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 90, zIndex: 20, pointerEvents: 'none' }}>
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 1 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.85 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.65 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.4 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.2 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.05 }} />
       </View>
 
-      {/* Bottom edge fade overlay */}
-      <View style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 80, zIndex: 20, pointerEvents: 'none' }}>
-        <Svg width="100%" height={80}>
-          <Defs>
-            <LinearGradient id="bottomFade" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#05070B" stopOpacity="0" />
-              <Stop offset="1" stopColor="#05070B" stopOpacity="1" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="80" fill="url(#bottomFade)" />
-        </Svg>
+      {/* Bottom edge fade overlay - stacked solid layers */}
+      <View style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 90, zIndex: 20, pointerEvents: 'none' }}>
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.05 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.2 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.4 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.65 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 0.85 }} />
+        <View style={{ flex: 1, backgroundColor: '#05070B', opacity: 1 }} />
       </View>
     </View>
   )
