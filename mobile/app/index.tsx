@@ -214,177 +214,191 @@ const Screen0Illustration = () => {
 }
 
 // -------------------------------------------------------------
-// Onboarding Illustration Component 1: Workspaces Showcase
+// Onboarding Illustration Component 1: Dual Marquee Icon Rows
 // -------------------------------------------------------------
+
+// Icon tile for the marquee rows
+const MarqueeIconTile = ({ children, label }: { children: React.ReactNode; label: string }) => (
+  <View style={{
+    width: 68,
+    height: 68,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 6,
+  }}>
+    {children}
+    <Text style={{
+      color: 'rgba(255, 255, 255, 0.5)',
+      fontSize: 7,
+      fontFamily: 'Inter_500Medium',
+      marginTop: 4,
+      letterSpacing: 0.3,
+    }}>{label}</Text>
+  </View>
+)
+
+// Top row icons: React, Docker, Go, TypeScript, Python, Flutter, OpenAI, Claude
+const ROW_TOP_ICONS = [
+  { key: 'react', label: 'React', icon: <ReactLogo /> },
+  { key: 'docker', label: 'Docker', icon: <DockerLogo /> },
+  { key: 'go', label: 'Go', icon: <GoLogo /> },
+  { key: 'ts', label: 'TypeScript', icon: <TypeScriptLogo /> },
+  { key: 'python', label: 'Python', icon: <PythonLogo /> },
+  { key: 'flutter', label: 'Flutter', icon: <FlutterLogo /> },
+  { key: 'openai', label: 'OpenAI', icon: <OpenAILogo /> },
+  { key: 'claude', label: 'Claude', icon: <ClaudeLogo /> },
+]
+
+// Bottom row icons: Gemini, DeepSeek, Llama, React, Docker, Go, TypeScript, Python
+const ROW_BOTTOM_ICONS = [
+  { key: 'gemini', label: 'Gemini', icon: <GeminiLogo /> },
+  { key: 'deepseek', label: 'DeepSeek', icon: <DeepSeekLogo /> },
+  { key: 'llama', label: 'Llama', icon: <LlamaLogo /> },
+  { key: 'react2', label: 'React', icon: <ReactLogo /> },
+  { key: 'docker2', label: 'Docker', icon: <DockerLogo /> },
+  { key: 'go2', label: 'Go', icon: <GoLogo /> },
+  { key: 'ts2', label: 'TypeScript', icon: <TypeScriptLogo /> },
+  { key: 'flutter2', label: 'Flutter', icon: <FlutterLogo /> },
+]
+
+const ICON_TILE_WIDTH = 80 // 68 + 12 margin
+const MARQUEE_ROW_WIDTH = ROW_TOP_ICONS.length * ICON_TILE_WIDTH
+
 const Screen1Illustration = () => {
-  const floatAnim = useSharedValue(0)
-  const pulseAnim = useSharedValue(0)
+  const topRowAnim = useSharedValue(0)
+  const bottomRowAnim = useSharedValue(0)
+  const glowAnim = useSharedValue(0)
 
   useEffect(() => {
-    floatAnim.value = withRepeat(
-      withTiming(1, { duration: 3200, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    )
-    pulseAnim.value = withRepeat(
-      withTiming(1, { duration: 2400, easing: Easing.linear }),
+    // Top row scrolls left
+    topRowAnim.value = withRepeat(
+      withTiming(-MARQUEE_ROW_WIDTH, { duration: 18000, easing: Easing.linear }),
       -1,
       false
     )
+    // Bottom row scrolls right
+    bottomRowAnim.value = withRepeat(
+      withTiming(MARQUEE_ROW_WIDTH, { duration: 18000, easing: Easing.linear }),
+      -1,
+      false
+    )
+    // Center logo glow pulse
+    glowAnim.value = withRepeat(
+      withTiming(1, { duration: 2800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
   }, [])
 
-  const centralStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 800 },
-      { rotateX: '6deg' },
-      { rotateY: '-4deg' },
-      { translateY: floatAnim.value * 8 - 4 }
-    ]
+  const topRowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: topRowAnim.value }],
   }))
 
-  const gitHubCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: floatAnim.value * 6 - 3 },
-      { translateX: -15 }
-    ]
+  const bottomRowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: bottomRowAnim.value - MARQUEE_ROW_WIDTH }],
   }))
 
-  const reactCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: -floatAnim.value * 10 + 5 },
-      { translateX: 15 }
-    ]
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(glowAnim.value, [0, 1], [0.4, 0.9]),
+    transform: [{ scale: interpolate(glowAnim.value, [0, 1], [0.95, 1.1]) }],
   }))
 
-  const flutterCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: floatAnim.value * 8 - 4 },
-      { translateX: 20 }
-    ]
-  }))
-
-  const dockerCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: -floatAnim.value * 6 + 3 },
-      { translateX: -20 }
-    ]
-  }))
-
-  const animatedPulseProps = useAnimatedProps(() => {
-    return {
-      strokeDashoffset: -pulseAnim.value * 120
-    }
-  })
+  const renderRow = (icons: typeof ROW_TOP_ICONS) => (
+    <>
+      {icons.map((item) => (
+        <MarqueeIconTile key={item.key} label={item.label}>
+          {item.icon}
+        </MarqueeIconTile>
+      ))}
+      {/* Duplicate for seamless loop */}
+      {icons.map((item) => (
+        <MarqueeIconTile key={`${item.key}-dup`} label={item.label}>
+          {item.icon}
+        </MarqueeIconTile>
+      ))}
+    </>
+  )
 
   return (
     <View style={styles.showcaseWrapper}>
-      <Svg style={StyleSheet.absoluteFill} viewBox="0 0 350 250">
-        <Path 
-          d="M 50 70 Q 110 70 140 120" 
-          fill="none" 
-          stroke="rgba(0, 229, 255, 0.15)" 
-          strokeWidth="2" 
-          strokeDasharray="4, 4" 
-        />
-        <AnimatedPath 
-          d="M 50 70 Q 110 70 140 120" 
-          fill="none" 
-          stroke="#00E5FF" 
-          strokeWidth="2" 
-          strokeDasharray="15, 105" 
-          animatedProps={animatedPulseProps}
-        />
-        <Path 
-          d="M 210 120 Q 240 60 300 60" 
-          fill="none" 
-          stroke="rgba(0, 229, 255, 0.15)" 
-          strokeWidth="2" 
-          strokeDasharray="4, 4" 
-        />
-        <AnimatedPath 
-          d="M 210 120 Q 240 60 300 60" 
-          fill="none" 
-          stroke="#61DAFB" 
-          strokeWidth="2" 
-          strokeDasharray="15, 105" 
-          animatedProps={animatedPulseProps}
-        />
-        <Path 
-          d="M 210 120 Q 240 120 290 130" 
-          fill="none" 
-          stroke="rgba(0, 229, 255, 0.15)" 
-          strokeWidth="2" 
-          strokeDasharray="4, 4" 
-        />
-        <AnimatedPath 
-          d="M 210 120 Q 240 120 290 130" 
-          fill="none" 
-          stroke="#13B9FD" 
-          strokeWidth="2" 
-          strokeDasharray="15, 105" 
-          animatedProps={animatedPulseProps}
-        />
-        <Path 
-          d="M 210 120 Q 240 180 280 200" 
-          fill="none" 
-          stroke="rgba(0, 229, 255, 0.15)" 
-          strokeWidth="2" 
-          strokeDasharray="4, 4" 
-        />
-        <AnimatedPath 
-          d="M 210 120 Q 240 180 280 200" 
-          fill="none" 
-          stroke="#2496ED" 
-          strokeWidth="2" 
-          strokeDasharray="15, 105" 
-          animatedProps={animatedPulseProps}
-        />
-      </Svg>
+      {/* Top row - scrolls left */}
+      <View style={{ width: '100%', overflow: 'hidden', marginBottom: 16 }}>
+        <Animated.View style={[{ flexDirection: 'row' }, topRowStyle]}>
+          {renderRow(ROW_TOP_ICONS)}
+        </Animated.View>
+      </View>
 
-      <Animated.View style={[styles.floatingBadge, { left: 15, top: 40 }, gitHubCardStyle]}>
-        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
-          <Svg width={14} height={14} viewBox="0 0 24 24" fill="#FFFFFF">
-            <Path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+      {/* Center CloudCode Logo with glow */}
+      <View style={{ alignItems: 'center', justifyContent: 'center', height: 90, zIndex: 10 }}>
+        <Animated.View style={[{
+          position: 'absolute',
+          width: 120,
+          height: 120,
+          borderRadius: 60,
+          backgroundColor: 'rgba(0, 229, 255, 0.12)',
+        }, glowStyle]} />
+        <View style={{
+          width: 72,
+          height: 72,
+          borderRadius: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          borderWidth: 1.5,
+          borderColor: 'rgba(0, 229, 255, 0.3)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#00E5FF',
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.4,
+          shadowRadius: 20,
+          elevation: 10,
+        }}>
+          <Svg width={40} height={40} viewBox="0 0 874 552">
+            <Path
+              d={CLOUD_PATH}
+              fill="none"
+              stroke="#00E5FF"
+              strokeWidth={18}
+            />
           </Svg>
-          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>octocat/app</Text>
-        </BlurView>
-      </Animated.View>
+        </View>
+      </View>
 
-      <Animated.View style={[styles.workspaceCard, { width: width - 150, height: 110, zIndex: 10 }, centralStyle, styles.glassCard3d]}>
-        <BlurView intensity={35} tint="dark" style={styles.workspaceBlur}>
-          <View style={styles.workspaceHeader}>
-            <View style={[styles.windowDot, { backgroundColor: '#FF5F56' }]} />
-            <View style={[styles.windowDot, { backgroundColor: '#FFBD2E' }]} />
-            <View style={[styles.windowDot, { backgroundColor: '#27C93F' }]} />
-            <Text style={styles.windowTitle}>workspace_main</Text>
-          </View>
-          <View style={styles.workspaceBody}>
-            <Text style={styles.codeText}>$ git clone https://github.com/octocat/app...</Text>
-            <Text style={[styles.codeText, { color: '#00E5FF', marginTop: 4 }]}>✓ Cloned. Starting Dev Environment.</Text>
-          </View>
-        </BlurView>
-      </Animated.View>
+      {/* Bottom row - scrolls right */}
+      <View style={{ width: '100%', overflow: 'hidden', marginTop: 16 }}>
+        <Animated.View style={[{ flexDirection: 'row' }, bottomRowStyle]}>
+          {renderRow(ROW_BOTTOM_ICONS)}
+        </Animated.View>
+      </View>
 
-      <Animated.View style={[styles.floatingBadge, { right: 10, top: 40 }, reactCardStyle]}>
-        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
-          <ReactLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>React Dev</Text>
-        </BlurView>
-      </Animated.View>
+      {/* Left edge fade overlay */}
+      <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, zIndex: 20, pointerEvents: 'none' }}>
+        <Svg width={60} height="100%">
+          <Defs>
+            <LinearGradient id="leftFade" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor="#0A0E1A" stopOpacity="1" />
+              <Stop offset="1" stopColor="#0A0E1A" stopOpacity="0" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="60" height="100%" fill="url(#leftFade)" />
+        </Svg>
+      </View>
 
-      <Animated.View style={[styles.floatingBadge, { right: 15, top: 110 }, flutterCardStyle]}>
-        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
-          <FlutterLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>Flutter App</Text>
-        </BlurView>
-      </Animated.View>
-
-      <Animated.View style={[styles.floatingBadge, { right: 40, top: 180 }, dockerCardStyle]}>
-        <BlurView intensity={30} tint="dark" style={styles.badgeBlur}>
-          <DockerLogo />
-          <Text style={[styles.badgeText, { marginLeft: 6, fontSize: 10 }]}>Docker Node</Text>
-        </BlurView>
-      </Animated.View>
+      {/* Right edge fade overlay */}
+      <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 60, zIndex: 20, pointerEvents: 'none' }}>
+        <Svg width={60} height="100%">
+          <Defs>
+            <LinearGradient id="rightFade" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor="#0A0E1A" stopOpacity="0" />
+              <Stop offset="1" stopColor="#0A0E1A" stopOpacity="1" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="60" height="100%" fill="url(#rightFade)" />
+        </Svg>
+      </View>
     </View>
   )
 }
