@@ -12,6 +12,7 @@ This is the status of all requirements to publish **CloudCode** on the Google Pl
     *   Integrated this into all voice-trigger points: `VoiceOverlay.tsx`, `AITab.tsx`, and `ai.tsx`.
 *   **[x] Legal & Privacy Links**:
     *   Added clickable "Privacy Policy" and "Terms of Service" links at the bottom of the `About` sub-screen in `mobile/app/(tabs)/settings.tsx`.
+    *   Added agreement text and links underneath the "Continue with GitHub" button on the onboarding/login screen in `mobile/app/index.tsx`.
 *   **[x] Android Versioning**:
     *   Added `"versionCode": 1` to the `android` block in `mobile/app.json`.
 
