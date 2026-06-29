@@ -309,27 +309,7 @@ export default function WelcomeScreen() {
     }
   })
 
-  const ctaButtonStyle = useAnimatedStyle(() => {
-    const backgroundColor = interpolateColor(
-      bgThemeTransition.value,
-      [0, 1],
-      ['#FFFFFF', '#05070B']
-    )
-    return {
-      backgroundColor,
-    }
-  })
 
-  const ctaButtonTextStyle = useAnimatedStyle(() => {
-    const color = interpolateColor(
-      bgThemeTransition.value,
-      [0, 1],
-      ['#000000', '#FFFFFF']
-    )
-    return {
-      color,
-    }
-  })
 
   const lightLogoStyle = useAnimatedStyle(() => ({
     opacity: 1 - bgThemeTransition.value,
@@ -468,7 +448,7 @@ export default function WelcomeScreen() {
   }))
 
   const ctaButtonStyle = useAnimatedStyle(() => {
-    const bgColor = interpolateColor(bgThemeTransition.value, [0, 1], ['#00E5FF', '#0F172A'])
+    const bgColor = interpolateColor(bgThemeTransition.value, [0, 1], ['#FFFFFF', '#0F172A'])
     return { backgroundColor: bgColor }
   })
 
