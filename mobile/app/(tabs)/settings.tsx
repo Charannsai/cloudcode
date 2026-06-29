@@ -2671,8 +2671,8 @@ export default function SettingsScreen() {
   const handleDeleteAccount = async () => {
     setDeletingAccount(true)
     try {
-      // Simulate API call to delete everything permanently
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Call the backend API to clean up Docker containers, workspaces, and database records
+      await api.user.deleteAccount()
       
       // Clear local storage configurations
       await AsyncStorage.removeItem('profile_name')
