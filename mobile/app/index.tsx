@@ -47,6 +47,7 @@ const AnimatedPath = Animated.createAnimatedComponent(Path)
 
 import { GridBackground } from '@/components/onboarding/GridBackground'
 import { AnimatedDot } from '@/components/onboarding/AnimatedDot'
+import { OnboardingPage } from '@/components/onboarding/OnboardingPage'
 import {
   Screen0Illustration,
   Screen1Illustration,
@@ -55,6 +56,39 @@ import {
   Screen4Illustration,
   Screen5Illustration,
 } from '@/components/onboarding/ScreenIllustrations'
+
+const ONBOARDING_DATA = [
+  {
+    title: "Welcome to\nCloudCode",
+    description: "Your secure hub for code, collaboration, and cloud automation. Build. Deploy. Scale — all in one place.",
+    illustration: Screen0Illustration,
+  },
+  {
+    title: "Create Development\nEnvironments Instantly",
+    description: "Instantly spin up isolated cloud containers from your repositories. Run full desktop workspaces right from your phone.",
+    illustration: Screen1Illustration,
+  },
+  {
+    title: "Describe It.\nLet AI Build It.",
+    description: "Collaborative AI developer agents work in sync to turn your descriptions into functional components, APIs, and databases.",
+    illustration: Screen2Illustration,
+  },
+  {
+    title: "Professional Development\nWorkflows Anywhere",
+    description: "Access a multi-shell remote terminal alongside a visual branching manager. Commit, merge, and pull requests effortlessly.",
+    illustration: Screen3Illustration,
+  },
+  {
+    title: "Run, Preview,\nand Deploy Securely",
+    description: "Interact with live browser previews connected via encrypted TLS tunnels to compliant, isolated cloud infrastructure.",
+    illustration: Screen4Illustration,
+  },
+  {
+    title: "Everything You Need.\nAnywhere.",
+    description: "Log in with your GitHub account to access your repositories and spin up remote dev boxes on the go.",
+    illustration: Screen5Illustration,
+  },
+]
 
 export default function WelcomeScreen() {
   const { user, loading, setToken } = useAuthStore()
@@ -415,43 +449,43 @@ export default function WelcomeScreen() {
       opacity: opacity,
     }
   })
-
-  // Welcome Screen Components animation styles
-  const headerTextStyle = useAnimatedStyle(() => {
-    return {
-      opacity: welcomeTransition.value,
-    }
+    const scale = interpolate(textAnim.value, [0, 1], [0.8, 1])
+    const opacity = textAnim.value * (1 - welcomeTransition.value)
+    const y = interpolate(textAnim.value, [0, 1], [15, 0])
+    return { transform: [{ scale }, { translateY: y }], opacity: opacity }
   })
 
   const watermarkStyle = useAnimatedStyle(() => {
     const targetOpacity = 0.08
     const finalOpacity = targetOpacity * (1 - bgThemeTransition.value)
-    // Hide watermark on screen 1 (vertical marquee screen)
     const screenHide = currentScreen === 1 ? 0 : 1
-    return {
-      opacity: interpolate(welcomeTransition.value, [0, 1], [0, finalOpacity]) * screenHide,
-    }
+    return { opacity: interpolate(welcomeTransition.value, [0, 1], [0, finalOpacity]) * screenHide }
   })
 
-  const welcomeContentStyle = useAnimatedStyle(() => {
-    return {
-      opacity: welcomeTransition.value,
-      transform: [
-        { translateY: interpolate(welcomeTransition.value, [0, 1], [40, 0]) }
-      ],
-    }
+  const welcomeContentStyle = useAnimatedStyle(() => ({
+    opacity: welcomeTransition.value,
+    transform: [{ translateY: interpolate(welcomeTransition.value, [0, 1], [40, 0]) }],
+  }))
+
+  const ambientGlowStyle = useAnimatedStyle(() => ({
+    opacity: welcomeTransition.value * (1 - bgThemeTransition.value),
+  }))
+
+  const ctaButtonStyle = useAnimatedStyle(() => {
+    const bgColor = interpolateColor(bgThemeTransition.value, [0, 1], ['#00E5FF', '#0F172A'])
+    return { backgroundColor: bgColor }
   })
 
-  const ambientGlowStyle = useAnimatedStyle(() => {
-    return {
-      opacity: welcomeTransition.value * (1 - bgThemeTransition.value),
-    }
-  })
+  const ctaButtonTextStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(bgThemeTransition.value, [0, 1], ['#05070B', '#FFFFFF']),
+  }))
+
+  const headerTextStyle = useAnimatedStyle(() => ({ opacity: welcomeTransition.value }))
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: '#05070B' }]}>
-        <StatusBar style="light" />
+      <View style={[styles.container, { backgroundColor: '#05070B', justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#00E5FF" />
       </View>
     )
   }
@@ -673,95 +707,16 @@ export default function WelcomeScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
         >
-          {/* Page 0: Welcome Screen */}
-          <View style={styles.pageContainer}>
-            <View style={styles.pageIllustrationContainer}>
-              <Screen0Illustration />
-            </View>
-            <View style={styles.textWrapper}>
-              <Text style={[styles.title, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Welcome to{"\n"}CloudCode
-              </Text>
-              <Text style={[styles.description, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Your secure hub for code, collaboration, and cloud automation. Build. Deploy. Scale — all in one place.
-              </Text>
-            </View>
-          </View>
-
-          {/* Page 1: Desktop Workspaces */}
-          <View style={styles.pageContainer}>
-            <View style={styles.pageIllustrationContainer}>
-              <Screen1Illustration />
-            </View>
-            <View style={styles.textWrapper}>
-              <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Create Development{"\n"}Environments Instantly
-              </Text>
-              <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Instantly spin up isolated cloud containers from your repositories. Run full desktop workspaces right from your phone.
-              </Text>
-            </View>
-          </View>
-
-          {/* Page 2: Build with AI */}
-          <View style={styles.pageContainer}>
-            <View style={styles.pageIllustrationContainer}>
-              <Screen2Illustration />
-            </View>
-            <View style={styles.textWrapper}>
-              <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Describe It.{"\n"}Let AI Build It.
-              </Text>
-              <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Collaborative AI developer agents work in sync to turn your descriptions into functional components, APIs, and databases.
-              </Text>
-            </View>
-          </View>
-
-          {/* Page 3: Terminal & Git */}
-          <View style={styles.pageContainer}>
-            <View style={styles.pageIllustrationContainer}>
-              <Screen3Illustration />
-            </View>
-            <View style={styles.textWrapper}>
-              <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Professional Development{"\n"}Workflows Anywhere
-              </Text>
-              <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Access a multi-shell remote terminal alongside a visual branching manager. Commit, merge, and pull requests effortlessly.
-              </Text>
-            </View>
-          </View>
-
-          {/* Page 4: Preview/Cloud/Security */}
-          <View style={styles.pageContainer}>
-            <View style={styles.pageIllustrationContainer}>
-              <Screen4Illustration />
-            </View>
-            <View style={styles.textWrapper}>
-              <Text style={[styles.showcaseTitle, { color: currentScreen === 5 ? '#0F172A' : '#FFFFFF', fontFamily: 'Inter_700Bold' }]}>
-                Run, Preview,{"\n"}and Deploy Securely
-              </Text>
-              <Text style={[styles.showcaseDescription, { color: currentScreen === 5 ? '#475569' : '#8B929A', fontFamily: 'Inter_400Regular' }]}>
-                Interact with live browser previews connected via encrypted TLS tunnels to compliant, isolated cloud infrastructure.
-              </Text>
-            </View>
-          </View>
-
-          {/* Page 5: Parallax Grid & Auth */}
-          <View style={styles.pageContainer}>
-            <View style={styles.pageIllustrationContainer}>
-              <Screen5Illustration />
-            </View>
-            <View style={styles.textWrapper}>
-              <Text style={[styles.showcaseTitle, { color: '#0F172A', fontFamily: 'Inter_700Bold' }]}>
-                Everything You Need.{"\n"}Anywhere.
-              </Text>
-              <Text style={[styles.showcaseDescription, { color: '#475569', fontFamily: 'Inter_400Regular' }]}>
-                Log in with your GitHub account to access your repositories and spin up remote dev boxes on the go.
-              </Text>
-            </View>
-          </View>
+          {ONBOARDING_DATA.map((page, index) => (
+            <OnboardingPage
+              key={index}
+              index={index}
+              currentScreen={currentScreen}
+              illustration={page.illustration}
+              title={page.title}
+              description={page.description}
+            />
+          ))}
         </ScrollView>
       )}
 
