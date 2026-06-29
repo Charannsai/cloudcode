@@ -736,6 +736,33 @@ export default function WelcomeScreen() {
                 </Animated.View>
               </TouchableOpacity>
 
+              {/* Terms & Privacy Agreement */}
+              <Text style={{
+                color: isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.45)',
+                fontSize: 11,
+                textAlign: 'center',
+                marginTop: 6,
+                lineHeight: 16,
+                paddingHorizontal: 16,
+                fontFamily: 'Inter_400Regular'
+              }}>
+                By continuing, you agree to our{' '}
+                <Text 
+                  style={{ color: '#58A6FF', textDecorationLine: 'underline', fontFamily: 'Inter_500Medium' }}
+                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/terms')}
+                >
+                  Terms of Service
+                </Text>{' '}
+                and{' '}
+                <Text 
+                  style={{ color: '#58A6FF', textDecorationLine: 'underline', fontFamily: 'Inter_500Medium' }}
+                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/privacy')}
+                >
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
+
             </View>
           ) : (
             <TouchableOpacity
