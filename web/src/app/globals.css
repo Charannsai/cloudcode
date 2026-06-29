@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F6F8FA;
+  --foreground: #0E1116;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-app-bg-light: #F6F8FA;
+  --color-app-card-light: #FFFFFF;
+  --color-app-border-light: #D8DEE4;
+  --color-app-text-light: #0E1116;
+  --color-app-text-secondary-light: #656D76;
+  --color-app-highlight-light: rgba(14, 17, 22, 0.06);
+
+  --color-app-bg-dark: #0E1116;
+  --color-app-card-dark: #151922;
+  --color-app-border-dark: #21262D;
+  --color-app-text-dark: #F3F4F6;
+  --color-app-text-secondary-dark: #8B929A;
+  --color-app-highlight-dark: #1C2128;
+  
+  --color-app-blue: #388bfd;
+  --color-app-purple: #8957e5;
+  --color-app-green: #3FB950;
+  --color-app-red: #F85149;
+  
+  --font-sans: var(--font-geist-sans), 'Inter', -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0E1116;
+    --foreground: #F3F4F6;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
