@@ -220,22 +220,22 @@ const Screen0Illustration = () => {
 // Icon tile with solid background for vertical marquee columns
 const MarqueeIconTile = ({ children, label }: { children: React.ReactNode; label: string }) => (
   <View style={{
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     borderRadius: 14,
-    backgroundColor: '#1A1F2E',
+    backgroundColor: '#141824',
     borderWidth: 1,
-    borderColor: '#2A3040',
+    borderColor: '#1E2436',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 6,
+    marginVertical: 5,
   }}>
     {children}
     <Text style={{
-      color: 'rgba(255, 255, 255, 0.55)',
-      fontSize: 7,
+      color: 'rgba(255, 255, 255, 0.5)',
+      fontSize: 6.5,
       fontFamily: 'Inter_500Medium',
-      marginTop: 4,
+      marginTop: 3,
       letterSpacing: 0.3,
     }}>{label}</Text>
   </View>
@@ -265,32 +265,32 @@ const COL_RIGHT_ICONS = [
   { key: 'flutter2', label: 'Flutter', icon: <FlutterLogo /> },
 ]
 
-const ICON_TILE_HEIGHT = 76 // 64 + 12 margin
+const ICON_TILE_HEIGHT = 66 // 56 + 10 margin
 const MARQUEE_COL_HEIGHT = COL_LEFT_ICONS.length * ICON_TILE_HEIGHT
 
 const Screen1Illustration = () => {
   const leftColAnim = useSharedValue(0)
   const rightColAnim = useSharedValue(0)
-  const glowAnim = useSharedValue(0)
+  const flashAnim = useSharedValue(0)
 
   useEffect(() => {
     // Left column scrolls upward
     leftColAnim.value = withRepeat(
-      withTiming(-MARQUEE_COL_HEIGHT, { duration: 16000, easing: Easing.linear }),
+      withTiming(-MARQUEE_COL_HEIGHT, { duration: 14000, easing: Easing.linear }),
       -1,
       false
     )
     // Right column scrolls downward
     rightColAnim.value = withRepeat(
-      withTiming(MARQUEE_COL_HEIGHT, { duration: 16000, easing: Easing.linear }),
+      withTiming(MARQUEE_COL_HEIGHT, { duration: 14000, easing: Easing.linear }),
       -1,
       false
     )
-    // Center logo glow pulse
-    glowAnim.value = withRepeat(
-      withTiming(1, { duration: 2800, easing: Easing.inOut(Easing.ease) }),
+    // Flash pulse animation along connecting lines
+    flashAnim.value = withRepeat(
+      withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      false
     )
   }, [])
 
@@ -302,9 +302,38 @@ const Screen1Illustration = () => {
     transform: [{ translateY: rightColAnim.value - MARQUEE_COL_HEIGHT }],
   }))
 
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(glowAnim.value, [0, 1], [0.35, 0.85]),
-    transform: [{ scale: interpolate(glowAnim.value, [0, 1], [0.92, 1.08]) }],
+  // Flash dot traveling from left column toward center
+  const leftFlashStyle = useAnimatedStyle(() => ({
+    position: 'absolute' as const,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00E5FF',
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 6,
+    left: interpolate(flashAnim.value, [0, 1], [0, 44]),
+    top: -3,
+    opacity: interpolate(flashAnim.value, [0, 0.1, 0.9, 1], [0, 1, 1, 0]),
+  }))
+
+  // Flash dot traveling from right column toward center
+  const rightFlashStyle = useAnimatedStyle(() => ({
+    position: 'absolute' as const,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00E5FF',
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 6,
+    right: interpolate(flashAnim.value, [0, 1], [0, 44]),
+    top: -3,
+    opacity: interpolate(flashAnim.value, [0, 0.1, 0.9, 1], [0, 1, 1, 0]),
   }))
 
   const renderColumn = (icons: typeof COL_LEFT_ICONS) => (
@@ -324,43 +353,44 @@ const Screen1Illustration = () => {
   )
 
   return (
-    <View style={[styles.showcaseWrapper, { flexDirection: 'row' }]}>
+    <View style={[styles.showcaseWrapper, { flexDirection: 'row', paddingHorizontal: 20 }]}>
       {/* Left column - scrolls up */}
-      <View style={{ height: '100%', overflow: 'hidden', width: 64, marginRight: 12 }}>
+      <View style={{ height: '100%', overflow: 'hidden', width: 56 }}>
         <Animated.View style={[{ alignItems: 'center' }, leftColStyle]}>
           {renderColumn(COL_LEFT_ICONS)}
         </Animated.View>
       </View>
 
-      {/* Center CloudCode Logo with glow */}
+      {/* Center area: connecting lines + logo */}
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-        <Animated.View style={[{
-          position: 'absolute',
-          width: 120,
-          height: 120,
-          borderRadius: 60,
-          backgroundColor: 'rgba(0, 229, 255, 0.1)',
-        }, glowStyle]} />
+        {/* Left connecting line */}
+        <View style={{ position: 'absolute', left: 0, width: 50, height: 1, top: '50%' }}>
+          <View style={{ width: '100%', height: 1, backgroundColor: 'rgba(0, 229, 255, 0.15)' }} />
+          <Animated.View style={leftFlashStyle} />
+        </View>
+
+        {/* Right connecting line */}
+        <View style={{ position: 'absolute', right: 0, width: 50, height: 1, top: '50%' }}>
+          <View style={{ width: '100%', height: 1, backgroundColor: 'rgba(0, 229, 255, 0.15)' }} />
+          <Animated.View style={rightFlashStyle} />
+        </View>
+
+        {/* CloudCode Logo */}
         <View style={{
-          width: 72,
-          height: 72,
-          borderRadius: 20,
-          backgroundColor: '#1A1F2E',
+          width: 68,
+          height: 68,
+          borderRadius: 18,
+          backgroundColor: '#141824',
           borderWidth: 1.5,
-          borderColor: 'rgba(0, 229, 255, 0.35)',
+          borderColor: '#2A3040',
           justifyContent: 'center',
           alignItems: 'center',
-          shadowColor: '#00E5FF',
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.4,
-          shadowRadius: 20,
-          elevation: 10,
         }}>
-          <Svg width={40} height={40} viewBox="0 0 874 552">
+          <Svg width={38} height={38} viewBox="0 0 874 552">
             <Path
               d={CLOUD_PATH}
               fill="none"
-              stroke="#00E5FF"
+              stroke="#FFFFFF"
               strokeWidth={18}
             />
           </Svg>
@@ -368,35 +398,35 @@ const Screen1Illustration = () => {
       </View>
 
       {/* Right column - scrolls down */}
-      <View style={{ height: '100%', overflow: 'hidden', width: 64, marginLeft: 12 }}>
+      <View style={{ height: '100%', overflow: 'hidden', width: 56 }}>
         <Animated.View style={[{ alignItems: 'center' }, rightColStyle]}>
           {renderColumn(COL_RIGHT_ICONS)}
         </Animated.View>
       </View>
 
       {/* Top edge fade overlay */}
-      <View style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 70, zIndex: 20, pointerEvents: 'none' }}>
-        <Svg width="100%" height={70}>
+      <View style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 80, zIndex: 20, pointerEvents: 'none' }}>
+        <Svg width="100%" height={80}>
           <Defs>
             <LinearGradient id="topFade" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#0A0E1A" stopOpacity="1" />
-              <Stop offset="1" stopColor="#0A0E1A" stopOpacity="0" />
+              <Stop offset="0" stopColor="#05070B" stopOpacity="1" />
+              <Stop offset="1" stopColor="#05070B" stopOpacity="0" />
             </LinearGradient>
           </Defs>
-          <Rect x="0" y="0" width="100%" height="70" fill="url(#topFade)" />
+          <Rect x="0" y="0" width="100%" height="80" fill="url(#topFade)" />
         </Svg>
       </View>
 
       {/* Bottom edge fade overlay */}
-      <View style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 70, zIndex: 20, pointerEvents: 'none' }}>
-        <Svg width="100%" height={70}>
+      <View style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 80, zIndex: 20, pointerEvents: 'none' }}>
+        <Svg width="100%" height={80}>
           <Defs>
             <LinearGradient id="bottomFade" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#0A0E1A" stopOpacity="0" />
-              <Stop offset="1" stopColor="#0A0E1A" stopOpacity="1" />
+              <Stop offset="0" stopColor="#05070B" stopOpacity="0" />
+              <Stop offset="1" stopColor="#05070B" stopOpacity="1" />
             </LinearGradient>
           </Defs>
-          <Rect x="0" y="0" width="100%" height="70" fill="url(#bottomFade)" />
+          <Rect x="0" y="0" width="100%" height="80" fill="url(#bottomFade)" />
         </Svg>
       </View>
     </View>
