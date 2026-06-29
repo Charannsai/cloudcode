@@ -449,11 +449,7 @@ export default function WelcomeScreen() {
       opacity: opacity,
     }
   })
-    const scale = interpolate(textAnim.value, [0, 1], [0.8, 1])
-    const opacity = textAnim.value * (1 - welcomeTransition.value)
-    const y = interpolate(textAnim.value, [0, 1], [15, 0])
-    return { transform: [{ scale }, { translateY: y }], opacity: opacity }
-  })
+
 
   const watermarkStyle = useAnimatedStyle(() => {
     const targetOpacity = 0.08
