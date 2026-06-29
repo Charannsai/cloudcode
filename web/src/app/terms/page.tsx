@@ -35,61 +35,97 @@ export default function TermsOfService() {
 
         <div className="space-y-8 text-gray-300 leading-relaxed text-sm">
           <p>
-            Welcome to CloudCode. These Terms of Service ("Terms") govern your access to and use of the CloudCode mobile application (the "App"), our website, and our cloud development container services (collectively, the "Service").
+            These Terms of Service ("Terms") constitute a legally binding agreement between you ("User", "you", or "your") and CloudCode, Inc. ("Company", "we", "us", or "our") governing your access to and use of the CloudCode mobile application (the "App"), our website located at https://cloudcode.app, and all related cloud development, container hosting, and artificial intelligence services (collectively, the "Service").
           </p>
           <p>
-            By creating an account or using our Service, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use the Service.
+            Please read these Terms carefully before accessing or using the Service. By creating an account, authenticating via GitHub, or otherwise accessing the Service, you agree to be bound by these Terms. If you do not agree to all of these Terms, you are prohibited from using the Service.
           </p>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">1. Accounts and Authentication</h2>
+            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">1. Eligibility & Authentication</h2>
+            <p className="mb-4">
+              To access and use the Service, you must be at least 13 years of age (or the minimum age of digital consent in your country). If you are under 18, you represent that you have received parental or guardian consent to use the Service.
+            </p>
             <p>
-              To use CloudCode, you must log in using your GitHub account. You are responsible for maintaining the security of your GitHub account and credentials. We are not liable for any loss or damage arising from your failure to maintain account security. You must immediately notify us of any unauthorized use of your account.
+              <strong>GitHub Authentication:</strong> The Service requires you to authenticate using your GitHub account. You are solely responsible for maintaining the security and confidentiality of your GitHub credentials. You agree that you are fully responsible for all activities, projects, and container sessions initiated under your account. We are not liable for any loss or damage arising from unauthorized access to your account.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">2. Acceptable Use of Cloud Sandboxes</h2>
             <p className="mb-4">
-              CloudCode provides you with isolated cloud container environments ("Sandboxes") to write, compile, and test code. You agree NOT to use these Sandboxes to:
+              CloudCode provides you with isolated, cloud-hosted Linux container environments ("Sandboxes") for software development, compilation, and testing. You are granted a limited, non-transferable, revocable license to use these Sandboxes.
+            </p>
+            <p className="mb-4">
+              You agree that you will **NOT** use, nor allow any third party to use, the Sandboxes or the Service to:
+            </p>
+            <ul className="list-disc list-inside space-y-2 pl-2 mb-4">
+              <li>Engage in any form of cryptocurrency mining (including but not limited to Bitcoin, Ethereum, or Monero).</li>
+              <li>Launch Denial of Service (DoS/DDoS) attacks, perform unauthorized port scanning, network sniffing, or distribute malware, trojans, or ransomware.</li>
+              <li>Host phishing pages, engage in spamming, or distribute bulk unsolicited emails.</li>
+              <li>Attempt to escape container isolation, exploit Linux kernel vulnerabilities, or gain unauthorized root access to our host servers.</li>
+              <li>Store, share, or compile material that violates intellectual property rights or is otherwise illegal.</li>
+              <li>Establish persistent reverse-shells or background daemons designed to bypass our inactivity timeout mechanisms.</li>
+            </ul>
+            <p>
+              We reserve the right to monitor Sandbox CPU, RAM, and network activity. Any violation of this Acceptable Use Section will result in the **immediate termination** of your active Sandboxes and the permanent suspension of your account without prior warning.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">3. User Code & Intellectual Property</h2>
+            <p className="mb-4">
+              <strong>Ownership:</strong> You retain sole ownership and all intellectual property rights in and to any source code, project files, assets, or repositories that you write, import, compile, or deploy within our Sandboxes. CloudCode claims no ownership, license, or proprietary rights over your code.
+            </p>
+            <p>
+              <strong>Responsibility:</strong> You represent and warrant that you own or have the necessary licenses, rights, and permissions to use and compile any code or repositories you import into the Service. You agree to indemnify and hold harmless CloudCode from any claims arising out of your violation of third-party intellectual property rights.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">4. Subscriptions, Resource Limits & Billing</h2>
+            <p className="mb-4">
+              Certain subscription tiers provide access to enhanced container resources (such as dedicated CPU cores, persistent SSD storage, or increased RAM limits).
             </p>
             <ul className="list-disc list-inside space-y-2 pl-2">
-              <li>Engage in any form of cryptocurrency mining.</li>
-              <li>Launch Denial of Service (DoS) attacks, port scanning, or distribute malware.</li>
-              <li>Host illegal content or engage in fraudulent activities.</li>
-              <li>Attempt to bypass container isolation or gain unauthorized access to our host servers or networks.</li>
-              <li>Exceed the resource limits (CPU, RAM, storage) allocated to your subscription tier.</li>
+              <li><strong>Billing:</strong> Fees for paid subscription tiers are billed in advance on a recurring monthly or annual basis.</li>
+              <li><strong>Cancellation:</strong> You can cancel your subscription at any time. Upon cancellation, your account will revert to the free tier at the end of your current billing cycle, and resources exceeding the free tier limits may be permanently deleted.</li>
+              <li><strong>Refunds:</strong> All fees are non-refundable unless explicitly required by local consumer protection laws.</li>
             </ul>
-            <p className="mt-4">
-              We reserve the right to monitor container resource usage and immediately suspend or terminate any Sandbox or account that violates these acceptable use guidelines without prior notice.
+          </section>
+
+          <section>
+            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">5. Account Deletion & Termination</h2>
+            <p className="mb-4">
+              You can terminate these Terms at any time by permanently deleting your account:
+            </p>
+            <ul className="list-disc list-inside space-y-1 pl-2 mb-4">
+              <li><strong>In-App:</strong> Under <span className="text-white font-medium">Settings &gt; Profile &gt; Delete Account</span>.</li>
+              <li><strong>Web:</strong> Via our secure <Link href="/delete-account" className="text-indigo-400 underline hover:text-indigo-300">Account Deletion Page</Link>.</li>
+            </ul>
+            <p>
+              Upon deletion, your user profile, active container instances, workspace files, and billing history will be permanently and irreversibly destroyed. We reserve the right to suspend or terminate your account at our sole discretion, without notice, if you breach these Terms.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">3. Intellectual Property and User Code</h2>
+            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">6. Disclaimer of Warranties</h2>
             <p>
-              You retain full ownership of all code, repositories, and intellectual property that you write, import, or deploy within the Service. We do not claim any ownership rights over your work. You represent and warrant that you have the necessary rights and permissions for any code or content you import into the Service.
+              THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, TIMELY, OR ERROR-FREE, OR THAT YOUR WORKSPACE FILES WILL NOT BE SUBJECT TO DATA LOSS. YOU ARE SOLELY RESPONSIBLE FOR MAINTAINING INDEPENDENT BACKUPS OF YOUR SOURCE CODE.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">4. Subscriptions and Billing</h2>
+            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">7. Limitation of Liability</h2>
             <p>
-              Certain features of the Service (such as increased RAM, persistent storage, or advanced AI features) may require a paid subscription. If you sign up for a paid subscription, you agree to our billing terms. All fees are non-refundable unless required by law or specified in our refund policy.
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL CLOUDCODE, INC. OR ITS DIRECTORS, EMPLOYEES, OR PARTNERS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF OR INABILITY TO USE THE SERVICE.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">5. Termination</h2>
+            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">8. Contact Us</h2>
             <p>
-              You can terminate these Terms at any time by deleting your account. You can delete your account from within the App (Settings &gt; Profile &gt; Delete Account) or via the web on our <Link href="/delete-account" className="text-indigo-400 underline hover:text-indigo-300">Account Deletion Page</Link>. Upon deletion, your account, cloud workspaces, and container environments will be permanently deleted. We also reserve the right to suspend or terminate your account for violations of these Terms.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">6. Limitation of Liability</h2>
-            <p>
-              THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL CLOUDCODE BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, REVENUE, DATA, OR USE, INCURRED BY YOU, ARISING FROM YOUR ACCESS TO OR USE OF THE SERVICE.
+              If you have any questions regarding these Terms, please contact us at <span className="text-white font-medium">legal@cloudcode.app</span>.
             </p>
           </section>
         </div>
@@ -101,8 +137,6 @@ export default function TermsOfService() {
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span className="text-gray-800">•</span>
           <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-          <span className="text-gray-800">•</span>
-          <Link href="/delete-account" className="hover:text-white transition-colors">Delete Account Request</Link>
         </div>
         <p className="text-[11px] text-gray-600 text-center">
           &copy; {new Date().getFullYear()} CloudCode. All rights reserved. Built for developers.
