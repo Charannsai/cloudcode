@@ -16,6 +16,8 @@ import Animated, {
   withRepeat, withSequence, withTiming, Easing
 } from 'react-native-reanimated'
 
+import { ensureMicrophonePermission } from '@/lib/permissions'
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
 interface Props {
@@ -99,29 +101,37 @@ export default function VoiceOverlay({ projectId }: Props) {
   }, [isStreaming, currentToolCalls, executionPhase])
 
   const startSpeech = async () => {
-    try {
-      setSpeechText('')
-      setError(null)
-      setIsListening(false)
+    ensureMicrophonePermission(
+      async () => {
+        try {
+          setSpeechText('')
+          setError(null)
+          setIsListening(false)
 
-      Voice.onSpeechStart = () => setIsListening(true)
-      Voice.onSpeechEnd = () => setIsListening(false)
-      Voice.onSpeechResults = (e: SpeechResultsEvent) => {
-        if (e.value && e.value[0]) {
-          setSpeechText(e.value[0])
+          Voice.onSpeechStart = () => setIsListening(true)
+          Voice.onSpeechEnd = () => setIsListening(false)
+          Voice.onSpeechResults = (e: SpeechResultsEvent) => {
+            if (e.value && e.value[0]) {
+              setSpeechText(e.value[0])
+            }
+          }
+          Voice.onSpeechError = (e: SpeechErrorEvent) => {
+            console.error('[VoiceOverlay] Error:', e)
+            setError(e.error?.message || 'Failed to detect speech.')
+            setIsListening(false)
+          }
+
+          await Voice.start('en-US')
+        } catch (err) {
+          setError((err as Error).message)
+          setIsListening(false)
         }
+      },
+      () => {
+        // Close overlay if permission is denied or dismissed
+        handleClose()
       }
-      Voice.onSpeechError = (e: SpeechErrorEvent) => {
-        console.error('[VoiceOverlay] Error:', e)
-        setError(e.error?.message || 'Failed to detect speech.')
-        setIsListening(false)
-      }
-
-      await Voice.start('en-US')
-    } catch (err) {
-      setError((err as Error).message)
-      setIsListening(false)
-    }
+    )
   }
 
   const stopSpeech = async () => {
