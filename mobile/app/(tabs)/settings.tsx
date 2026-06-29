@@ -3146,6 +3146,28 @@ export default function SettingsScreen() {
             </View>
           </View>
         )}
+
+        {/* Legal Links Footer */}
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: 16, 
+          marginTop: 20, 
+          paddingTop: 20,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          marginHorizontal: 24,
+          opacity: 0.8
+        }}>
+          <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/privacy')}>
+            <Text style={{ color: colors.primary, fontSize: 13, fontFamily: 'Inter_500Medium' }}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>•</Text>
+          <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/terms')}>
+            <Text style={{ color: colors.primary, fontSize: 13, fontFamily: 'Inter_500Medium' }}>Terms of Service</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     )
   }
