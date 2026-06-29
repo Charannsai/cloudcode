@@ -214,25 +214,25 @@ const Screen0Illustration = () => {
 }
 
 // -------------------------------------------------------------
-// Onboarding Illustration Component 1: Dual Marquee Icon Rows
+// Onboarding Illustration Component 1: Dual Vertical Marquee Columns
 // -------------------------------------------------------------
 
-// Icon tile for the marquee rows
+// Icon tile with solid background for vertical marquee columns
 const MarqueeIconTile = ({ children, label }: { children: React.ReactNode; label: string }) => (
   <View style={{
-    width: 68,
-    height: 68,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: '#1A1F2E',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#2A3040',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 6,
+    marginVertical: 6,
   }}>
     {children}
     <Text style={{
-      color: 'rgba(255, 255, 255, 0.5)',
+      color: 'rgba(255, 255, 255, 0.55)',
       fontSize: 7,
       fontFamily: 'Inter_500Medium',
       marginTop: 4,
@@ -241,8 +241,8 @@ const MarqueeIconTile = ({ children, label }: { children: React.ReactNode; label
   </View>
 )
 
-// Top row icons: React, Docker, Go, TypeScript, Python, Flutter, OpenAI, Claude
-const ROW_TOP_ICONS = [
+// Left column icons
+const COL_LEFT_ICONS = [
   { key: 'react', label: 'React', icon: <ReactLogo /> },
   { key: 'docker', label: 'Docker', icon: <DockerLogo /> },
   { key: 'go', label: 'Go', icon: <GoLogo /> },
@@ -253,8 +253,8 @@ const ROW_TOP_ICONS = [
   { key: 'claude', label: 'Claude', icon: <ClaudeLogo /> },
 ]
 
-// Bottom row icons: Gemini, DeepSeek, Llama, React, Docker, Go, TypeScript, Python
-const ROW_BOTTOM_ICONS = [
+// Right column icons
+const COL_RIGHT_ICONS = [
   { key: 'gemini', label: 'Gemini', icon: <GeminiLogo /> },
   { key: 'deepseek', label: 'DeepSeek', icon: <DeepSeekLogo /> },
   { key: 'llama', label: 'Llama', icon: <LlamaLogo /> },
@@ -265,24 +265,24 @@ const ROW_BOTTOM_ICONS = [
   { key: 'flutter2', label: 'Flutter', icon: <FlutterLogo /> },
 ]
 
-const ICON_TILE_WIDTH = 80 // 68 + 12 margin
-const MARQUEE_ROW_WIDTH = ROW_TOP_ICONS.length * ICON_TILE_WIDTH
+const ICON_TILE_HEIGHT = 76 // 64 + 12 margin
+const MARQUEE_COL_HEIGHT = COL_LEFT_ICONS.length * ICON_TILE_HEIGHT
 
 const Screen1Illustration = () => {
-  const topRowAnim = useSharedValue(0)
-  const bottomRowAnim = useSharedValue(0)
+  const leftColAnim = useSharedValue(0)
+  const rightColAnim = useSharedValue(0)
   const glowAnim = useSharedValue(0)
 
   useEffect(() => {
-    // Top row scrolls left
-    topRowAnim.value = withRepeat(
-      withTiming(-MARQUEE_ROW_WIDTH, { duration: 18000, easing: Easing.linear }),
+    // Left column scrolls upward
+    leftColAnim.value = withRepeat(
+      withTiming(-MARQUEE_COL_HEIGHT, { duration: 16000, easing: Easing.linear }),
       -1,
       false
     )
-    // Bottom row scrolls right
-    bottomRowAnim.value = withRepeat(
-      withTiming(MARQUEE_ROW_WIDTH, { duration: 18000, easing: Easing.linear }),
+    // Right column scrolls downward
+    rightColAnim.value = withRepeat(
+      withTiming(MARQUEE_COL_HEIGHT, { duration: 16000, easing: Easing.linear }),
       -1,
       false
     )
@@ -294,20 +294,20 @@ const Screen1Illustration = () => {
     )
   }, [])
 
-  const topRowStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: topRowAnim.value }],
+  const leftColStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: leftColAnim.value }],
   }))
 
-  const bottomRowStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: bottomRowAnim.value - MARQUEE_ROW_WIDTH }],
+  const rightColStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: rightColAnim.value - MARQUEE_COL_HEIGHT }],
   }))
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(glowAnim.value, [0, 1], [0.4, 0.9]),
-    transform: [{ scale: interpolate(glowAnim.value, [0, 1], [0.95, 1.1]) }],
+    opacity: interpolate(glowAnim.value, [0, 1], [0.35, 0.85]),
+    transform: [{ scale: interpolate(glowAnim.value, [0, 1], [0.92, 1.08]) }],
   }))
 
-  const renderRow = (icons: typeof ROW_TOP_ICONS) => (
+  const renderColumn = (icons: typeof COL_LEFT_ICONS) => (
     <>
       {icons.map((item) => (
         <MarqueeIconTile key={item.key} label={item.label}>
@@ -324,30 +324,30 @@ const Screen1Illustration = () => {
   )
 
   return (
-    <View style={styles.showcaseWrapper}>
-      {/* Top row - scrolls left */}
-      <View style={{ width: '100%', overflow: 'hidden', marginBottom: 16 }}>
-        <Animated.View style={[{ flexDirection: 'row' }, topRowStyle]}>
-          {renderRow(ROW_TOP_ICONS)}
+    <View style={[styles.showcaseWrapper, { flexDirection: 'row' }]}>
+      {/* Left column - scrolls up */}
+      <View style={{ height: '100%', overflow: 'hidden', width: 64, marginRight: 12 }}>
+        <Animated.View style={[{ alignItems: 'center' }, leftColStyle]}>
+          {renderColumn(COL_LEFT_ICONS)}
         </Animated.View>
       </View>
 
       {/* Center CloudCode Logo with glow */}
-      <View style={{ alignItems: 'center', justifyContent: 'center', height: 90, zIndex: 10 }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
         <Animated.View style={[{
           position: 'absolute',
           width: 120,
           height: 120,
           borderRadius: 60,
-          backgroundColor: 'rgba(0, 229, 255, 0.12)',
+          backgroundColor: 'rgba(0, 229, 255, 0.1)',
         }, glowStyle]} />
         <View style={{
           width: 72,
           height: 72,
           borderRadius: 20,
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: '#1A1F2E',
           borderWidth: 1.5,
-          borderColor: 'rgba(0, 229, 255, 0.3)',
+          borderColor: 'rgba(0, 229, 255, 0.35)',
           justifyContent: 'center',
           alignItems: 'center',
           shadowColor: '#00E5FF',
@@ -367,36 +367,36 @@ const Screen1Illustration = () => {
         </View>
       </View>
 
-      {/* Bottom row - scrolls right */}
-      <View style={{ width: '100%', overflow: 'hidden', marginTop: 16 }}>
-        <Animated.View style={[{ flexDirection: 'row' }, bottomRowStyle]}>
-          {renderRow(ROW_BOTTOM_ICONS)}
+      {/* Right column - scrolls down */}
+      <View style={{ height: '100%', overflow: 'hidden', width: 64, marginLeft: 12 }}>
+        <Animated.View style={[{ alignItems: 'center' }, rightColStyle]}>
+          {renderColumn(COL_RIGHT_ICONS)}
         </Animated.View>
       </View>
 
-      {/* Left edge fade overlay */}
-      <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, zIndex: 20, pointerEvents: 'none' }}>
-        <Svg width={60} height="100%">
+      {/* Top edge fade overlay */}
+      <View style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 70, zIndex: 20, pointerEvents: 'none' }}>
+        <Svg width="100%" height={70}>
           <Defs>
-            <LinearGradient id="leftFade" x1="0" y1="0" x2="1" y2="0">
+            <LinearGradient id="topFade" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor="#0A0E1A" stopOpacity="1" />
               <Stop offset="1" stopColor="#0A0E1A" stopOpacity="0" />
             </LinearGradient>
           </Defs>
-          <Rect x="0" y="0" width="60" height="100%" fill="url(#leftFade)" />
+          <Rect x="0" y="0" width="100%" height="70" fill="url(#topFade)" />
         </Svg>
       </View>
 
-      {/* Right edge fade overlay */}
-      <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 60, zIndex: 20, pointerEvents: 'none' }}>
-        <Svg width={60} height="100%">
+      {/* Bottom edge fade overlay */}
+      <View style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 70, zIndex: 20, pointerEvents: 'none' }}>
+        <Svg width="100%" height={70}>
           <Defs>
-            <LinearGradient id="rightFade" x1="0" y1="0" x2="1" y2="0">
+            <LinearGradient id="bottomFade" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor="#0A0E1A" stopOpacity="0" />
               <Stop offset="1" stopColor="#0A0E1A" stopOpacity="1" />
             </LinearGradient>
           </Defs>
-          <Rect x="0" y="0" width="60" height="100%" fill="url(#rightFade)" />
+          <Rect x="0" y="0" width="100%" height="70" fill="url(#bottomFade)" />
         </Svg>
       </View>
     </View>
@@ -1307,8 +1307,10 @@ export default function WelcomeScreen() {
   const watermarkStyle = useAnimatedStyle(() => {
     const targetOpacity = 0.08
     const finalOpacity = targetOpacity * (1 - bgThemeTransition.value)
+    // Hide watermark on screen 1 (vertical marquee screen)
+    const screenHide = currentScreen === 1 ? 0 : 1
     return {
-      opacity: interpolate(welcomeTransition.value, [0, 1], [0, finalOpacity]),
+      opacity: interpolate(welcomeTransition.value, [0, 1], [0, finalOpacity]) * screenHide,
     }
   })
 
