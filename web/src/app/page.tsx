@@ -41,6 +41,10 @@ export default function Home() {
     highlight: theme === "dark" ? "hover:bg-[#161821]" : "hover:bg-[#0F111508]",
     terminalBg: theme === "dark" ? "bg-[#08090E]" : "bg-[#F3F4F6]",
     terminalHeader: theme === "dark" ? "bg-[#0F1117]" : "bg-[#E5E7EB]",
+    
+    // Theme-specific button classes
+    btnPrimary: theme === "dark" ? "bg-white text-[#030303] hover:bg-white/90" : "bg-[#0F1115] text-white hover:bg-[#0F1115]/90",
+    btnSecondary: theme === "dark" ? "bg-transparent text-white border-[#21262D] hover:bg-white/5" : "bg-transparent text-[#0F1115] border-[#D8DEE4] hover:bg-black/5",
   };
 
   const trustedTech = [
@@ -52,8 +56,8 @@ export default function Home() {
       {/* Embedded Animations for Subtle Motion */}
       <style>{`
         @keyframes pulse-glow {
-          0%, 100% { opacity: 0.1; transform: scale(1); }
-          50% { opacity: 0.18; transform: scale(1.08); }
+          0%, 100% { opacity: 0.08; transform: scale(1); }
+          50% { opacity: 0.15; transform: scale(1.06); }
         }
         @keyframes line-draw {
           0% { stroke-dashoffset: 24; }
@@ -133,10 +137,10 @@ export default function Home() {
           </p>
 
           <div className="flex gap-3 justify-center mb-16">
-            <a href="#" className="bg-indigo-600 hover:bg-indigo-500 dark:bg-[#F3F4F6] text-white dark:text-[#030303] px-5 py-2.5 rounded-lg font-bold text-xs transition-all">
+            <a href="#" className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
               {"Download App"}
             </a>
-            <a href="#" className={`bg-transparent ${colors.highlight} ${colors.text} border ${colors.border} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
+            <a href="#" className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
               {"Watch Demo"}
             </a>
           </div>
@@ -165,7 +169,7 @@ export default function Home() {
                 <div className="flex-1 space-y-1">
                   <div className="text-app-purple">✓ Sandbox running</div>
                   <div className="text-app-green">root@cloudcode:~$ npm run dev</div>
-                  <div className="text-gray-600">- ready on port 3000</div>
+                  <div className="text-gray-655">- ready on port 3000</div>
                 </div>
                 <div className="w-1.5 h-3 bg-app-blue animate-pulse" />
               </div>
@@ -211,7 +215,7 @@ export default function Home() {
               {/* Old way */}
               <div className={`p-6 rounded-xl border ${colors.border} ${colors.card} space-y-4 text-left`}>
                 <span className="text-[10px] font-mono font-bold text-app-red">{"[x] TRADITIONAL"}</span>
-                <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-450 font-medium">
+                <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-455 font-medium">
                   <li>{"- Carry a heavy laptop"}</li>
                   <li>{"- Hard to patch bugs on road"}</li>
                   <li>{"- No local compilers"}</li>
@@ -220,7 +224,7 @@ export default function Home() {
               </div>
 
               {/* CloudCode */}
-              <div className={`p-6 rounded-xl border border-indigo-500/20 bg-indigo-500/5 dark:bg-[#0B0C10] space-y-4 text-left`}>
+              <div className={`p-6 rounded-xl border border-indigo-500/25 bg-indigo-500/5 dark:bg-[#0B0C10] space-y-4 text-left`}>
                 <span className="text-[10px] font-mono font-bold text-indigo-400">{"[+] CLOUDCODE"}</span>
                 <ul className="space-y-2.5 text-xs text-app-text-light dark:text-app-text-dark font-medium">
                   <li>{"- Full cloud IDE on phone"}</li>
@@ -252,8 +256,8 @@ export default function Home() {
                   onClick={() => setActiveStory(idx)}
                   className={`px-3 py-2.5 rounded-lg text-left text-xs font-mono transition-all cursor-pointer whitespace-nowrap md:whitespace-normal border ${
                     activeStory === idx
-                      ? "bg-[#161821] border-[#2E3039] text-white font-semibold"
-                      : "border-transparent text-gray-500 hover:text-gray-300"
+                      ? (theme === "dark" ? "bg-[#161821] border-[#2E3039] text-white font-semibold" : "bg-[#E5E7EB] border-[#D1D5DB] text-black font-semibold")
+                      : `border-transparent text-gray-500 ${theme === "dark" ? "hover:text-gray-300" : "hover:text-gray-900"}`
                   }`}
                 >
                   {`0${idx + 1}. ${name}`}
@@ -377,7 +381,14 @@ export default function Home() {
               { title: "Preview", desc: "Preview your web applications instantly with console and network inspection." },
               { title: "Extensions", desc: "Personalize your workspace with custom compilers, tools, themes, and keymaps." }
             ].map((feat, idx) => (
-              <div key={idx} className={`p-6 rounded-xl border ${colors.border} ${colors.card} space-y-2`}>
+              <div key={idx} className={`p-6 rounded-xl border ${colors.border} ${colors.card} space-y-3`}>
+                {/* Minimalist Monochrome Icon Placeholder */}
+                <div className="w-5 h-5 text-gray-400 dark:text-gray-550">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="8" />
+                    <path d="M12 8v8M8 12h8" />
+                  </svg>
+                </div>
                 <h4 className="font-semibold text-sm">{feat.title}</h4>
                 <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>{feat.desc}</p>
               </div>
@@ -397,32 +408,32 @@ export default function Home() {
 
           {/* Minimalist SVG Node-Link Diagram */}
           <div className="w-full max-w-2xl py-8">
-            <svg viewBox="0 0 600 120" className="w-full h-auto text-gray-500 dark:text-gray-600">
+            <svg viewBox="0 0 600 120" className="w-full h-auto text-gray-550 dark:text-gray-600">
               {/* Nodes */}
-              <circle cx="100" cy="60" r="30" className="fill-indigo-500/10 stroke-indigo-500" strokeWidth="1.5" />
-              <circle cx="300" cy="60" r="30" className="fill-purple-500/10 stroke-purple-500" strokeWidth="1.5" />
-              <circle cx="500" cy="60" r="30" className="fill-emerald-500/10 stroke-emerald-500" strokeWidth="1.5" />
+              <circle cx="100" cy="60" r="30" className="fill-indigo-500/5 stroke-indigo-500/35" strokeWidth="1.5" />
+              <circle cx="300" cy="60" r="30" className="fill-purple-500/5 stroke-purple-500/35" strokeWidth="1.5" />
+              <circle cx="500" cy="60" r="30" className="fill-emerald-500/5 stroke-emerald-500/35" strokeWidth="1.5" />
               
               {/* Labels inside Nodes */}
-              <text x="100" y="64" fontSize="10" fontFamily="monospace" textAnchor="middle" className="fill-indigo-400 font-bold">DEV</text>
-              <text x="300" y="64" fontSize="10" fontFamily="monospace" textAnchor="middle" className="fill-purple-400 font-bold">AGENT</text>
-              <text x="500" y="64" fontSize="10" fontFamily="monospace" textAnchor="middle" className="fill-emerald-400 font-bold">SANDBOX</text>
+              <text x="100" y="63" fontSize="9" fontFamily="monospace" textAnchor="middle" className="fill-indigo-450 font-bold">DEV</text>
+              <text x="300" y="63" fontSize="9" fontFamily="monospace" textAnchor="middle" className="fill-purple-455 font-bold">AGENT</text>
+              <text x="500" y="63" fontSize="9" fontFamily="monospace" textAnchor="middle" className="fill-emerald-450 font-bold">SANDBOX</text>
 
               {/* Connecting Lines */}
-              <path d="M 130 60 L 270 60" className="stroke-indigo-500/40" strokeWidth="1.5" />
-              <path d="M 330 60 L 470 60" className="stroke-purple-500/40" strokeWidth="1.5" />
+              <path d="M 130 60 L 270 60" className="stroke-indigo-500/20" strokeWidth="1" />
+              <path d="M 330 60 L 470 60" className="stroke-purple-500/20" strokeWidth="1" />
               
               {/* Animated pulses along the path */}
-              <circle cx="100" cy="60" r="4" className="fill-indigo-500 animate-line-draw">
+              <circle cx="100" cy="60" r="3" className="fill-indigo-500/60 animate-line-draw">
                 <animateMotion dur="3s" repeatCount="indefinite" path="M 30 0 L 170 0" />
               </circle>
-              <circle cx="300" cy="60" r="4" className="fill-purple-500 animate-line-draw">
+              <circle cx="300" cy="60" r="3" className="fill-purple-500/60 animate-line-draw">
                 <animateMotion dur="3s" repeatCount="indefinite" path="M 30 0 L 170 0" />
               </circle>
             </svg>
           </div>
           
-          <div className="flex gap-8 text-[10px] font-mono text-gray-500 dark:text-gray-400">
+          <div className="flex gap-8 text-[10px] font-mono text-gray-500 dark:text-gray-450">
             <span>{"[o] Autonomous Planning"}</span>
             <span>{"[o] Code Editing"}</span>
             <span>{"[o] Compiler Verification"}</span>
@@ -516,19 +527,19 @@ export default function Home() {
               <div>
                 <span className="text-[10px] font-mono text-gray-450 uppercase">{"[Free]"}</span>
                 <h3 className="text-2xl font-bold mt-2 mb-4">{"$0"}</h3>
-                <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-450 font-medium">
                   <li>{"- 1 Active Sandbox"}</li>
                   <li>{"- 512MB RAM / 1 Core"}</li>
                   <li>{"- Basic AI autocomplete"}</li>
                 </ul>
               </div>
-              <button className={`w-full mt-8 bg-transparent hover:bg-app-highlight-light dark:hover:bg-app-highlight-dark ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all`}>
+              <button className={`w-full mt-8 bg-transparent hover:bg-app-highlight-light dark:hover:bg-app-highlight-dark ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
                 {"Get Started"}
               </button>
             </div>
 
             {/* Pro */}
-            <div className="p-8 rounded-xl border-2 border-indigo-500 bg-indigo-500/5 dark:bg-[#0B0C10] flex flex-col justify-between text-left relative">
+            <div className={`p-8 rounded-xl border border-indigo-500/40 bg-indigo-500/5 dark:bg-[#0B0C10] flex flex-col justify-between text-left relative`}>
               <span className="absolute top-3 right-3 text-[8px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">{"POPULAR"}</span>
               <div>
                 <span className="text-[10px] font-mono text-indigo-400 uppercase">{"[Pro]"}</span>
@@ -539,7 +550,7 @@ export default function Home() {
                   <li>{"- Autonomous AI agent"}</li>
                 </ul>
               </div>
-              <button className="w-full mt-8 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-xs transition-all">
+              <button className={`w-full mt-8 ${colors.btnPrimary} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
                 {"Get Started with Pro"}
               </button>
             </div>
@@ -555,7 +566,7 @@ export default function Home() {
                   <li>{"- SLA & dedicated accounts"}</li>
                 </ul>
               </div>
-              <button className={`w-full mt-8 bg-transparent hover:bg-app-highlight-light dark:hover:bg-app-highlight-dark ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all`}>
+              <button className={`w-full mt-8 bg-transparent hover:bg-app-highlight-light dark:hover:bg-app-highlight-dark ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
                 {"Contact Sales"}
               </button>
             </div>
@@ -623,10 +634,10 @@ export default function Home() {
             </p>
 
             <div className="flex gap-3 justify-center">
-              <a href="#" className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg font-bold text-xs transition-all">
+              <a href="#" className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
                 {"Download CloudCode"}
               </a>
-              <a href="https://discord.gg" target="_blank" rel="noopener noreferrer" className={`bg-transparent ${colors.highlight} ${colors.text} border ${colors.border} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
+              <a href="https://discord.gg" target="_blank" rel="noopener noreferrer" className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
                 {"Join Discord"}
               </a>
             </div>
