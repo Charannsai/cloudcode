@@ -217,25 +217,24 @@ const Screen0Illustration = () => {
 // Onboarding Illustration Component 1: Dual Vertical Marquee Columns
 // -------------------------------------------------------------
 
-// Icon tile with solid background for vertical marquee columns
+// Icon tile with solid background
 const MarqueeIconTile = ({ children, label }: { children: React.ReactNode; label: string }) => (
   <View style={{
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: 14,
     backgroundColor: '#141824',
     borderWidth: 1,
     borderColor: '#1E2436',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 5,
   }}>
     {children}
     <Text style={{
       color: 'rgba(255, 255, 255, 0.5)',
-      fontSize: 6.5,
+      fontSize: 6,
       fontFamily: 'Inter_500Medium',
-      marginTop: 3,
+      marginTop: 2,
       letterSpacing: 0.3,
     }}>{label}</Text>
   </View>
@@ -265,8 +264,10 @@ const COL_RIGHT_ICONS = [
   { key: 'flutter2', label: 'Flutter', icon: <FlutterLogo /> },
 ]
 
-const ICON_TILE_HEIGHT = 66 // 56 + 10 margin
-const MARQUEE_COL_HEIGHT = COL_LEFT_ICONS.length * ICON_TILE_HEIGHT
+const ROW_HEIGHT = 62 // 52 tile + 10 gap
+const MARQUEE_COL_HEIGHT = COL_LEFT_ICONS.length * ROW_HEIGHT
+const CENTER_LOGO_SIZE = 64
+const FLASH_TRAVEL = Math.floor((width - CENTER_LOGO_SIZE) / 2 - 52 - 10)
 
 const Screen1Illustration = () => {
   const leftColAnim = useSharedValue(0)
@@ -274,23 +275,17 @@ const Screen1Illustration = () => {
   const flashAnim = useSharedValue(0)
 
   useEffect(() => {
-    // Left column scrolls upward
     leftColAnim.value = withRepeat(
       withTiming(-MARQUEE_COL_HEIGHT, { duration: 14000, easing: Easing.linear }),
-      -1,
-      false
+      -1, false
     )
-    // Right column scrolls downward
     rightColAnim.value = withRepeat(
       withTiming(MARQUEE_COL_HEIGHT, { duration: 14000, easing: Easing.linear }),
-      -1,
-      false
+      -1, false
     )
-    // Flash pulse animation along connecting lines
     flashAnim.value = withRepeat(
-      withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      false
+      withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
+      -1, false
     )
   }, [])
 
@@ -302,83 +297,69 @@ const Screen1Illustration = () => {
     transform: [{ translateY: rightColAnim.value - MARQUEE_COL_HEIGHT }],
   }))
 
-  // Flash dot traveling from left column toward center
+  // Flash dot: travels from icon toward center (left to right)
   const leftFlashStyle = useAnimatedStyle(() => ({
-    position: 'absolute' as const,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#00E5FF',
-    shadowColor: '#00E5FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
-    elevation: 6,
-    left: interpolate(flashAnim.value, [0, 1], [0, 44]),
-    top: -3,
-    opacity: interpolate(flashAnim.value, [0, 0.1, 0.9, 1], [0, 1, 1, 0]),
+    transform: [{ translateX: interpolate(flashAnim.value, [0, 1], [0, FLASH_TRAVEL]) }],
+    opacity: interpolate(flashAnim.value, [0, 0.08, 0.85, 1], [0, 1, 1, 0]),
   }))
 
-  // Flash dot traveling from right column toward center
+  // Flash dot: travels from icon toward center (right to left)
   const rightFlashStyle = useAnimatedStyle(() => ({
-    position: 'absolute' as const,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#00E5FF',
-    shadowColor: '#00E5FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
-    elevation: 6,
-    right: interpolate(flashAnim.value, [0, 1], [0, 44]),
-    top: -3,
-    opacity: interpolate(flashAnim.value, [0, 0.1, 0.9, 1], [0, 1, 1, 0]),
+    transform: [{ translateX: interpolate(flashAnim.value, [0, 1], [0, -FLASH_TRAVEL]) }],
+    opacity: interpolate(flashAnim.value, [0, 0.08, 0.85, 1], [0, 1, 1, 0]),
   }))
 
-  const renderColumn = (icons: typeof COL_LEFT_ICONS) => (
-    <>
-      {icons.map((item) => (
-        <MarqueeIconTile key={item.key} label={item.label}>
-          {item.icon}
-        </MarqueeIconTile>
-      ))}
-      {/* Duplicate for seamless loop */}
-      {icons.map((item) => (
-        <MarqueeIconTile key={`${item.key}-dup`} label={item.label}>
-          {item.icon}
-        </MarqueeIconTile>
-      ))}
-    </>
-  )
+  const flashDotBase = {
+    position: 'absolute' as const,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#00E5FF',
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 0 } as const,
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    elevation: 5,
+    top: -2,
+  }
+
+  const renderLeftRows = (icons: typeof COL_LEFT_ICONS, suffix = '') =>
+    icons.map((item) => (
+      <View key={`${item.key}${suffix}`} style={{ flexDirection: 'row', alignItems: 'center', height: ROW_HEIGHT }}>
+        <MarqueeIconTile label={item.label}>{item.icon}</MarqueeIconTile>
+        <View style={{ flex: 1, justifyContent: 'center', marginLeft: 4 }}>
+          <View style={{ height: 1, backgroundColor: 'rgba(0, 229, 255, 0.08)' }} />
+          <Animated.View style={[flashDotBase, { left: 0 }, leftFlashStyle]} />
+        </View>
+      </View>
+    ))
+
+  const renderRightRows = (icons: typeof COL_RIGHT_ICONS, suffix = '') =>
+    icons.map((item) => (
+      <View key={`${item.key}${suffix}`} style={{ flexDirection: 'row', alignItems: 'center', height: ROW_HEIGHT }}>
+        <View style={{ flex: 1, justifyContent: 'center', marginRight: 4 }}>
+          <View style={{ height: 1, backgroundColor: 'rgba(0, 229, 255, 0.08)' }} />
+          <Animated.View style={[flashDotBase, { right: 0 }, rightFlashStyle]} />
+        </View>
+        <MarqueeIconTile label={item.label}>{item.icon}</MarqueeIconTile>
+      </View>
+    ))
 
   return (
-    <View style={[styles.showcaseWrapper, { flexDirection: 'row', paddingHorizontal: 20 }]}>
-      {/* Left column - scrolls up */}
-      <View style={{ height: '100%', overflow: 'hidden', width: 56 }}>
-        <Animated.View style={[{ alignItems: 'center' }, leftColStyle]}>
-          {renderColumn(COL_LEFT_ICONS)}
+    <View style={[styles.showcaseWrapper, { flexDirection: 'row' }]}>
+      {/* Left side: icons at left edge, lines extend right toward center */}
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        <Animated.View style={leftColStyle}>
+          {renderLeftRows(COL_LEFT_ICONS)}
+          {renderLeftRows(COL_LEFT_ICONS, '-dup')}
         </Animated.View>
       </View>
 
-      {/* Center area: connecting lines + logo */}
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-        {/* Left connecting line */}
-        <View style={{ position: 'absolute', left: 0, width: 50, height: 1, top: '50%' }}>
-          <View style={{ width: '100%', height: 1, backgroundColor: 'rgba(0, 229, 255, 0.15)' }} />
-          <Animated.View style={leftFlashStyle} />
-        </View>
-
-        {/* Right connecting line */}
-        <View style={{ position: 'absolute', right: 0, width: 50, height: 1, top: '50%' }}>
-          <View style={{ width: '100%', height: 1, backgroundColor: 'rgba(0, 229, 255, 0.15)' }} />
-          <Animated.View style={rightFlashStyle} />
-        </View>
-
-        {/* CloudCode Logo */}
+      {/* Center CloudCode Logo */}
+      <View style={{ width: CENTER_LOGO_SIZE, justifyContent: 'center', alignItems: 'center', zIndex: 10 }}>
         <View style={{
-          width: 68,
-          height: 68,
+          width: CENTER_LOGO_SIZE,
+          height: CENTER_LOGO_SIZE,
           borderRadius: 18,
           backgroundColor: '#141824',
           borderWidth: 1.5,
@@ -386,7 +367,7 @@ const Screen1Illustration = () => {
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-          <Svg width={38} height={38} viewBox="0 0 874 552">
+          <Svg width={36} height={36} viewBox="0 0 874 552">
             <Path
               d={CLOUD_PATH}
               fill="none"
@@ -397,14 +378,15 @@ const Screen1Illustration = () => {
         </View>
       </View>
 
-      {/* Right column - scrolls down */}
-      <View style={{ height: '100%', overflow: 'hidden', width: 56 }}>
-        <Animated.View style={[{ alignItems: 'center' }, rightColStyle]}>
-          {renderColumn(COL_RIGHT_ICONS)}
+      {/* Right side: lines extend left toward center, icons at right edge */}
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        <Animated.View style={rightColStyle}>
+          {renderRightRows(COL_RIGHT_ICONS)}
+          {renderRightRows(COL_RIGHT_ICONS, '-dup')}
         </Animated.View>
       </View>
 
-      {/* Top edge fade overlay */}
+      {/* Top edge fade */}
       <View style={{ position: 'absolute', left: 0, top: 0, right: 0, height: 80, zIndex: 20, pointerEvents: 'none' }}>
         <Svg width="100%" height={80}>
           <Defs>
@@ -417,7 +399,7 @@ const Screen1Illustration = () => {
         </Svg>
       </View>
 
-      {/* Bottom edge fade overlay */}
+      {/* Bottom edge fade */}
       <View style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 80, zIndex: 20, pointerEvents: 'none' }}>
         <Svg width="100%" height={80}>
           <Defs>
