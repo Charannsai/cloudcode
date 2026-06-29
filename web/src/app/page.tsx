@@ -182,23 +182,23 @@ export default function Home() {
               <div className="p-6 text-left font-mono text-xs md:text-sm min-h-[240px] transition-all duration-300">
                 {activeTab === "terminal" && (
                   <div className="space-y-2.5 text-app-text-secondary-dark">
-                    <div className="text-gray-500"># Initializing Docker sandbox container...</div>
-                    <div className="text-app-purple">✓ Container environment ready [node-lts-alpine]</div>
-                    <div className="text-app-blue">✓ Port forwarding configured on port 3000</div>
+                    <div className="text-gray-500">{"# Initializing Docker sandbox container..."}</div>
+                    <div className="text-app-purple">{"✓ Container environment ready [node-lts-alpine]"}</div>
+                    <div className="text-app-blue">{"✓ Port forwarding configured on port 3000"}</div>
                     <div className="flex items-center gap-2 pt-2">
-                      <span className="text-app-green">root@cloudcode:~/workspace$</span>
-                      <span className={theme === "dark" ? "text-white" : "text-gray-800"}>npm run dev</span>
+                      <span className="text-app-green">{"root@cloudcode:~/workspace$"}</span>
+                      <span className={theme === "dark" ? "text-white" : "text-gray-800"}>{"npm run dev"}</span>
                     </div>
                     <div className="pl-4">
-                      &gt; dev-server@1.0.0 dev
+                      {"> dev-server@1.0.0 dev"}
                       <br />
-                      &gt; next dev
+                      {"> next dev"}
                     </div>
                     <div className="text-app-green pl-4">
-                      - ready started server on 0.0.0.0:3000, url: http://localhost:3000
+                      {"- ready started server on 0.0.0.0:3000, url: http://localhost:3000"}
                     </div>
                     <div className="flex items-center gap-1.5 pt-1">
-                      <span className="text-app-green">root@cloudcode:~/workspace$</span>
+                      <span className="text-app-green">{"root@cloudcode:~/workspace$"}</span>
                       <span className="w-2 h-4 bg-app-blue animate-pulse inline-block" />
                     </div>
                   </div>
@@ -206,16 +206,16 @@ export default function Home() {
 
                 {activeTab === "editor" && (
                   <div className="space-y-1 text-gray-500 dark:text-gray-400">
-                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">1</span><span className="text-app-purple">import</span> React, &#123; useState, useEffect &#125; <span className="text-app-purple">from</span> <span className="text-app-green">&apos;react&apos;</span>;</div>
-                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">2</span><span className="text-app-purple">import</span> &#123; Terminal, Cloud &#125; <span className="text-app-purple">from</span> <span className="text-app-green">&apos;lucide-react-native&apos;</span>;</div>
+                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">1</span><span className="text-app-purple">import</span>{" React, { useState, useEffect } "}<span className="text-app-purple">from</span> <span className="text-app-green">&apos;react&apos;</span>;</div>
+                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">2</span><span className="text-app-purple">import</span>{" { Terminal, Cloud } "}<span className="text-app-purple">from</span> <span className="text-app-green">&apos;lucide-react-native&apos;</span>;</div>
                     <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">3</span></div>
                     <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">4</span><span className="text-app-purple">export default function</span> <span className="text-app-blue">CloudSandbox</span>() &#123;</div>
-                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">5</span>  <span className="text-app-purple">const</span> [active, setActive] = <span className="text-app-blue">useState</span>(<span className="text-app-purple">true</span>);</div>
+                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">5</span>  <span className="text-app-purple">const</span>{" [active, setActive] = "}<span className="text-app-blue">useState</span>(<span className="text-app-purple">true</span>);</div>
                     <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">6</span></div>
                     <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">7</span>  <span className="text-app-purple">return</span> (</div>
-                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">8</span>    &lt;<span className="text-app-blue">View</span> className=<span className="text-app-green">&quot;flex-1 bg-slate-950 p-4&quot;</span>&gt;</div>
-                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">9</span>      &lt;<span className="text-app-blue">Text</span>&gt;Welcome to CloudCode Sandboxes!&lt;&#47;<span className="text-app-blue">Text</span>&gt;</div>
-                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">10</span>    &lt;&#47;<span className="text-app-blue">View</span>&gt;</div>
+                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">8</span>    {"<"}<span className="text-app-blue">View</span>{" className=\"flex-1 bg-slate-950 p-4\">"}</div>
+                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">9</span>      {"<"}<span className="text-app-blue">Text</span>{">Welcome to CloudCode Sandboxes!</"}<span className="text-app-blue">Text</span>{">"}</div>
+                    <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">10</span>    {"</"}<span className="text-app-blue">View</span>{">"}</div>
                     <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">11</span>  );</div>
                     <div><span className="text-gray-400 dark:text-gray-600 select-none mr-4">12</span>&#125;</div>
                   </div>
@@ -223,15 +223,15 @@ export default function Home() {
 
                 {activeTab === "git" && (
                   <div className="space-y-1">
-                    <div className="text-gray-500">diff --git a/app/page.tsx b/app/page.tsx</div>
-                    <div className="text-gray-500">index e69de29..d95f3ad 100644</div>
-                    <div className="text-gray-500">--- a/app/page.tsx</div>
-                    <div className="text-gray-500">+++ b/app/page.tsx</div>
-                    <div className="text-gray-500">@@ -5,4 +5,8 @@</div>
-                    <div className="text-red-500 bg-red-500/10 px-1">- const IDE = &apos;Local&apos;;</div>
-                    <div className="text-green-500 bg-green-500/10 px-1">+ const IDE = &apos;CloudCode Mobile Cloud IDE&apos;;</div>
-                    <div className="text-green-500 bg-green-500/10 px-1">+ const active = true;</div>
-                    <div className="text-green-500 bg-green-500/10 px-1">+ const platform = &apos;Isolated Docker Container&apos;;</div>
+                    <div className="text-gray-500">{"diff --git a/app/page.tsx b/app/page.tsx"}</div>
+                    <div className="text-gray-500">{"index e69de29..d95f3ad 100644"}</div>
+                    <div className="text-gray-500">{"--- a/app/page.tsx"}</div>
+                    <div className="text-gray-500">{"+++ b/app/page.tsx"}</div>
+                    <div className="text-gray-500">{"@@ -5,4 +5,8 @@"}</div>
+                    <div className="text-red-500 bg-red-500/10 px-1">{"- const IDE = 'Local';"}</div>
+                    <div className="text-green-500 bg-green-500/10 px-1">{"+ const IDE = 'CloudCode Mobile Cloud IDE';"}</div>
+                    <div className="text-green-500 bg-green-500/10 px-1">{"+ const active = true;"}</div>
+                    <div className="text-green-500 bg-green-500/10 px-1">{"+ const platform = 'Isolated Docker Container';"}</div>
                   </div>
                 )}
               </div>
