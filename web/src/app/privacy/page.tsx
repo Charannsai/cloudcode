@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function PrivacyPolicy() {
   return (
-    <div className="bg-[#030712] text-gray-100 min-h-screen flex flex-col items-center relative overflow-hidden font-sans">
+    <div className="bg-[#030712] text-gray-100 min-h-screen flex flex-col items-center relative overflow-x-hidden font-sans">
       {/* Background Ambient Glow */}
       <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.1)_0%,rgba(0,0,0,0)_70%)] pointer-events-none z-0" />
 
@@ -22,9 +22,6 @@ export default function PrivacyPolicy() {
           </Link>
           <Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">
             Terms
-          </Link>
-          <Link href="/delete-account" className="text-xs font-semibold text-red-400 border border-red-500/30 hover:border-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-md bg-red-500/5 transition-all">
-            Delete Account
           </Link>
         </nav>
       </header>
