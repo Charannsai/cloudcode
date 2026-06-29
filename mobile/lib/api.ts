@@ -43,6 +43,9 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
 let activeAbort: (() => void) | null = null
 
 export const api = {
+  user: {
+    deleteAccount: () => apiFetch<{ deleted: boolean }>('/cc-api/user', { method: 'DELETE' }),
+  },
   projects: {
     list: () => apiFetch<Project[]>('/cc-api/projects'),
     get: (id: string) => apiFetch<Project>(`/cc-api/projects/${id}`),
