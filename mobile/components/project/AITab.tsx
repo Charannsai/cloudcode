@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Markdown from 'react-native-markdown-display'
 import { api } from '@/lib/api'
 import { ConfirmModal } from '@/components/ConfirmModal'
+import { ensureMicrophonePermission } from '@/lib/permissions'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -703,18 +704,22 @@ export default function AITab({ projectId }: Props) {
         console.error(e)
       }
     } else {
-      try {
-        Keyboard.dismiss()
-        setInputText('')
-        await Voice.start('en-US')
-        setIsListening(true)
-      } catch (e) {
-        console.error(e)
-        Alert.alert(
-          'Microphone Access',
-          'Could not start voice recognition. Please ensure microphone permissions are granted in your device settings.'
-        )
-      }
+      ensureMicrophonePermission(
+        async () => {
+          try {
+            Keyboard.dismiss()
+            setInputText('')
+            await Voice.start('en-US')
+            setIsListening(true)
+          } catch (e) {
+            console.error(e)
+            Alert.alert(
+              'Microphone Access',
+              'Could not start voice recognition. Please ensure microphone permissions are granted in your device settings.'
+            )
+          }
+        }
+      )
     }
   }
 
