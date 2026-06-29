@@ -181,8 +181,8 @@ export default function Home() {
                 {activeTab === "terminal" && (
                   <div className="space-y-2.5 text-app-text-secondary-dark">
                     <div className="text-gray-500">{"# Initializing Docker sandbox container..."}</div>
-                    <div className="text-app-purple">{"✓ Container environment ready [node-lts-alpine]"}</div>
-                    <div className="text-app-blue">{"✓ Port forwarding configured on port 3000"}</div>
+                    <div className="text-app-purple">{"[OK] Container environment ready [node-lts-alpine]"}</div>
+                    <div className="text-app-blue">{"[OK] Port forwarding configured on port 3000"}</div>
                     <div className="flex items-center gap-2 pt-2">
                       <span className="text-app-green">{"root@cloudcode:~/workspace$"}</span>
                       <span className={theme === "dark" ? "text-white" : "text-gray-800"}>{"npm run dev"}</span>
@@ -286,7 +286,7 @@ export default function Home() {
         <footer className={`mt-auto w-full max-w-5xl px-6 py-10 border-t ${colors.border} flex flex-col items-center gap-4 z-10`}>
           <div className={`flex flex-wrap gap-6 justify-center text-xs ${colors.textSecondary}`}>
             <Link href="/privacy" className="hover:text-indigo-600 dark:hover:text-white transition-colors">Privacy Policy</Link>
-            <span className="text-gray-300 dark:text-gray-800">•</span>
+            <span className="text-gray-300 dark:text-gray-800">|</span>
             <Link href="/terms" className="hover:text-indigo-600 dark:hover:text-white transition-colors">Terms of Service</Link>
           </div>
           <p className="text-[11px] text-gray-400 dark:text-gray-600 text-center">
