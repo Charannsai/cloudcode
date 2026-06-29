@@ -18,7 +18,7 @@ export default function DeleteAccount() {
   };
 
   return (
-    <div className="bg-[#030712] text-gray-100 min-h-screen flex flex-col items-center relative overflow-hidden font-sans">
+    <div className="bg-[#030712] text-gray-100 min-h-screen flex flex-col items-center relative overflow-x-hidden font-sans">
       {/* Background Ambient Glow */}
       <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(248,81,73,0.08)_0%,rgba(0,0,0,0)_70%)] pointer-events-none z-0" />
 
