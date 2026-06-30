@@ -260,6 +260,7 @@ export default function Home() {
   const [activeStory, setActiveStory] = useState<number>(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [showAllFaq, setShowAllFaq] = useState(false);
+  const [showAppDropdown, setShowAppDropdown] = useState(false);
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
@@ -415,29 +416,44 @@ export default function Home() {
               />
             </div>
             
-            <div className="flex items-center gap-6">
-              <Link href="/privacy" className={`text-xs ${colors.textSecondary} hover:text-indigo-500 dark:hover:text-white transition-colors`}>
-                Privacy
-              </Link>
-              <Link href="/terms" className={`text-xs ${colors.textSecondary} hover:text-indigo-500 dark:hover:text-white transition-colors`}>
-                Terms
-              </Link>
-              <button
-                onClick={toggleTheme}
-                className={`p-1.5 rounded-md border ${colors.border} ${colors.highlight} transition-all cursor-pointer ${colors.textSecondary}`}
-                aria-label="Toggle theme"
-              >
-                {theme === "dark" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="12" r="4" />
-                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            <div className="flex items-center gap-6 relative">
+              <div className="relative">
+                <button 
+                  onClick={() => setShowAppDropdown(!showAppDropdown)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-bold text-xs transition-all cursor-pointer ${colors.btnPrimary}`}
+                >
+                  <span>{"Get the app"}</span>
+                  <svg 
+                    className={`w-3 h-3 transition-transform duration-200 ${showAppDropdown ? "rotate-180" : ""}`}
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor" 
+                    strokeWidth="2.5"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-                  </svg>
+                </button>
+                
+                {showAppDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowAppDropdown(false)} />
+                    <div className={`absolute right-0 mt-2 w-48 rounded-xl border ${colors.border} ${colors.card} shadow-lg py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150`}>
+                      <a 
+                        href="https://play.google.com" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setShowAppDropdown(false)}
+                        className={`flex items-center px-4 py-2 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 ${colors.text} transition-colors`}
+                      >
+                        <span>{"Playstore"}</span>
+                      </a>
+                      <div className={`flex items-center px-4 py-2 text-xs font-semibold ${colors.textSecondary} cursor-not-allowed`}>
+                        <span>{"App store (coming soon)"}</span>
+                      </div>
+                    </div>
+                  </>
                 )}
-              </button>
+              </div>
             </div>
           </div>
         </nav>
@@ -964,56 +980,44 @@ export default function Home() {
         </section>
 
         {/* ==================== FOOTER ==================== */}
-        <footer className={`w-full py-16 border-t ${colors.border} bg-app-card-light/10 dark:bg-app-card-dark/10 backdrop-blur-sm z-10`}>
-          <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-8 text-left">
-            
-            <div className="col-span-2 space-y-4">
+        <footer className={`w-full py-10 border-t ${colors.border} z-10`}>
+          <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-left">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <img 
                 src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
                 alt="CloudCode" 
-                className={theme === "dark" ? "h-[21px] my-[1.5px] w-auto object-contain" : "h-6 w-auto object-contain"}
+                className="h-[20px] w-auto object-contain"
               />
-              <p className={`text-xs ${colors.textSecondary} max-w-xs leading-relaxed`}>
-                {"Designed for builders. Engineered for the future."}
-              </p>
+              <span className={`text-xs ${colors.textSecondary}`}>
+                {`© ${new Date().getFullYear()} CloudCode, Inc. All rights reserved.`}
+              </span>
             </div>
 
-            <div className="space-y-3 text-[11px]">
-              <h5 className="font-bold text-gray-400 uppercase tracking-wider font-mono">{"Products"}</h5>
-              <ul className={`space-y-2 ${colors.textSecondary}`}>
-                <li><a href="#" className="hover:text-indigo-500 dark:hover:text-white">{"Download"}</a></li>
-                <li><a href="#" className="hover:text-indigo-500 dark:hover:text-white">{"Pricing"}</a></li>
-                <li><a href="#" className="hover:text-indigo-500 dark:hover:text-white">{"Changelog"}</a></li>
-              </ul>
+            <div className="flex items-center gap-6">
+              <Link href="/privacy" className={`text-xs ${colors.textSecondary} hover:text-indigo-550 dark:hover:text-white transition-colors`}>
+                {"Privacy"}
+              </Link>
+              <Link href="/terms" className={`text-xs ${colors.textSecondary} hover:text-indigo-550 dark:hover:text-white transition-colors`}>
+                {"Terms"}
+              </Link>
+              
+              <button
+                onClick={(e) => toggleTheme(e)}
+                className={`p-1.5 rounded-md border ${colors.border} ${colors.highlight} transition-all cursor-pointer ${colors.textSecondary}`}
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                )}
+              </button>
             </div>
-
-            <div className="space-y-3 text-[11px]">
-              <h5 className="font-bold text-gray-400 uppercase tracking-wider font-mono">{"Developers"}</h5>
-              <ul className={`space-y-2 ${colors.textSecondary}`}>
-                <li><a href="#" className="hover:text-indigo-500 dark:hover:text-white">{"Documentation"}</a></li>
-                <li><a href="#" className="hover:text-indigo-500 dark:hover:text-white">{"API"}</a></li>
-                <li><a href="https://github.com" className="hover:text-indigo-500 dark:hover:text-white">{"GitHub"}</a></li>
-              </ul>
-            </div>
-
-            <div className="space-y-3 text-[11px]">
-              <h5 className="font-bold text-gray-400 uppercase tracking-wider font-mono">{"Company"}</h5>
-              <ul className={`space-y-2 ${colors.textSecondary}`}>
-                <li><a href="#" className="hover:text-indigo-500 dark:hover:text-white">{"About"}</a></li>
-                <li><a href="/privacy" className="hover:text-indigo-500 dark:hover:text-white">{"Privacy Policy"}</a></li>
-                <li><a href="/terms" className="hover:text-indigo-500 dark:hover:text-white">{"Terms of Service"}</a></li>
-              </ul>
-            </div>
-
-          </div>
-
-          <div className="max-w-5xl mx-auto px-6 pt-8 mt-8 border-t border-app-border-light/30 dark:border-app-border-dark/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px]">
-            <p className="text-gray-450">
-              {`© ${new Date().getFullYear()} CloudCode, Inc. All rights reserved.`}
-            </p>
-            <p className="text-gray-450 font-mono">
-              {"Designed for builders."}
-            </p>
           </div>
         </footer>
 
