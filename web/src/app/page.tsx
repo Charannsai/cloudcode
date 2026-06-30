@@ -1522,11 +1522,7 @@ export function InteractiveShowcase() {
           </div>
         ))}
       </div>
-      
       <div className="clear-both" />
-    </div>
-  );
-}ear-both" />
     </div>
   );
 }
