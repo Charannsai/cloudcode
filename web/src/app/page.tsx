@@ -2098,7 +2098,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             pointerEvents: mockupOpacity > 0.1 ? "auto" : "none"
           }}
         >
-          <PhoneMockup scrollProgress={scrollProgress} theme={theme} mouseOffset={mouseOffset}>
+          <PhoneMockup scrollProgress={scrollProgress} theme={theme} mouseOffset={mouseOffset} activeStep={activeStep}>
             <PhoneScreen activeStep={activeStep} theme={theme} scrollProgress={scrollProgress} />
           </PhoneMockup>
         </div>
