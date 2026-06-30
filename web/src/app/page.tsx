@@ -811,38 +811,24 @@ const InitialScreen = ({ theme }: { theme: "light" | "dark" }) => {
   );
 };
 
-const EnvironmentsScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark" }) => {
-  const [loading, setLoading] = useState(false);
-  const [complete, setComplete] = useState(false);
+const EnvironmentsScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
+  const isDark = theme === "dark";
+  
+  // Calculate local progress t from 0.48 to 0.68
+  const t = Math.max(0, Math.min(1, (scrollProgress - 0.48) / 0.20));
 
-  useEffect(() => {
-    if (!active) {
-      setLoading(false);
-      setComplete(false);
-      return;
-    }
+  const showTemplates = t < 0.35;
+  const showLoading = t >= 0.35 && t < 0.80;
+  const showComplete = t >= 0.80;
 
-    const t1 = setTimeout(() => {
-      setLoading(true);
-    }, 800);
-
-    const t2 = setTimeout(() => {
-      setLoading(false);
-      setComplete(true);
-    }, 2500);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [active]);
+  const loadProgress = Math.max(0, Math.min(100, Math.floor((t - 0.35) / 0.45 * 100)));
 
   return (
     <div className={`w-full h-full p-4 flex flex-col justify-between font-sans transition-colors duration-300 ${
-      theme === "dark" ? "bg-[#0A0B10] text-white" : "bg-white text-[#0F1115]"
+      isDark ? "bg-[#0A0B10] text-white" : "bg-white text-[#0F1115]"
     }`}>
       <div className="space-y-3">
-        <div className={`border-b pb-2 ${theme === "dark" ? "border-white/5" : "border-black/5"}`}>
+        <div className={`border-b pb-2 ${isDark ? "border-white/5" : "border-black/5"}`}>
           <h4 className="font-bold text-[10px] text-gray-400 tracking-wide uppercase font-mono">Select Template</h4>
         </div>
         
@@ -851,139 +837,117 @@ const EnvironmentsScreen = ({ active, theme }: { active: boolean, theme: "light"
             { name: "Node.js / Next.js", desc: "React framework with Tailwind" },
             { name: "Python / FastAPI", desc: "Modern Python web backend" },
             { name: "Rust / Cargo", desc: "Performance-critical system code" }
-          ].map((tmpl, idx) => (
-            <div key={idx} className={`p-2 rounded border transition-all text-left ${
-              idx === 0 
-                ? (theme === "dark" ? "border-indigo-500 bg-indigo-500/10" : "border-indigo-500 bg-indigo-500/5")
-                : (theme === "dark" ? "border-white/5 bg-white/5 opacity-60" : "border-black/5 bg-black/5 opacity-60")
-            }`}>
-              <div className="font-bold text-[9px]">{tmpl.name}</div>
-              <div className={`text-[7px] ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>{tmpl.desc}</div>
-            </div>
-          ))}
+          ].map((tmpl, idx) => {
+            const isSelected = idx === 0 && showTemplates;
+            return (
+              <div key={idx} className={`p-2 rounded border transition-all text-left ${
+                isSelected 
+                  ? (isDark ? "border-white bg-white/5" : "border-black bg-black/5")
+                  : (isDark ? "border-white/5 bg-white/5 opacity-40" : "border-black/5 bg-black/5 opacity-45")
+              }`}>
+                <div className="font-bold text-[9px]">{tmpl.name}</div>
+                <div className={`text-[7px] ${isDark ? "text-gray-400" : "text-gray-500"}`}>{tmpl.desc}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       <div className="space-y-2">
-        {loading && (
+        {showLoading && (
           <div className="space-y-1 text-center">
-            <div className={`w-full h-1 rounded overflow-hidden ${theme === "dark" ? "bg-white/5" : "bg-black/5"}`}>
-              <div className="bg-indigo-500 h-full w-[80%] animate-pulse" />
+            <div className={`w-full h-1 rounded overflow-hidden ${isDark ? "bg-white/10" : "bg-black/5"}`}>
+              <div 
+                className={`h-full transition-all duration-75 ${isDark ? "bg-white" : "bg-black"}`} 
+                style={{ width: `${loadProgress}%` }}
+              />
             </div>
-            <span className="text-[8px] font-mono text-indigo-400">Allocating sandbox...</span>
+            <span className="text-[8px] font-mono text-gray-400">Allocating sandbox... {loadProgress}%</span>
           </div>
         )}
         
-        {complete && (
-          <div className={`border p-2 rounded text-left space-y-1 font-mono text-[8px] animate-fade-in-up ${
-            theme === "dark" 
-              ? "bg-emerald-500/15 border-emerald-500/20 text-gray-400" 
-              : "bg-emerald-500/5 border-emerald-500/15 text-gray-600"
+        {showComplete && (
+          <div className={`border p-2 rounded text-left space-y-1 font-mono text-[8px] ${
+            isDark 
+              ? "bg-white/5 border-white/10 text-gray-400" 
+              : "bg-black/5 border-black/10 text-gray-600"
           }`}>
-            <div className="text-emerald-400 font-bold">● Workspace Online</div>
+            <div className="text-white dark:text-white font-bold">● Workspace Online</div>
             <div className="text-gray-400">ID: sandbox-node-1</div>
             <div className="text-gray-500">Resources: 4 Cores / 4GB RAM</div>
           </div>
         )}
 
         <button className={`w-full py-1.5 rounded text-[9px] font-bold text-center transition-all ${
-          complete 
-            ? "bg-emerald-500 text-white" 
-            : loading 
-              ? "bg-indigo-600/50 text-white/50" 
-              : (theme === "dark" ? "bg-indigo-500 text-white hover:bg-indigo-600" : "bg-indigo-600 text-white hover:bg-indigo-700")
+          showComplete 
+            ? (isDark ? "bg-white text-black" : "bg-black text-white") 
+            : showLoading 
+              ? (isDark ? "bg-white/10 text-white/40" : "bg-black/5 text-black/30") 
+              : (isDark ? "bg-white text-black hover:bg-gray-255" : "bg-black text-white hover:bg-gray-850")
         }`}>
-          {complete ? "Open Workspace" : loading ? "Starting..." : "Create Workspace"}
+          {showComplete ? "Open Workspace" : showLoading ? "Starting..." : "Create Workspace"}
         </button>
       </div>
     </div>
   );
 };
 
-const TerminalScreen = ({ active }: { active: boolean }) => {
-  const [lines, setLines] = useState<string[]>([]);
+const TerminalScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
+  const isDark = theme === "dark";
   
-  useEffect(() => {
-    if (!active) {
-      setLines([]);
-      return;
-    }
-    
-    const allLines = [
-      "root@cloudcode:~# git clone https://github.com/user/project",
-      "Cloning into 'project'... done.",
-      "root@cloudcode:~# cd project && npm install",
-      "added 342 packages in 4.1s",
-      "root@cloudcode:~# npm run dev",
-      "▲ Next.js 16.2.9 (Turbopack)",
-      "- Local: http://localhost:3000"
-    ];
-    
-    let currentLine = 0;
-    const interval = setInterval(() => {
-      if (currentLine < allLines.length) {
-        const lineToAdd = allLines[currentLine];
-        setLines(prev => [...prev, lineToAdd]);
-        currentLine++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 600);
-    
-    return () => clearInterval(interval);
-  }, [active]);
+  // Calculate local progress t from 0.68 to 0.78
+  const t = Math.max(0, Math.min(1, (scrollProgress - 0.68) / 0.10));
+
+  const allLines = [
+    "root@cloudcode:~# git clone https://github.com/user/project",
+    "Cloning into 'project'... done.",
+    "root@cloudcode:~# cd project && npm install",
+    "added 342 packages in 4.1s",
+    "root@cloudcode:~# npm run dev",
+    "▲ Next.js 16.2.9 (Turbopack)",
+    "- Local: http://localhost:3000"
+  ];
+
+  // Number of lines visible is directly proportional to scroll progress
+  const visibleCount = Math.floor(t * (allLines.length + 1));
 
   return (
-    <div className="w-full h-full bg-[#08090E] p-3 font-mono text-[9px] text-gray-300 flex flex-col justify-between overflow-hidden">
-      <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-2">
+    <div className={`w-full h-full p-3 font-mono text-[9px] flex flex-col justify-between overflow-hidden transition-colors duration-300 ${
+      isDark ? "bg-[#08090E] text-gray-300" : "bg-gray-50 text-gray-800"
+    }`}>
+      <div className={`flex items-center justify-between border-b pb-1 mb-2 ${isDark ? "border-white/5" : "border-black/5"}`}>
         <span className="text-gray-500">bash - session-1</span>
-        <span className="text-emerald-455">● online</span>
+        <span className="font-bold text-gray-400">● online</span>
       </div>
       <div className="flex-1 space-y-1.5 overflow-y-auto">
-        {lines.map((line, idx) => {
-          if (!line) return null;
+        {allLines.slice(0, visibleCount).map((line, idx) => {
           if (line.startsWith("root@")) {
             return (
               <div key={idx}>
-                <span className="text-emerald-500">root@cloudcode</span>
-                <span className="text-gray-500">:~#</span> <span className="text-white">{line.split("~# ")[1]}</span>
+                <span className="font-bold">root@cloudcode</span>
+                <span className="text-gray-500">:~#</span> <span className={isDark ? "text-white" : "text-black"}>{line.split("~# ")[1]}</span>
               </div>
             );
           }
-          if (line.startsWith("▲") || line.startsWith("-")) {
-            return <div key={idx} className="text-indigo-455">{line}</div>;
-          }
-          return <div key={idx} className="text-gray-400">{line}</div>;
+          return <div key={idx} className="text-gray-400 dark:text-gray-400">{line}</div>;
         })}
-        {active && lines.length < 7 && (
-          <div className="w-1 h-2.5 bg-indigo-500 animate-pulse inline-block ml-0.5" />
+        {visibleCount > 0 && visibleCount < allLines.length && (
+          <div className={`w-1 h-2.5 inline-block ml-0.5 animate-pulse ${isDark ? "bg-white" : "bg-black"}`} />
         )}
       </div>
     </div>
   );
 };
 
-const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark" }) => {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    if (!active) {
-      setStep(0);
-      return;
-    }
-
-    const t1 = setTimeout(() => setStep(1), 1200); // highlight code
-    const t2 = setTimeout(() => setStep(2), 2400); // show AI prompt
-    const t3 = setTimeout(() => setStep(3), 3600); // replace with AI code
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [active]);
-
+const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
   const isDark = theme === "dark";
+  
+  // Calculate local progress t from 0.78 to 0.86
+  const t = Math.max(0, Math.min(1, (scrollProgress - 0.78) / 0.08));
+
+  const showHighlight = t >= 0.25 && t < 0.55;
+  const showAIPanel = t >= 0.55 && t < 0.75;
+  const showNewCode = t >= 0.75;
 
   return (
     <div className={`w-full h-full flex flex-col justify-between overflow-hidden relative transition-colors duration-300 ${
@@ -993,72 +957,72 @@ const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "da
         isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-50 border-black/5"
       }`}>
         <span className={`text-[8px] font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}>Counter.tsx</span>
-        <span className="text-[7px] font-mono text-indigo-400 bg-indigo-500/10 px-1 py-0.5 rounded">TypeScript</span>
+        <span className={`text-[7px] font-mono px-1 py-0.5 rounded ${isDark ? "bg-white/10 text-white" : "bg-black/5 text-black"}`}>TypeScript</span>
       </div>
 
       <div className={`flex-1 p-3 font-mono text-[9px] space-y-1 overflow-y-auto leading-relaxed ${
         isDark ? "text-gray-300" : "text-gray-700"
       }`}>
-        {step < 3 ? (
+        {!showNewCode ? (
           <>
-            <div><span className="text-purple-500">import</span> &#123; useState  &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
+            <div><span className="font-bold">import</span> &#123; useState  &#125; <span className="font-bold">from</span> <span className="italic text-gray-500">&apos;react&apos;</span>;</div>
             <div className="h-1" />
-            <div><span className="text-purple-500">export function</span> <span className="text-blue-500">Counter</span>() &#123;</div>
+            <div><span className="font-bold">export function</span> <span className="underline decoration-gray-500">Counter</span>() &#123;</div>
             <div className="pl-3">
-              <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-500">useState</span>(<span className="text-orange-550">0</span>);
+              <span className="font-bold">const</span> [count, setCount] = <span className="underline decoration-gray-550">useState</span>(<span className="font-bold">0</span>);
             </div>
-            <div className="pl-3"><span className="text-purple-500">return</span> (</div>
-            <div className={`pl-6 transition-all duration-500 ${
-              step === 1 
-                ? (isDark ? "bg-indigo-500/20 border-l-2 border-indigo-500 rounded" : "bg-indigo-500/10 border-l-2 border-indigo-500 rounded") 
+            <div className="pl-3"><span className="font-bold">return</span> (</div>
+            <div className={`pl-6 transition-all duration-300 ${
+              showHighlight 
+                ? (isDark ? "bg-white/10 border-l-2 border-white rounded" : "bg-black/5 border-l-2 border-black rounded") 
                 : ""
             }`}>
-              &lt;<span className="text-blue-500">button</span> <span className="text-yellow-600">onClick</span>=&#123;() =&gt; <span className="text-blue-500">setCount</span>(count + <span className="text-orange-550">1</span>)&#125;&gt;
+              &lt;<span className="font-bold">button</span> <span className="text-gray-500">onClick</span>=&#123;() =&gt; <span>setCount</span>(count + <span className="font-bold">1</span>)&#125;&gt;
             </div>
             <div className="pl-9">Count: &#123;count&#125;</div>
-            <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
+            <div className="pl-6">&lt;/<span className="font-bold">button</span>&gt;</div>
             <div className="pl-3">);</div>
             <div>&#125;</div>
           </>
         ) : (
           <>
-            <div><span className="text-purple-500">import</span> &#123; useState, useEffect  &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
+            <div><span className="font-bold">import</span> &#123; useState, useEffect  &#125; <span className="font-bold">from</span> <span className="italic text-gray-500">&apos;react&apos;</span>;</div>
             <div className="h-1" />
-            <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
+            <div><span className="font-bold">export function</span> <span className="underline decoration-gray-500">Counter</span>() &#123;</div>
             <div className="pl-3">
-              <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
+              <span className="font-bold">const</span> [count, setCount] = <span className="underline decoration-gray-550">useState</span>(<span className="font-bold">0</span>);
             </div>
             <div className={`pl-3 border-l-2 rounded py-0.5 my-1 ${
-              isDark ? "bg-emerald-500/10 border-emerald-500" : "bg-emerald-500/5 border-emerald-500"
+              isDark ? "bg-white/10 border-white" : "bg-black/5 border-black"
             }`}>
-              <span className="text-blue-550">useEffect</span>(() =&gt; &#123;
-              <div className="pl-3">console.<span className="text-blue-550">log</span>(<span className="text-emerald-600">&quot;Count is&quot;</span>, count);</div>
+              <span className="underline decoration-gray-550">useEffect</span>(() =&gt; &#123;
+              <div className="pl-3">console.<span className="underline decoration-gray-550">log</span>(<span className="italic text-gray-500">&quot;Count is&quot;</span>, count);</div>
               &#125;, [count]);
             </div>
-            <div className="pl-3"><span className="text-purple-500">return</span> (</div>
+            <div className="pl-3"><span className="font-bold">return</span> (</div>
             <div className="pl-6">
-              &lt;<span className="text-blue-550">button</span> 
+              &lt;<span className="font-bold">button</span> 
             </div>
-            <div className="pl-9 text-yellow-600">onClick<span className={isDark ? "text-gray-400" : "text-gray-600"}>=&#123;() =&gt;</span> <span className="text-blue-555">setCount</span>(count + <span className="text-orange-550">1</span>)&#125;</div>
-            <div className="pl-9 text-yellow-600">className<span className={isDark ? "text-gray-400" : "text-gray-600"}>=&quot;active:scale-95 transition-all&quot;</span></div>
+            <div className="pl-9 text-gray-500">onClick<span className={isDark ? "text-gray-400" : "text-gray-600"}>=&#123;() =&gt;</span> <span>setCount</span>(count + <span className="font-bold">1</span>)&#125;</div>
+            <div className="pl-9 text-gray-500">className<span className={isDark ? "text-gray-400" : "text-gray-600"}>=&quot;active:scale-95 transition-all&quot;</span></div>
             <div className="pl-6">&gt;</div>
             <div className="pl-9">Count: &#123;count&#125;</div>
-            <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
+            <div className="pl-6">&lt;/<span className="font-bold">button</span>&gt;</div>
             <div className="pl-3">);</div>
             <div>&#125;</div>
           </>
         )}
       </div>
 
-      {/* AI Assistant Panel */}
+      {/* AI Assistant Panel (Slides up when active) */}
       <div className={`absolute bottom-0 left-0 right-0 p-3 border-t transition-all duration-500 transform ${
-        step >= 2 && step < 3 ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+        showAIPanel ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
       } ${
-        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-55 border-black/5"
+        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-50 border-black/5"
       }`}>
         <div className="flex items-center gap-2 mb-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-          <span className="text-[7px] font-mono text-indigo-500 uppercase font-bold">CloudCode AI</span>
+          <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDark ? "bg-white" : "bg-black"}`} />
+          <span className="text-[7px] font-mono uppercase font-bold">CloudCode AI</span>
         </div>
         <div className={`text-[8px] font-mono p-1.5 rounded border ${
           isDark ? "bg-white/5 border-white/5 text-white" : "bg-black/5 border-black/5 text-black"
@@ -1070,33 +1034,20 @@ const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "da
   );
 };
 
-const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark" }) => {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    if (!active) {
-      setStep(0);
-      return;
-    }
-
-    const t1 = setTimeout(() => setStep(1), 1200); // commit
-    const t2 = setTimeout(() => setStep(2), 2400); // pr screen
-    const t3 = setTimeout(() => setStep(3), 3600); // merge
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [active]);
-
+const GitScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
   const isDark = theme === "dark";
+  
+  // Calculate local progress t from 0.86 to 0.92
+  const t = Math.max(0, Math.min(1, (scrollProgress - 0.86) / 0.06));
+
+  const isPushing = t >= 0.35 && t < 0.70;
+  const showPR = t >= 0.70;
 
   return (
     <div className={`w-full h-full p-3 font-sans text-xs flex flex-col justify-between overflow-hidden transition-colors duration-300 ${
       isDark ? "bg-[#0A0B10] text-gray-300" : "bg-white text-[#0F1115]"
     }`}>
-      {step < 2 ? (
+      {!showPR ? (
         <>
           <div className={`border-b pb-2 ${isDark ? "border-white/5" : "border-black/5"}`}>
             <h4 className={`font-bold text-[10px] tracking-wide uppercase font-mono ${isDark ? "text-white" : "text-gray-800"}`}>Source Control</h4>
@@ -1106,15 +1057,15 @@ const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark"
               <span className="text-[9px] font-mono text-gray-500">CHANGES</span>
               <div className="mt-1 space-y-1">
                 <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
-                  isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+                  isDark ? "bg-white/5 border-white/5" : "bg-gray-50 border-black/5"
                 }`}>
-                  <span className="font-mono text-emerald-450">M  Counter.tsx</span>
+                  <span className="font-mono font-bold">M  Counter.tsx</span>
                   <span className="text-[7px] text-gray-500 font-mono">Modified</span>
                 </div>
                 <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
-                  isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+                  isDark ? "bg-white/5 border-white/5" : "bg-gray-50 border-black/5"
                 }`}>
-                  <span className="font-mono text-emerald-455">M  page.tsx</span>
+                  <span className="font-mono font-bold">M  page.tsx</span>
                   <span className="text-[7px] text-gray-500 font-mono">Modified</span>
                 </div>
               </div>
@@ -1123,7 +1074,7 @@ const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark"
             <div className="space-y-1">
               <span className="text-[9px] font-mono text-gray-500">COMMIT MESSAGE</span>
               <div className={`p-2 rounded border text-[9px] font-mono ${
-                isDark ? "bg-white/5 border-white/5 text-white" : "bg-gray-55 border-black/5 text-black"
+                isDark ? "bg-white/5 border-white/5 text-white" : "bg-gray-50 border-black/5 text-black"
               }`}>
                 feat: improve counter interactivity
               </div>
@@ -1131,38 +1082,38 @@ const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark"
           </div>
           
           <button className={`w-full py-2 rounded font-bold text-[10px] text-center transition-all duration-300 ${
-            step === 1 
-              ? "bg-indigo-600 text-white scale-95 opacity-50" 
-              : "bg-indigo-500 text-white hover:bg-indigo-600"
+            isPushing 
+              ? (isDark ? "bg-white/10 text-white/40" : "bg-black/5 text-black/30") 
+              : (isDark ? "bg-white text-black hover:bg-gray-200" : "bg-black text-white hover:bg-gray-850")
           }`}>
-            {step === 1 ? "Pushing..." : "Commit & Push"}
+            {isPushing ? "Pushing..." : "Commit & Push"}
           </button>
         </>
       ) : (
         <>
           <div className={`border-b pb-2 flex justify-between items-center ${isDark ? "border-white/5" : "border-black/5"}`}>
             <h4 className={`font-bold text-[10px] tracking-wide uppercase font-mono ${isDark ? "text-white" : "text-gray-800"}`}>Pull Request #42</h4>
-            <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Open</span>
+            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold border ${
+              isDark ? "bg-white/10 border-white/20 text-white" : "bg-black/5 border-black/10 text-black"
+            }`}>Open</span>
           </div>
           <div className="flex-1 py-3 space-y-3">
             <div className="space-y-1">
               <h5 className={`font-bold text-[10px] ${isDark ? "text-white" : "text-gray-800"}`}>feat: improve counter interactivity</h5>
-              <p className="text-[8px] text-gray-455 font-mono">Merged 2 commits from <code className="font-mono bg-white/5 px-1 rounded text-indigo-400">feat/counter</code> into <code className="font-mono bg-white/5 px-1 rounded text-gray-350 font-mono">main</code></p>
+              <p className="text-[8px] text-gray-500 font-mono">Merged 2 commits from <code className="font-mono bg-white/5 px-1 rounded">feat/counter</code> into <code className="font-mono bg-white/5 px-1 rounded">main</code></p>
             </div>
             <div className={`p-2 rounded border text-[8px] space-y-1 font-mono ${
-              isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+              isDark ? "bg-white/5 border-white/5" : "bg-gray-50 border-black/5"
             }`}>
-              <div className="text-emerald-455 font-bold font-mono">✓ All checks passed (100%)</div>
+              <div className="font-bold font-mono">✓ All checks passed (100%)</div>
               <div className="text-gray-500 font-mono">✓ No conflicts with base branch</div>
             </div>
           </div>
           
-          <button className={`w-full py-2 rounded font-bold text-[10px] text-center transition-all duration-300 ${
-            step === 3 
-              ? "bg-purple-600 text-white opacity-50" 
-              : "bg-purple-500 text-white hover:bg-purple-600"
+          <button className={`w-full py-2 rounded font-bold text-[10px] text-center transition-all ${
+            isDark ? "bg-white text-black" : "bg-black text-white"
           }`}>
-            {step === 3 ? "Merged ✓" : "Merge Pull Request"}
+            Merge Pull Request
           </button>
         </>
       )}
@@ -1170,47 +1121,27 @@ const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark"
   );
 };
 
-const PreviewsScreen = ({ active }: { active: boolean }) => {
-  const [count, setCount] = useState(0);
-  const [isClicking, setIsClicking] = useState(false);
+const PreviewsScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
+  const isDark = theme === "dark";
+  
+  // Calculate local progress t from 0.92 to 0.96
+  const t = Math.max(0, Math.min(1, (scrollProgress - 0.92) / 0.04));
 
-  useEffect(() => {
-    if (!active) {
-      setCount(0);
-      setIsClicking(false);
-      return;
-    }
+  // Determine counter value based on scroll progress
+  let count = 0;
+  if (t >= 0.33 && t < 0.66) count = 1;
+  else if (t >= 0.66) count = 2;
 
-    const t1 = setTimeout(() => {
-      setIsClicking(true);
-      setCount(1);
-    }, 1200);
+  // Determine cursor position and clicking state based on scroll progress
+  const isClicking = (t >= 0.30 && t <= 0.36) || (t >= 0.63 && t <= 0.69);
 
-    const t2 = setTimeout(() => {
-      setIsClicking(false);
-    }, 1500);
-
-    const t3 = setTimeout(() => {
-      setIsClicking(true);
-      setCount(2);
-    }, 2700);
-
-    const t4 = setTimeout(() => {
-      setIsClicking(false);
-    }, 3000);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-    };
-  }, [active]);
+  // Scroll offset for the mock browser content (scrolls up as t increases)
+  const scrollTop = -t * 80;
 
   return (
     <div className="w-full h-full bg-[#FAFAFA] text-[#0F1115] flex flex-col justify-between overflow-hidden font-sans">
-      <div className="bg-white border-b border-gray-200 px-3 py-1.5 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+      <div className="bg-white border-b border-gray-200 px-3 py-1.5 flex items-center gap-2 z-10">
+        <span className="w-1.5 h-1.5 rounded-full bg-black/40" />
         <div className="flex-1 bg-gray-100 px-2 py-0.5 rounded text-[8px] text-gray-500 font-mono flex justify-between items-center">
           <span>localhost:3000</span>
           <span>🔒</span>
@@ -1218,34 +1149,54 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
         <span className="text-[8px] text-gray-400 font-mono">↻</span>
       </div>
 
-      <div className="flex-1 p-4 flex flex-col items-center justify-center bg-gray-55 relative">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm w-full max-w-[160px] text-center space-y-3">
+      <div className="flex-1 p-4 flex flex-col items-center justify-center bg-gray-50 relative overflow-hidden">
+        <div 
+          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm w-full max-w-[160px] text-center space-y-3 transition-transform duration-100"
+          style={{ transform: `translateY(${scrollTop}px)` }}
+        >
           <h5 className="font-bold text-[10px]">Interactive Preview</h5>
           <p className="text-[7px] text-gray-400">Click the button below to test interactions.</p>
-          <button className={`px-3 py-1 rounded-lg text-[9px] font-bold text-white transition-all bg-indigo-500 ${
-            isClicking ? "scale-95 bg-indigo-600" : "active:scale-95"
+          <button className={`px-3 py-1 rounded-lg text-[9px] font-bold text-white transition-all bg-black ${
+            isClicking ? "scale-95 bg-gray-800" : "active:scale-95"
           }`}>
             Count: {count}
           </button>
         </div>
 
-        {active && (
-          <div 
-            className="absolute w-2.5 h-2.5 bg-black rounded-full border border-white pointer-events-none transition-all duration-1000 shadow-lg"
-            style={{
-              left: isClicking ? "50%" : "68%",
-              top: isClicking ? "58%" : "75%",
-              transform: "translate(-50%, -50%)",
-              opacity: 0.8,
-            }}
-          />
-        )}
+        {/* Scrollable Dummy Page Contents that appear as you scroll */}
+        <div 
+          className="w-full max-w-[160px] mt-4 space-y-2 text-left opacity-60 transition-transform duration-100"
+          style={{ transform: `translateY(${scrollTop}px)` }}
+        >
+          <div className="h-1 bg-gray-200 rounded w-12" />
+          <div className="h-2 bg-gray-200 rounded w-full" />
+          <div className="h-2 bg-gray-200 rounded w-3/4" />
+        </div>
+
+        {/* Scroll-driven cursor indicator */}
+        <div 
+          className="absolute w-2.5 h-2.5 bg-black rounded-full border border-white pointer-events-none transition-all duration-75 shadow-lg z-20"
+          style={{
+            left: t < 0.33 
+              ? `${68 - (t / 0.33) * 18}%` // moving to button
+              : t < 0.66 
+                ? `${50 + ((t - 0.33) / 0.33) * 18}%` // moving away
+                : `${68 - ((t - 0.66) / 0.34) * 18}%`, // clicking again
+            top: t < 0.33 
+              ? `${75 - (t / 0.33) * 17}%`
+              : t < 0.66 
+                ? `${58 + ((t - 0.33) / 0.33) * 17}%`
+                : `${75 - ((t - 0.66) / 0.34) * 17}%`,
+            transform: "translate(-50%, -50%)",
+            opacity: 0.8,
+          }}
+        />
       </div>
 
-      <div className="bg-[#0A0B0F] border-t border-white/5 p-2 font-mono text-[7px] text-gray-450 space-y-0.5">
-        <div className="text-indigo-400 uppercase font-bold tracking-wider text-[6px]">Console Logs</div>
-        {count >= 1 && <div className="text-emerald-400">[Console] Count is now 1</div>}
-        {count >= 2 && <div className="text-emerald-400">[Console] Count is now 2</div>}
+      <div className="bg-[#0A0B0F] border-t border-white/5 p-2 font-mono text-[7px] text-gray-450 space-y-0.5 z-10">
+        <div className="text-white uppercase font-bold tracking-wider text-[6px]">Console Logs</div>
+        {count >= 1 && <div className="text-gray-300">[Console] Count is now 1</div>}
+        {count >= 2 && <div className="text-gray-300">[Console] Count is now 2</div>}
       </div>
     </div>
   );
@@ -1327,15 +1278,15 @@ const PhoneScreen = ({ activeStep, theme, scrollProgress }: { activeStep: string
       return <InitialScreen theme={theme} />;
     case "sandbox_orbit":
     case "sandbox_load":
-      return <EnvironmentsScreen active={activeStep === "sandbox_load"} theme={theme} />;
+      return <EnvironmentsScreen theme={theme} scrollProgress={scrollProgress} />;
     case "terminal":
-      return <TerminalScreen active={activeStep === "terminal"} />;
+      return <TerminalScreen theme={theme} scrollProgress={scrollProgress} />;
     case "editor":
-      return <EditorScreen active={activeStep === "editor"} theme={theme} />;
+      return <EditorScreen theme={theme} scrollProgress={scrollProgress} />;
     case "git":
-      return <GitScreen active={activeStep === "git"} theme={theme} />;
+      return <GitScreen theme={theme} scrollProgress={scrollProgress} />;
     case "previews":
-      return <PreviewsScreen active={activeStep === "previews"} />;
+      return <PreviewsScreen theme={theme} scrollProgress={scrollProgress} />;
     case "exit":
       return <InitialScreen theme={theme} />;
     default:
@@ -1343,54 +1294,59 @@ const PhoneScreen = ({ activeStep, theme, scrollProgress }: { activeStep: string
   }
 };
 
-const GitDiffView = ({ theme }: { theme: "light" | "dark" }) => {
+const GitDiffView = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
+  const isDark = theme === "dark";
+  
+  // Calculate local progress t from 0.86 to 0.92
+  const t = Math.max(0, Math.min(1, (scrollProgress - 0.86) / 0.06));
+
   return (
     <div className="w-full h-full flex text-[9px] font-mono divide-x divide-white/5 overflow-y-auto">
       {/* Left Side: Old Code */}
       <div className="w-1/2 p-3 space-y-1 bg-red-500/5 opacity-80 select-none">
-        <div className="text-red-500 font-bold border-b border-red-500/10 pb-1 mb-2">Counter.tsx (Before)</div>
-        <div><span className="text-purple-500">import</span> &#123; useState &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
+        <div className="text-gray-400 font-bold border-b border-white/5 pb-1 mb-2">Counter.tsx (Before)</div>
+        <div><span className="font-bold">import</span> &#123; useState &#125; <span className="font-bold">from</span> <span className="italic text-gray-500">&apos;react&apos;</span>;</div>
         <div className="h-1" />
-        <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
+        <div><span className="font-bold">export function</span> <span className="underline decoration-gray-500">Counter</span>() &#123;</div>
         <div className="pl-3">
-          <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
+          <span className="font-bold">const</span> [count, setCount] = <span className="underline decoration-gray-550">useState</span>(<span className="font-bold">0</span>);
         </div>
-        <div className="pl-3"><span className="text-purple-500">return</span> (</div>
-        <div className="pl-6 bg-red-500/10 text-red-400">
-          - &lt;<span className="text-blue-550">button</span> <span className="text-yellow-650">onClick</span>=&#123;() =&gt; <span className="text-blue-550">setCount</span>(count + 1)&#125;&gt;
+        <div className="pl-3"><span className="font-bold">return</span> (</div>
+        <div className="pl-6 bg-black/20 text-gray-400">
+          - &lt;<span className="font-bold">button</span> <span className="text-gray-550">onClick</span>=&#123;() =&gt; <span>setCount</span>(count + 1)&#125;&gt;
         </div>
         <div className="pl-9">Count: &#123;count&#125;</div>
-        <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
+        <div className="pl-6">&lt;/<span className="font-bold">button</span>&gt;</div>
         <div className="pl-3">);</div>
         <div>&#125;</div>
       </div>
 
       {/* Right Side: New Code */}
-      <div className="w-1/2 p-3 space-y-1 bg-emerald-500/5">
-        <div className="text-emerald-500 font-bold border-b border-emerald-500/10 pb-1 mb-2">Counter.tsx (After)</div>
-        <div><span className="text-purple-500">import</span> &#123; useState, useEffect &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
+      <div className="w-1/2 p-3 space-y-1 bg-white/5">
+        <div className="text-white font-bold border-b border-white/5 pb-1 mb-2">Counter.tsx (After)</div>
+        <div><span className="font-bold">import</span> &#123; useState, useEffect &#125; <span className="font-bold">from</span> <span className="italic text-gray-500">&apos;react&apos;</span>;</div>
         <div className="h-1" />
-        <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
+        <div><span className="font-bold">export function</span> <span className="underline decoration-gray-500">Counter</span>() &#123;</div>
         <div className="pl-3">
-          <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
+          <span className="font-bold">const</span> [count, setCount] = <span className="underline decoration-gray-550">useState</span>(<span className="font-bold">0</span>);
         </div>
-        <div className="pl-3 bg-emerald-500/10 text-emerald-400">
-          + <span className="text-blue-550">useEffect</span>(() =&gt; &#123;
-          <div className="pl-3">console.<span className="text-blue-550">log</span>(<span className="text-emerald-600">&quot;Count is&quot;</span>, count);</div>
+        <div className="pl-3 bg-white/10 text-white">
+          + <span className="underline decoration-gray-550">useEffect</span>(() =&gt; &#123;
+          <div className="pl-3">console.<span className="underline decoration-gray-550">log</span>(<span className="italic text-gray-500">&quot;Count is&quot;</span>, count);</div>
           + &#125;, [count]);
         </div>
-        <div className="pl-3"><span className="text-purple-500">return</span> (</div>
-        <div className="pl-6 bg-emerald-500/10 text-emerald-400">
-          + &lt;<span className="text-blue-550">button</span> <span className="text-yellow-650">onClick</span>=&#123;() =&gt; <span className="text-blue-550">setCount</span>(count + 1)&#125; className=&quot;active:scale-95&quot;&gt;
+        <div className="pl-3"><span className="font-bold">return</span> (</div>
+        <div className="pl-6 bg-white/10 text-white">
+          + &lt;<span className="font-bold">button</span> <span className="text-gray-550">onClick</span>=&#123;() =&gt; <span>setCount</span>(count + 1)&#125; className=&quot;active:scale-95&quot;&gt;
         </div>
         <div className="pl-9">Count: &#123;count&#125;</div>
-        <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
+        <div className="pl-6">&lt;/<span className="font-bold">button</span>&gt;</div>
       </div>
     </div>
   );
 };
 
-const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
+const WorkspaceIDE = ({ activeStep, theme, scrollProgress }: { activeStep: string, theme: "light" | "dark", scrollProgress: number }) => {
   const isDark = theme === "dark";
   const showSidebar = activeStep === "terminal" || activeStep === "editor" || activeStep === "git";
   const showTerminal = activeStep === "terminal";
@@ -1406,54 +1362,48 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
       }`}>
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
+            <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-white/20" : "bg-black/10"}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-white/20" : "bg-black/10"}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-white/20" : "bg-black/10"}`} />
           </div>
-          <span className="ml-4 font-mono text-[10px]">cloudcode-sandbox-1 (Workspace)</span>
+          <span className="ml-4 font-mono text-[9px]">sandbox-1</span>
         </div>
-        <div className="flex items-center gap-4 text-[10px]">
+        <div className="flex items-center gap-4 text-[9px]">
           <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-white" : "bg-black"}`} />
             <span>Connected</span>
           </div>
-          <span>Node.js v20.10.0</span>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Activity Bar (Icons - No Emojis) */}
-        <div className={`w-12 flex flex-col items-center py-4 gap-6 border-r ${
+        <div className={`w-10 flex flex-col items-center py-4 gap-5 border-r ${
           isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-50 border-black/5"
         }`}>
           {[
             // Files Icon
-            <svg key="files" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg key="files" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>,
             // Search Icon
-            <svg key="search" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg key="search" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>,
             // Git Icon
-            <svg key="git" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg key="git" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="18" cy="18" r="3" />
               <circle cx="6" cy="6" r="3" />
               <circle cx="6" cy="18" r="3" />
               <path d="M6 9v6M9 6h6a3 3 0 013 3v6" />
-            </svg>,
-            // Settings Icon
-            <svg key="settings" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
             </svg>
           ].map((icon, idx) => (
             <span 
               key={idx} 
               className={`cursor-pointer hover:opacity-100 transition-opacity ${
-                idx === 2 && activeStep === "git" ? "opacity-100 scale-110 text-indigo-500" : "opacity-40"
+                idx === 2 && activeStep === "git" ? "opacity-100 scale-105" : "opacity-40"
               }`}
             >
               {icon}
@@ -1464,7 +1414,7 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
         {/* Sidebar */}
         <div className={`transition-all duration-500 overflow-hidden flex flex-col border-r ${
           showSidebar 
-            ? "w-52" 
+            ? "w-40" 
             : "w-0 border-r-0"
         } ${
           isDark ? "bg-[#0B0C10] border-white/5" : "bg-white border-black/5"
@@ -1472,79 +1422,50 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
           {activeStep === "git" ? (
             <div className="p-3 flex-1 flex flex-col justify-between">
               <div className="space-y-4">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-555 font-mono">Source Control</div>
+                <div className="text-[9px] font-bold uppercase tracking-wider text-gray-400 font-mono">Source Control</div>
                 <div className="space-y-1">
-                  <span className="text-[9px] font-mono text-gray-550 font-mono">CHANGES</span>
-                  <div className={`p-1.5 rounded border text-[9px] flex justify-between items-center ${
-                    isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+                  <span className="text-[8px] font-mono text-gray-500">CHANGES</span>
+                  <div className={`p-1.5 rounded border text-[8px] flex justify-between items-center ${
+                    isDark ? "bg-white/5 border-white/5" : "bg-gray-50 border-black/5"
                   }`}>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-emerald-500 font-mono">M</span>
-                      <span className="font-mono">Counter.tsx</span>
+                      <span className="font-bold font-mono">M</span>
+                      <span className="font-mono text-gray-400">Counter.tsx</span>
                     </div>
-                    <span className="text-[7px] text-gray-505 font-mono">Modified</span>
                   </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className={`p-2 rounded border text-[9px] font-mono ${
-                  isDark ? "bg-white/5 border-white/5 text-white" : "bg-gray-55 border-black/5 text-black"
-                }`}>
-                  feat: improve counter interactivity
-                </div>
-                <button className="w-full py-1.5 bg-indigo-500 text-white rounded text-[9px] font-bold hover:bg-indigo-600 transition-all">
-                  Commit & Push
-                </button>
-              </div>
             </div>
           ) : (
-            <div className="p-3 space-y-4 font-mono text-[9px]">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Explorer</div>
+            <div className="p-3 space-y-4 font-mono text-[8px]">
+              <div className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Explorer</div>
               <div className="space-y-2">
-                <div className="text-indigo-400 font-bold">
-                  <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div className="font-bold">
+                  <svg className="w-2.5 h-2.5 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                   </svg>
                   project
                 </div>
                 <div className="pl-3 space-y-2">
                   <div>
-                    <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="w-2.5 h-2.5 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                     </svg>
                     src
                   </div>
                   <div className="pl-3 space-y-2">
                     <div className="text-gray-500">
-                      <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-2.5 h-2.5 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
                       components
                     </div>
-                    <div className="pl-3 text-indigo-400 font-bold">
-                      <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="pl-3 font-bold text-white dark:text-white">
+                      <svg className="w-2.5 h-2.5 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
                       </svg>
                       Counter.tsx
                     </div>
-                    <div className="pl-3">
-                      <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
-                      </svg>
-                      Header.tsx
-                    </div>
-                  </div>
-                  <div>
-                    <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
-                    </svg>
-                    package.json
-                  </div>
-                  <div>
-                    <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
-                    </svg>
-                    tsconfig.json
                   </div>
                 </div>
               </div>
@@ -1558,25 +1479,25 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* Editor Tabs */}
             <div className={`h-8 flex border-b ${
-              isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-55 border-black/5"
+              isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-50 border-black/5"
             }`}>
-              <div className={`px-4 flex items-center gap-2 border-r text-[9px] font-mono ${
+              <div className={`px-4 flex items-center gap-2 border-r text-[8px] font-mono ${
                 isDark ? "bg-[#0F1117] border-white/5 text-white" : "bg-white border-black/5 text-black"
               }`}>
-                <svg className="w-3 h-3 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="w-2.5 h-2.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
                 </svg>
                 <span>Counter.tsx</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-white" : "bg-black"}`} />
               </div>
             </div>
 
             {/* Code Content */}
             <div className="flex-1 overflow-auto">
               {activeStep === "git" ? (
-                <GitDiffView theme={theme} />
+                <GitDiffView theme={theme} scrollProgress={scrollProgress} />
               ) : (
-                <EditorScreen active={activeStep === "editor"} theme={theme} />
+                <EditorScreen theme={theme} scrollProgress={scrollProgress} />
               )}
             </div>
           </div>
@@ -1584,12 +1505,12 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
           {/* Terminal Panel */}
           <div className={`transition-all duration-500 overflow-hidden border-t ${
             showTerminal 
-              ? "h-48" 
+              ? "h-40" 
               : "h-0 border-t-0"
           } ${
             isDark ? "border-white/5" : "border-black/5"
           }`}>
-            <TerminalScreen active={activeStep === "terminal"} />
+            <TerminalScreen theme={theme} scrollProgress={scrollProgress} />
           </div>
         </div>
 
@@ -1601,11 +1522,10 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
         } ${
           isDark ? "border-white/5" : "border-black/5"
         }`}>
-          <PreviewsScreen active={activeStep === "previews"} />
+          <PreviewsScreen theme={theme} scrollProgress={scrollProgress} />
         </div>
       </div>
     </div>
-  );
 };
 
 const KEYFRAMES = [
