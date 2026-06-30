@@ -1904,6 +1904,32 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </div>
         </div>
 
+        <div 
+          className={`absolute inset-0 z-5 pointer-events-none transition-opacity duration-300 ${
+            isDark ? "bg-[#030303]" : "bg-[#FAFAFA]"
+          }`}
+          style={{
+            opacity: Math.min(1, scrollProgress / 0.15)
+          }}
+        />
+
+        <div 
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-8 overflow-hidden px-6"
+          style={{
+            opacity: (scrollProgress >= 0.15 && scrollProgress < 0.35)
+              ? Math.sin(((scrollProgress - 0.15) / 0.20) * Math.PI) * 0.45
+              : 0
+          }}
+        >
+          <span className={`text-[7vw] font-black tracking-[0.18em] text-center uppercase leading-none bg-clip-text text-transparent bg-gradient-to-b ${
+            isDark 
+              ? "from-white/40 to-white/5" 
+              : "from-black/30 to-black/5"
+          }`}>
+            WELCOME TO<br />CLOUDCODE
+          </span>
+        </div>
+
         {/* B. Glowing Aura behind phone (Dynamic Color Shifting) */}
         <div 
           className="absolute w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none transition-all duration-1000 ease-in-out z-1"
