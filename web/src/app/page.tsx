@@ -1783,43 +1783,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   const [isMobile, setIsMobile] = useState(false);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
 
-  const [autoAnimate, setAutoAnimate] = useState(false);
-  const [animProgress, setAnimProgress] = useState(0);
-
-  useEffect(() => {
-    if (scrollProgress >= 0.35) {
-      setAutoAnimate(true);
-    } else if (scrollProgress < 0.25) {
-      setAutoAnimate(false);
-      setAnimProgress(0);
-    }
-  }, [scrollProgress]);
-
-  useEffect(() => {
-    if (!autoAnimate) {
-      setAnimProgress(0);
-      return;
-    }
-
-    let startTime: number | null = null;
-    let animId: number;
-    const duration = 2000; // 2 seconds total loop
-
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      setAnimProgress(progress);
-
-      if (progress < 1) {
-        animId = requestAnimationFrame(step);
-      }
-    };
-
-    animId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animId);
-  }, [autoAnimate]);
-
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -1881,11 +1844,11 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
     ? Math.max(0, 1 - Math.abs(scrollProgress - 0.35) / 0.02)
     : 0;
 
-  // 1. Tracing progress (0.0 to 1.0 of the first 65% of animation progress)
-  const drawT = Math.max(0, Math.min(1, animProgress / 0.65));
+  // 1. Tracing progress (0.0 to 1.0 between 0.40 and 0.70)
+  const drawT = Math.max(0, Math.min(1, (scrollProgress - 0.40) / 0.30));
 
-  // 2. Splash progress (0.0 to 1.0 of next 15% of animation progress)
-  const splashT = Math.max(0, Math.min(1, (animProgress - 0.65) / 0.15));
+  // 2. Splash progress (0.0 to 1.0 between 0.70 and 0.78)
+  const splashT = Math.max(0, Math.min(1, (scrollProgress - 0.70) / 0.08));
 
   // Stroke fades out, fill fades in during the splash
   const strokeOpacity = 1 - splashT;
@@ -1899,7 +1862,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   const glowScale = 1 + splashT * 0.4;
 
   // Text reveals after the splash begins
-  const textOpacity = Math.max(0, Math.min(1, (animProgress - 0.75) / 0.20));
+  const textOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.72) / 0.15));
 
   return (
     <div 
