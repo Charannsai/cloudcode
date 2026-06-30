@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 export default function Home() {
@@ -148,37 +148,6 @@ export default function Home() {
             <a href="#" className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
               {"Watch Demo"}
             </a>
-          </div>
-
-          {/* Layered Laptop & Phone Mockup */}
-          <div className="w-full max-w-3xl relative mt-4 flex justify-center items-end">
-            {/* Laptop Mockup */}
-            <div className={`w-[85%] aspect-[16/10] rounded-t-xl border-t-4 border-x-4 border-[#24292e] dark:border-[#2F363D] ${colors.card} p-1 shadow-2xl z-10 overflow-hidden`}>
-              <div className="w-full h-full rounded-t bg-[#07080C] p-3 text-left font-mono text-[9px] text-gray-500 flex flex-col justify-between">
-                <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-2">
-                  <span>workspace-node-1</span>
-                  <span className="text-app-green">● Online</span>
-                </div>
-                <div className="space-y-1 flex-1">
-                  <div><span className="text-gray-600 mr-2">1</span><span className="text-app-purple">import</span> React <span className="text-app-purple">from</span> <span className="text-app-green">&apos;react&apos;</span>;</div>
-                  <div><span className="text-gray-600 mr-2">2</span><span className="text-app-purple">const</span> <span className="text-app-blue">IDE</span> = <span className="text-app-green">&apos;CloudCode&apos;</span>;</div>
-                  <div><span className="text-gray-600 mr-2">3</span><span className="text-app-purple">export default</span> () =&gt; &lt;<span className="text-app-blue">div</span>&gt;&#123;<span className="text-app-blue">IDE</span>&#125;&lt;/<span className="text-app-blue">div</span>&gt;;</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Overlapping Phone Mockup (Bottom Right) */}
-            <div className="absolute right-[5%] bottom-[-20px] w-[24%] aspect-[9/19] rounded-[24px] border-[5px] border-[#24292e] dark:border-[#2F363D] bg-[#030303] shadow-2xl z-20 overflow-hidden flex flex-col justify-between p-1">
-              <div className="w-full h-full rounded-[18px] bg-[#07080C] p-2 text-left font-mono text-[7px] text-gray-500 flex flex-col justify-between">
-                <div className="text-[6px] text-app-blue border-b border-white/5 pb-1 mb-1">Terminal</div>
-                <div className="flex-1 space-y-1">
-                  <div className="text-app-purple">✓ Sandbox running</div>
-                  <div className="text-app-green">root@cloudcode:~$ npm run dev</div>
-                  <div className="text-gray-655">- ready on port 3000</div>
-                </div>
-                <div className="w-1.5 h-3 bg-app-blue animate-pulse" />
-              </div>
-            </div>
           </div>
         </section>
 
