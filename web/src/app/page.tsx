@@ -1885,85 +1885,47 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* D. Monochromatic Tech Watermarks (Fixed on left and right sides) */}
+        {/* D. Vertical Scrolling Text Reel (Hidden on Mobile Viewport, No Badges, Centered Vertically in a Viewport) */}
         {!isMobile && (
-          <div 
-            className="absolute inset-0 pointer-events-none z-10 flex justify-between items-center px-12 select-none"
-            style={{ opacity: mockupOpacity * 0.25 }}
-          >
-            {/* Left Column */}
-            <div className="flex flex-col gap-10 text-left">
-              {WATERMARK_LEFT.map((tech, idx) => (
-                <span key={idx} className={`text-xs font-extrabold font-mono tracking-[0.25em] uppercase ${
-                  isDark ? "text-white" : "text-[#0F1115]"
-                }`}>
-                  {tech}
-                </span>
-              ))}
-            </div>
-
-            {/* Right Column */}
-            <div className="flex flex-col gap-10 text-right">
-              {WATERMARK_RIGHT.map((tech, idx) => (
-                <span key={idx} className={`text-xs font-extrabold font-mono tracking-[0.25em] uppercase ${
-                  isDark ? "text-white" : "text-[#0F1115]"
-                }`}>
-                  {tech}
-                </span>
-              ))}
+          <div className="absolute left-24 top-1/2 -translate-y-1/2 w-80 h-56 overflow-hidden z-30 pointer-events-none select-none">
+            <div 
+              className="transition-transform duration-750 flex flex-col"
+              style={{
+                transform: `translateY(${112 - (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 224}px)`,
+                transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
+              }}
+            >
+              {STEPS.map((step) => {
+                const isActive = step.id === activeStep;
+                const isPortal = activeStep === "portal_zoom";
+                return (
+                  <div 
+                    key={step.id}
+                    className="h-56 flex flex-col justify-center transition-all duration-750"
+                    style={{
+                      opacity: isActive && !isPortal ? 1 : 0.05,
+                      filter: isActive && !isPortal ? "none" : "blur(2px)",
+                      transform: `scale(${isActive && !isPortal ? 1.0 : 0.92})`,
+                      transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
+                    }}
+                  >
+                    <h3 className={`text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3 bg-clip-text text-transparent bg-gradient-to-b ${
+                      isDark 
+                        ? "from-white via-white to-white/50" 
+                        : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
+                    }`}>
+                      {step.title}
+                    </h3>
+                    <p className={`text-xs md:text-sm leading-relaxed max-w-[280px] ${
+                      isDark ? "text-[#8E939E]" : "text-[#6B7280]"
+                    }`}>
+                      {step.description}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
-
-        {/* E. Orbiting / Attached Content Typography (No Box Card, Hidden on Mobile Viewport, No Badges) */}
-        {!isMobile && (
-          <>
-            {/* Left Side Copy */}
-            <div 
-              className="absolute left-24 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
-              style={{
-                opacity: (activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 1 : 0,
-                transform: `translateY(-50%) translateX(${(activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 0 : -20}px)`,
-                pointerEvents: (activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? "auto" : "none"
-              }}
-            >
-              <h3 className={`text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-4 bg-clip-text text-transparent bg-gradient-to-b ${
-                isDark 
-                  ? "from-white via-white to-white/50" 
-                  : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
-              }`}>
-                {currentStepData.title}
-              </h3>
-              <p className={`text-xs md:text-sm leading-relaxed ${
-                isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-              }`}>
-                {currentStepData.description}
-              </p>
-            </div>
-
-            {/* Right Side Copy */}
-            <div 
-              className="absolute right-24 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
-              style={{
-                opacity: (activeStep === "editor" || activeStep === "previews") ? 1 : 0,
-                transform: `translateY(-50%) translateX(${(activeStep === "editor" || activeStep === "previews") ? 0 : 20}px)`,
-                pointerEvents: (activeStep === "editor" || activeStep === "previews") ? "auto" : "none"
-              }}
-            >
-              <h3 className={`text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-4 bg-clip-text text-transparent bg-gradient-to-b ${
-                isDark 
-                  ? "from-white via-white to-white/50" 
-                  : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
-              }`}>
-                {currentStepData.title}
-              </h3>
-              <p className={`text-xs md:text-sm leading-relaxed ${
-                isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-              }`}>
-                {currentStepData.description}
-              </p>
-            </div>
-          </>
         )}
       </div>
 
