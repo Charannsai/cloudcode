@@ -2032,7 +2032,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         {/* G. Left Side Heading Fade Layer (Two Lines, Behind Phone) */}
         {!isMobile && (
           <div 
-            className="absolute left-[10%] md:left-[14%] top-[24%] w-[800px] h-[320px] z-8 pointer-events-none select-none text-left"
+            className="absolute left-[10%] md:left-[14%] top-[18%] w-[800px] h-[320px] z-8 pointer-events-none select-none text-left"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
               transition: "opacity 0.5s ease-in-out"
