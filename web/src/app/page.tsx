@@ -2032,7 +2032,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         {/* G. Left Side Heading Fade Layer (Two Lines, Behind Phone) */}
         {!isMobile && (
           <div 
-            className="absolute left-[10%] md:left-[14%] top-[18%] w-[800px] h-[320px] z-8 pointer-events-none select-none text-left"
+            className="absolute left-[10%] md:left-[16%] top-[18%] w-[850px] h-[320px] z-8 pointer-events-none select-none text-left"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
               transition: "opacity 0.5s ease-in-out"
@@ -2052,7 +2052,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                 >
                   {step.title && (
                     <h3 
-                      className={`text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] uppercase bg-clip-text text-transparent bg-gradient-to-b ${
+                      className={`text-5xl md:text-7xl lg:text-[5vw] font-black tracking-tight leading-[0.95] uppercase bg-clip-text text-transparent bg-gradient-to-b ${
                         isDark 
                           ? "from-white/35 to-white/5" 
                           : "from-black/25 to-black/5"
