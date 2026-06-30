@@ -1081,9 +1081,6 @@ const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scro
         </div>
       </div>
     </div>
-  );
-};iv>
-  );
 };
 
 const GitScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
