@@ -1941,8 +1941,8 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         <div 
           className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-8 overflow-hidden px-6"
           style={{
-            opacity: scrollProgress < 0.35 
-              ? Math.sin(Math.min(1, scrollProgress / 0.35) * Math.PI) * 0.45
+            opacity: (scrollProgress >= 0.15 && scrollProgress < 0.35)
+              ? Math.sin(((scrollProgress - 0.15) / 0.20) * Math.PI) * 0.45
               : 0
           }}
         >
