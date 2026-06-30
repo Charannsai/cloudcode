@@ -1548,39 +1548,32 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
   return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
 };
 
-const getCardPositionClass = (stepId: string, isMobile: boolean) => {
-  if (isMobile) {
-    if (stepId === "portal_zoom" || stepId === "terminal" || stepId === "editor" || stepId === "git" || stepId === "previews") {
-      return "bottom-4 left-4 right-4 scale-95 opacity-90 z-50 p-4";
-    }
-    return "bottom-4 left-4 right-4 scale-100 opacity-100 z-50";
-  }
-
+const getCardStyle = (stepId: string) => {
   switch (stepId) {
     case "arrival":
-      return "top-10 left-1/2 -translate-x-1/2 scale-100 opacity-100";
+      return { pos: "top-16 left-1/2 -translate-x-1/2", align: "text-center" };
     case "float":
-      return "left-12 top-[35%] -translate-y-1/2 scale-100 opacity-100";
+      return { pos: "left-20 top-1/2 -translate-y-1/2", align: "text-left" };
     case "camera":
-      return "right-12 top-[35%] -translate-y-1/2 scale-100 opacity-100";
+      return { pos: "right-20 top-1/2 -translate-y-1/2", align: "text-left" };
     case "sandbox_orbit":
-      return "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-110 opacity-100 z-30";
+      return { pos: "top-16 left-1/2 -translate-x-1/2", align: "text-center" };
     case "sandbox_load":
-      return "left-12 top-[65%] -translate-y-1/2 scale-100 opacity-100";
+      return { pos: "left-20 top-[60%] -translate-y-1/2", align: "text-left" };
     case "portal_zoom":
-      return "scale-90 opacity-0 pointer-events-none";
+      return { pos: "opacity-0 scale-90 pointer-events-none", align: "text-center" };
     case "terminal":
-      return "bottom-12 left-1/2 -translate-x-1/2 scale-100 opacity-100 z-50";
+      return { pos: "bottom-16 left-1/2 -translate-x-1/2", align: "text-center" };
     case "editor":
-      return "right-12 bottom-[15%] scale-100 opacity-100 z-50";
+      return { pos: "right-20 bottom-[15%]", align: "text-left" };
     case "git":
-      return "left-12 top-[25%] scale-100 opacity-100 z-50";
+      return { pos: "left-20 top-[25%]", align: "text-left" };
     case "previews":
-      return "right-12 top-[25%] scale-100 opacity-100 z-50";
+      return { pos: "right-20 top-[25%]", align: "text-left" };
     case "exit":
-      return "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100 opacity-100";
+      return { pos: "top-16 left-1/2 -translate-x-1/2", align: "text-center" };
     default:
-      return "opacity-0 scale-90";
+      return { pos: "opacity-0 scale-90", align: "text-center" };
   }
 };
 
@@ -1961,66 +1954,22 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
       }`}
     >
-      {/* 1. HTML Floating Technology Nodes */}
-      <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-        {TECH_NODES.map((node, idx) => (
-          <div 
-            key={idx}
-            ref={el => { nodeRefs.current[idx] = el; }}
-            className="absolute transition-transform duration-75 ease-out"
-            style={{
-              width: '56px',
-              height: '56px',
-              transform: 'translate3d(0, 0, 0) scale(0)',
-              opacity: 0,
-            }}
-          >
-            <div className={`w-full h-full flex flex-col items-center justify-center rounded-xl border shadow-lg ${
-              isDark 
-                ? 'bg-[#0B0C10]/90 border-white/10 shadow-indigo-500/5' 
-                : 'bg-white/90 border-black/10 shadow-sm'
-            }`}>
-              <div className="scale-90">{getIcon(node.name)}</div>
-              <span className={`text-[6px] font-mono font-bold mt-0.5 tracking-tight ${
-                isDark ? 'text-gray-400' : 'text-gray-655'
-              }`}>{node.label}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 2. Interactive Canvas Background (Stars and Grid Lines) */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden pointer-events-none z-0">
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      </div>
-
-      {/* 3. Fullscreen Workspace IDE Takeover */}
+      {/* Sticky Container wrapping everything */}
       <div 
-        className="fixed inset-0 w-screen h-screen z-40 transition-all duration-500 p-4 md:p-8 flex items-center justify-center pointer-events-none"
-        style={{
-          opacity: showFullscreenIDE ? 1 : 0,
-          transform: showFullscreenIDE ? "scale(1)" : "scale(0.92)",
-          pointerEvents: showFullscreenIDE ? "auto" : "none"
-        }}
-      >
-        <div className="w-full h-full max-w-6xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl">
-          <WorkspaceIDE activeStep={activeStep} theme={theme} />
-        </div>
-      </div>
-
-      {/* 4. Center Sticky Stage Container (Mockup & Floating Cards) */}
-      <div 
-        className="fixed inset-0 h-screen w-full flex items-center justify-center overflow-hidden z-20"
+        className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden z-20"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Glowing Aura behind phone */}
+        {/* A. Canvas Background */}
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
+
+        {/* B. Glowing Aura behind phone */}
         <div 
-          className="absolute w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none transition-opacity duration-300"
+          className="absolute w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none transition-opacity duration-300 z-5"
           style={{ opacity: mockupOpacity }}
         />
         
-        {/* 3D Phone Wrapper */}
+        {/* C. 3D Phone Wrapper */}
         <div 
           className="relative z-10 transition-all duration-300 ease-out"
           style={{
@@ -2035,33 +1984,73 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* Orbiting / Attached Content Cards */}
-        <div 
-          className={`absolute transition-all duration-700 ease-out p-6 bg-opacity-90 border backdrop-blur-md rounded-2xl shadow-2xl max-w-sm z-35 ${getCardPositionClass(activeStep, isMobile)} ${
-            isDark ? "bg-[#0B0C10] border-white/10" : "bg-white border-black/10"
-          }`}
-          style={{
-            transitionProperty: "all",
-            transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
-          }}
-        >
-          <span className={`inline-block text-[9px] font-mono font-bold tracking-widest px-2.5 py-1 rounded-full uppercase mb-3 ${
-            isDark 
-              ? "text-indigo-400 bg-indigo-500/10 border border-indigo-500/20" 
-              : "text-indigo-600 bg-indigo-600/5 border border-indigo-600/15"
-          }`}>
-            {currentStepData.badge}
-          </span>
-          <h3 className={`text-xl md:text-2xl font-bold tracking-tight leading-tight font-sans mb-2 ${
-            isDark ? "text-white" : "text-[#0F1115]"
-          }`}>
-            {currentStepData.title}
-          </h3>
-          <p className={`text-xs leading-relaxed ${
-            isDark ? "text-gray-400" : "text-gray-650"
-          }`}>
-            {currentStepData.description}
-          </p>
+        {/* D. HTML Floating Technology Nodes */}
+        <div className="absolute inset-0 pointer-events-none z-15 overflow-hidden">
+          {TECH_NODES.map((node, idx) => (
+            <div 
+              key={idx}
+              ref={el => { nodeRefs.current[idx] = el; }}
+              className="absolute transition-transform duration-75 ease-out"
+              style={{
+                width: '56px',
+                height: '56px',
+                transform: 'translate3d(0, 0, 0) scale(0)',
+                opacity: 0,
+              }}
+            >
+              <div className={`w-full h-full flex flex-col items-center justify-center rounded-xl border shadow-lg ${
+                isDark 
+                  ? 'bg-[#0B0C10]/90 border-white/10 shadow-indigo-500/5' 
+                  : 'bg-white/90 border-black/10 shadow-sm'
+              }`}>
+                <div className="scale-90">{getIcon(node.name)}</div>
+                <span className={`text-[6px] font-mono font-bold mt-0.5 tracking-tight ${
+                  isDark ? 'text-gray-400' : 'text-gray-655'
+                }`}>{node.label}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* E. Orbiting / Attached Content Typography (No Box Card, Hidden on Mobile Viewport) */}
+        {!isMobile && (
+          <div 
+            className={`absolute transition-all duration-700 ease-out max-w-sm z-30 ${getCardStyle(activeStep).pos} ${getCardStyle(activeStep).align}`}
+            style={{
+              transitionProperty: "all",
+              transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+          >
+            <span className="text-[10px] font-mono font-extrabold tracking-[0.2em] text-indigo-400 uppercase block mb-2.5 animate-pulse">
+              {currentStepData.badge}
+            </span>
+            <h3 className={`text-3xl md:text-5xl font-extrabold tracking-tight leading-tight mb-4 ${
+              isDark 
+                ? "text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-500" 
+                : "text-[#0F1115] bg-clip-text text-transparent bg-gradient-to-r from-[#0F1115] via-[#0F1115] to-gray-500"
+            }`}>
+              {currentStepData.title}
+            </h3>
+            <p className={`text-xs leading-relaxed ${
+              isDark ? "text-gray-400" : "text-gray-655"
+            }`}>
+              {currentStepData.description}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* 5. Fullscreen Workspace IDE Takeover */}
+      <div 
+        className="fixed inset-0 w-screen h-screen z-40 transition-all duration-500 p-4 md:p-8 flex items-center justify-center pointer-events-none"
+        style={{
+          opacity: showFullscreenIDE ? 1 : 0,
+          transform: showFullscreenIDE ? "scale(1)" : "scale(0.92)",
+          pointerEvents: showFullscreenIDE ? "auto" : "none"
+        }}
+      >
+        <div className="w-full h-full max-w-6xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl">
+          <WorkspaceIDE activeStep={activeStep} theme={theme} />
         </div>
       </div>
     </div>
