@@ -770,9 +770,9 @@ const InitialScreen = ({ theme }: { theme: "light" | "dark" }) => {
         }
         @keyframes fillIn {
           to {
-            fill: url(#logoGradient);
+            fill: ${isDark ? "#FFFFFF" : "#0F1115"};
             fill-opacity: 1;
-            stroke-opacity: 0.15;
+            stroke-opacity: 0;
           }
         }
         @keyframes fadeInBrand {
@@ -786,19 +786,12 @@ const InitialScreen = ({ theme }: { theme: "light" | "dark" }) => {
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
 
       <div className="z-10 flex flex-col items-center gap-6">
-        <svg width="80" height="80" viewBox="0 0 874 552" className="drop-shadow-[0_0_15px_rgba(0,229,255,0.25)]">
-          <defs>
-            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00E5FF" />
-              <stop offset="50%" stopColor="#2F80ED" />
-              <stop offset="100%" stopColor="#9B51E0" />
-            </linearGradient>
-          </defs>
+        <svg width="80" height="80" viewBox="0 0 874 552">
           <path
             d={CLOUD_PATH}
             fill="none"
-            stroke={isDark ? "rgba(0, 229, 255, 0.65)" : "rgba(47, 128, 237, 0.65)"}
-            strokeWidth="12"
+            stroke={isDark ? "#FFFFFF" : "#0F1115"}
+            strokeWidth="16"
             strokeLinecap="round"
             strokeLinejoin="round"
             className="trace-path"
@@ -809,7 +802,7 @@ const InitialScreen = ({ theme }: { theme: "light" | "dark" }) => {
           <h4 className={`text-[13px] font-extrabold tracking-[0.15em] uppercase font-sans ${isDark ? "text-white" : "text-[#0F1115]"}`}>
             CloudCode
           </h4>
-          <span className="text-[7px] tracking-[0.25em] text-indigo-500 dark:text-indigo-400 font-mono uppercase">
+          <span className={`text-[7px] tracking-[0.25em] font-mono uppercase ${isDark ? "text-gray-400" : "text-gray-550"}`}>
             Mobile Workspace
           </span>
         </div>
@@ -1261,6 +1254,7 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
 const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
   switch (activeStep) {
     case "phone_rise":
+    case "welcome_phase":
       return <div className={`w-full h-full ${theme === "dark" ? "bg-[#05070B]" : "bg-[#FAFAFA]"}`} />;
     case "arrival":
       return <InitialScreen theme={theme} />;
@@ -1551,22 +1545,24 @@ const KEYFRAMES = [
   // 1. Phone Rise (0.0 - 0.15) - Phone rises from below, screen is black/off, straight rise
   { p: 0.0, rx: 0, ry: 0, rz: 0, s: 0.25, tx: 0, ty: 450, tz: 0, bezelOpacity: 1 },
   { p: 0.15, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
-  // 2. Arrival & Boot (0.15 - 0.28) - Phone boots (traces logo)
-  { p: 0.28, rx: 8, ry: -10, rz: 3, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
-  // 3. Sandbox Orbit (0.28 - 0.40) - Centered
-  { p: 0.40, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
-  // 4. Sandbox Load (0.40 - 0.52) - Centered
-  { p: 0.52, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 5. Terminal (0.52 - 0.64) - Terminal screen on phone
-  { p: 0.64, rx: -8, ry: 12, rz: -3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 6. Editor (0.64 - 0.76) - Editor screen on phone
-  { p: 0.76, rx: 8, ry: -12, rz: 3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 7. Git (0.76 - 0.86) - Git screen on phone
-  { p: 0.86, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 8. Previews (0.86 - 0.94) - Starts on phone, then deep zooms to fullscreen desktop preview
-  { p: 0.90, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  { p: 0.94, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 9. Exit (0.94 - 1.0) - Re-emerge to floating phone
+  // 2. Welcome Phase (0.15 - 0.35) - Phone is centered, screen is blank/off, welcome text fades in/out in bg
+  { p: 0.35, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 3. Arrival & Boot (0.35 - 0.48) - Welcome text is gone, phone boots (traces logo)
+  { p: 0.48, rx: 8, ry: -10, rz: 3, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 4. Sandbox Orbit (0.48 - 0.58) - Centered
+  { p: 0.58, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
+  // 5. Sandbox Load (0.58 - 0.68) - Centered
+  { p: 0.68, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 6. Terminal (0.68 - 0.78) - Terminal screen on phone
+  { p: 0.78, rx: -8, ry: 12, rz: -3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 7. Editor (0.78 - 0.86) - Editor screen on phone
+  { p: 0.86, rx: 8, ry: -12, rz: 3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 8. Git (0.86 - 0.92) - Git screen on phone
+  { p: 0.92, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 9. Previews (0.92 - 0.96) - Starts on phone, then deep zooms to fullscreen desktop preview
+  { p: 0.94, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  { p: 0.96, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 10. Exit (0.96 - 1.0) - Re-emerge to floating phone
   { p: 1.0, rx: 15, ry: -20, rz: 10, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 }
 ];
 
@@ -1666,10 +1662,7 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
       />
       <div 
         className={`absolute right-[-3px] top-32 w-[3px] h-16 rounded-r ${isDark ? "bg-[#2D3039]" : "bg-gray-400"}`} 
-        style={{ transform: "translateZ(-8px)" }}
-      />
-
-      {/* Screen container with translateZ to pop it forward in 3D */}
+        style={{ transform: "transla      {/* Screen container with translateZ to pop it forward in 3D */}
       <div 
         className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border ${
           isDark ? "bg-[#030303] border-black/50" : "bg-white border-gray-200"
@@ -1690,22 +1683,9 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
           }}
         />
 
-        {/* Dynamic Island (Camera Cutout) */}
-        <div 
-          className={`absolute top-3 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full z-30 flex items-center justify-between px-3 border ${
-            isDark ? "bg-black border-white/5" : "bg-[#0F1115] border-black/5"
-          }`}
-          style={{ transform: "translateZ(10px)", transition: "all 0.3s ease-in-out" }}
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-[#1c2d5a] flex items-center justify-center">
-            <div className="w-0.5 h-0.5 rounded-full bg-[#101118]" />
-          </div>
-          {getIslandIcon()}
-        </div>
-
         {/* Status bar (No Emojis) */}
         <div className={`h-8 pt-2.5 px-6 flex justify-between items-center text-[8px] font-mono z-20 select-none ${
-          isDark ? "text-gray-400" : "text-gray-500"
+          isDark ? "text-gray-400" : "text-gray-555"
         }`}>
           <span>09:41</span>
           <div className="flex items-center gap-2">
@@ -1719,6 +1699,7 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
               <path d="M22 11v2" />
             </svg>
           </div>
+        </div>   </div>
         </div>
 
         {/* Screen Content */}
@@ -1737,6 +1718,7 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 
 const STEPS = [
   { id: "phone_rise", title: "", description: "", cardType: "standard" },
+  { id: "welcome_phase", title: "", description: "", cardType: "standard" },
   { id: "arrival", title: "The Mobile-First Workspace", description: "Your phone is now a fully-equipped engineering environment. Tracing and booting the CloudCode sandbox.", cardType: "standard" },
   { id: "sandbox_orbit", title: "Create Dev Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox" },
   { id: "sandbox_load", title: "Container Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox" },
@@ -1771,13 +1753,14 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
 
       let step = "phone_rise";
       if (progress < 0.15) step = "phone_rise";
-      else if (progress >= 0.15 && progress < 0.28) step = "arrival";
-      else if (progress >= 0.28 && progress < 0.40) step = "sandbox_orbit";
-      else if (progress >= 0.40 && progress < 0.52) step = "sandbox_load";
-      else if (progress >= 0.52 && progress < 0.64) step = "terminal";
-      else if (progress >= 0.64 && progress < 0.76) step = "editor";
-      else if (progress >= 0.76 && progress < 0.86) step = "git";
-      else if (progress >= 0.86 && progress < 0.94) step = "previews";
+      else if (progress >= 0.15 && progress < 0.35) step = "welcome_phase";
+      else if (progress >= 0.35 && progress < 0.48) step = "arrival";
+      else if (progress >= 0.48 && progress < 0.58) step = "sandbox_orbit";
+      else if (progress >= 0.58 && progress < 0.68) step = "sandbox_load";
+      else if (progress >= 0.68 && progress < 0.78) step = "terminal";
+      else if (progress >= 0.78 && progress < 0.86) step = "editor";
+      else if (progress >= 0.86 && progress < 0.92) step = "git";
+      else if (progress >= 0.92 && progress < 0.96) step = "previews";
       else step = "exit";
 
       setActiveStep(step);
@@ -1974,11 +1957,12 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
+        {/* G. Vertical Scrolling Text Reel (Hidden on Mobile Viewport, No Badges, Centered Vertically) */}
         {!isMobile && (
           <div 
             className="absolute left-24 top-1/2 -translate-y-1/2 w-80 h-56 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
             style={{
-              opacity: activeStep === "phone_rise" || activeStep === "portal_zoom" ? 0 : 1
+              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
             }}
           >
             <div 
