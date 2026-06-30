@@ -2029,7 +2029,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         {/* G. Vertical Scrolling Text Reel (Hidden on Mobile Viewport, No Badges, Centered Vertically) */}
         {!isMobile && (
           <div 
-            className="absolute left-24 top-1/2 -translate-y-1/2 w-80 h-56 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
+            className="absolute left-24 top-1/2 -translate-y-1/2 w-80 h-80 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
             }}
@@ -2037,7 +2037,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             <div 
               className="transition-transform duration-750 flex flex-col"
               style={{
-                transform: `translateY(${112 - (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 224}px)`,
+                transform: `translateY(${160 - (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 320}px)`,
                 transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
               }}
             >
@@ -2046,7 +2046,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                 return (
                   <div 
                     key={step.id}
-                    className="h-56 flex flex-col justify-center transition-all duration-750"
+                    className="h-80 flex flex-col justify-center transition-all duration-750"
                     style={{
                       opacity: isActive ? 1 : 0.05,
                       filter: isActive ? "none" : "blur(2px)",
