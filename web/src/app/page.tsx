@@ -1238,7 +1238,6 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
       <div className="bg-[#0A0B0F] border-t border-white/5 p-2 font-mono text-[7px] text-gray-400 space-y-0.5">
         <div className="text-indigo-400 uppercase font-bold tracking-wider text-[6px]">Console Logs</div>
         {count >= 1 && <div className="text-emerald-400">[Console] Count is now 1</div>}
-        {count >= 2 && <div className="text-emerald-400">[Console] Count is now 2</div>}
       </div>
     </div>
   );
@@ -1259,7 +1258,11 @@ const PhoneScreen = ({ activeStep }: { activeStep: string }) => {
     case "previews":
       return <PreviewsScreen active={activeStep === "previews"} />;
     default:
-      return <Inconst KEYFRAMES = [
+      return <InitialScreen />;
+  }
+};
+
+const KEYFRAMES = [
   { p: 0.0, rx: 15, ry: -20, rz: 10, s: 0.9, tx: 0, ty: 10, tz: 0 },      // initial
   { p: 0.2, rx: 8, ry: -12, rz: 5, s: 1.0, tx: -20, ty: 0, tz: 20 },     // environments
   { p: 0.4, rx: 5, ry: 5, rz: -3, s: 1.15, tx: 10, ty: -10, tz: 50 },    // terminal
