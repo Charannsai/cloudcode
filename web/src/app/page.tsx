@@ -397,6 +397,13 @@ export default function Home() {
         .animate-float {
           animation: float 6s ease-in-out infinite;
         }
+        @keyframes marquee-right {
+          0% { transform: translate3d(-50%, 0, 0); }
+          100% { transform: translate3d(0, 0, 0); }
+        }
+        .animate-marquee-right {
+          animation: marquee-right 30s linear infinite;
+        }
       `}</style>
 
       <div className={`${colors.bg} ${colors.text} min-h-screen flex flex-col items-center relative font-sans transition-colors duration-350`}>
@@ -482,7 +489,7 @@ export default function Home() {
         <InteractiveShowcase theme={theme} colors={colors} />
 
         {/* ==================== EVERYTHING YOU NEED SECTION ==================== */}
-        <section className="w-full max-w-5xl px-6 py-24 z-10">
+        <section id="features" className="w-full max-w-5xl px-6 py-24 z-10">
           {/* Header */}
           <ScrollReveal>
             <div className="mb-16 text-left">
@@ -2415,24 +2422,53 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             <a href="#" className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
               {"Download App"}
             </a>
-            <a href="#" className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
-              {"Watch Demo"}
+            <a 
+              href="#features"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all cursor-pointer`}
+            >
+              {"Know more"}
             </a>
           </div>
 
-          <div className="flex flex-col items-center mt-8 max-w-lg mx-auto z-10">
+          <div className="flex flex-col items-center mt-8 w-full max-w-lg mx-auto z-10">
             <p className={`text-[10px] font-mono tracking-widest ${colors.textSecondary} uppercase mb-4`}>
               {"Works With Your Workflow"}
             </p>
-            <div className="flex flex-wrap gap-x-6 gap-y-3 justify-center items-center opacity-45 dark:opacity-35 text-zinc-700 dark:text-zinc-300">
-              {WORKFLOW_TOOLS.map((tool, idx) => (
-                <div key={idx} className="flex items-center gap-1.5 hover:text-indigo-400 hover:opacity-100 transition-all duration-200 cursor-default" title={tool.name}>
-                  {tool.icon}
-                  <span className="text-[10px] font-bold font-mono tracking-tight">{tool.name}</span>
+            
+            {/* Scrolling Infinite Carousel */}
+            <div className="relative w-full overflow-hidden py-2">
+              {/* Left and Right Faded Corners */}
+              <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#FAFAFA] dark:from-[#030303] to-transparent z-20 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#FAFAFA] dark:from-[#030303] to-transparent z-20 pointer-events-none" />
+              
+              {/* Scrolling Track */}
+              <div className="flex gap-8 items-center w-max animate-marquee-right">
+                {/* List 1 */}
+                <div className="flex gap-8 shrink-0">
+                  {WORKFLOW_TOOLS.map((tool, idx) => (
+                    <div key={`t1-${idx}`} className="flex items-center gap-1.5 opacity-50 dark:opacity-40 hover:opacity-100 hover:text-indigo-400 dark:hover:text-white transition-all duration-200 cursor-default" title={tool.name}>
+                      {tool.icon}
+                      <span className="text-[10px] font-bold font-mono tracking-tight">{tool.name}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                {/* List 2 */}
+                <div className="flex gap-8 shrink-0">
+                  {WORKFLOW_TOOLS.map((tool, idx) => (
+                    <div key={`t2-${idx}`} className="flex items-center gap-1.5 opacity-50 dark:opacity-40 hover:opacity-100 hover:text-indigo-400 dark:hover:text-white transition-all duration-200 cursor-default" title={tool.name}>
+                      {tool.icon}
+                      <span className="text-[10px] font-bold font-mono tracking-tight">{tool.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <p className={`text-[10px] font-medium tracking-tight ${colors.textSecondary} text-center mt-4 opacity-90 max-w-xs`}>
+            
+            <p className={`text-[10px] font-medium tracking-tight ${colors.textSecondary} text-center mt-5 opacity-90 max-w-xs`}>
               {"Connect your existing workflow without changing how you build."}
             </p>
           </div>
