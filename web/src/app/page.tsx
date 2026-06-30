@@ -28,7 +28,7 @@ export default function Home() {
   };
 
   if (!mounted) {
-    return <div className="bg-[#030303] min-h-screen" />;
+    return <div className="bg-[#030303] min-h-screen" suppressHydrationWarning />;
   }
 
   // Pure, calm color tokens matching the reference image
