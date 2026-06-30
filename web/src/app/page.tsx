@@ -1244,19 +1244,22 @@ const EnvironmentsScreen = ({ theme, scrollProgress }: { theme: "light" | "dark"
         
         <div className="space-y-1.5">
           {[
-            { name: "Node.js / Next.js", desc: "React framework with Tailwind" },
-            { name: "Python / FastAPI", desc: "Modern Python web backend" },
-            { name: "Rust / Cargo", desc: "Performance-critical system code" }
+            { name: "Node.js / Next.js", desc: "React framework with Tailwind", icon: <i className="devicon-nodejs-plain colored text-xs mr-1 shrink-0" /> },
+            { name: "Python / FastAPI", desc: "Modern Python web backend", icon: <i className="devicon-python-plain colored text-xs mr-1 shrink-0" /> },
+            { name: "Rust / Cargo", desc: "Performance-critical system code", icon: <i className="devicon-rust-plain text-xs mr-1 shrink-0 text-black dark:text-white" /> }
           ].map((tmpl, idx) => {
             const isSelected = idx === 0 && showTemplates;
             return (
-              <div key={idx} className={`p-2 rounded border transition-all text-left ${
+              <div key={idx} className={`p-2 rounded border transition-all text-left flex items-center gap-2 ${
                 isSelected 
                   ? (isDark ? "border-white bg-white/5" : "border-black bg-black/5")
                   : (isDark ? "border-white/5 bg-white/5 opacity-40" : "border-black/5 bg-black/5 opacity-45")
               }`}>
-                <div className="font-bold text-[9px]">{tmpl.name}</div>
-                <div className={`text-[7px] ${isDark ? "text-gray-400" : "text-gray-500"}`}>{tmpl.desc}</div>
+                {tmpl.icon}
+                <div>
+                  <div className="font-bold text-[9px]">{tmpl.name}</div>
+                  <div className={`text-[7px] ${isDark ? "text-gray-400" : "text-gray-500"}`}>{tmpl.desc}</div>
+                </div>
               </div>
             );
           })}
