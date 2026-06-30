@@ -2029,10 +2029,10 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* G. Clean Editorial Content Layer (Watermark Heading + Description, Left-Aligned in Background) */}
+        {/* G. Left Side Heading Fade Layer (Two Lines, Behind Phone) */}
         {!isMobile && (
           <div 
-            className="absolute left-[10%] md:left-[14%] top-[24%] w-[650px] h-[400px] z-8 pointer-events-none select-none text-left"
+            className="absolute left-[10%] md:left-[14%] top-[24%] w-[800px] h-[320px] z-8 pointer-events-none select-none text-left"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
               transition: "opacity 0.5s ease-in-out"
@@ -2043,7 +2043,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
               return (
                 <div 
                   key={step.id}
-                  className="absolute inset-0 flex flex-col justify-start gap-6 transition-all duration-500 ease-in-out"
+                  className="absolute inset-0 flex flex-col justify-center transition-all duration-500 ease-in-out"
                   style={{
                     opacity: isActive ? 1 : 0,
                     transform: `translateY(${isActive ? 0 : 15}px)`,
@@ -2052,7 +2052,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                 >
                   {step.title && (
                     <h3 
-                      className={`text-[5.5vw] font-black tracking-tight leading-[0.95] uppercase bg-clip-text text-transparent bg-gradient-to-b ${
+                      className={`text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] uppercase bg-clip-text text-transparent bg-gradient-to-b ${
                         isDark 
                           ? "from-white/35 to-white/5" 
                           : "from-black/25 to-black/5"
@@ -2060,8 +2060,35 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                       dangerouslySetInnerHTML={{ __html: step.title }}
                     />
                   )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* H. Right Side Description Fade Layer (Middle-to-Bottom-Right) */}
+        {!isMobile && (
+          <div 
+            className="absolute right-28 md:right-[18%] bottom-[28%] w-[240px] h-[150px] z-30 pointer-events-none select-none text-left"
+            style={{
+              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
+              transition: "opacity 0.5s ease-in-out"
+            }}
+          >
+            {STEPS.map((step) => {
+              const isActive = step.id === activeStep;
+              return (
+                <div 
+                  key={step.id}
+                  className="absolute inset-0 flex flex-col justify-end pb-4 transition-all duration-500 ease-in-out"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    transform: `translateY(${isActive ? 0 : 15}px)`,
+                    pointerEvents: isActive ? "auto" : "none"
+                  }}
+                >
                   {step.description && (
-                    <p className={`text-xs md:text-sm leading-relaxed max-w-[280px] ${
+                    <p className={`text-xs md:text-sm leading-relaxed ${
                       isDark ? "text-[#8E939E]" : "text-[#6B7280]"
                     }`}>
                       {step.description}
