@@ -1548,34 +1548,7 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
   return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
 };
 
-const getCardStyle = (stepId: string) => {
-  switch (stepId) {
-    case "arrival":
-      return { pos: "top-16 left-1/2 -translate-x-1/2", align: "text-center" };
-    case "float":
-      return { pos: "left-20 top-1/2 -translate-y-1/2", align: "text-left" };
-    case "camera":
-      return { pos: "right-20 top-1/2 -translate-y-1/2", align: "text-left" };
-    case "sandbox_orbit":
-      return { pos: "top-16 left-1/2 -translate-x-1/2", align: "text-center" };
-    case "sandbox_load":
-      return { pos: "left-20 top-[60%] -translate-y-1/2", align: "text-left" };
-    case "portal_zoom":
-      return { pos: "opacity-0 scale-90 pointer-events-none", align: "text-center" };
-    case "terminal":
-      return { pos: "bottom-16 left-1/2 -translate-x-1/2", align: "text-center" };
-    case "editor":
-      return { pos: "right-20 bottom-[15%]", align: "text-left" };
-    case "git":
-      return { pos: "left-20 top-[25%]", align: "text-left" };
-    case "previews":
-      return { pos: "right-20 top-[25%]", align: "text-left" };
-    case "exit":
-      return { pos: "top-16 left-1/2 -translate-x-1/2", align: "text-center" };
-    default:
-      return { pos: "opacity-0 scale-90", align: "text-center" };
-  }
-};
+// Left/Right layout slots are handled directly in the JSX using CSS transitions for maximum smoothness.
 
 const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { children: React.ReactNode, scrollProgress: number, theme: "light" | "dark", mouseOffset: { x: number, y: number } }) => {
   const glareX = (scrollProgress * 400) - 200 + (mouseOffset.x * 100);
@@ -2014,29 +1987,55 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
 
         {/* E. Orbiting / Attached Content Typography (No Box Card, Hidden on Mobile Viewport) */}
         {!isMobile && (
-          <div 
-            className={`absolute transition-all duration-700 ease-out max-w-sm z-30 ${getCardStyle(activeStep).pos} ${getCardStyle(activeStep).align}`}
-            style={{
-              transitionProperty: "all",
-              transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
-            }}
-          >
-            <span className="text-[10px] font-mono font-extrabold tracking-[0.2em] text-indigo-400 uppercase block mb-2.5 animate-pulse">
-              {currentStepData.badge}
-            </span>
-            <h3 className={`text-3xl md:text-5xl font-extrabold tracking-tight leading-tight mb-4 ${
-              isDark 
-                ? "text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-500" 
-                : "text-[#0F1115] bg-clip-text text-transparent bg-gradient-to-r from-[#0F1115] via-[#0F1115] to-gray-500"
-            }`}>
-              {currentStepData.title}
-            </h3>
-            <p className={`text-xs leading-relaxed ${
-              isDark ? "text-gray-400" : "text-gray-655"
-            }`}>
-              {currentStepData.description}
-            </p>
-          </div>
+          <>
+            {/* Left Side Copy */}
+            <div 
+              className="absolute left-20 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
+              style={{
+                opacity: (activeStep === "arrival" || activeStep === "float" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 1 : 0,
+                transform: `translateY(-50%) translateX(${(activeStep === "arrival" || activeStep === "float" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 0 : -20}px)`,
+                pointerEvents: (activeStep === "arrival" || activeStep === "float" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? "auto" : "none"
+              }}
+            >
+              <span className="text-[10px] font-mono font-extrabold tracking-[0.2em] text-indigo-500 dark:text-indigo-400 uppercase block mb-2.5 animate-pulse">
+                {currentStepData.badge}
+              </span>
+              <h3 className={`text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4 ${
+                isDark ? "text-white" : "text-[#0F1115]"
+              }`}>
+                {currentStepData.title}
+              </h3>
+              <p className={`text-xs leading-relaxed ${
+                isDark ? "text-gray-400" : "text-gray-655"
+              }`}>
+                {currentStepData.description}
+              </p>
+            </div>
+
+            {/* Right Side Copy */}
+            <div 
+              className="absolute right-20 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
+              style={{
+                opacity: (activeStep === "camera" || activeStep === "editor" || activeStep === "previews") ? 1 : 0,
+                transform: `translateY(-50%) translateX(${(activeStep === "camera" || activeStep === "editor" || activeStep === "previews") ? 0 : 20}px)`,
+                pointerEvents: (activeStep === "camera" || activeStep === "editor" || activeStep === "previews") ? "auto" : "none"
+              }}
+            >
+              <span className="text-[10px] font-mono font-extrabold tracking-[0.2em] text-indigo-500 dark:text-indigo-400 uppercase block mb-2.5 animate-pulse">
+                {currentStepData.badge}
+              </span>
+              <h3 className={`text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4 ${
+                isDark ? "text-white" : "text-[#0F1115]"
+              }`}>
+                {currentStepData.title}
+              </h3>
+              <p className={`text-xs leading-relaxed ${
+                isDark ? "text-gray-400" : "text-gray-655"
+              }`}>
+                {currentStepData.description}
+              </p>
+            </div>
+          </>
         )}
       </div>
 
