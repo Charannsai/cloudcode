@@ -1938,7 +1938,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             background: isDark 
               ? "radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%)"
               : "radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0) 70%)",
-              : "radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0) 70%)",
             left: "50%",
             top: "50%",
             transform: "translate(-50%, -50%)"
