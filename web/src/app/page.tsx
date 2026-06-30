@@ -729,18 +729,18 @@ const STEPS = [
 ];
 
 const HONEYCOMB_CELLS = [
-  { label: "React", name: "React", x: -120, y: -140 },
-  { label: "Node.js", name: "Node", x: 60, y: -140 },
-  { label: "Python", name: "Python", x: -210, y: -60 },
-  { label: "Docker", name: "Docker", x: -30, y: -60 },
-  { label: "Go", name: "Go", x: 150, y: -60 },
-  { label: "Rust", name: "Rust", x: -120, y: 20 },
-  { label: "TypeScript", name: "TS", x: 60, y: 20 },
-  { label: "Next.js", name: "Next.js", x: -210, y: 100 },
-  { label: "Tailwind", name: "Tailwind", x: -30, y: 100 },
-  { label: "Git", name: "Git", x: 150, y: 100 },
-  { label: "Postgres", name: "Postgres", x: -120, y: 180 },
-  { label: "Linux", name: "Linux", x: 60, y: 180 },
+  { label: "React", name: "React", x: -160, y: -160 },
+  { label: "Node.js", name: "Node", x: 160, y: -160 },
+  { label: "Python", name: "Python", x: -280, y: -60 },
+  { label: "Docker", name: "Docker", x: 0, y: -240 }, // Top center
+  { label: "Go", name: "Go", x: 280, y: -60 },
+  { label: "Rust", name: "Rust", x: -160, y: 160 },
+  { label: "TypeScript", name: "TS", x: 160, y: 160 },
+  { label: "Next.js", name: "Next.js", x: -280, y: 60 },
+  { label: "Tailwind", name: "Tailwind", x: 0, y: 240 }, // Bottom center
+  { label: "Git", name: "Git", x: 280, y: 60 },
+  { label: "Postgres", name: "Postgres", x: -160, y: 0 },
+  { label: "Linux", name: "Linux", x: 160, y: 0 },
 ];
 
 const getIcon = (name: string) => {
@@ -1309,48 +1309,68 @@ const get3DTransform = (progress: number, isMobile: boolean) => {
 };
 
 const PhoneMockup = ({ children, scrollProgress }: { children: React.ReactNode, scrollProgress: number }) => {
-  const glareX = (scrollProgress * 300) - 150;
+  const glareX = (scrollProgress * 400) - 200;
 
   return (
     <div 
-      className="w-[260px] h-[520px] bg-[#1E2028] rounded-[36px] p-2 relative border border-white/15 select-none transition-all duration-300"
+      className="w-[280px] h-[550px] bg-[#090A10] rounded-[44px] p-3 relative select-none transition-all duration-300 border border-white/10"
       style={{
+        transformStyle: "preserve-3d",
         boxShadow: `
-          -2px 2px 0px 0px #1a1c24,
-          -4px 4px 0px 0px #15161d,
-          -6px 6px 0px 0px #101116,
-          -8px 8px 12px 0px rgba(0, 0, 0, 0.6),
-          -20px 20px 40px 0px rgba(0, 0, 0, 0.4)
+          -2px 2px 0px 0px rgba(255, 255, 255, 0.05),
+          -4px 4px 0px 0px #1a1c24,
+          -8px 8px 0px 0px #111217,
+          -12px 12px 20px 0px rgba(0, 0, 0, 0.7),
+          -24px 24px 50px 0px rgba(0, 0, 0, 0.5)
         `,
       }}
     >
-      {/* Side buttons to enhance 3D feel */}
-      <div className="absolute left-[-3px] top-24 w-[3px] h-10 bg-[#2D3039] rounded-l" />
-      <div className="absolute left-[-3px] top-38 w-[3px] h-14 bg-[#2D3039] rounded-l" />
-      <div className="absolute left-[-3px] top-56 w-[3px] h-14 bg-[#2D3039] rounded-l" />
-      <div className="absolute right-[-3px] top-32 w-[3px] h-16 bg-[#2D3039] rounded-r" />
+      {/* 3D Side Buttons */}
+      <div 
+        className="absolute left-[-3px] top-24 w-[3px] h-10 bg-[#2D3039] rounded-l font-sans" 
+        style={{ transform: "translateZ(-8px)" }}
+      />
+      <div 
+        className="absolute left-[-3px] top-38 w-[3px] h-14 bg-[#2D3039] rounded-l" 
+        style={{ transform: "translateZ(-8px)" }}
+      />
+      <div 
+        className="absolute right-[-3px] top-32 w-[3px] h-16 bg-[#2D3039] rounded-r" 
+        style={{ transform: "translateZ(-8px)" }}
+      />
 
-      {/* Speaker ear piece */}
-      <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-full z-35 flex items-center justify-center">
-        <div className="w-10 h-1 bg-gray-805 rounded-full" />
-      </div>
-      
-      {/* Screen container */}
-      <div className="w-full h-full rounded-[30px] overflow-hidden bg-[#030303] relative border border-black/50 flex flex-col">
+      {/* Screen container with translateZ to pop it forward in 3D */}
+      <div 
+        className="w-full h-full rounded-[34px] overflow-hidden bg-[#030303] relative border border-black/50 flex flex-col"
+        style={{
+          transform: "translateZ(8px)",
+          transformStyle: "preserve-3d",
+        }}
+      >
         {/* Glass Glare Reflection Effect */}
         <div 
-          className="absolute inset-0 z-25 pointer-events-none opacity-15 mix-blend-overlay"
+          className="absolute inset-0 z-25 pointer-events-none opacity-20 mix-blend-overlay"
           style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0) 100%)',
-            transform: `translateX(${glareX}px) translateY(${glareX * 0.5}px)`,
+            background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 100%)',
+            transform: `translateX(${glareX}px) translateY(${glareX * 0.5}px) translateZ(12px)`,
             transition: 'transform 0.1s ease-out',
           }}
         />
 
+        {/* Dynamic Island (Camera Cutout) */}
+        <div 
+          className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-4.5 bg-black rounded-full z-30 flex items-center justify-center border border-white/5"
+          style={{ transform: "translateZ(10px)" }}
+        >
+          <div className="w-2 h-2 rounded-full bg-[#101118] ml-auto mr-2 flex items-center justify-center">
+            <div className="w-1 h-1 rounded-full bg-[#1c2d5a]" />
+          </div>
+        </div>
+
         {/* Status bar */}
-        <div className="h-6 pt-1.5 px-4 flex justify-between items-center text-[7px] font-mono text-gray-450 z-20 select-none">
+        <div className="h-8 pt-2.5 px-6 flex justify-between items-center text-[8px] font-mono text-gray-455 z-20 select-none">
           <span>09:41</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <span>📶</span>
             <span>🔋</span>
           </div>
@@ -1363,7 +1383,7 @@ const PhoneMockup = ({ children, scrollProgress }: { children: React.ReactNode, 
 
         {/* Home Indicator */}
         <div className="h-3 w-full flex items-center justify-center z-25">
-          <div className="w-16 h-0.5 bg-gray-650 rounded-full" />
+          <div className="w-16 h-0.5 bg-gray-700 rounded-full" />
         </div>
       </div>
     </div>
@@ -1457,25 +1477,12 @@ export function InteractiveShowcase() {
       setScrollProgress(progress);
 
       const steps = ["initial", "environments", "terminal", "editor", "git", "previews"];
-      let currentStep = "initial";
-      let minDistance = Infinity;
+      const stepIndex = Math.min(
+        Math.floor(progress * steps.length),
+        steps.length - 1
+      );
 
-      steps.forEach((stepId) => {
-        const element = document.getElementById(`step-${stepId}`);
-        if (element) {
-          const elRect = element.getBoundingClientRect();
-          const elCenter = elRect.top + elRect.height / 2;
-          const viewportCenter = viewHeight / 2;
-          const distance = Math.abs(elCenter - viewportCenter);
-          
-          if (distance < minDistance) {
-            minDistance = distance;
-            currentStep = stepId;
-          }
-        }
-      });
-
-      setActiveStep(currentStep);
+      setActiveStep(steps[stepIndex]);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -1488,48 +1495,54 @@ export function InteractiveShowcase() {
   }, []);
 
   const transformStyle = get3DTransform(scrollProgress, isMobile);
+  const currentStepData = STEPS.find(s => s.id === activeStep) || STEPS[0];
 
   return (
-    <div ref={containerRef} className="relative w-full bg-[#030303] border-y border-white/5">
-      {/* Sticky Visuals Column (Right) */}
-      <div className="w-full md:w-1/2 h-[45vh] md:h-screen sticky top-14 md:top-0 md:float-right flex items-center justify-center overflow-hidden z-20 bg-[#030303] md:bg-transparent">
-        <HoneycombBackground scrollProgress={scrollProgress} activeStep={activeStep} />
-        <div className="absolute w-[260px] h-[260px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
-        <div 
-          className="relative z-10 transition-transform duration-300 ease-out"
-          style={{
-            transform: transformStyle,
-          }}
-        >
-          <PhoneMockup scrollProgress={scrollProgress}>
-            <PhoneScreen activeStep={activeStep} />
-          </PhoneMockup>
-        </div>
-      </div>
-
-      {/* Scrolling Text Column (Left) */}
-      <div className="w-full md:w-1/2 flex flex-col relative z-10">
-        {STEPS.map((step) => (
+    <div ref={containerRef} className="relative w-full h-[500vh] bg-[#030303] border-y border-white/5">
+      {/* Sticky Container */}
+      <div className="sticky top-0 h-screen w-full flex flex-col md:flex-row items-center justify-between px-6 md:px-24 overflow-hidden z-20">
+        
+        {/* Left Side: Animated Text */}
+        <div className="w-full md:w-[40%] h-[30vh] md:h-full flex flex-col justify-center order-2 md:order-1 text-center md:text-left pb-8 md:pb-0">
           <div 
-            key={step.id} 
-            id={`step-${step.id}`}
-            className="h-[55vh] md:h-screen flex flex-col justify-center px-6 md:px-20"
+            key={activeStep} 
+            className="space-y-4 animate-fade-in-up"
           >
-            <div className="max-w-md space-y-4">
-              <span className="inline-block text-[9px] font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded">
-                {step.badge}
-              </span>
-              <h3 className="text-2xl md:text-4xl font-bold tracking-tight text-white leading-tight">
-                {step.title}
-              </h3>
-              <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
-                {step.description}
-              </p>
-            </div>
+            <span className="inline-block text-[9px] font-mono font-bold tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full uppercase">
+              {currentStepData.badge}
+            </span>
+            <h3 className="text-2xl md:text-5xl font-bold tracking-tight text-white leading-tight font-sans">
+              {currentStepData.title}
+            </h3>
+            <p className="text-xs md:text-sm text-gray-400 leading-relaxed max-w-md mx-auto md:mx-0">
+              {currentStepData.description}
+            </p>
           </div>
-        ))}
+        </div>
+
+        {/* Right Side: Sticky Phone & Background */}
+        <div className="w-full md:w-[60%] h-[55vh] md:h-full relative flex items-center justify-center overflow-hidden order-1 md:order-2">
+          {/* Honeycomb Background */}
+          <HoneycombBackground scrollProgress={scrollProgress} activeStep={activeStep} />
+          
+          {/* Glowing Aura behind phone */}
+          <div className="absolute w-[260px] h-[260px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
+          
+          {/* 3D Phone Wrapper */}
+          <div 
+            className="relative z-10 transition-transform duration-300 ease-out"
+            style={{
+              transform: transformStyle,
+              transformStyle: "preserve-3d",
+            }}
+          >
+            <PhoneMockup scrollProgress={scrollProgress}>
+              <PhoneScreen activeStep={activeStep} />
+            </PhoneMockup>
+          </div>
+        </div>
+
       </div>
-      <div className="clear-both" />
     </div>
   );
 }
