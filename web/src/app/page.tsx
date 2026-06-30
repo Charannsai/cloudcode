@@ -1526,6 +1526,7 @@ const WorkspaceIDE = ({ activeStep, theme, scrollProgress }: { activeStep: strin
         </div>
       </div>
     </div>
+  );
 };
 
 const KEYFRAMES = [
