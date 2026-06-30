@@ -933,9 +933,11 @@ const TerminalScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", sc
         })}
         {visibleCount > 0 && visibleCount < allLines.length && (
           <div className={`w-1 h-2.5 inline-block ml-0.5 animate-pulse ${isDark ? "bg-white" : "bg-black"}`} />
-        )}
       </div>
     </div>
+  );
+};
+
 const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
   const isDark = theme === "dark";
   
