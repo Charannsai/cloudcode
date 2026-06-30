@@ -2022,7 +2022,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           }}
         >
           <PhoneMockup scrollProgress={scrollProgress} theme={theme} mouseOffset={mouseOffset}>
-            <PhoneScreen activeStep={activeStep} theme={theme} />
+            <PhoneScreen activeStep={activeStep} theme={theme} scrollProgress={scrollProgress} />
           </PhoneMockup>
         </div>
 
