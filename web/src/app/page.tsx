@@ -1909,7 +1909,9 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           className="absolute w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none transition-all duration-1000 ease-in-out z-1"
           style={{ 
             opacity: mockupOpacity,
-            background: getGlowColor(activeStep, isDark),
+            background: isDark 
+              ? "radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%)"
+              : "radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0) 70%)",
             left: "50%",
             top: "50%",
             transform: "translate(-50%, -50%)"
