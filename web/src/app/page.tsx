@@ -167,6 +167,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ==================== INTERACTIVE SHOWCASE ==================== */}
+        <InteractiveShowcase />
+
         {/* ==================== 3. THE PROBLEM ==================== */}
         <section className="w-full max-w-5xl px-6 py-28 z-10">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
@@ -673,6 +676,767 @@ export default function Home() {
         </footer>
 
       </div>
+    </div>
+  );
+}
+
+// ==================== INTERACTIVE SHOWCASE SUBCOMPONENTS ====================
+
+const STEPS = [
+  {
+    id: "initial",
+    title: "The Mobile-First Workspace",
+    badge: "01 / BOOTING",
+    description: "Your phone is now a fully-equipped engineering environment. Scroll to boot up your mobile-first workspace.",
+  },
+  {
+    id: "environments",
+    title: "Create Dev Environments",
+    badge: "02 / SANDBOXES",
+    description: "Launch isolated workspaces for any language or framework in seconds. Pre-configured Docker environments with zero setup required.",
+  },
+  {
+    id: "terminal",
+    title: "Isolated Terminal Sessions",
+    badge: "03 / TERMINAL",
+    description: "Get full root access with isolated, persistent Linux terminal sessions. Run compilers, install dependencies, and manage processes.",
+  },
+  {
+    id: "editor",
+    title: "AI-Powered Editor",
+    badge: "04 / CODE EDITOR",
+    description: "Edit files manually with a desktop-grade editor, or select code and let our built-in AI assistant refactor, explain, or write it for you.",
+  },
+  {
+    id: "git",
+    title: "Git & PR Workflows",
+    badge: "05 / VERSION CONTROL",
+    description: "Manage your source control directly from your phone. Commit, push, raise pull requests, and review code changes seamlessly.",
+  },
+  {
+    id: "previews",
+    title: "Native Browser Previews",
+    badge: "06 / LIVE PREVIEW",
+    description: "Test your web applications with an integrated browser preview. Supports hot-reloading, console logging, and inspect elements.",
+  }
+];
+
+const HONEYCOMB_CELLS = [
+  { label: "React", name: "React", x: -120, y: -140 },
+  { label: "Node.js", name: "Node", x: 60, y: -140 },
+  { label: "Python", name: "Python", x: -210, y: -60 },
+  { label: "Docker", name: "Docker", x: -30, y: -60 },
+  { label: "Go", name: "Go", x: 150, y: -60 },
+  { label: "Rust", name: "Rust", x: -120, y: 20 },
+  { label: "TypeScript", name: "TS", x: 60, y: 20 },
+  { label: "Next.js", name: "Next.js", x: -210, y: 100 },
+  { label: "Tailwind", name: "Tailwind", x: -30, y: 100 },
+  { label: "Git", name: "Git", x: 150, y: 100 },
+  { label: "Postgres", name: "Postgres", x: -120, y: 180 },
+  { label: "Linux", name: "Linux", x: 60, y: 180 },
+];
+
+const getIcon = (name: string) => {
+  switch (name) {
+    case "React":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#61DAFB" strokeWidth="2" className="w-5 h-5">
+          <circle cx="12" cy="12" r="1.5" fill="#61DAFB" />
+          <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(30 12 12)" />
+          <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(90 12 12)" />
+          <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(150 12 12)" />
+        </svg>
+      );
+    case "Node":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#68A063" strokeWidth="2" className="w-5 h-5">
+          <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" />
+          <path d="M12 22V12M3 7l9 5 9-5" />
+        </svg>
+      );
+    case "Python":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3776AB" strokeWidth="1.8" className="w-5 h-5">
+          <path d="M12 2c-3 0-3 2-3 2v2h3v1H6c-2 0-2 2-2 4v3c0 2 2 2 2 2h1v-2c0-1.2 1.2-2 2.5-2h3c1.2 0 2.5-.8 2.5-2V7.5c0-2-1.5-5-4.5-5.5z" />
+          <path d="M12 22c3 0 3-2 3-2v-2h-3v-1h6c2 0 2-2 2-4v-3c0-2-2-2-2-2h-1v2c0 1.2-1.2 2-3 2h-3c-1.2 0-2.5.8-2.5 2v3.5c0 2 1.5 5 4.5 5.5z" />
+        </svg>
+      );
+    case "Docker":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2496ED" strokeWidth="1.8" className="w-5 h-5">
+          <path d="M2 14h20M4 14v-2h2v2M8 14v-2h2v2M12 14v-2h2v2M16 14v-2h2v2M6 10v-2h2v2M10 10v-2h2v2M14 10v-2h2v2M8 6v-2h2v2" />
+          <path d="M2 14c0 3 2.5 5 6 5h8c3.5 0 6-2 6-5" />
+        </svg>
+      );
+    case "Go":
+      return (
+        <span className="text-[10px] font-bold text-[#00ADD8] font-mono">GO</span>
+      );
+    case "Rust":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#E57324" strokeWidth="1.8" className="w-5 h-5">
+          <circle cx="12" cy="12" r="7" strokeDasharray="2.5 2.5" />
+          <text x="12" y="15" fontSize="8" fontFamily="sans-serif" fontWeight="bold" fill="#E57324" textAnchor="middle">R</text>
+        </svg>
+      );
+    case "TS":
+      return (
+        <span className="text-[10px] font-bold text-[#3178C6] font-mono">TS</span>
+      );
+    case "Next.js":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8 15.5V8.5l8 7V8.5" />
+        </svg>
+      );
+    case "Tailwind":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="1.8" className="w-5 h-5">
+          <path d="M12 6c-3 0-5 1.5-5.5 5 2.2-1.3 4.5-.8 5.8.8.9-1.3 2.2-2 5-2 3 0 5 1.5 5.5 5-2.2-1.3-4.5-.8-5.8.8-.9-1.3-2.2-2-5-2z" transform="scale(0.8) translate(3, 3)" />
+        </svg>
+      );
+    case "Git":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F05032" strokeWidth="1.8" className="w-5 h-5">
+          <circle cx="18" cy="6" r="2.5" />
+          <circle cx="6" cy="18" r="2.5" />
+          <circle cx="6" cy="6" r="2.5" />
+          <path d="M6 8.5v7M8.5 18h7M18 18a2.5 2.5 0 0 0 2.5-2.5V8.5" />
+        </svg>
+      );
+    case "Postgres":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#336791" strokeWidth="1.8" className="w-5 h-5">
+          <path d="M4 6h16M4 12h16M4 18h16M4 6v12M20 6v12" />
+        </svg>
+      );
+    case "Linux":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5">
+          <path d="M12 2C8.5 2 6 4.5 6 8c0 3 1.8 5.5 4.5 6.5v2H8v1.5h8v-1.5h-2.5v-2c2.7-1 4.5-3.5 4.5-6.5 0-3.5-2.5-6-6-6z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
+
+const InitialScreen = () => {
+  return (
+    <div className="w-full h-full bg-[#030303] flex flex-col items-center justify-center text-center relative overflow-hidden">
+      <div className="absolute w-40 h-40 rounded-full bg-indigo-500/10 blur-2xl" />
+      <div className="z-10 space-y-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto">
+          <span className="text-white font-bold text-lg font-mono">CC</span>
+        </div>
+        <div className="space-y-1">
+          <h4 className="font-bold text-xs text-white tracking-tight">CloudCode Workspace</h4>
+          <p className="text-[9px] text-gray-500 font-mono">v1.0.0-beta</p>
+        </div>
+        <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/5 px-2.5 py-1 rounded text-[8px] font-mono text-gray-450">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
+          <span>Scroll to Boot</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EnvironmentsScreen = ({ active }: { active: boolean }) => {
+  const [loading, setLoading] = useState(false);
+  const [complete, setComplete] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setLoading(false);
+      setComplete(false);
+      return;
+    }
+
+    const t1 = setTimeout(() => {
+      setLoading(true);
+    }, 800);
+
+    const t2 = setTimeout(() => {
+      setLoading(false);
+      setComplete(true);
+    }, 3000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [active]);
+
+  return (
+    <div className="w-full h-full bg-[#0A0B10] p-4 text-white flex flex-col justify-between font-sans">
+      <div className="space-y-3">
+        <div className="border-b border-white/5 pb-2">
+          <h4 className="font-bold text-[10px] text-gray-400 tracking-wide uppercase font-mono">Select Template</h4>
+        </div>
+        
+        <div className="space-y-1.5">
+          {[
+            { name: "Node.js / Next.js", desc: "React framework with Tailwind" },
+            { name: "Python / FastAPI", desc: "Modern Python web backend" },
+            { name: "Rust / Cargo", desc: "Performance-critical system code" }
+          ].map((tmpl, idx) => (
+            <div key={idx} className={`p-2 rounded border transition-all text-left ${
+              idx === 0 
+                ? "border-indigo-500 bg-indigo-500/10" 
+                : "border-white/5 bg-white/5 opacity-60"
+            }`}>
+              <div className="font-bold text-[9px]">{tmpl.name}</div>
+              <div className="text-[7px] text-gray-400">{tmpl.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {loading && (
+          <div className="space-y-1 text-center">
+            <div className="w-full bg-white/5 h-1 rounded overflow-hidden">
+              <div className="bg-indigo-500 h-full w-[80%] animate-pulse" />
+            </div>
+            <span className="text-[8px] font-mono text-indigo-400">Allocating sandbox...</span>
+          </div>
+        )}
+        
+        {complete && (
+          <div className="bg-emerald-500/15 border border-emerald-500/20 p-2 rounded text-left space-y-1 font-mono text-[8px] animate-fade-in">
+            <div className="text-emerald-400 font-bold">● Workspace Online</div>
+            <div className="text-gray-450">ID: sandbox-node-1</div>
+            <div className="text-gray-500">Resources: 4 Cores / 4GB RAM</div>
+          </div>
+        )}
+
+        <button className={`w-full py-1.5 rounded text-[9px] font-bold text-center transition-all ${
+          complete 
+            ? "bg-emerald-500 text-white" 
+            : loading 
+              ? "bg-indigo-600/50 text-white/50" 
+              : "bg-indigo-500 text-white hover:bg-indigo-600"
+        }`}>
+          {complete ? "Open Workspace" : loading ? "Starting..." : "Create Workspace"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const TerminalScreen = ({ active }: { active: boolean }) => {
+  const [lines, setLines] = useState<string[]>([]);
+  
+  useEffect(() => {
+    if (!active) {
+      setLines([]);
+      return;
+    }
+    
+    const allLines = [
+      "root@cloudcode:~# git clone https://github.com/user/project",
+      "Cloning into 'project'... done.",
+      "root@cloudcode:~# cd project && npm install",
+      "added 342 packages in 4.1s",
+      "root@cloudcode:~# npm run dev",
+      "▲ Next.js 16.2.9 (Turbopack)",
+      "- Local: http://localhost:3000"
+    ];
+    
+    let currentLine = 0;
+    const interval = setInterval(() => {
+      if (currentLine < allLines.length) {
+        setLines(prev => [...prev, allLines[currentLine]]);
+        currentLine++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 800);
+    
+    return () => clearInterval(interval);
+  }, [active]);
+
+  return (
+    <div className="w-full h-full bg-[#08090E] p-3 font-mono text-[9px] text-gray-300 flex flex-col justify-between overflow-hidden">
+      <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-2">
+        <span className="text-gray-500">bash - session-1</span>
+        <span className="text-emerald-450">● online</span>
+      </div>
+      <div className="flex-1 space-y-1.5 overflow-y-auto">
+        {lines.map((line, idx) => {
+          if (line.startsWith("root@")) {
+            return (
+              <div key={idx}>
+                <span className="text-emerald-500">root@cloudcode</span>
+                <span className="text-gray-500">:~#</span> <span className="text-white">{line.split("~# ")[1]}</span>
+              </div>
+            );
+          }
+          if (line.startsWith("▲") || line.startsWith("-")) {
+            return <div key={idx} className="text-indigo-455">{line}</div>;
+          }
+          return <div key={idx} className="text-gray-400">{line}</div>;
+        })}
+        {active && lines.length < 7 && (
+          <div className="w-1 h-2.5 bg-indigo-500 animate-pulse inline-block ml-0.5" />
+        )}
+      </div>
+    </div>
+  );
+};
+
+const EditorScreen = ({ active }: { active: boolean }) => {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setStep(0);
+      return;
+    }
+
+    const t1 = setTimeout(() => setStep(1), 1500); // highlight code
+    const t2 = setTimeout(() => setStep(2), 3000); // show AI prompt
+    const t3 = setTimeout(() => setStep(3), 4500); // replace with AI code
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [active]);
+
+  return (
+    <div className="w-full h-full bg-[#0F1117] flex flex-col justify-between overflow-hidden relative">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0A0B0F] border-b border-white/5">
+        <span className="text-[8px] font-mono text-gray-400">Counter.tsx</span>
+        <span className="text-[7px] font-mono text-indigo-400 bg-indigo-500/10 px-1 py-0.5 rounded">TypeScript</span>
+      </div>
+
+      <div className="flex-1 p-3 font-mono text-[9px] text-gray-300 space-y-1 overflow-y-auto leading-relaxed">
+        {step < 3 ? (
+          <>
+            <div><span className="text-purple-400">import</span> &#123; useState &#125; <span className="text-purple-400">from</span> <span className="text-emerald-400">&apos;react&apos;</span>;</div>
+            <div className="h-1" />
+            <div><span className="text-purple-400">export function</span> <span className="text-blue-455">Counter</span>() &#123;</div>
+            <div className="pl-3">
+              <span className="text-purple-400">const</span> [count, setCount] = <span className="text-blue-455">useState</span>(<span className="text-orange-400">0</span>);
+            </div>
+            <div className="pl-3"><span className="text-purple-400">return</span> (</div>
+            <div className={`pl-6 transition-all duration-500 ${step === 1 ? "bg-indigo-500/20 rounded border-l-2 border-indigo-500" : ""}`}>
+              &lt;<span className="text-blue-455">button</span> <span className="text-yellow-400">onClick</span>=&#123;() =&gt; <span className="text-blue-455">setCount</span>(count + <span className="text-orange-400">1</span>)&#125;&gt;
+            </div>
+            <div className="pl-9">Count: &#123;count&#125;</div>
+            <div className="pl-6">&lt;/<span className="text-blue-455">button</span>&gt;</div>
+            <div className="pl-3">);</div>
+            <div>&#125;</div>
+          </>
+        ) : (
+          <>
+            <div><span className="text-purple-400">import</span> &#123; useState, useEffect &#125; <span className="text-purple-400">from</span> <span className="text-emerald-400">&apos;react&apos;</span>;</div>
+            <div className="h-1" />
+            <div><span className="text-purple-400">export function</span> <span className="text-blue-455">Counter</span>() &#123;</div>
+            <div className="pl-3">
+              <span className="text-purple-400">const</span> [count, setCount] = <span className="text-blue-455">useState</span>(<span className="text-orange-400">0</span>);
+            </div>
+            <div className="pl-3 bg-emerald-500/10 border-l-2 border-emerald-500 rounded py-0.5 my-1">
+              <span className="text-blue-455">useEffect</span>(() =&gt; &#123;
+              <div className="pl-3">console.<span className="text-blue-455">log</span>(<span className="text-emerald-400">&quot;Count is&quot;</span>, count);</div>
+              &#125;, [count]);
+            </div>
+            <div className="pl-3"><span className="text-purple-400">return</span> (</div>
+            <div className="pl-6">
+              &lt;<span className="text-blue-455">button</span> 
+            </div>
+            <div className="pl-9 text-yellow-400">onClick<span className="text-gray-350">=&#123;() =&gt;</span> <span className="text-blue-455">setCount</span>(count + <span className="text-orange-400">1</span>)&#125;</div>
+            <div className="pl-9 text-yellow-400">className<span className="text-gray-350">=&quot;active:scale-95 transition-all&quot;</span></div>
+            <div className="pl-6">&gt;</div>
+            <div className="pl-9">Count: &#123;count&#125;</div>
+            <div className="pl-6">&lt;/<span className="text-blue-455">button</span>&gt;</div>
+            <div className="pl-3">);</div>
+            <div>&#125;</div>
+          </>
+        )}
+      </div>
+
+      <div className={`absolute bottom-0 left-0 right-0 p-3 bg-[#0A0B0F] border-t border-white/5 transition-all duration-500 transform ${
+        step >= 2 && step < 3 ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+      }`}>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          <span className="text-[7px] font-mono text-indigo-400 uppercase font-bold">CloudCode AI</span>
+        </div>
+        <div className="text-[8px] text-white font-mono bg-white/5 p-1.5 rounded border border-white/5">
+          {"✨ Refactoring: Adding transition and console.log..."}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GitScreen = ({ active }: { active: boolean }) => {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setStep(0);
+      return;
+    }
+
+    const t1 = setTimeout(() => setStep(1), 1500); // commit
+    const t2 = setTimeout(() => setStep(2), 3000); // pr screen
+    const t3 = setTimeout(() => setStep(3), 4500); // merge
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [active]);
+
+  return (
+    <div className="w-full h-full bg-[#0A0B10] p-3 font-sans text-xs text-gray-300 flex flex-col justify-between overflow-hidden">
+      {step < 2 ? (
+        <>
+          <div className="border-b border-white/5 pb-2">
+            <h4 className="font-bold text-[10px] text-white tracking-wide uppercase font-mono">Source Control</h4>
+          </div>
+          <div className="flex-1 py-3 space-y-3">
+            <div>
+              <span className="text-[9px] font-mono text-gray-500">CHANGES</span>
+              <div className="mt-1 space-y-1">
+                <div className="flex items-center justify-between bg-white/5 p-1.5 rounded border border-white/5 text-[9px]">
+                  <span className="font-mono text-emerald-400">M  Counter.tsx</span>
+                  <span className="text-[7px] text-gray-500">Modified</span>
+                </div>
+                <div className="flex items-center justify-between bg-white/5 p-1.5 rounded border border-white/5 text-[9px]">
+                  <span className="font-mono text-emerald-400">M  page.tsx</span>
+                  <span className="text-[7px] text-gray-500">Modified</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <span className="text-[9px] font-mono text-gray-500">COMMIT MESSAGE</span>
+              <div className="bg-white/5 p-2 rounded border border-white/5 text-[9px] font-mono text-white">
+                feat: improve counter interactivity
+              </div>
+            </div>
+          </div>
+          
+          <button className={`w-full py-2 rounded font-bold text-[10px] text-center transition-all duration-300 ${
+            step === 1 
+              ? "bg-indigo-600 text-white scale-95 opacity-50" 
+              : "bg-indigo-500 text-white hover:bg-indigo-600"
+          }`}>
+            {step === 1 ? "Pushing..." : "Commit & Push"}
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="border-b border-white/5 pb-2 flex justify-between items-center">
+            <h4 className="font-bold text-[10px] text-white tracking-wide uppercase font-mono">Pull Request #42</h4>
+            <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Open</span>
+          </div>
+          <div className="flex-1 py-3 space-y-3">
+            <div className="space-y-1">
+              <h5 className="font-bold text-white text-[10px]">feat: improve counter interactivity</h5>
+              <p className="text-[8px] text-gray-400">Merged 2 commits from <code className="font-mono bg-white/5 px-1 rounded text-indigo-400">feat/counter</code> into <code className="font-mono bg-white/5 px-1 rounded text-gray-350">main</code></p>
+            </div>
+            <div className="bg-white/5 p-2 rounded border border-white/5 text-[8px] space-y-1 font-mono">
+              <div className="text-emerald-450">✓ All checks passed (100%)</div>
+              <div className="text-gray-400">✓ No conflicts with base branch</div>
+            </div>
+          </div>
+          
+          <button className={`w-full py-2 rounded font-bold text-[10px] text-center transition-all duration-300 ${
+            step === 3 
+              ? "bg-purple-600 text-white opacity-50" 
+              : "bg-purple-500 text-white hover:bg-purple-600"
+          }`}>
+            {step === 3 ? "Merged ✓" : "Merge Pull Request"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
+const PreviewsScreen = ({ active }: { active: boolean }) => {
+  const [count, setCount] = useState(0);
+  const [isClicking, setIsClicking] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setCount(0);
+      setIsClicking(false);
+      return;
+    }
+
+    const t1 = setTimeout(() => {
+      setIsClicking(true);
+      setCount(1);
+    }, 1500);
+
+    const t2 = setTimeout(() => {
+      setIsClicking(false);
+    }, 1800);
+
+    const t3 = setTimeout(() => {
+      setIsClicking(true);
+      setCount(2);
+    }, 3000);
+
+    const t4 = setTimeout(() => {
+      setIsClicking(false);
+    }, 3300);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, [active]);
+
+  return (
+    <div className="w-full h-full bg-[#FAFAFA] text-[#0F1115] flex flex-col justify-between overflow-hidden font-sans">
+      <div className="bg-white border-b border-gray-200 px-3 py-1.5 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <div className="flex-1 bg-gray-100 px-2 py-0.5 rounded text-[8px] text-gray-500 font-mono flex justify-between items-center">
+          <span>localhost:3000</span>
+          <span>🔒</span>
+        </div>
+        <span className="text-[8px] text-gray-400">↻</span>
+      </div>
+
+      <div className="flex-1 p-4 flex flex-col items-center justify-center bg-gray-55 relative">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm w-full max-w-[160px] text-center space-y-3">
+          <h5 className="font-bold text-[10px]">Interactive Preview</h5>
+          <p className="text-[7px] text-gray-400">Click the button below to test interactions.</p>
+          <button className={`px-3 py-1 rounded-lg text-[9px] font-bold text-white transition-all bg-indigo-500 ${
+            isClicking ? "scale-95 bg-indigo-600" : "active:scale-95"
+          }`}>
+            Count: {count}
+          </button>
+        </div>
+
+        {active && (
+          <div 
+            className="absolute w-2.5 h-2.5 bg-black rounded-full border border-white pointer-events-none transition-all duration-1000 shadow-lg"
+            style={{
+              left: isClicking ? "50%" : "68%",
+              top: isClicking ? "58%" : "75%",
+              transform: "translate(-50%, -50%)",
+              opacity: 0.8,
+            }}
+          />
+        )}
+      </div>
+
+      <div className="bg-[#0A0B0F] border-t border-white/5 p-2 font-mono text-[7px] text-gray-400 space-y-0.5">
+        <div className="text-indigo-400 uppercase font-bold tracking-wider text-[6px]">Console Logs</div>
+        {count >= 1 && <div className="text-emerald-400">[Console] Count is now 1</div>}
+        {count >= 2 && <div className="text-emerald-400">[Console] Count is now 2</div>}
+      </div>
+    </div>
+  );
+};
+
+const PhoneScreen = ({ activeStep }: { activeStep: string }) => {
+  switch (activeStep) {
+    case "initial":
+      return <InitialScreen />;
+    case "environments":
+      return <EnvironmentsScreen active={activeStep === "environments"} />;
+    case "terminal":
+      return <TerminalScreen active={activeStep === "terminal"} />;
+    case "editor":
+      return <EditorScreen active={activeStep === "editor"} />;
+    case "git":
+      return <GitScreen active={activeStep === "git"} />;
+    case "previews":
+      return <PreviewsScreen active={activeStep === "previews"} />;
+    default:
+      return <InitialScreen />;
+  }
+};
+
+const PhoneMockup = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="w-[260px] h-[520px] bg-[#1E2028] rounded-[36px] p-2 shadow-2xl relative border-2 border-white/10 select-none">
+      <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-full z-35 flex items-center justify-center">
+        <div className="w-10 h-1 bg-gray-805 rounded-full" />
+      </div>
+      
+      <div className="w-full h-full rounded-[30px] overflow-hidden bg-[#030303] relative border border-black/50 flex flex-col">
+        <div className="h-6 pt-1.5 px-4 flex justify-between items-center text-[7px] font-mono text-gray-450 z-20 select-none">
+          <span>09:41</span>
+          <div className="flex items-center gap-1">
+            <span>📶</span>
+            <span>🔋</span>
+          </div>
+        </div>
+
+        <div className="flex-1 w-full relative overflow-hidden">
+          {children}
+        </div>
+
+        <div className="h-3 w-full flex items-center justify-center z-25">
+          <div className="w-16 h-0.5 bg-gray-650 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HoneycombBackground = ({ scrollProgress, activeStep }: { scrollProgress: number, activeStep: string }) => {
+  const translateY = (scrollProgress - 0.25) * -160;
+  const isEnvironments = activeStep === "environments";
+
+  return (
+    <div 
+      className="absolute inset-0 pointer-events-none transition-transform duration-300 ease-out"
+      style={{
+        transform: `translateY(${translateY}px)`,
+      }}
+    >
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px]">
+        {HONEYCOMB_CELLS.map((cell, idx) => {
+          const isActive = isEnvironments || (
+            (activeStep === "terminal" && (cell.name === "Linux" || cell.name === "Docker")) ||
+            (activeStep === "editor" && (cell.name === "TS" || cell.name === "React" || cell.name === "Next.js")) ||
+            (activeStep === "git" && cell.name === "Git") ||
+            (activeStep === "previews" && (cell.name === "Next.js" || cell.name === "React" || cell.name === "Node"))
+          );
+
+          return (
+            <div 
+              key={idx}
+              className={`absolute transition-all duration-700 ${
+                isActive 
+                  ? 'opacity-80 scale-100' 
+                  : 'opacity-10 scale-90 blur-[0.5px]'
+              }`}
+              style={{
+                left: `calc(50% + ${cell.x}px)`,
+                top: `calc(50% + ${cell.y}px)`,
+                width: '82px',
+                height: '95px',
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              <div 
+                className={`w-full h-full flex flex-col items-center justify-center relative shadow-lg transition-all duration-500 border ${
+                  isActive 
+                    ? 'bg-indigo-500/10 border-indigo-500/30 shadow-indigo-500/5' 
+                    : 'bg-[#0B0C10]/80 border-white/5'
+                }`}
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                }}
+              >
+                {isActive && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent animate-pulse" />
+                )}
+                <div className="mb-1">{getIcon(cell.name)}</div>
+                <span className={`text-[7px] font-mono font-bold tracking-tight transition-colors ${
+                  isActive ? 'text-white' : 'text-gray-500'
+                }`}>{cell.label}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export function InteractiveShowcase() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeStep, setActiveStep] = useState<string>("initial");
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const containerHeight = rect.height;
+      const viewHeight = window.innerHeight;
+      const scrolled = -rect.top;
+      const maxScroll = containerHeight - viewHeight;
+      const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
+      setScrollProgress(progress);
+
+      const steps = ["initial", "environments", "terminal", "editor", "git", "previews"];
+      let currentStep = "initial";
+      let minDistance = Infinity;
+
+      steps.forEach((stepId) => {
+        const element = document.getElementById(`step-${stepId}`);
+        if (element) {
+          const elRect = element.getBoundingClientRect();
+          const elCenter = elRect.top + elRect.height / 2;
+          const viewportCenter = viewHeight / 2;
+          const distance = Math.abs(elCenter - viewportCenter);
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            currentStep = stepId;
+          }
+        }
+      });
+
+      setActiveStep(currentStep);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative w-full bg-[#030303] border-y border-white/5">
+      {/* Sticky Visuals Column (Right) */}
+      <div className="w-full md:w-1/2 h-[45vh] md:h-screen sticky top-14 md:top-0 md:float-right flex items-center justify-center overflow-hidden z-20 bg-[#030303] md:bg-transparent">
+        <HoneycombBackground scrollProgress={scrollProgress} activeStep={activeStep} />
+        <div className="absolute w-[260px] h-[260px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
+        <div className="relative z-10 transition-transform duration-500">
+          <PhoneMockup>
+            <PhoneScreen activeStep={activeStep} />
+          </PhoneMockup>
+        </div>
+      </div>
+
+      {/* Scrolling Text Column (Left) */}
+      <div className="w-full md:w-1/2 flex flex-col relative z-10">
+        {STEPS.map((step) => (
+          <div 
+            key={step.id} 
+            id={`step-${step.id}`}
+            className="h-[55vh] md:h-screen flex flex-col justify-center px-6 md:px-20"
+          >
+            <div className="max-w-md space-y-4">
+              <span className="inline-block text-[9px] font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded">
+                {step.badge}
+              </span>
+              <h3 className="text-2xl md:text-4xl font-bold tracking-tight text-white leading-tight">
+                {step.title}
+              </h3>
+              <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
+                {step.description}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="clear-both" />
     </div>
   );
 }
