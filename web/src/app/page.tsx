@@ -1324,8 +1324,6 @@ const GitDiffView = ({ theme }: { theme: "light" | "dark" }) => {
         </div>
         <div className="pl-9">Count: &#123;count&#125;</div>
         <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
-        <div className="pl-3">);</div>
-        <div>&#125;</div>
       </div>
     </div>
   );
@@ -1343,7 +1341,7 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
     }`}>
       {/* Top Title Bar */}
       <div className={`h-9 px-4 flex items-center justify-between border-b text-xs ${
-        isDark ? "bg-[#0D0E12] border-white/5 text-gray-400" : "bg-white border-black/5 text-gray-650"
+        isDark ? "bg-[#0D0E12] border-white/5 text-gray-400" : "bg-white border-black/5 text-gray-655"
       }`}>
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
@@ -1354,22 +1352,47 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
           <span className="ml-4 font-mono text-[10px]">cloudcode-sandbox-1 (Workspace)</span>
         </div>
         <div className="flex items-center gap-4 text-[10px]">
-          <span>⚡ Connected</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Connected</span>
+          </div>
           <span>Node.js v20.10.0</span>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Activity Bar (Icons) */}
+        {/* Activity Bar (Icons - No Emojis) */}
         <div className={`w-12 flex flex-col items-center py-4 gap-6 border-r ${
           isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-50 border-black/5"
         }`}>
-          {["📁", "🔍", "🌿", "⚙️"].map((icon, idx) => (
+          {[
+            // Files Icon
+            <svg key="files" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>,
+            // Search Icon
+            <svg key="search" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>,
+            // Git Icon
+            <svg key="git" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="18" cy="18" r="3" />
+              <circle cx="6" cy="6" r="3" />
+              <circle cx="6" cy="18" r="3" />
+              <path d="M6 9v6M9 6h6a3 3 0 013 3v6" />
+            </svg>,
+            // Settings Icon
+            <svg key="settings" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+            </svg>
+          ].map((icon, idx) => (
             <span 
               key={idx} 
-              className={`text-base cursor-pointer hover:opacity-100 transition-opacity ${
-                idx === 2 && activeStep === "git" ? "opacity-100 scale-110" : "opacity-50"
+              className={`cursor-pointer hover:opacity-100 transition-opacity ${
+                idx === 2 && activeStep === "git" ? "opacity-100 scale-110 text-indigo-500" : "opacity-40"
               }`}
             >
               {icon}
@@ -1391,10 +1414,13 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
                 <div className="text-[10px] font-bold uppercase tracking-wider text-gray-555 font-mono">Source Control</div>
                 <div className="space-y-1">
                   <span className="text-[9px] font-mono text-gray-550 font-mono">CHANGES</span>
-                  <div className={`p-1.5 rounded border text-[9px] flex justify-between ${
+                  <div className={`p-1.5 rounded border text-[9px] flex justify-between items-center ${
                     isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
                   }`}>
-                    <span className="font-mono text-emerald-450 font-mono">M  Counter.tsx</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-emerald-500 font-mono">M</span>
+                      <span className="font-mono">Counter.tsx</span>
+                    </div>
                     <span className="text-[7px] text-gray-505 font-mono">Modified</span>
                   </div>
                 </div>
@@ -1414,16 +1440,51 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
             <div className="p-3 space-y-4 font-mono text-[9px]">
               <div className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Explorer</div>
               <div className="space-y-2">
-                <div className="text-indigo-400 font-bold">📂 project</div>
+                <div className="text-indigo-400 font-bold">
+                  <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  project
+                </div>
                 <div className="pl-3 space-y-2">
-                  <div>📂 src</div>
-                  <div className="pl-3 space-y-2">
-                    <div className="text-gray-500">📂 components</div>
-                    <div className="pl-3 text-indigo-400 font-bold">📄 Counter.tsx</div>
-                    <div className="pl-3">📄 Header.tsx</div>
+                  <div>
+                    <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    src
                   </div>
-                  <div>📄 package.json</div>
-                  <div>📄 tsconfig.json</div>
+                  <div className="pl-3 space-y-2">
+                    <div className="text-gray-500">
+                      <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      components
+                    </div>
+                    <div className="pl-3 text-indigo-400 font-bold">
+                      <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
+                      </svg>
+                      Counter.tsx
+                    </div>
+                    <div className="pl-3">
+                      <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
+                      </svg>
+                      Header.tsx
+                    </div>
+                  </div>
+                  <div>
+                    <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
+                    </svg>
+                    package.json
+                  </div>
+                  <div>
+                    <svg className="w-3 h-3 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
+                    </svg>
+                    tsconfig.json
+                  </div>
                 </div>
               </div>
             </div>
@@ -1436,13 +1497,16 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* Editor Tabs */}
             <div className={`h-8 flex border-b ${
-              isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-50 border-black/5"
+              isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-55 border-black/5"
             }`}>
               <div className={`px-4 flex items-center gap-2 border-r text-[9px] font-mono ${
                 isDark ? "bg-[#0F1117] border-white/5 text-white" : "bg-white border-black/5 text-black"
               }`}>
-                <span>📄 Counter.tsx</span>
-                <span className="text-emerald-500 font-mono">●</span>
+                <svg className="w-3 h-3 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
+                </svg>
+                <span>Counter.tsx</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
             </div>
 
@@ -1484,9 +1548,9 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
 };
 
 const KEYFRAMES = [
-  // 1. Phone Rise (0.0 - 0.15) - Phone rises from below, screen is black/off
-  { p: 0.0, rx: 35, ry: -45, rz: 12, s: 0.25, tx: 0, ty: 450, tz: -120, bezelOpacity: 1 },
-  { p: 0.15, rx: 12, ry: -15, rz: 5, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 1. Phone Rise (0.0 - 0.15) - Phone rises from below, screen is black/off, straight rise
+  { p: 0.0, rx: 0, ry: 0, rz: 0, s: 0.25, tx: 0, ty: 450, tz: 0, bezelOpacity: 1 },
+  { p: 0.15, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
   // 2. Arrival & Boot (0.15 - 0.28) - Phone boots (traces logo)
   { p: 0.28, rx: 8, ry: -10, rz: 3, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
   // 3. Sandbox Orbit (0.28 - 0.40) - Centered
@@ -1548,13 +1612,17 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
   const glareY = (scrollProgress * 200) - 100 + (mouseOffset.y * 100);
   const isDark = theme === "dark";
 
-  // Dynamic Island status indicator based on scrollProgress
+  // Dynamic Island status indicator based on scrollProgress (No emojis)
   const getIslandIcon = () => {
-    if (scrollProgress < 0.24) return <span className="text-[6px] text-indigo-400 animate-pulse font-mono">Syncing...</span>;
-    if (scrollProgress >= 0.24 && scrollProgress < 0.40) return <span className="text-[6px] text-emerald-400 animate-spin font-mono">⏳</span>;
-    if (scrollProgress >= 0.40 && scrollProgress < 0.58) return <span className="text-[6px] text-indigo-400 font-mono">bash</span>;
-    if (scrollProgress >= 0.58 && scrollProgress < 0.68) return <span className="text-[6px] text-purple-400 font-bold font-mono">✨ AI</span>;
-    return <span className="text-[6px] text-emerald-500 font-mono">● Live</span>;
+    if (scrollProgress < 0.28) return <span className="text-[6px] text-indigo-450 dark:text-indigo-400 animate-pulse font-mono">Syncing</span>;
+    if (scrollProgress >= 0.28 && scrollProgress < 0.52) {
+      return (
+        <span className="w-1.5 h-1.5 rounded-full border border-t-transparent border-indigo-500 animate-spin" />
+      );
+    }
+    if (scrollProgress >= 0.52 && scrollProgress < 0.64) return <span className="text-[6px] text-indigo-400 font-mono">bash</span>;
+    if (scrollProgress >= 0.64 && scrollProgress < 0.76) return <span className="text-[6px] text-gray-400 font-bold font-mono">AI</span>;
+    return <span className="text-[6px] text-emerald-500 font-mono">Live</span>;
   };
 
   const shadowX = -8 - (mouseOffset.x * 15);
@@ -1635,14 +1703,21 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
           {getIslandIcon()}
         </div>
 
-        {/* Status bar */}
+        {/* Status bar (No Emojis) */}
         <div className={`h-8 pt-2.5 px-6 flex justify-between items-center text-[8px] font-mono z-20 select-none ${
-          isDark ? "text-gray-455" : "text-gray-500"
+          isDark ? "text-gray-400" : "text-gray-500"
         }`}>
           <span>09:41</span>
-          <div className="flex items-center gap-1.5">
-            <span>📶</span>
-            <span>🔋</span>
+          <div className="flex items-center gap-2">
+            {/* Clean SVG Signal */}
+            <svg className="w-2.5 h-2.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M2 20h.01M6 20v-4M10 20v-8M14 20V8M18 20V4" />
+            </svg>
+            {/* Clean SVG Battery */}
+            <svg className="w-3.5 h-2.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <rect x="2" y="5" width="16" height="14" rx="3" />
+              <path d="M22 11v2" />
+            </svg>
           </div>
         </div>
 
