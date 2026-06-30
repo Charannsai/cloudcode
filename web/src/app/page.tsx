@@ -1251,11 +1251,55 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
   );
 };
 
+const LockScreen = ({ theme }: { theme: "light" | "dark" }) => {
+  const isDark = theme === "dark";
+  return (
+    <div className={`w-full h-full flex flex-col items-center justify-between py-12 px-6 text-center select-none relative overflow-hidden ${
+      isDark ? "bg-[#05070B] text-white/40" : "bg-[#FAFAFA] text-black/35"
+    }`}>
+      {/* Ambient lockscreen glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full bg-indigo-500/5 blur-2xl pointer-events-none" />
+
+      {/* Date & Time */}
+      <div className="space-y-0.5">
+        <div className="text-[6px] font-bold tracking-widest uppercase opacity-60 font-sans">
+          Tuesday, June 30
+        </div>
+        <div className="text-4xl font-extralight tracking-tight font-sans leading-none">
+          09:41
+        </div>
+      </div>
+
+      {/* Pulsing Cloud Icon Outline */}
+      <div className="animate-pulse flex items-center justify-center" style={{ animationDuration: '3s' }}>
+        <svg width="36" height="36" viewBox="0 0 874 552" className="opacity-40">
+          <path
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="24"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
+      {/* Bottom Swipe Indicator */}
+      <div className="flex flex-col items-center gap-1.5 opacity-60">
+        <span className="text-[6px] font-mono tracking-widest uppercase">
+          Swipe up to unlock
+        </span>
+        <div className={`w-12 h-0.5 rounded-full ${isDark ? "bg-white/20" : "bg-black/15"}`} />
+      </div>
+    </div>
+  );
+};
+
 const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
   switch (activeStep) {
     case "phone_rise":
     case "welcome_phase":
-      return <div className={`w-full h-full ${theme === "dark" ? "bg-[#05070B]" : "bg-[#FAFAFA]"}`} />;
+      return <LockScreen theme={theme} />;
     case "arrival":
       return <InitialScreen theme={theme} />;
     case "sandbox_orbit":
