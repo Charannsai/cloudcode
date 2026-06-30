@@ -63,12 +63,19 @@ export default function Home() {
           0% { stroke-dashoffset: 24; }
           100% { stroke-dashoffset: 0; }
         }
+        @keyframes fadeInUp {
+          0% { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+          100% { opacity: 1; transform: translateY(0); filter: none; }
+        }
         .animate-pulse-glow {
           animation: pulse-glow 8s ease-in-out infinite;
         }
         .animate-line-draw {
           stroke-dasharray: 8, 4;
           animation: line-draw 1.5s linear infinite;
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
       `}</style>
 
