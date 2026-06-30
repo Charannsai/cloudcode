@@ -1628,8 +1628,8 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   return (
     <div 
       ref={containerRef} 
-      className={`relative w-full h-[500vh] border-b transition-colors duration-300 ${
-        isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
+      className={`relative w-full h-[500vh] transition-colors duration-300 ${
+        isDark ? "bg-[#030303]" : "bg-[#FAFAFA]"
       }`}
     >
       <div 
