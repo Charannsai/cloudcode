@@ -1269,7 +1269,7 @@ const LockScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scroll
       {(() => {
         const zoomT = Math.max(0, Math.min(1, (scrollProgress - 0.30) / 0.05));
         const cloudScale = zoomT > 0
-          ? 0.9 + zoomT * 12
+          ? 0.9 + zoomT * 1.5
           : 1 - t * 0.1;
         const cloudOpacity = zoomT > 0
           ? 0.4 + zoomT * 0.6
@@ -1582,7 +1582,8 @@ const KEYFRAMES = [
   { p: 0.0, rx: 0, ry: 0, rz: 0, s: 0.25, tx: 0, ty: 450, tz: 0, bezelOpacity: 1 },
   { p: 0.15, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
   // 2. Welcome Phase (0.15 - 0.35) - Phone is centered, screen is blank/off, welcome text fades in/out in bg
-  { p: 0.35, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  { p: 0.30, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  { p: 0.35, rx: 0, ry: 0, rz: 0, s: 5.5, tx: 0, ty: 0, tz: 200, bezelOpacity: 1 },
   // 3. Arrival & Boot (0.35 - 0.48) - Welcome text is gone, phone boots (traces logo)
   { p: 0.48, rx: 8, ry: -10, rz: 3, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
   // 4. Sandbox Orbit (0.48 - 0.58) - Centered
@@ -1797,7 +1798,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
 
       let step = "phone_rise";
       if (progress < 0.15) step = "phone_rise";
-      else if (progress >= 0.15 && progress < 0.35) step = "welcome_phase";
+      else if (progress >= 0.15 && progress < 0.38) step = "welcome_phase";
       else step = "logo_transition";
 
       setActiveStep(step);
