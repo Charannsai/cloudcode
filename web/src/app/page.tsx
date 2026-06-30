@@ -626,6 +626,7 @@ export default function Home() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-indigo-600/10 blur-3xl animate-pulse-glow pointer-events-none z-0" />
           )}
 
+          <div className="w-full max-w-2xl px-6 flex flex-col items-center z-10 space-y-6">
             <h2 className="text-3xl md:text-5xl font-semibold tracking-tighter leading-none">
               {"The mobile-first"}
               <br />
