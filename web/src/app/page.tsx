@@ -67,6 +67,10 @@ export default function Home() {
           0% { opacity: 0; transform: translateY(20px); filter: blur(4px); }
           100% { opacity: 1; transform: translateY(0); filter: none; }
         }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-6px) rotate(1.5deg); }
+        }
         .animate-pulse-glow {
           animation: pulse-glow 8s ease-in-out infinite;
         }
@@ -76,6 +80,9 @@ export default function Home() {
         }
         .animate-fade-in-up {
           animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
         }
       `}</style>
 
@@ -175,7 +182,7 @@ export default function Home() {
         </section>
 
         {/* ==================== INTERACTIVE SHOWCASE ==================== */}
-        <InteractiveShowcase />
+        <InteractiveShowcase theme={theme} colors={colors} />
 
         {/* ==================== 3. THE PROBLEM ==================== */}
         <section className="w-full max-w-5xl px-6 py-28 z-10">
