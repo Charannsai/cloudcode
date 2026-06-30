@@ -2193,6 +2193,89 @@ const PhoneMockup = ({
 
 
 
+const WORKFLOW_TOOLS = [
+  {
+    name: "GitHub",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+      </svg>
+    )
+  },
+  {
+    name: "GitLab",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M23.955 13.587l-1.342-4.135a.447.447 0 0 0-.168-.23.438.438 0 0 0-.276-.08.439.439 0 0 0-.281.086.452.452 0 0 0-.163.224l-2.09 6.435H7.365l-2.09-6.435a.465.465 0 0 0-.163-.224.444.444 0 0 0-.28-.086.436.436 0 0 0-.277.08.448.448 0 0 0-.168.23L.045 13.587a.9.9 0 0 0 .074.757.868.868 0 0 0 .252.284l11.196 8.136a.65.65 0 0 0 .766 0l11.196-8.136a.873.873 0 0 0 .252-.284.9.9 0 0 0 .074-.757zM12 2.69l3.056 9.407H8.944L12 2.69z"/>
+      </svg>
+    )
+  },
+  {
+    name: "VS Code",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M23.985 6.891a.502.502 0 00-.147-.282L19.22 1.637a.501.501 0 00-.847.337v3.528L4.041 1.054a.502.502 0 00-.585.07L.18 3.993a.502.502 0 00-.012.7L4.76 9.423.168 14.161a.502.502 0 00.012.7l3.276 2.869a.502.502 0 00.585.07l14.332-4.448v3.528a.501.501 0 00.847.337l4.619-4.973c.1-.107.156-.251.156-.4V7.292c0-.149-.056-.293-.156-.4zm-5.112 4.339L12 9.091V6.262l6.873 2.15v2.818z"/>
+      </svg>
+    )
+  },
+  {
+    name: "npm",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M0 0v24h24V0H0zm19.2 19.2H14.4V9.6h-4.8v9.6H4.8V4.8h14.4v14.4z"/>
+      </svg>
+    )
+  },
+  {
+    name: "Docker",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M13.983 11.078h2.119c.102 0 .186-.083.186-.185V8.99c0-.102-.084-.186-.186-.186h-2.119c-.103 0-.186.084-.186.186v1.903c0 .102.083.185.186.185zM20.67 9.871c.008.062.014.124.014.187 0 2.222-1.802 4.024-4.024 4.024-1.129 0-2.148-.466-2.883-1.217v.006c-.461.341-1.012.544-1.616.544-.604 0-1.155-.203-1.616-.544v-.006c-.735.751-1.754 1.217-2.883 1.217-2.222 0-4.024-1.802-4.024-4.024 0-.063.006-.125.014-.187v-.006A2.43 2.43 0 0 1 3.513 8.3c.731-.73 1.748-1.182 2.871-1.182.49 0 .95.1 1.368.277.418-.177.878-.277 1.368-.277s.95.1 1.368.277c.418-.177.878-.277 1.368-.277 1.123 0 2.14.452 2.871 1.182a2.43 2.43 0 0 1-.856 1.571v.006z"/>
+      </svg>
+    )
+  },
+  {
+    name: "Node",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5l-3.5-2 3.5-2v4z"/>
+      </svg>
+    )
+  },
+  {
+    name: "Python",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11.992 0c-3.134 0-2.939 1.359-2.939 1.359l.006 1.402h2.96v.421H7.839S5.22 3.125 5.22 6.262c0 3.137 2.278 2.973 2.278 2.973h1.355V7.879s-.044-1.637 1.621-1.637h2.981s1.399.044 1.399-1.285V1.961S14.939 0 11.992 0zm-1.642 1.055a.555.555 0 1 1 0 1.11.555.555 0 0 1 0-1.11z"/>
+      </svg>
+    )
+  },
+  {
+    name: "Rust",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 3.2c4.852 0 8.8 3.948 8.8 8.8s-3.948 8.8-8.8 8.8-8.8-3.948-8.8-8.8 3.948-8.8 8.8-8.8zm-2.4 4.8v8l6.4-4-6.4-4z"/>
+      </svg>
+    )
+  },
+  {
+    name: "Go",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.8 14.5l-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7z"/>
+      </svg>
+    )
+  },
+  {
+    name: "PostgreSQL",
+    icon: (
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.2 12.8h-2.4v-5.6h2.4v5.6z"/>
+      </svg>
+    )
+  }
+];
+
 export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -2337,15 +2420,21 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             </a>
           </div>
 
-          <div className="flex flex-col items-center mt-6">
+          <div className="flex flex-col items-center mt-8 max-w-lg mx-auto z-10">
             <p className={`text-[10px] font-mono tracking-widest ${colors.textSecondary} uppercase mb-4`}>
-              {"Built using technologies developers already trust"}
+              {"Works With Your Workflow"}
             </p>
-            <div className="flex flex-wrap gap-x-10 gap-y-2 justify-center items-center opacity-45 dark:opacity-35 text-[10px] font-mono">
-              {["React", "Node.js", "Python", "Rust", "Go"].map((logo, idx) => (
-                <span key={idx} className="font-bold tracking-wider">{logo}</span>
+            <div className="flex flex-wrap gap-x-6 gap-y-3 justify-center items-center opacity-45 dark:opacity-35 text-zinc-700 dark:text-zinc-300">
+              {WORKFLOW_TOOLS.map((tool, idx) => (
+                <div key={idx} className="flex items-center gap-1.5 hover:text-indigo-400 hover:opacity-100 transition-all duration-200 cursor-default" title={tool.name}>
+                  {tool.icon}
+                  <span className="text-[10px] font-bold font-mono tracking-tight">{tool.name}</span>
+                </div>
               ))}
             </div>
+            <p className={`text-[10px] font-medium tracking-tight ${colors.textSecondary} text-center mt-4 opacity-90 max-w-xs`}>
+              {"Connect your existing workflow without changing how you build."}
+            </p>
           </div>
         </div>
 
