@@ -136,17 +136,16 @@ export default function Home() {
         {/* ==================== EVERYTHING YOU NEED SECTION ==================== */}
         <section className="w-full max-w-5xl px-6 py-24 z-10">
           {/* Header */}
-          <div className={`border-b ${colors.border} pb-10 mb-16`}>
-            <h2 className={`text-5xl md:text-7xl font-light tracking-tighter uppercase leading-[0.9] ${colors.text}`}>
-              {"Everything"}<br/>{"you need."}
-            </h2>
+          <div className="mb-16 text-left">
+            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Platform"}</span>
+            <h2 className={`text-3xl font-semibold tracking-tighter mt-2 ${colors.text}`}>{"everything you need"}</h2>
           </div>
 
           {/* Seamless Content Flow Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             {/* LEFT COLUMN: Cloud Sandbox (spans 8 cols) */}
-            <div className="lg:col-span-8 space-y-8">
+            <div className="lg:col-span-8 space-y-6">
               <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-[#fafafa] dark:bg-[#0A0A0A]">
                 <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#05070B] via-transparent to-transparent z-10 pointer-events-none"></div>
                 <img 
@@ -156,14 +155,14 @@ export default function Home() {
                 />
               </div>
               
-              <div className="max-w-2xl space-y-3">
-                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block uppercase tracking-widest">
+              <div className="max-w-2xl space-y-2">
+                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">
                   {"01 / Infrastructure"}
                 </span>
-                <h3 className={`text-2xl md:text-3xl font-light uppercase tracking-tight ${colors.text}`}>
+                <h3 className={`text-xl md:text-2xl font-semibold tracking-tighter ${colors.text}`}>
                   {"create workspaces or clone your repos"}
                 </h3>
-                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed font-light`}>
+                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
                   {"Spin up containerized workspaces in under 5 seconds. Connect directly to your GitHub, clone any branch, and start coding instantly with full environment parity."}
                 </p>
               </div>
@@ -173,9 +172,9 @@ export default function Home() {
             <div className="lg:col-span-4 space-y-8">
               
               {/* Feature 02: Terminal */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
-                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"02"}</span>
-                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"02"}</span>
+                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
                   {"Terminal"}
                 </h4>
                 <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
@@ -184,9 +183,9 @@ export default function Home() {
               </div>
 
               {/* Feature 03: AI Agent */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
-                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"03"}</span>
-                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"03"}</span>
+                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
                   {"AI Agent"}
                 </h4>
                 <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
@@ -195,9 +194,9 @@ export default function Home() {
               </div>
 
               {/* Feature 04: Web Preview */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
-                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"04"}</span>
-                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"04"}</span>
+                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
                   {"Web Preview"}
                 </h4>
                 <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
@@ -206,9 +205,9 @@ export default function Home() {
               </div>
 
               {/* Feature 05: Git Workflows */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
-                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"05"}</span>
-                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"05"}</span>
+                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
                   {"Git Workflows"}
                 </h4>
                 <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
