@@ -1,3 +1,4 @@
+@import url('https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css');
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
