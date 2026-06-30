@@ -1266,25 +1266,39 @@ const LockScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scroll
       </div>
 
       {/* Pulsing Cloud Icon Outline */}
-      <div 
-        className="animate-pulse flex items-center justify-center transition-all duration-75" 
-        style={{ 
-          animationDuration: '3s',
-          transform: `translateY(${-t * 100}px) scale(${1 - t * 0.1})`,
-          opacity: 1 - t
-        }}
-      >
-        <svg width="36" height="36" viewBox="0 0 874 552" className="opacity-40">
-          <path
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="24"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
+      {(() => {
+        const zoomT = Math.max(0, Math.min(1, (scrollProgress - 0.30) / 0.05));
+        const cloudScale = zoomT > 0
+          ? 0.9 + zoomT * 12
+          : 1 - t * 0.1;
+        const cloudOpacity = zoomT > 0
+          ? 0.4 + zoomT * 0.6
+          : 1 - t;
+        const cloudY = zoomT > 0
+          ? -t * 100 * (1 - zoomT)
+          : -t * 100;
+        return (
+          <div 
+            className="flex items-center justify-center transition-all duration-75" 
+            style={{ 
+              transform: `translateY(${cloudY}px) scale(${cloudScale})`,
+              opacity: cloudOpacity,
+              transformOrigin: "center"
+            }}
+          >
+            <svg width="36" height="36" viewBox="0 0 874 552" className="transition-all duration-75">
+              <path
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="24"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        );
+      })()}
 
       {/* Bottom Swipe Indicator */}
       <div 
@@ -1813,13 +1827,21 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   const isDark = theme === "dark";
 
   // Calculate Opacities and Scales for the transition and splash
-  const mockupOpacity = scrollProgress < 0.35 
+  const mockupOpacity = scrollProgress < 0.33 
     ? 1 
-    : Math.max(0, Math.min(1, 1 - (scrollProgress - 0.35) / 0.08));
+    : scrollProgress > 0.35 
+      ? 0 
+      : 1 - (scrollProgress - 0.33) / 0.02;
 
-  const logoOpacity = scrollProgress < 0.35 
+  const logoOpacity = scrollProgress < 0.33 
     ? 0 
-    : Math.max(0, Math.min(1, (scrollProgress - 0.35) / 0.08));
+    : scrollProgress > 0.35 
+      ? 1 
+      : (scrollProgress - 0.33) / 0.02;
+
+  const flashOpacity = scrollProgress >= 0.33 && scrollProgress <= 0.37
+    ? Math.max(0, 1 - Math.abs(scrollProgress - 0.35) / 0.02)
+    : 0;
 
   // 1. Tracing progress (0.0 to 1.0 between 0.40 and 0.70)
   const drawT = Math.max(0, Math.min(1, (scrollProgress - 0.40) / 0.30));
@@ -2027,6 +2049,16 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
               </div>
             </div>
           </div>
+        )}
+
+        {/* Cinematic Flash Transition Overlay */}
+        {flashOpacity > 0.01 && (
+          <div 
+            className="absolute inset-0 bg-white dark:bg-zinc-100 pointer-events-none z-50 transition-opacity duration-75"
+            style={{ 
+              opacity: flashOpacity * 0.95
+            }}
+          />
         )}
       </div>
     </div>
