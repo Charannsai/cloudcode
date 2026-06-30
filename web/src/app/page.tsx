@@ -1646,8 +1646,6 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
   return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
 };
 
-// Left/Right layout slots are handled directly in the JSX using CSS transitions for maximum smoothness.
-
 const PhoneMockup = ({ 
   scrollProgress, 
   theme, 
@@ -1667,15 +1665,7 @@ const PhoneMockup = ({
 
   // Dynamic Island status indicator based on scrollProgress (No emojis)
   const getIslandIcon = () => {
-    if (scrollProgress < 0.28) return <span className="text-[6px] text-indigo-450 dark:text-indigo-400 animate-pulse font-mono">Syncing</span>;
-    if (scrollProgress >= 0.28 && scrollProgress < 0.52) {
-      return (
-        <span className="w-1.5 h-1.5 rounded-full border border-t-transparent border-indigo-500 animate-spin" />
-      );
-    }
-    if (scrollProgress >= 0.52 && scrollProgress < 0.64) return <span className="text-[6px] text-indigo-400 font-mono">bash</span>;
-    if (scrollProgress >= 0.64 && scrollProgress < 0.76) return <span className="text-[6px] text-gray-400 font-bold font-mono">AI</span>;
-    return <span className="text-[6px] text-emerald-500 font-mono">Live</span>;
+    return <span className="text-[6px] text-indigo-455 dark:text-indigo-400 animate-pulse font-mono">Syncing</span>;
   };
 
   const shadowX = -8 - (mouseOffset.x * 15);
@@ -1783,67 +1773,6 @@ const PhoneMockup = ({
   );
 };
 
-const STEPS = [
-  { id: "phone_rise", title: "", description: "", cardType: "system", badge: "SYSTEM: INITIALIZING" },
-  { id: "welcome_phase", title: "", description: "", cardType: "system", badge: "SYSTEM: WELCOME" },
-  { id: "arrival", title: "The Mobile-First<br />Workspace", description: "Welcome to CloudCode, the first engineering workspace you can carry in your pocket. Spin up, code, and preview full-stack applications anywhere, anytime.", cardType: "system", badge: "SYSTEM: ACTIVE" },
-  { id: "sandbox_orbit", title: "Create Dev<br />Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox", badge: "RUNTIME: SANDBOX" },
-  { id: "sandbox_load", title: "Container<br />Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox", badge: "RUNTIME: ONLINE" },
-  { id: "terminal", title: "Isolated<br />Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions right on your mobile screen.", cardType: "terminal", badge: "SHELL: BASH" },
-  { id: "editor", title: "AI-Powered<br />Editor", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor", badge: "IDE: SOURCE" },
-  { id: "git", title: "Git & PR<br />Workflows", description: "Manage source control, commit changes, and review code diffs directly from your device.", cardType: "git", badge: "VCS: GIT" },
-  { id: "previews", title: "Live Browser<br />Preview", description: "Run your previews seamlessly. Previews can be displayed in mobile, and it scrolls just as a native browser does. Transition to desktop to inspect logs and preview side-by-side.", cardType: "preview", badge: "PORT: 3000" },
-  { id: "exit", title: "Return to<br />Orbit", description: "Step back out of the workspace. Your session remains persistent in the cloud, ready whenever you return.", cardType: "system", badge: "SYSTEM: PERSISTENT" }
-];
-
-const getGlowColor = (step: string, isDark: boolean) => {
-  const op = isDark ? "0.08" : "0.05";
-  switch (step) {
-    case "phone_rise":
-    case "welcome_phase":
-    case "arrival":
-      return `radial-gradient(circle, rgba(99, 102, 241, ${op}) 0%, rgba(99, 102, 241, 0) 70%)`; // Indigo
-    case "sandbox_orbit":
-    case "sandbox_load":
-      return `radial-gradient(circle, rgba(16, 185, 129, ${op}) 0%, rgba(16, 185, 129, 0) 70%)`; // Emerald
-    case "terminal":
-      return `radial-gradient(circle, rgba(59, 130, 246, ${op}) 0%, rgba(59, 130, 246, 0) 70%)`; // Blue
-    case "editor":
-      return `radial-gradient(circle, rgba(139, 92, 246, ${op}) 0%, rgba(139, 92, 246, 0) 70%)`; // Purple
-    case "git":
-      return `radial-gradient(circle, rgba(236, 72, 153, ${op}) 0%, rgba(236, 72, 153, 0) 70%)`; // Pink
-    case "previews":
-      return `radial-gradient(circle, rgba(245, 158, 11, ${op}) 0%, rgba(245, 158, 11, 0) 70%)`; // Amber
-    default:
-      return `radial-gradient(circle, rgba(99, 102, 241, ${op}) 0%, rgba(99, 102, 241, 0) 70%)`;
-  }
-};
-
-const getGlowColorValue = (step: string) => {
-  switch (step) {
-    case "phone_rise":
-    case "welcome_phase":
-    case "arrival":
-      return "#6366F1";
-    case "sandbox_orbit":
-    case "sandbox_load":
-      return "#10B981";
-    case "terminal":
-      return "#3B82F6";
-    case "editor":
-      return "#8B5CF6";
-    case "git":
-      return "#EC4899";
-    case "previews":
-      return "#F59E0B";
-    default:
-      return "#6366F1";
-  }
-};
-
-const WATERMARK_LEFT = ["React", "Node.js", "Python", "Rust", "Go"];
-const WATERMARK_RIGHT = ["Docker", "GitHub", "Postgres", "Linux", "Cloudflare"];
-
 export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1872,14 +1801,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       let step = "phone_rise";
       if (progress < 0.15) step = "phone_rise";
       else if (progress >= 0.15 && progress < 0.35) step = "welcome_phase";
-      else if (progress >= 0.35 && progress < 0.48) step = "arrival";
-      else if (progress >= 0.48 && progress < 0.58) step = "sandbox_orbit";
-      else if (progress >= 0.58 && progress < 0.68) step = "sandbox_load";
-      else if (progress >= 0.68 && progress < 0.78) step = "terminal";
-      else if (progress >= 0.78 && progress < 0.86) step = "editor";
-      else if (progress >= 0.86 && progress < 0.92) step = "git";
-      else if (progress >= 0.92 && progress < 0.96) step = "previews";
-      else step = "exit";
+      else step = "logo_transition";
 
       setActiveStep(step);
     };
@@ -1887,65 +1809,9 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationFrameId = 0;
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-
-    const animLoop = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const isDark = theme === "dark";
-
-      const cy = canvas.height / 2;
-      const cx = canvas.width / 2;
-
-      // Draw Subtle Perspective Grid Lines with a fading radial gradient stroke
-      const gradient = ctx.createRadialGradient(cx, cy, 10, cx, cy, canvas.width / 1.8);
-      gradient.addColorStop(0, isDark ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.05)");
-      gradient.addColorStop(0.5, isDark ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.012)");
-      gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-      
-      ctx.strokeStyle = gradient;
-      ctx.lineWidth = 1.2;
-      const gridGap = 85;
-
-      // Vertical perspective lines radiating from center
-      for (let x = -8; x <= 8; x++) {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + x * 320, canvas.height);
-        ctx.stroke();
-      }
-
-      // Horizontal scrolling grid lines (using ref to avoid rebuilding useEffect on scroll)
-      const scrollOffset = (scrollProgressRef.current * 220) % gridGap;
-      for (let y = cy; y < canvas.height; y += gridGap) {
-        const dy = y + scrollOffset;
-        ctx.beginPath();
-        ctx.moveTo(0, dy);
-        ctx.lineTo(canvas.width, dy);
-        ctx.stroke();
-      }
-
-      animationFrameId = requestAnimationFrame(animLoop);
-    };
-
-    animLoop();
-
     return () => {
       window.removeEventListener("resize", checkMobile);
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", resizeCanvas);
-      cancelAnimationFrame(animationFrameId);
     };
   }, [theme]);
 
@@ -1963,21 +1829,22 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   const transformStyle = get3DTransform(scrollProgress, isMobile, mouseOffset.x, mouseOffset.y);
   const isDark = theme === "dark";
 
-  let mockupOpacity = 1;
-  if (scrollProgress >= 0.90 && scrollProgress < 0.94) {
-    mockupOpacity = 1 - (scrollProgress - 0.90) / 0.04;
-  } else if (scrollProgress >= 0.94 && scrollProgress < 0.96) {
-    mockupOpacity = 0;
-  } else if (scrollProgress >= 0.96 && scrollProgress < 1.0) {
-    mockupOpacity = (scrollProgress - 0.96) / 0.04;
-  }
+  // Calculate Opacities for the transition
+  const mockupOpacity = scrollProgress < 0.35 
+    ? 1 
+    : Math.max(0, Math.min(1, 1 - (scrollProgress - 0.35) / 0.08));
 
-  const showFullscreenIDE = scrollProgress >= 0.92 && scrollProgress < 0.97;
+  const logoOpacity = scrollProgress < 0.35 
+    ? 0 
+    : Math.max(0, Math.min(1, (scrollProgress - 0.35) / 0.08));
+
+  const drawT = Math.max(0, Math.min(1, (scrollProgress - 0.40) / 0.35));
+  const textOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.65) / 0.20));
 
   return (
     <div 
       ref={containerRef} 
-      className={`relative w-full h-[1200vh] border-y transition-colors duration-300 ${
+      className={`relative w-full h-[500vh] border-y transition-colors duration-300 ${
         isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
       }`}
     >
@@ -1986,8 +1853,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
-
         <div 
           className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 pointer-events-none"
           style={{
@@ -2032,37 +1897,11 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
               {"Built using technologies developers already trust"}
             </p>
             <div className="flex flex-wrap gap-x-10 gap-y-2 justify-center items-center opacity-45 dark:opacity-35 text-[10px] font-mono">
-              {["React", "Node.js", "Supabase", "Docker", "GitHub", "OpenAI", "Anthropic", "Linux", "Cloudflare"].map((logo, idx) => (
+              {["React", "Node.js", "Python", "Rust", "Go"].map((logo, idx) => (
                 <span key={idx} className="font-bold tracking-wider">{logo}</span>
               ))}
             </div>
           </div>
-        </div>
-
-        <div 
-          className={`absolute inset-0 z-5 pointer-events-none transition-opacity duration-300 ${
-            isDark ? "bg-[#030303]" : "bg-[#FAFAFA]"
-          }`}
-          style={{
-            opacity: Math.min(1, scrollProgress / 0.15)
-          }}
-        />
-
-        <div 
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-8 overflow-hidden px-6"
-          style={{
-            opacity: (scrollProgress >= 0.15 && scrollProgress < 0.35)
-              ? Math.sin(((scrollProgress - 0.15) / 0.20) * Math.PI) * 0.45
-              : 0
-          }}
-        >
-          <span className={`text-[7vw] font-black tracking-[0.18em] text-center uppercase leading-none bg-clip-text text-transparent bg-gradient-to-b ${
-            isDark 
-              ? "from-white/40 to-white/5" 
-              : "from-black/30 to-black/5"
-          }`}>
-            WELCOME TO<br />CLOUDCODE
-          </span>
         </div>
 
         {/* B. Glowing Aura behind phone (Dynamic Color Shifting) */}
@@ -2091,89 +1930,72 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* G. Left Side Heading Fade Layer (Two Lines, Behind Phone) */}
-        {!isMobile && (
+        {/* Centered Large Logo Transition Layer */}
+        {scrollProgress >= 0.35 && (
           <div 
-            className="absolute left-[10%] md:left-[16%] top-[18%] w-[850px] h-[320px] z-8 pointer-events-none select-none text-left"
+            className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 px-6"
             style={{
-              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
-              transition: "opacity 0.5s ease-in-out"
+              opacity: logoOpacity,
             }}
           >
-            {STEPS.map((step) => {
-              const isActive = step.id === activeStep;
-              return (
-                <div 
-                  key={step.id}
-                  className="absolute inset-0 flex flex-col justify-center transition-all duration-500 ease-in-out"
+            {/* Massive Glowing Logo & Brand Intro */}
+            <div className="flex flex-col items-center gap-6 select-none relative">
+              {/* Glowing Ambient Glow behind the logo */}
+              <div 
+                className="absolute w-[350px] h-[350px] rounded-full blur-[100px] pointer-events-none transition-all duration-1000 ease-in-out -z-1"
+                style={{ 
+                  opacity: Math.max(0, Math.min(0.25, (scrollProgress - 0.50) / 0.20)),
+                  background: isDark 
+                    ? "radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(16, 185, 129, 0.2) 50%, rgba(0,0,0,0) 100%)"
+                    : "radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, rgba(16, 185, 129, 0.1) 50%, rgba(0,0,0,0) 100%)"
+                }}
+              />
+
+              <svg 
+                width={isMobile ? "140" : "200"} 
+                height={isMobile ? "90" : "135"} 
+                viewBox="0 0 874 552" 
+                className="transition-all duration-300"
+              >
+                <path
+                  d={CLOUD_PATH}
+                  fill={isDark ? `rgba(255, 255, 255, ${Math.max(0, Math.min(0.08, (scrollProgress - 0.55) / 0.25))})` : `rgba(15, 17, 21, ${Math.max(0, Math.min(0.05, (scrollProgress - 0.55) / 0.25))})`}
+                  stroke={isDark ? "#FFFFFF" : "#0F1115"}
+                  strokeWidth="16"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray="2500"
+                  strokeDashoffset={(1 - drawT) * 2500}
+                  className="transition-all duration-75 ease-out"
+                />
+              </svg>
+
+              <div 
+                className="flex flex-col items-center gap-3 text-center transition-all duration-300"
+                style={{
+                  opacity: textOpacity,
+                  transform: `translateY(${(1 - textOpacity) * 20}px)`
+                }}
+              >
+                <h2 
+                  className={`text-4xl md:text-6xl font-black uppercase tracking-[0.18em] leading-none ${
+                    isDark ? "text-white" : "text-[#0F1115]"
+                  }`}
                   style={{
-                    opacity: isActive ? 1 : 0,
-                    transform: `translateY(${isActive ? 0 : 15}px)`,
-                    pointerEvents: isActive ? "auto" : "none"
+                    letterSpacing: `${(1 - textOpacity) * 0.4 + 0.18}em`
                   }}
                 >
-                  {step.title && (
-                    <h3 
-                      className={`text-5xl md:text-7xl lg:text-[5vw] font-black tracking-tight leading-[0.95] uppercase bg-clip-text text-transparent bg-gradient-to-b ${
-                        isDark 
-                          ? "from-white/35 to-white/5" 
-                          : "from-black/25 to-black/5"
-                      }`}
-                      dangerouslySetInnerHTML={{ __html: step.title }}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                  CloudCode
+                </h2>
+                <p className={`text-[10px] md:text-xs font-mono uppercase tracking-[0.25em] ${
+                  isDark ? "text-gray-400" : "text-gray-555"
+                }`}>
+                  Mobile-First Engineering Workspace
+                </p>
+              </div>
+            </div>
           </div>
         )}
-
-        {/* H. Right Side Description Fade Layer (Middle-to-Bottom-Right) */}
-        {!isMobile && (
-          <div 
-            className="absolute right-28 md:right-[18%] bottom-[28%] w-[240px] h-[180px] z-30 pointer-events-none select-none text-left"
-            style={{
-              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
-              transition: "opacity 0.5s ease-in-out"
-            }}
-          >
-            {STEPS.map((step) => {
-              const isActive = step.id === activeStep;
-              return (
-                <div 
-                  key={step.id}
-                  className="absolute inset-0 flex flex-col justify-end pb-4 transition-all duration-500 ease-in-out"
-                  style={{
-                    opacity: isActive ? 1 : 0,
-                    transform: `translateY(${isActive ? 0 : 15}px)`,
-                    pointerEvents: isActive ? "auto" : "none"
-                  }}
-                >
-                  {step.description && (
-                    <p className={`text-xs md:text-sm leading-relaxed ${
-                      isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-                    }`}>
-                      {step.description}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div 
-        className="fixed inset-0 w-screen h-screen z-40 transition-all duration-500 p-4 md:p-8 flex items-center justify-center pointer-events-none"
-        style={{
-          opacity: showFullscreenIDE ? 1 : 0,
-          transform: showFullscreenIDE ? "scale(1)" : "scale(0.92)",
-          pointerEvents: showFullscreenIDE ? "auto" : "none"
-        }}
-      >
-        <div className="w-full h-full max-w-6xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl">
-          <WorkspaceIDE activeStep={activeStep} theme={theme} scrollProgress={scrollProgress} />
-        </div>
       </div>
     </div>
   );
