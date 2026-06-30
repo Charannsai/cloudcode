@@ -411,7 +411,7 @@ export default function Home() {
               <img 
                 src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
                 alt="CloudCode" 
-                className="h-6 w-auto object-contain"
+                className={theme === "dark" ? "h-[21px] my-[1.5px] w-auto object-contain" : "h-6 w-auto object-contain"}
               />
             </div>
             
@@ -971,7 +971,7 @@ export default function Home() {
               <img 
                 src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
                 alt="CloudCode" 
-                className="h-6 w-auto object-contain"
+                className={theme === "dark" ? "h-[21px] my-[1.5px] w-auto object-contain" : "h-6 w-auto object-contain"}
               />
               <p className={`text-xs ${colors.textSecondary} max-w-xs leading-relaxed`}>
                 {"Designed for builders. Engineered for the future."}
