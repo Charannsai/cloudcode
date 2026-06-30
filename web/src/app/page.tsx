@@ -1974,34 +1974,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                 style={{ 
                   opacity: Math.max(0, Math.min(0.25, (scrollProgress - 0.50) / 0.20)),
                   background: isDark 
-                    ? "radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(16, 185, 129, 0.2) 50%, rgba(0,0,0,0) 100%)"
-                    : "radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, rgba(16, 185, 129, 0.1) 50%, rgba(0,0,0,0) 100%)"
-                }}
-              />
-
-              <svg 
-                width={isMobile ? "140" : "200"} 
-                height={isMobile ? "90" : "135"} 
-                viewBox="0 0 874 552" 
-                className="transition-all duration-300"
-              >
-                <path
-                  d={CLOUD_PATH}
-                  fill={isDark ? `rgba(255, 255, 255, ${Math.max(0, Math.min(0.08, (scrollProgress - 0.55) / 0.25))})` : `rgba(15, 17, 21, ${Math.max(0, Math.min(0.05, (scrollProgress - 0.55) / 0.25))})`}
-                  stroke={isDark ? "#FFFFFF" : "#0F1115"}
-                  strokeWidth="16"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeDasharray="2500"
-                  strokeDashoffset={(1 - drawT) * 2500}
-                  className="transition-all duration-75 ease-out"
-                />
-              </svg>
-
-              <div 
-                className="flex flex-col items-center gap-3 text-center transition-all duration-300"
-                style={{
-                  opacity: textOpacity,
                   transform: `translateY(${(1 - textOpacity) * 20}px)`
                 }}
               >
