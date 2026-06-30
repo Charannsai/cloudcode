@@ -2037,7 +2037,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             <div 
               className="transition-transform duration-750 flex flex-col"
               style={{
-                transform: `translateY(${160 - (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 320}px)`,
+                transform: `translateY(${- (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 320}px)`,
                 transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
               }}
             >
