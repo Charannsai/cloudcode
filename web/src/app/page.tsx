@@ -136,20 +136,10 @@ export default function Home() {
         {/* ==================== EVERYTHING YOU NEED SECTION ==================== */}
         <section className="w-full max-w-5xl px-6 py-24 z-10">
           {/* Header */}
-          <div className={`flex flex-col md:flex-row md:items-end justify-between border-b ${colors.border} pb-10 mb-16 gap-6`}>
-            <div className="max-w-4xl space-y-4">
-              <p className="font-mono text-[9px] uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                {"System Runtime / Stable v2.4.0"}
-              </p>
-              <h2 className={`text-5xl md:text-7xl font-light tracking-tighter uppercase leading-[0.9] ${colors.text}`}>
-                {"Everything"}<br/>{"you need."}
-              </h2>
-            </div>
-            <div className="md:text-right font-mono text-[9px] text-gray-500 dark:text-gray-400 leading-relaxed uppercase">
-              {"Workspace Nodes: Active"}<br/>
-              {"Response Latency: 14ms"}<br/>
-              {"Edge Status: Optimal"}
-            </div>
+          <div className={`border-b ${colors.border} pb-10 mb-16`}>
+            <h2 className={`text-5xl md:text-7xl font-light tracking-tighter uppercase leading-[0.9] ${colors.text}`}>
+              {"Everything"}<br/>{"you need."}
+            </h2>
           </div>
 
           {/* Seamless Content Flow Grid */}
