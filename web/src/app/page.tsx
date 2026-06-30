@@ -1662,7 +1662,10 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
       />
       <div 
         className={`absolute right-[-3px] top-32 w-[3px] h-16 rounded-r ${isDark ? "bg-[#2D3039]" : "bg-gray-400"}`} 
-        style={{ transform: "transla      {/* Screen container with translateZ to pop it forward in 3D */}
+        style={{ transform: "translateZ(-8px)" }}
+      />
+
+      {/* Screen container with translateZ to pop it forward in 3D */}
       <div 
         className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border ${
           isDark ? "bg-[#030303] border-black/50" : "bg-white border-gray-200"
@@ -1699,7 +1702,6 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
               <path d="M22 11v2" />
             </svg>
           </div>
-        </div>   </div>
         </div>
 
         {/* Screen Content */}
