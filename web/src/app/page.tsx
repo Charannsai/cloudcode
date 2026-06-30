@@ -1535,24 +1535,24 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
 };
 
 const KEYFRAMES = [
-  // 1. Arrival & Boot (0.0 - 0.18) - Phone assembles and boots up
+  // 1. Arrival & Boot (0.0 - 0.15) - Phone assembles and boots up
   { p: 0.0, rx: 35, ry: -45, rz: 12, s: 0.25, tx: 0, ty: 180, tz: -100, bezelOpacity: 1 },
-  { p: 0.18, rx: 12, ry: -15, rz: 5, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
-  // 2. Sandbox Orbit (0.18 - 0.32) - Centered, preparing to load
-  { p: 0.32, rx: 5, ry: 0, rz: 0, s: 1.35, tx: 0, ty: 0, tz: 40, bezelOpacity: 1 },
-  // 3. Sandbox Load (0.32 - 0.44) - Centered zoom
-  { p: 0.44, rx: 0, ry: 0, rz: 0, s: 1.35, tx: 0, ty: 0, tz: 60, bezelOpacity: 1 },
-  // 4. Portal Zoom (WOW) (0.44 - 0.52) - Deep zoom, bezel disappearing
-  { p: 0.52, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 5. Terminal (0.52 - 0.64) - Fullscreen IDE
-  { p: 0.64, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 6. AI Refactor (0.64 - 0.74) - Fullscreen IDE
-  { p: 0.74, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 7. Git Flow (0.74 - 0.84) - Fullscreen IDE
-  { p: 0.84, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 8. Live Preview (0.84 - 0.94) - Fullscreen IDE
-  { p: 0.94, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 9. Exit (0.94 - 1.0) - Re-emerge to floating phone
+  { p: 0.15, rx: 12, ry: -15, rz: 5, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 2. Sandbox Orbit (0.15 - 0.28) - Centered
+  { p: 0.28, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
+  // 3. Sandbox Load (0.28 - 0.40) - Centered
+  { p: 0.40, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 4. Terminal (0.40 - 0.52) - Terminal screen on phone
+  { p: 0.52, rx: -8, ry: 12, rz: -3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 5. Editor (0.52 - 0.64) - Editor screen on phone
+  { p: 0.64, rx: 8, ry: -12, rz: 3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 6. Git (0.64 - 0.78) - Git screen on phone
+  { p: 0.78, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 7. Previews (0.78 - 0.92) - Starts on phone, then deep zooms to fullscreen desktop preview
+  { p: 0.82, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  { p: 0.88, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  { p: 0.92, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 8. Exit (0.92 - 1.0) - Re-emerge to floating phone
   { p: 1.0, rx: 15, ry: -20, rz: 10, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 }
 ];
 
@@ -1712,29 +1712,17 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 
 const STEPS = [
   { id: "arrival", title: "The Mobile-First Workspace", description: "Your phone is now a fully-equipped engineering environment. Tracing and booting the CloudCode sandbox.", cardType: "standard" },
-  { id: "sandbox_orbit", title: "Create Dev Environments", description: "Instantly spin up isolated cloud containers from your repositories. Pre-configured Docker environments with zero setup.", cardType: "sandbox" },
-  { id: "sandbox_load", title: "Container Online", description: "Launch isolated workspaces for any language or framework in seconds with root access.", cardType: "sandbox" },
-  { id: "portal_zoom", title: "Entering the Workspace", description: "Dolly zoom directly into the screen. The bezel fades, and the IDE becomes your browser.", cardType: "standard" },
-  { id: "terminal", title: "Isolated Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions emerging from the side.", cardType: "terminal" },
+  { id: "sandbox_orbit", title: "Create Dev Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox" },
+  { id: "sandbox_load", title: "Container Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox" },
+  { id: "terminal", title: "Isolated Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions right on your mobile screen.", cardType: "terminal" },
   { id: "editor", title: "AI-Powered Editor", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor" },
-  { id: "git", title: "Git & PR Workflows", description: "Manage source control, commit changes, and merge pull requests with animated branch graphs.", cardType: "git" },
-  { id: "previews", title: "Live Browser Preview", description: "Test your web applications with an integrated browser preview featuring hot-reloading and console logging.", cardType: "preview" },
-  { id: "exit", title: "Return to Orbit", description: "Pull back out of the workspace. The phone frame reappears, settling into its floating position.", cardType: "standard" }
+  { id: "git", title: "Git & PR Workflows", description: "Manage source control, commit changes, and review code diffs directly from your device.", cardType: "git" },
+  { id: "previews", title: "Live Browser Preview", description: "Run your previews seamlessly. Previews can be displayed in mobile, and it scrolls just as a native browser does. Transition to desktop to inspect logs and preview side-by-side.", cardType: "preview" },
+  { id: "exit", title: "Return to Orbit", description: "Step back out of the workspace. Your session remains persistent in the cloud, ready whenever you return.", cardType: "standard" }
 ];
 
-const HONEYCOMB_CELLS = [
-  { name: "React", label: "React", top: "25%", left: "15%" },
-  { name: "Node", label: "Node.js", top: "45%", left: "10%" },
-  { name: "Python", label: "Python", top: "65%", left: "15%" },
-  { name: "Rust", label: "Rust", top: "35%", left: "22%" },
-  { name: "Go", label: "Go", top: "55%", left: "22%" },
-  
-  { name: "Docker", label: "Docker", top: "25%", right: "15%" },
-  { name: "Git", label: "Git", top: "45%", right: "10%" },
-  { name: "Postgres", label: "Postgres", top: "65%", right: "15%" },
-  { name: "Linux", label: "Linux", top: "35%", right: "22%" },
-  { name: "Tailwind", label: "Tailwind", top: "55%", right: "22%" },
-];
+const WATERMARK_LEFT = ["React", "Node.js", "Python", "Rust", "Go"];
+const WATERMARK_RIGHT = ["Docker", "GitHub", "Postgres", "Linux", "Cloudflare"];
 
 export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1761,13 +1749,12 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       // Determine active step based on progress thresholds
       let step = "arrival";
       if (progress < 0.18) step = "arrival";
-      else if (progress >= 0.18 && progress < 0.32) step = "sandbox_orbit";
-      else if (progress >= 0.32 && progress < 0.44) step = "sandbox_load";
-      else if (progress >= 0.44 && progress < 0.52) step = "portal_zoom";
-      else if (progress >= 0.52 && progress < 0.64) step = "terminal";
-      else if (progress >= 0.64 && progress < 0.74) step = "editor";
-      else if (progress >= 0.74 && progress < 0.84) step = "git";
-      else if (progress >= 0.84 && progress < 0.94) step = "previews";
+      else if (progress >= 0.18 && progress < 0.30) step = "sandbox_orbit";
+      else if (progress >= 0.30 && progress < 0.42) step = "sandbox_load";
+      else if (progress >= 0.42 && progress < 0.54) step = "terminal";
+      else if (progress >= 0.54 && progress < 0.66) step = "editor";
+      else if (progress >= 0.66 && progress < 0.78) step = "git";
+      else if (progress >= 0.78 && progress < 0.93) step = "previews";
       else step = "exit";
 
       setActiveStep(step);
@@ -1776,23 +1763,13 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    // 60FPS Canvas Stars Background Loop
+    // 60FPS Canvas Background Loop (Clean grid lines, no blinking stars)
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let animationFrameId = 0;
-    const stars: { x: number, y: number, size: number, speed: number, alpha: number }[] = [];
-    for (let i = 0; i < 60; i++) {
-      stars.push({
-        x: Math.random() * 2000 - 1000,
-        y: Math.random() * 2000 - 1000,
-        size: Math.random() * 1.5 + 0.5,
-        speed: Math.random() * 0.05 + 0.02,
-        alpha: Math.random() * 0.5 + 0.3
-      });
-    }
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -1805,23 +1782,23 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const isDark = theme === "dark";
 
-      // 1. Draw Subtle Perspective Grid Lines in background
-      ctx.strokeStyle = isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)";
+      // Draw Subtle Perspective Grid Lines in background
+      ctx.strokeStyle = isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.012)";
       ctx.lineWidth = 1;
-      const gridGap = 80;
+      const gridGap = 85;
       const cy = canvas.height / 2;
       const cx = canvas.width / 2;
 
       // Vertical perspective lines radiating from center
-      for (let x = -10; x <= 10; x++) {
+      for (let x = -8; x <= 8; x++) {
         ctx.beginPath();
         ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + x * 300, canvas.height);
+        ctx.lineTo(cx + x * 320, canvas.height);
         ctx.stroke();
       }
 
       // Horizontal scrolling grid lines
-      const scrollOffset = (scrollProgress * 200) % gridGap;
+      const scrollOffset = (scrollProgress * 220) % gridGap;
       for (let y = cy; y < canvas.height; y += gridGap) {
         const dy = y + scrollOffset;
         ctx.beginPath();
@@ -1829,25 +1806,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         ctx.lineTo(canvas.width, dy);
         ctx.stroke();
       }
-
-      // 2. Draw Twinkling Starfield
-      ctx.fillStyle = isDark ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.4)";
-      stars.forEach(star => {
-        star.alpha += star.speed;
-        if (star.alpha > 1 || star.alpha < 0.2) star.speed = -star.speed;
-
-        // Parallax coordinate offset
-        const px = cx + star.x + (mouseOffset.x * 30);
-        const py = cy + star.y + (mouseOffset.y * 30);
-
-        if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
-          ctx.globalAlpha = star.alpha;
-          ctx.beginPath();
-          ctx.arc(px, py, star.size, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
-      ctx.globalAlpha = 1.0;
 
       animationFrameId = requestAnimationFrame(animLoop);
     };
@@ -1877,18 +1835,18 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   const transformStyle = get3DTransform(scrollProgress, isMobile, mouseOffset.x, mouseOffset.y);
   const isDark = theme === "dark";
 
-  // Interpolate mockup opacity: disappears during fullscreen zoom
+  // Interpolate mockup opacity: disappears during fullscreen zoom (only at previews)
   let mockupOpacity = 1;
-  if (scrollProgress >= 0.44 && scrollProgress < 0.52) {
-    mockupOpacity = 1 - (scrollProgress - 0.44) / 0.08;
-  } else if (scrollProgress >= 0.52 && scrollProgress < 0.94) {
+  if (scrollProgress >= 0.82 && scrollProgress < 0.88) {
+    mockupOpacity = 1 - (scrollProgress - 0.82) / 0.06;
+  } else if (scrollProgress >= 0.88 && scrollProgress < 0.94) {
     mockupOpacity = 0;
   } else if (scrollProgress >= 0.94 && scrollProgress < 1.0) {
     mockupOpacity = (scrollProgress - 0.94) / 0.06;
   }
 
-  // Determine if we show the fullscreen desktop IDE overlay
-  const showFullscreenIDE = scrollProgress >= 0.48 && scrollProgress < 0.95;
+  // Determine if we show the fullscreen desktop IDE overlay (during previews)
+  const showFullscreenIDE = scrollProgress >= 0.85 && scrollProgress < 0.95;
 
   return (
     <div 
@@ -1897,18 +1855,22 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
       }`}
     >
+      {/* Sticky Container wrapping everything */}
       <div 
         className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden z-20"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
+        {/* A. Canvas Background */}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
+        {/* B. Glowing Aura behind phone */}
         <div 
           className="absolute w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none transition-opacity duration-300 z-5"
           style={{ opacity: mockupOpacity }}
         />
         
+        {/* C. 3D Phone Wrapper */}
         <div 
           className="relative z-10 transition-all duration-300 ease-out"
           style={{
@@ -1923,50 +1885,33 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* D. Honeycomb Cells Background (Fixed on left and right sides) */}
+        {/* D. Monochromatic Tech Watermarks (Fixed on left and right sides) */}
         {!isMobile && (
           <div 
-            className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
-            style={{ opacity: mockupOpacity }}
+            className="absolute inset-0 pointer-events-none z-10 flex justify-between items-center px-12 select-none"
+            style={{ opacity: mockupOpacity * 0.25 }}
           >
-            {HONEYCOMB_CELLS.map((cell, idx) => {
-              const isLeftCell = 'left' in cell;
-              const posStyle = isLeftCell 
-                ? { top: cell.top, left: cell.left } 
-                : { top: cell.top, right: cell.right };
-                
-              return (
-                <div 
-                  key={idx}
-                  className="absolute flex flex-col items-center justify-center transition-all duration-500 group"
-                  style={{
-                    ...posStyle,
-                    width: '72px',
-                    height: '72px',
-                  }}
-                >
-                  <div 
-                    className={`w-14 h-16 flex items-center justify-center relative border transition-all duration-500 ${
-                      isDark 
-                        ? "bg-white/[0.02] border-white/5 text-indigo-400/80 shadow-indigo-500/5 shadow-inner" 
-                        : "bg-black/[0.01] border-black/5 text-indigo-600/80 shadow-sm"
-                    }`}
-                    style={{
-                      clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-                    }}
-                  >
-                    <div className="scale-90 opacity-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-350">
-                      {getIcon(cell.name)}
-                    </div>
-                  </div>
-                  <span className={`text-[7px] font-mono font-bold mt-1.5 tracking-wider uppercase opacity-40 group-hover:opacity-80 transition-opacity ${
-                    isDark ? 'text-gray-400' : 'text-gray-655'
-                  }`}>
-                    {cell.label}
-                  </span>
-                </div>
-              );
-            })}
+            {/* Left Column */}
+            <div className="flex flex-col gap-10 text-left">
+              {WATERMARK_LEFT.map((tech, idx) => (
+                <span key={idx} className={`text-xs font-extrabold font-mono tracking-[0.25em] uppercase ${
+                  isDark ? "text-white" : "text-[#0F1115]"
+                }`}>
+                  {tech}
+                </span>
+              ))}
+            </div>
+
+            {/* Right Column */}
+            <div className="flex flex-col gap-10 text-right">
+              {WATERMARK_RIGHT.map((tech, idx) => (
+                <span key={idx} className={`text-xs font-extrabold font-mono tracking-[0.25em] uppercase ${
+                  isDark ? "text-white" : "text-[#0F1115]"
+                }`}>
+                  {tech}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1975,20 +1920,22 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           <>
             {/* Left Side Copy */}
             <div 
-              className="absolute left-20 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
+              className="absolute left-24 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
               style={{
                 opacity: (activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 1 : 0,
                 transform: `translateY(-50%) translateX(${(activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 0 : -20}px)`,
                 pointerEvents: (activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? "auto" : "none"
               }}
             >
-              <h3 className={`text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4 ${
-                isDark ? "text-white" : "text-[#0F1115]"
+              <h3 className={`text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-4 bg-clip-text text-transparent bg-gradient-to-b ${
+                isDark 
+                  ? "from-white via-white to-white/50" 
+                  : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
               }`}>
                 {currentStepData.title}
               </h3>
-              <p className={`text-xs leading-relaxed ${
-                isDark ? "text-gray-400" : "text-gray-655"
+              <p className={`text-xs md:text-sm leading-relaxed ${
+                isDark ? "text-[#8E939E]" : "text-[#6B7280]"
               }`}>
                 {currentStepData.description}
               </p>
@@ -1996,20 +1943,22 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
 
             {/* Right Side Copy */}
             <div 
-              className="absolute right-20 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
+              className="absolute right-24 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
               style={{
                 opacity: (activeStep === "editor" || activeStep === "previews") ? 1 : 0,
                 transform: `translateY(-50%) translateX(${(activeStep === "editor" || activeStep === "previews") ? 0 : 20}px)`,
                 pointerEvents: (activeStep === "editor" || activeStep === "previews") ? "auto" : "none"
               }}
             >
-              <h3 className={`text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4 ${
-                isDark ? "text-white" : "text-[#0F1115]"
+              <h3 className={`text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-4 bg-clip-text text-transparent bg-gradient-to-b ${
+                isDark 
+                  ? "from-white via-white to-white/50" 
+                  : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
               }`}>
                 {currentStepData.title}
               </h3>
-              <p className={`text-xs leading-relaxed ${
-                isDark ? "text-gray-400" : "text-gray-655"
+              <p className={`text-xs md:text-sm leading-relaxed ${
+                isDark ? "text-[#8E939E]" : "text-[#6B7280]"
               }`}>
                 {currentStepData.description}
               </p>
@@ -2018,6 +1967,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         )}
       </div>
 
+      {/* 5. Fullscreen Workspace IDE Takeover */}
       <div 
         className="fixed inset-0 w-screen h-screen z-40 transition-all duration-500 p-4 md:p-8 flex items-center justify-center pointer-events-none"
         style={{
