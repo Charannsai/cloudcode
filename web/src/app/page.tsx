@@ -1670,7 +1670,19 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
 
 // Left/Right layout slots are handled directly in the JSX using CSS transitions for maximum smoothness.
 
-const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { children: React.ReactNode, scrollProgress: number, theme: "light" | "dark", mouseOffset: { x: number, y: number } }) => {
+const PhoneMockup = ({ 
+  scrollProgress, 
+  theme, 
+  mouseOffset, 
+  activeStep,
+  children 
+}: { 
+  scrollProgress: number, 
+  theme: "light" | "dark", 
+  mouseOffset: { x: number, y: number }, 
+  activeStep: string,
+  children: React.ReactNode 
+}) => {
   const glareX = (scrollProgress * 400) - 200 + (mouseOffset.x * 100);
   const glareY = (scrollProgress * 200) - 100 + (mouseOffset.y * 100);
   const isDark = theme === "dark";
