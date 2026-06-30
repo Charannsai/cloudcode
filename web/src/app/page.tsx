@@ -1938,19 +1938,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             background: isDark 
               ? "radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%)"
               : "radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0) 70%)",
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)"
-          }}
-        />
-        
-        <div 
-          className="relative z-10 transition-all duration-300 ease-out"
-          style={{
-            transform: transformStyle,
-            transformStyle: "preserve-3d",
-            opacity: mockupOpacity,
-            pointerEvents: mockupOpacity > 0.1 ? "auto" : "none"
               : "radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0) 70%)",
             left: "50%",
             top: "50%",
@@ -1970,74 +1957,74 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           <PhoneMockup scrollProgress={scrollProgress} theme={theme} mouseOffset={mouseOffset} activeStep={activeStep}>
             <PhoneScreen activeStep={activeStep} theme={theme} scrollProgress={scrollProgress} />
           </PhoneMockup>
+        </div>
 
-          {/* Centered Large Logo Transition Layer */}
-          {scrollProgress >= 0.35 && (
-            <div 
-              className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 px-6"
-              style={{
-                opacity: logoOpacity,
-              }}
-            >
-              {/* Massive Glowing Logo & Brand Intro */}
-              <div className="flex flex-col items-center gap-6 select-none relative">
-                {/* Glowing Ambient Glow behind the logo */}
-                <div 
-                  className="absolute w-[350px] h-[350px] rounded-full blur-[100px] pointer-events-none transition-all duration-1000 ease-in-out -z-1"
-                  style={{ 
-                    opacity: Math.max(0, Math.min(0.25, (scrollProgress - 0.50) / 0.20)),
-                    background: isDark 
-                      ? "radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(16, 185, 129, 0.2) 50%, rgba(0,0,0,0) 100%)"
-                      : "radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, rgba(16, 185, 129, 0.1) 50%, rgba(0,0,0,0) 100%)"
-                  }}
+        {/* Centered Large Logo Transition Layer */}
+        {scrollProgress >= 0.35 && (
+          <div 
+            className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 px-6"
+            style={{
+              opacity: logoOpacity,
+            }}
+          >
+            {/* Massive Glowing Logo & Brand Intro */}
+            <div className="flex flex-col items-center gap-6 select-none relative">
+              {/* Glowing Ambient Glow behind the logo */}
+              <div 
+                className="absolute w-[350px] h-[350px] rounded-full blur-[100px] pointer-events-none transition-all duration-1000 ease-in-out -z-1"
+                style={{ 
+                  opacity: Math.max(0, Math.min(0.25, (scrollProgress - 0.50) / 0.20)),
+                  background: isDark 
+                    ? "radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(16, 185, 129, 0.2) 50%, rgba(0,0,0,0) 100%)"
+                    : "radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, rgba(16, 185, 129, 0.1) 50%, rgba(0,0,0,0) 100%)"
+                }}
+              />
+
+              <svg 
+                width={isMobile ? "140" : "200"} 
+                height={isMobile ? "90" : "135"} 
+                viewBox="0 0 874 552" 
+                className="transition-all duration-300"
+              >
+                <path
+                  d={CLOUD_PATH}
+                  fill={isDark ? `rgba(255, 255, 255, ${Math.max(0, Math.min(0.08, (scrollProgress - 0.55) / 0.25))})` : `rgba(15, 17, 21, ${Math.max(0, Math.min(0.05, (scrollProgress - 0.55) / 0.25))})`}
+                  stroke={isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(15, 17, 21, 0.6)"}
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray="2500"
+                  strokeDashoffset={(1 - drawT) * 2500}
+                  className="transition-all duration-75 ease-out"
                 />
+              </svg>
 
-                <svg 
-                  width={isMobile ? "140" : "200"} 
-                  height={isMobile ? "90" : "135"} 
-                  viewBox="0 0 874 552" 
-                  className="transition-all duration-300"
-                >
-                  <path
-                    d={CLOUD_PATH}
-                    fill={isDark ? `rgba(255, 255, 255, ${Math.max(0, Math.min(0.08, (scrollProgress - 0.55) / 0.25))})` : `rgba(15, 17, 21, ${Math.max(0, Math.min(0.05, (scrollProgress - 0.55) / 0.25))})`}
-                    stroke={isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(15, 17, 21, 0.6)"}
-                    strokeWidth="5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray="2500"
-                    strokeDashoffset={(1 - drawT) * 2500}
-                    className="transition-all duration-75 ease-out"
-                  />
-                </svg>
-
-                <div 
-                  className="flex flex-col items-center gap-3 text-center transition-all duration-300"
+              <div 
+                className="flex flex-col items-center gap-3 text-center transition-all duration-300"
+                style={{
+                  opacity: textOpacity,
+                  transform: `translateY(${(1 - textOpacity) * 20}px)`
+                }}
+              >
+                <h2 
+                  className={`text-4xl md:text-6xl font-black uppercase tracking-[0.18em] leading-none ${
+                    isDark ? "text-white" : "text-[#0F1115]"
+                  }`}
                   style={{
-                    opacity: textOpacity,
-                    transform: `translateY(${(1 - textOpacity) * 20}px)`
+                    letterSpacing: `${(1 - textOpacity) * 0.4 + 0.18}em`
                   }}
                 >
-                  <h2 
-                    className={`text-4xl md:text-6xl font-black uppercase tracking-[0.18em] leading-none ${
-                      isDark ? "text-white" : "text-[#0F1115]"
-                    }`}
-                    style={{
-                      letterSpacing: `${(1 - textOpacity) * 0.4 + 0.18}em`
-                    }}
-                  >
-                    CloudCode
-                  </h2>
-                  <p className={`text-[10px] md:text-xs font-mono uppercase tracking-[0.25em] ${
-                    isDark ? "text-gray-400" : "text-gray-555"
-                  }`}>
-                    Mobile-First Engineering Workspace
-                  </p>
-                </div>
+                  CloudCode
+                </h2>
+                <p className={`text-[10px] md:text-xs font-mono uppercase tracking-[0.25em] ${
+                  isDark ? "text-gray-400" : "text-gray-555"
+                }`}>
+                  Mobile-First Engineering Workspace
+                </p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
