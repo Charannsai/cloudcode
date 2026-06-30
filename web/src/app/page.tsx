@@ -1773,46 +1773,35 @@ const PhoneMockup = ({
   );
 };
 
-export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  const [activeStep, setActiveStep] = useState<string>("phone_rise");
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const scrollProgressRef = useRef<number>(0);
-  scrollProgressRef.current = scrollProgress;
+const KEYFRAMES = [
+  // 1. Phone Rise (0.0 - 0.15) - Phone rises from below, screen is black/off, straight rise
+  { p: 0.0, rx: 0, ry: 0, rz: 0, s: 0.25, tx: 0, ty: 450, tz: 0, bezelOpacity: 1 },
+  { p: 0.15, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 2. Welcome Phase (0.15 - 0.35) - Phone is centered, screen is blank/off, welcome text fades in/out in bg
+  { p: 0.35, rx: 0, ry: 0, rz: 0, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 3. Arrival & Boot (0.35 - 0.48) - Welcome text is gone, phone boots (traces logo)
+  { p: 0.48, rx: 8, ry: -10, rz: 3, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 4. Sandbox Orbit (0.48 - 0.58) - Centered
+  { p: 0.58, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
+  // 5. Sandbox Load (0.58 - 0.68) - Centered
+  { p: 0.68, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 6. Terminal (0.68 - 0.78) - Crisp centered focus (1.6x zoom, low tz for subpixel clarity)
+  { p: 0.71, rx: 0, ry: 0, rz: 0, s: 1.6, tx: 0, ty: 0, tz: 20, bezelOpacity: 1 },
+  { p: 0.78, rx: 0, ry: 0, rz: 0, s: 1.6, tx: 0, ty: 0, tz: 20, bezelOpacity: 1 },
+  // 7. Editor (0.78 - 0.86) - Zoom out to select code, then zoom back in for AI refactor
+  { p: 0.79, rx: 6, ry: -8, rz: 2, s: 1.25, tx: 0, ty: 0, tz: 10, bezelOpacity: 1 }, // zoom out for selection
+  { p: 0.82, rx: 0, ry: 0, rz: 0, s: 1.6, tx: 0, ty: 0, tz: 20, bezelOpacity: 1 },  // zoom in for AI popup
+  { p: 0.84, rx: 0, ry: 0, rz: 0, s: 1.45, tx: 0, ty: 0, tz: 15, bezelOpacity: 1 }, // zoom out slightly for AI panel
+  { p: 0.86, rx: 0, ry: 0, rz: 0, s: 1.45, tx: 0, ty: 0, tz: 15, bezelOpacity: 1 },
+  // 8. Git (0.86 - 0.92) - Git screen on phone
+  { p: 0.92, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 9. Previews (0.92 - 0.96) - Starts on phone, then deep zooms to fullscreen desktop preview
+  { p: 0.94, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  { p: 0.96, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 10. Exit (0.96 - 1.0) - Re-emerge to floating phone
+  { p: 1.0, rx: 15, ry: -20, rz: 10, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 }
+];
 
-  const [isMobile, setIsMobile] = useState(false);
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
-      setScrollProgress(progress);
-
-      let step = "phone_rise";
-      if (progress < 0.15) step = "phone_rise";
-      else if (progress >= 0.15 && progress < 0.35) step = "welcome_phase";
-      else step = "logo_transition";
-
-      setActiveStep(step);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-      window.removeEventListener("scroll", handleScroll);
-    };
 const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mouseY: number) => {
   const kIndex = KEYFRAMES.findIndex((k) => k.p > progress);
   const idx2 = kIndex === -1 ? KEYFRAMES.length - 1 : kIndex;
