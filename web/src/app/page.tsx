@@ -627,8 +627,8 @@ export default function Home() {
 
             {/* Pro Developer */}
             <ScrollReveal delay={200}>
-              <div className={`p-8 rounded-2xl border-2 border-zinc-950 dark:border-zinc-50 bg-zinc-50/50 dark:bg-[#07080b] flex flex-col justify-between h-full relative hover:border-zinc-800 dark:hover:border-zinc-200 transition-all duration-300 shadow-md hover:shadow-lg`}>
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-mono font-bold text-zinc-950 dark:text-zinc-50 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2.5 py-1 rounded-full uppercase tracking-wider">{"Most Popular"}</span>
+              <div className={`p-8 rounded-2xl border-2 ${theme === "dark" ? "border-zinc-50 bg-[#07080b] hover:border-zinc-200" : "border-zinc-950 bg-white hover:border-zinc-800"} flex flex-col justify-between h-full relative transition-all duration-300 shadow-md hover:shadow-lg`}>
+                <span className={`absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-mono font-bold ${theme === "dark" ? "text-zinc-950 bg-zinc-100 border-zinc-705" : "text-zinc-50 bg-zinc-900 border-zinc-205"} border px-2.5 py-1 rounded-full uppercase tracking-wider`}>{"Most Popular"}</span>
                 <div className="space-y-6">
                   <div>
                     <h3 className={`text-lg font-semibold tracking-tight ${colors.text}`}>{"Pro Developer"}</h3>
@@ -641,51 +641,51 @@ export default function Home() {
 
                   <hr className={`border-t ${colors.border}`} />
 
-                  <ul className="space-y-3.5 text-xs text-gray-600 dark:text-gray-300">
+                  <ul className="space-y-3.5 text-xs text-gray-500 dark:text-gray-400">
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"4 Cores CPU"}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"8 GB RAM"}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"50 GB SSD Storage"}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"20 Workspaces Max"}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"5M Monthly AI Tokens"}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"Uncapped Network Speed"}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"500 API req/min"}</span>
                     </li>
                     <li className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="font-semibold">{"60 min Auto-Stop Timeout"}</span>
