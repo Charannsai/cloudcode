@@ -836,19 +836,25 @@ const getIcon = (name: string) => {
   }
 };
 
-const InitialScreen = () => {
+const InitialScreen = ({ theme }: { theme: "light" | "dark" }) => {
   return (
-    <div className="w-full h-full bg-[#030303] flex flex-col items-center justify-center text-center relative overflow-hidden">
+    <div className={`w-full h-full flex flex-col items-center justify-center text-center relative overflow-hidden transition-colors duration-300 ${
+      theme === "dark" ? "bg-[#030303]" : "bg-[#FAFAFA]"
+    }`}>
       <div className="absolute w-40 h-40 rounded-full bg-indigo-500/10 blur-2xl" />
       <div className="z-10 space-y-4">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto">
           <span className="text-white font-bold text-lg font-mono">CC</span>
         </div>
         <div className="space-y-1">
-          <h4 className="font-bold text-xs text-white tracking-tight">CloudCode Workspace</h4>
+          <h4 className={`font-bold text-xs tracking-tight ${theme === "dark" ? "text-white" : "text-[#0F1115]"}`}>CloudCode Workspace</h4>
           <p className="text-[9px] text-gray-500 font-mono">v1.0.0-beta</p>
         </div>
-        <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/5 px-2.5 py-1 rounded text-[8px] font-mono text-gray-450">
+        <div className={`inline-flex items-center gap-1.5 border px-2.5 py-1 rounded text-[8px] font-mono ${
+          theme === "dark" 
+            ? "bg-white/5 border-white/5 text-gray-400" 
+            : "bg-black/5 border-black/5 text-gray-600"
+        }`}>
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
           <span>Scroll to Boot</span>
         </div>
@@ -857,7 +863,7 @@ const InitialScreen = () => {
   );
 };
 
-const EnvironmentsScreen = ({ active }: { active: boolean }) => {
+const EnvironmentsScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark" }) => {
   const [loading, setLoading] = useState(false);
   const [complete, setComplete] = useState(false);
 
@@ -884,9 +890,11 @@ const EnvironmentsScreen = ({ active }: { active: boolean }) => {
   }, [active]);
 
   return (
-    <div className="w-full h-full bg-[#0A0B10] p-4 text-white flex flex-col justify-between font-sans">
+    <div className={`w-full h-full p-4 flex flex-col justify-between font-sans transition-colors duration-300 ${
+      theme === "dark" ? "bg-[#0A0B10] text-white" : "bg-white text-[#0F1115]"
+    }`}>
       <div className="space-y-3">
-        <div className="border-b border-white/5 pb-2">
+        <div className={`border-b pb-2 ${theme === "dark" ? "border-white/5" : "border-black/5"}`}>
           <h4 className="font-bold text-[10px] text-gray-400 tracking-wide uppercase font-mono">Select Template</h4>
         </div>
         
@@ -898,11 +906,11 @@ const EnvironmentsScreen = ({ active }: { active: boolean }) => {
           ].map((tmpl, idx) => (
             <div key={idx} className={`p-2 rounded border transition-all text-left ${
               idx === 0 
-                ? "border-indigo-500 bg-indigo-500/10" 
-                : "border-white/5 bg-white/5 opacity-60"
+                ? (theme === "dark" ? "border-indigo-500 bg-indigo-500/10" : "border-indigo-500 bg-indigo-500/5")
+                : (theme === "dark" ? "border-white/5 bg-white/5 opacity-60" : "border-black/5 bg-black/5 opacity-60")
             }`}>
               <div className="font-bold text-[9px]">{tmpl.name}</div>
-              <div className="text-[7px] text-gray-400">{tmpl.desc}</div>
+              <div className={`text-[7px] ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>{tmpl.desc}</div>
             </div>
           ))}
         </div>
@@ -911,7 +919,7 @@ const EnvironmentsScreen = ({ active }: { active: boolean }) => {
       <div className="space-y-2">
         {loading && (
           <div className="space-y-1 text-center">
-            <div className="w-full bg-white/5 h-1 rounded overflow-hidden">
+            <div className={`w-full h-1 rounded overflow-hidden ${theme === "dark" ? "bg-white/5" : "bg-black/5"}`}>
               <div className="bg-indigo-500 h-full w-[80%] animate-pulse" />
             </div>
             <span className="text-[8px] font-mono text-indigo-400">Allocating sandbox...</span>
@@ -919,9 +927,13 @@ const EnvironmentsScreen = ({ active }: { active: boolean }) => {
         )}
         
         {complete && (
-          <div className="bg-emerald-500/15 border border-emerald-500/20 p-2 rounded text-left space-y-1 font-mono text-[8px] animate-fade-in">
+          <div className={`border p-2 rounded text-left space-y-1 font-mono text-[8px] animate-fade-in-up ${
+            theme === "dark" 
+              ? "bg-emerald-500/15 border-emerald-500/20 text-gray-450" 
+              : "bg-emerald-500/5 border-emerald-500/15 text-gray-600"
+          }`}>
             <div className="text-emerald-400 font-bold">● Workspace Online</div>
-            <div className="text-gray-450">ID: sandbox-node-1</div>
+            <div className="text-gray-455">ID: sandbox-node-1</div>
             <div className="text-gray-500">Resources: 4 Cores / 4GB RAM</div>
           </div>
         )}
@@ -931,7 +943,7 @@ const EnvironmentsScreen = ({ active }: { active: boolean }) => {
             ? "bg-emerald-500 text-white" 
             : loading 
               ? "bg-indigo-600/50 text-white/50" 
-              : "bg-indigo-500 text-white hover:bg-indigo-600"
+              : (theme === "dark" ? "bg-indigo-500 text-white hover:bg-indigo-600" : "bg-indigo-600 text-white hover:bg-indigo-700")
         }`}>
           {complete ? "Open Workspace" : loading ? "Starting..." : "Create Workspace"}
         </button>
@@ -962,7 +974,8 @@ const TerminalScreen = ({ active }: { active: boolean }) => {
     let currentLine = 0;
     const interval = setInterval(() => {
       if (currentLine < allLines.length) {
-        setLines(prev => [...prev, allLines[currentLine]]);
+        const lineToAdd = allLines[currentLine];
+        setLines(prev => [...prev, lineToAdd]);
         currentLine++;
       } else {
         clearInterval(interval);
@@ -980,6 +993,7 @@ const TerminalScreen = ({ active }: { active: boolean }) => {
       </div>
       <div className="flex-1 space-y-1.5 overflow-y-auto">
         {lines.map((line, idx) => {
+          if (!line) return null;
           if (line.startsWith("root@")) {
             return (
               <div key={idx}>
@@ -1001,7 +1015,7 @@ const TerminalScreen = ({ active }: { active: boolean }) => {
   );
 };
 
-const EditorScreen = ({ active }: { active: boolean }) => {
+const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark" }) => {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -1010,9 +1024,9 @@ const EditorScreen = ({ active }: { active: boolean }) => {
       return;
     }
 
-    const t1 = setTimeout(() => setStep(1), 1500); // highlight code
-    const t2 = setTimeout(() => setStep(2), 3000); // show AI prompt
-    const t3 = setTimeout(() => setStep(3), 4500); // replace with AI code
+    const t1 = setTimeout(() => setStep(1), 1500);
+    const t2 = setTimeout(() => setStep(2), 3000);
+    const t3 = setTimeout(() => setStep(3), 4500);
 
     return () => {
       clearTimeout(t1);
@@ -1021,28 +1035,40 @@ const EditorScreen = ({ active }: { active: boolean }) => {
     };
   }, [active]);
 
+  const isDark = theme === "dark";
+
   return (
-    <div className="w-full h-full bg-[#0F1117] flex flex-col justify-between overflow-hidden relative">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0A0B0F] border-b border-white/5">
-        <span className="text-[8px] font-mono text-gray-400">Counter.tsx</span>
+    <div className={`w-full h-full flex flex-col justify-between overflow-hidden relative transition-colors duration-300 ${
+      isDark ? "bg-[#0F1117]" : "bg-white"
+    }`}>
+      <div className={`flex items-center justify-between px-3 py-1.5 border-b ${
+        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-55 border-black/5"
+      }`}>
+        <span className={`text-[8px] font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}>Counter.tsx</span>
         <span className="text-[7px] font-mono text-indigo-400 bg-indigo-500/10 px-1 py-0.5 rounded">TypeScript</span>
       </div>
 
-      <div className="flex-1 p-3 font-mono text-[9px] text-gray-300 space-y-1 overflow-y-auto leading-relaxed">
+      <div className={`flex-1 p-3 font-mono text-[9px] space-y-1 overflow-y-auto leading-relaxed ${
+        isDark ? "text-gray-300" : "text-gray-700"
+      }`}>
         {step < 3 ? (
           <>
-            <div><span className="text-purple-400">import</span> &#123; useState &#125; <span className="text-purple-400">from</span> <span className="text-emerald-400">&apos;react&apos;</span>;</div>
+            <div><span className="text-purple-500">import</span> &#123; useState  &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
             <div className="h-1" />
-            <div><span className="text-purple-400">export function</span> <span className="text-blue-455">Counter</span>() &#123;</div>
+            <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
             <div className="pl-3">
-              <span className="text-purple-400">const</span> [count, setCount] = <span className="text-blue-455">useState</span>(<span className="text-orange-400">0</span>);
+              <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
             </div>
-            <div className="pl-3"><span className="text-purple-400">return</span> (</div>
-            <div className={`pl-6 transition-all duration-500 ${step === 1 ? "bg-indigo-500/20 rounded border-l-2 border-indigo-500" : ""}`}>
-              &lt;<span className="text-blue-455">button</span> <span className="text-yellow-400">onClick</span>=&#123;() =&gt; <span className="text-blue-455">setCount</span>(count + <span className="text-orange-400">1</span>)&#125;&gt;
+            <div className="pl-3"><span className="text-purple-500">return</span> (</div>
+            <div className={`pl-6 transition-all duration-500 ${
+              step === 1 
+                ? (isDark ? "bg-indigo-500/20 border-l-2 border-indigo-500 rounded" : "bg-indigo-500/10 border-l-2 border-indigo-500 rounded") 
+                : ""
+            }`}>
+              &lt;<span className="text-blue-550">button</span> <span className="text-yellow-650">onClick</span>=&#123;() =&gt; <span className="text-blue-550">setCount</span>(count + <span className="text-orange-550">1</span>)&#125;&gt;
             </div>
             <div className="pl-9">Count: &#123;count&#125;</div>
-            <div className="pl-6">&lt;/<span className="text-blue-455">button</span>&gt;</div>
+            <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
             <div className="pl-3">);</div>
             <div>&#125;</div>
           </>
@@ -1054,7 +1080,9 @@ const EditorScreen = ({ active }: { active: boolean }) => {
             <div className="pl-3">
               <span className="text-purple-400">const</span> [count, setCount] = <span className="text-blue-455">useState</span>(<span className="text-orange-400">0</span>);
             </div>
-            <div className="pl-3 bg-emerald-500/10 border-l-2 border-emerald-500 rounded py-0.5 my-1">
+            <div className={`pl-3 border-l-2 rounded py-0.5 my-1 ${
+              isDark ? "bg-emerald-500/10 border-emerald-500" : "bg-emerald-500/5 border-emerald-500"
+            }`}>
               <span className="text-blue-455">useEffect</span>(() =&gt; &#123;
               <div className="pl-3">console.<span className="text-blue-455">log</span>(<span className="text-emerald-400">&quot;Count is&quot;</span>, count);</div>
               &#125;, [count]);
@@ -1063,8 +1091,8 @@ const EditorScreen = ({ active }: { active: boolean }) => {
             <div className="pl-6">
               &lt;<span className="text-blue-455">button</span> 
             </div>
-            <div className="pl-9 text-yellow-400">onClick<span className="text-gray-350">=&#123;() =&gt;</span> <span className="text-blue-455">setCount</span>(count + <span className="text-orange-400">1</span>)&#125;</div>
-            <div className="pl-9 text-yellow-400">className<span className="text-gray-350">=&quot;active:scale-95 transition-all&quot;</span></div>
+            <div className="pl-9 text-yellow-400">onClick<span className={isDark ? "text-gray-350" : "text-gray-600"}>=&#123;() =&gt;</span> <span className="text-blue-455">setCount</span>(count + <span className="text-orange-400">1</span>)&#125;</div>
+            <div className="pl-9 text-yellow-400">className<span className={isDark ? "text-gray-350" : "text-gray-600"}>=&quot;active:scale-95 transition-all&quot;</span></div>
             <div className="pl-6">&gt;</div>
             <div className="pl-9">Count: &#123;count&#125;</div>
             <div className="pl-6">&lt;/<span className="text-blue-455">button</span>&gt;</div>
@@ -1074,14 +1102,18 @@ const EditorScreen = ({ active }: { active: boolean }) => {
         )}
       </div>
 
-      <div className={`absolute bottom-0 left-0 right-0 p-3 bg-[#0A0B0F] border-t border-white/5 transition-all duration-500 transform ${
+      <div className={`absolute bottom-0 left-0 right-0 p-3 border-t transition-all duration-500 transform ${
         step >= 2 && step < 3 ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+      } ${
+        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-55 border-black/5"
       }`}>
         <div className="flex items-center gap-2 mb-1">
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-          <span className="text-[7px] font-mono text-indigo-400 uppercase font-bold">CloudCode AI</span>
+          <span className="text-[7px] font-mono text-indigo-500 uppercase font-bold">CloudCode AI</span>
         </div>
-        <div className="text-[8px] text-white font-mono bg-white/5 p-1.5 rounded border border-white/5">
+        <div className={`text-[8px] font-mono p-1.5 rounded border ${
+          isDark ? "bg-white/5 border-white/5 text-white" : "bg-black/5 border-black/5 text-black"
+        }`}>
           {"✨ Refactoring: Adding transition and console.log..."}
         </div>
       </div>
@@ -1089,7 +1121,7 @@ const EditorScreen = ({ active }: { active: boolean }) => {
   );
 };
 
-const GitScreen = ({ active }: { active: boolean }) => {
+const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark" }) => {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -1098,9 +1130,9 @@ const GitScreen = ({ active }: { active: boolean }) => {
       return;
     }
 
-    const t1 = setTimeout(() => setStep(1), 1500); // commit
-    const t2 = setTimeout(() => setStep(2), 3000); // pr screen
-    const t3 = setTimeout(() => setStep(3), 4500); // merge
+    const t1 = setTimeout(() => setStep(1), 1500);
+    const t2 = setTimeout(() => setStep(2), 3000);
+    const t3 = setTimeout(() => setStep(3), 4500);
 
     return () => {
       clearTimeout(t1);
@@ -1109,22 +1141,30 @@ const GitScreen = ({ active }: { active: boolean }) => {
     };
   }, [active]);
 
+  const isDark = theme === "dark";
+
   return (
-    <div className="w-full h-full bg-[#0A0B10] p-3 font-sans text-xs text-gray-300 flex flex-col justify-between overflow-hidden">
+    <div className={`w-full h-full p-3 font-sans text-xs flex flex-col justify-between overflow-hidden transition-colors duration-300 ${
+      isDark ? "bg-[#0A0B10] text-gray-300" : "bg-white text-[#0F1115]"
+    }`}>
       {step < 2 ? (
         <>
-          <div className="border-b border-white/5 pb-2">
-            <h4 className="font-bold text-[10px] text-white tracking-wide uppercase font-mono">Source Control</h4>
+          <div className={`border-b pb-2 ${isDark ? "border-white/5" : "border-black/5"}`}>
+            <h4 className={`font-bold text-[10px] tracking-wide uppercase font-mono ${isDark ? "text-white" : "text-gray-800"}`}>Source Control</h4>
           </div>
           <div className="flex-1 py-3 space-y-3">
             <div>
               <span className="text-[9px] font-mono text-gray-500">CHANGES</span>
               <div className="mt-1 space-y-1">
-                <div className="flex items-center justify-between bg-white/5 p-1.5 rounded border border-white/5 text-[9px]">
+                <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
+                  isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+                }`}>
                   <span className="font-mono text-emerald-400">M  Counter.tsx</span>
                   <span className="text-[7px] text-gray-500">Modified</span>
                 </div>
-                <div className="flex items-center justify-between bg-white/5 p-1.5 rounded border border-white/5 text-[9px]">
+                <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
+                  isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+                }`}>
                   <span className="font-mono text-emerald-400">M  page.tsx</span>
                   <span className="text-[7px] text-gray-500">Modified</span>
                 </div>
@@ -1133,7 +1173,9 @@ const GitScreen = ({ active }: { active: boolean }) => {
             
             <div className="space-y-1">
               <span className="text-[9px] font-mono text-gray-500">COMMIT MESSAGE</span>
-              <div className="bg-white/5 p-2 rounded border border-white/5 text-[9px] font-mono text-white">
+              <div className={`p-2 rounded border text-[9px] font-mono ${
+                isDark ? "bg-white/5 border-white/5 text-white" : "bg-gray-55 border-black/5 text-black"
+              }`}>
                 feat: improve counter interactivity
               </div>
             </div>
@@ -1149,18 +1191,20 @@ const GitScreen = ({ active }: { active: boolean }) => {
         </>
       ) : (
         <>
-          <div className="border-b border-white/5 pb-2 flex justify-between items-center">
-            <h4 className="font-bold text-[10px] text-white tracking-wide uppercase font-mono">Pull Request #42</h4>
+          <div className={`border-b pb-2 flex justify-between items-center ${isDark ? "border-white/5" : "border-black/5"}`}>
+            <h4 className={`font-bold text-[10px] tracking-wide uppercase font-mono ${isDark ? "text-white" : "text-gray-800"}`}>Pull Request #42</h4>
             <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Open</span>
           </div>
           <div className="flex-1 py-3 space-y-3">
             <div className="space-y-1">
-              <h5 className="font-bold text-white text-[10px]">feat: improve counter interactivity</h5>
+              <h5 className={`font-bold text-[10px] ${isDark ? "text-white" : "text-gray-800"}`}>feat: improve counter interactivity</h5>
               <p className="text-[8px] text-gray-400">Merged 2 commits from <code className="font-mono bg-white/5 px-1 rounded text-indigo-400">feat/counter</code> into <code className="font-mono bg-white/5 px-1 rounded text-gray-350">main</code></p>
             </div>
-            <div className="bg-white/5 p-2 rounded border border-white/5 text-[8px] space-y-1 font-mono">
+            <div className={`p-2 rounded border text-[8px] space-y-1 font-mono ${
+              isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+            }`}>
               <div className="text-emerald-450">✓ All checks passed (100%)</div>
-              <div className="text-gray-400">✓ No conflicts with base branch</div>
+              <div className="text-gray-500">✓ No conflicts with base branch</div>
             </div>
           </div>
           
@@ -1249,112 +1293,84 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
         )}
       </div>
 
-      <div className="bg-[#0A0B0F] border-t border-white/5 p-2 font-mono text-[7px] text-gray-400 space-y-0.5">
+      <div className="bg-[#0A0B0F] border-t border-white/5 p-2 font-mono text-[7px] text-gray-450 space-y-0.5">
         <div className="text-indigo-400 uppercase font-bold tracking-wider text-[6px]">Console Logs</div>
         {count >= 1 && <div className="text-emerald-400">[Console] Count is now 1</div>}
+        {count >= 2 && <div className="text-emerald-400">[Console] Count is now 2</div>}
       </div>
     </div>
   );
 };
 
-const PhoneScreen = ({ activeStep }: { activeStep: string }) => {
+const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
   switch (activeStep) {
     case "initial":
-      return <InitialScreen />;
+      return <InitialScreen theme={theme} />;
     case "environments":
-      return <EnvironmentsScreen active={activeStep === "environments"} />;
+      return <EnvironmentsScreen active={activeStep === "environments"} theme={theme} />;
     case "terminal":
       return <TerminalScreen active={activeStep === "terminal"} />;
     case "editor":
-      return <EditorScreen active={activeStep === "editor"} />;
+      return <EditorScreen active={activeStep === "editor"} theme={theme} />;
     case "git":
-      return <GitScreen active={activeStep === "git"} />;
+      return <GitScreen active={activeStep === "git"} theme={theme} />;
     case "previews":
       return <PreviewsScreen active={activeStep === "previews"} />;
     default:
-      return <InitialScreen />;
+      return <InitialScreen theme={theme} />;
   }
 };
 
-const KEYFRAMES = [
-  { p: 0.0, rx: 15, ry: -20, rz: 10, s: 0.9, tx: 0, ty: 10, tz: 0 },      // initial
-  { p: 0.2, rx: 8, ry: -12, rz: 5, s: 1.0, tx: -20, ty: 0, tz: 20 },     // environments
-  { p: 0.4, rx: 5, ry: 5, rz: -3, s: 1.15, tx: 10, ty: -10, tz: 50 },    // terminal
-  { p: 0.6, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: -20, tz: 100 },     // editor
-  { p: 0.8, rx: 8, ry: 15, rz: -5, s: 1.1, tx: 20, ty: 10, tz: 30 },     // git
-  { p: 1.0, rx: 0, ry: 0, rz: 0, s: 1.05, tx: 0, ty: 0, tz: 10 }         // previews
-];
-
-const get3DTransform = (progress: number, isMobile: boolean) => {
-  let idx = 0;
-  for (let i = 0; i < KEYFRAMES.length - 1; i++) {
-    if (progress >= KEYFRAMES[i].p && progress <= KEYFRAMES[i + 1].p) {
-      idx = i;
-      break;
-    }
-  }
-  
-  const k1 = KEYFRAMES[idx];
-  const k2 = KEYFRAMES[idx + 1];
-  
-  const range = k2.p - k1.p;
-  const t = range === 0 ? 0 : (progress - k1.p) / range;
-  
-  const lerp = (a: number, b: number) => a + (b - a) * t;
-  
-  const factor = isMobile ? 0.2 : 1.0;
-  
-  const rx = lerp(k1.rx, k2.rx) * factor;
-  const ry = lerp(k1.ry, k2.ry) * factor;
-  const rz = lerp(k1.rz, k2.rz) * factor;
-  const s = lerp(k1.s, k2.s) * (isMobile ? 0.85 : 1.0);
-  const tx = lerp(k1.tx, k2.tx) * factor;
-  const ty = lerp(k1.ty, k2.ty) * factor;
-  const tz = lerp(k1.tz, k2.tz) * factor;
-  
-  return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
-};
-
-const PhoneMockup = ({ children, scrollProgress }: { children: React.ReactNode, scrollProgress: number }) => {
+const PhoneMockup = ({ children, scrollProgress, theme }: { children: React.ReactNode, scrollProgress: number, theme: "light" | "dark" }) => {
   const glareX = (scrollProgress * 400) - 200;
+  const isDark = theme === "dark";
 
   return (
     <div 
-      className="w-[280px] h-[550px] bg-[#090A10] rounded-[44px] p-3 relative select-none transition-all duration-300 border border-white/10"
+      className={`w-[280px] h-[550px] rounded-[44px] p-3 relative select-none transition-all duration-300 border ${
+        isDark ? "bg-[#090A10] border-white/10" : "bg-[#F3F4F6] border-black/10"
+      }`}
       style={{
         transformStyle: "preserve-3d",
-        boxShadow: `
-          -2px 2px 0px 0px rgba(255, 255, 255, 0.05),
-          -4px 4px 0px 0px #1a1c24,
-          -8px 8px 0px 0px #111217,
-          -12px 12px 20px 0px rgba(0, 0, 0, 0.7),
-          -24px 24px 50px 0px rgba(0, 0, 0, 0.5)
-        `,
+        boxShadow: isDark 
+          ? `
+            -2px 2px 0px 0px rgba(255, 255, 255, 0.05),
+            -4px 4px 0px 0px #1a1c24,
+            -8px 8px 0px 0px #111217,
+            -12px 12px 20px 0px rgba(0, 0, 0, 0.7),
+            -24px 24px 50px 0px rgba(0, 0, 0, 0.5)
+          `
+          : `
+            -2px 2px 0px 0px rgba(0, 0, 0, 0.03),
+            -4px 4px 0px 0px #E5E7EB,
+            -8px 8px 0px 0px #D1D5DB,
+            -12px 12px 20px 0px rgba(0, 0, 0, 0.12),
+            -24px 24px 50px 0px rgba(0, 0, 0, 0.08)
+          `,
       }}
     >
-      {/* 3D Side Buttons */}
       <div 
-        className="absolute left-[-3px] top-24 w-[3px] h-10 bg-[#2D3039] rounded-l font-sans" 
+        className={`absolute left-[-3px] top-24 w-[3px] h-10 rounded-l font-sans ${isDark ? "bg-[#2D3039]" : "bg-gray-400"}`} 
         style={{ transform: "translateZ(-8px)" }}
       />
       <div 
-        className="absolute left-[-3px] top-38 w-[3px] h-14 bg-[#2D3039] rounded-l" 
+        className={`absolute left-[-3px] top-38 w-[3px] h-14 rounded-l ${isDark ? "bg-[#2D3039]" : "bg-gray-400"}`} 
         style={{ transform: "translateZ(-8px)" }}
       />
       <div 
-        className="absolute right-[-3px] top-32 w-[3px] h-16 bg-[#2D3039] rounded-r" 
+        className={`absolute right-[-3px] top-32 w-[3px] h-16 rounded-r ${isDark ? "bg-[#2D3039]" : "bg-gray-400"}`} 
         style={{ transform: "translateZ(-8px)" }}
       />
 
-      {/* Screen container with translateZ to pop it forward in 3D */}
       <div 
-        className="w-full h-full rounded-[34px] overflow-hidden bg-[#030303] relative border border-black/50 flex flex-col"
+        className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border ${
+          isDark ? "bg-[#030303] border-black/50" : "bg-white border-gray-200"
+        }`}
         style={{
           transform: "translateZ(8px)",
           transformStyle: "preserve-3d",
         }}
       >
-        {/* Glass Glare Reflection Effect */}
         <div 
           className="absolute inset-0 z-25 pointer-events-none opacity-20 mix-blend-overlay"
           style={{
@@ -1364,9 +1380,10 @@ const PhoneMockup = ({ children, scrollProgress }: { children: React.ReactNode, 
           }}
         />
 
-        {/* Dynamic Island (Camera Cutout) */}
         <div 
-          className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-4.5 bg-black rounded-full z-30 flex items-center justify-center border border-white/5"
+          className={`absolute top-3 left-1/2 -translate-x-1/2 w-20 h-4.5 rounded-full z-30 flex items-center justify-center border ${
+            isDark ? "bg-black border-white/5" : "bg-[#0F1115] border-black/5"
+          }`}
           style={{ transform: "translateZ(10px)" }}
         >
           <div className="w-2 h-2 rounded-full bg-[#101118] ml-auto mr-2 flex items-center justify-center">
@@ -1374,8 +1391,9 @@ const PhoneMockup = ({ children, scrollProgress }: { children: React.ReactNode, 
           </div>
         </div>
 
-        {/* Status bar */}
-        <div className="h-8 pt-2.5 px-6 flex justify-between items-center text-[8px] font-mono text-gray-455 z-20 select-none">
+        <div className={`h-8 pt-2.5 px-6 flex justify-between items-center text-[8px] font-mono z-20 select-none ${
+          isDark ? "text-gray-455" : "text-gray-500"
+        }`}>
           <span>09:41</span>
           <div className="flex items-center gap-1.5">
             <span>📶</span>
@@ -1383,23 +1401,22 @@ const PhoneMockup = ({ children, scrollProgress }: { children: React.ReactNode, 
           </div>
         </div>
 
-        {/* Screen Content */}
         <div className="flex-1 w-full relative overflow-hidden">
           {children}
         </div>
 
-        {/* Home Indicator */}
         <div className="h-3 w-full flex items-center justify-center z-25">
-          <div className="w-16 h-0.5 bg-gray-700 rounded-full" />
+          <div className={`w-16 h-0.5 rounded-full ${isDark ? "bg-gray-700" : "bg-gray-300"}`} />
         </div>
       </div>
     </div>
   );
 };
 
-const HoneycombBackground = ({ scrollProgress, activeStep }: { scrollProgress: number, activeStep: string }) => {
+const HoneycombBackground = ({ scrollProgress, activeStep, theme }: { scrollProgress: number, activeStep: string, theme: "light" | "dark" }) => {
   const translateY = (scrollProgress - 0.25) * -160;
   const isEnvironments = activeStep === "environments";
+  const isDark = theme === "dark";
 
   return (
     <div 
@@ -1420,10 +1437,10 @@ const HoneycombBackground = ({ scrollProgress, activeStep }: { scrollProgress: n
           return (
             <div 
               key={idx}
-              className={`absolute transition-all duration-700 ${
+              className={`absolute transition-all duration-700 animate-float ${
                 isActive 
                   ? 'opacity-80 scale-100' 
-                  : 'opacity-10 scale-90 blur-[0.5px]'
+                  : (isDark ? 'opacity-10 scale-90 blur-[0.5px]' : 'opacity-25 scale-90 blur-[0.5px]')
               }`}
               style={{
                 left: `calc(50% + ${cell.x}px)`,
@@ -1431,13 +1448,14 @@ const HoneycombBackground = ({ scrollProgress, activeStep }: { scrollProgress: n
                 width: '82px',
                 height: '95px',
                 transform: 'translate(-50%, -50%)',
+                animationDelay: `${idx * 0.4}s`,
               }}
             >
               <div 
                 className={`w-full h-full flex flex-col items-center justify-center relative shadow-lg transition-all duration-500 border ${
                   isActive 
-                    ? 'bg-indigo-500/10 border-indigo-500/30 shadow-indigo-500/5' 
-                    : 'bg-[#0B0C10]/80 border-white/5'
+                    ? (isDark ? 'bg-indigo-500/10 border-indigo-500/30 shadow-indigo-500/5' : 'bg-indigo-500/5 border-indigo-500/20 shadow-md shadow-indigo-500/5') 
+                    : (isDark ? 'bg-[#0B0C10]/80 border-white/5' : 'bg-white/90 border-black/5 shadow-sm')
                 }`}
                 style={{
                   clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
@@ -1448,7 +1466,7 @@ const HoneycombBackground = ({ scrollProgress, activeStep }: { scrollProgress: n
                 )}
                 <div className="mb-1">{getIcon(cell.name)}</div>
                 <span className={`text-[7px] font-mono font-bold tracking-tight transition-colors ${
-                  isActive ? 'text-white' : 'text-gray-500'
+                  isActive ? (isDark ? 'text-white' : 'text-[#0F1115]') : 'text-gray-500'
                 }`}>{cell.label}</span>
               </div>
             </div>
@@ -1459,11 +1477,12 @@ const HoneycombBackground = ({ scrollProgress, activeStep }: { scrollProgress: n
   );
 };
 
-export function InteractiveShowcase() {
+export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState<string>("initial");
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const checkMobile = () => {
@@ -1474,81 +1493,87 @@ export function InteractiveShowcase() {
     
     const handleScroll = () => {
       if (!containerRef.current) return;
-      
       const rect = containerRef.current.getBoundingClientRect();
-      const containerHeight = rect.height;
-      const viewHeight = window.innerHeight;
-      const scrolled = -rect.top;
-      const maxScroll = containerHeight - viewHeight;
-      const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
+      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
       setScrollProgress(progress);
-
       const steps = ["initial", "environments", "terminal", "editor", "git", "previews"];
-      const stepIndex = Math.min(
-        Math.floor(progress * steps.length),
-        steps.length - 1
-      );
-
-      setActiveStep(steps[stepIndex]);
+      setActiveStep(steps[Math.min(Math.floor(progress * steps.length), steps.length - 1)]);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    
     return () => {
       window.removeEventListener("resize", checkMobile);
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
-  const transformStyle = get3DTransform(scrollProgress, isMobile);
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobile) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMouseOffset({
+      x: (e.clientX - rect.left) / rect.width - 0.5,
+      y: (e.clientY - rect.top) / rect.height - 0.5
+    });
+  };
+
+  const handleMouseLeave = () => setMouseOffset({ x: 0, y: 0 });
+  const get3DTransform = (p: number, m: boolean, ox: number, oy: number) => {
+    const k = KEYFRAMES[Math.min(Math.floor(p * 5), 4)];
+    const rx = (oy * -20) + k.rx;
+    const ry = (ox * 20) + k.ry;
+    return `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${m ? 0.8 : k.s})`;
+  };
+
+  const transformStyle = get3DTransform(scrollProgress, isMobile, mouseOffset.x, mouseOffset.y);
   const currentStepData = STEPS.find(s => s.id === activeStep) || STEPS[0];
+  const isDark = theme === "dark";
 
   return (
-    <div ref={containerRef} className="relative w-full h-[500vh] bg-[#030303] border-y border-white/5">
-      {/* Sticky Container */}
+    <div 
+      ref={containerRef} 
+      className={`relative w-full h-[500vh] border-y transition-colors duration-300 ${
+        isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
+      }`}
+    >
       <div className="sticky top-0 h-screen w-full flex flex-col md:flex-row items-center justify-between px-6 md:px-24 overflow-hidden z-20">
-        
-        {/* Left Side: Animated Text */}
         <div className="w-full md:w-[40%] h-[30vh] md:h-full flex flex-col justify-center order-2 md:order-1 text-center md:text-left pb-8 md:pb-0">
-          <div 
-            key={activeStep} 
-            className="space-y-4 animate-fade-in-up"
-          >
-            <span className="inline-block text-[9px] font-mono font-bold tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full uppercase">
+          <div key={activeStep} className="space-y-4 animate-fade-in-up">
+            <span className={`inline-block text-[9px] font-mono font-bold tracking-widest px-2.5 py-1 rounded-full uppercase ${
+              isDark 
+                ? "text-indigo-400 bg-indigo-500/10 border border-indigo-500/20" 
+                : "text-indigo-600 bg-indigo-600/5 border border-indigo-600/15"
+            }`}>
               {currentStepData.badge}
             </span>
-            <h3 className="text-2xl md:text-5xl font-bold tracking-tight text-white leading-tight font-sans">
+            <h3 className={`text-2xl md:text-5xl font-bold tracking-tight leading-tight font-sans ${
+              isDark ? "text-white" : "text-[#0F1115]"
+            }`}>
               {currentStepData.title}
             </h3>
-            <p className="text-xs md:text-sm text-gray-400 leading-relaxed max-w-md mx-auto md:mx-0">
+            <p className={`text-xs md:text-sm leading-relaxed max-w-md mx-auto md:mx-0 ${
+              isDark ? "text-gray-400" : "text-gray-650"
+            }`}>
               {currentStepData.description}
             </p>
           </div>
         </div>
 
-        {/* Right Side: Sticky Phone & Background */}
-        <div className="w-full md:w-[60%] h-[55vh] md:h-full relative flex items-center justify-center overflow-hidden order-1 md:order-2">
-          {/* Honeycomb Background */}
-          <HoneycombBackground scrollProgress={scrollProgress} activeStep={activeStep} />
-          
-          {/* Glowing Aura behind phone */}
+        <div 
+          className="w-full md:w-[60%] h-[55vh] md:h-full relative flex items-center justify-center overflow-hidden order-1 md:order-2"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <HoneycombBackground scrollProgress={scrollProgress} activeStep={activeStep} theme={theme} />
           <div className="absolute w-[260px] h-[260px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
-          
-          {/* 3D Phone Wrapper */}
           <div 
             className="relative z-10 transition-transform duration-300 ease-out"
-            style={{
-              transform: transformStyle,
-              transformStyle: "preserve-3d",
-            }}
+            style={{ transform: transformStyle, transformStyle: "preserve-3d" }}
           >
-            <PhoneMockup scrollProgress={scrollProgress}>
-              <PhoneScreen activeStep={activeStep} />
+            <PhoneMockup scrollProgress={scrollProgress} theme={theme}>
+              <PhoneScreen activeStep={activeStep} theme={theme} />
             </PhoneMockup>
           </div>
         </div>
-
       </div>
     </div>
   );
