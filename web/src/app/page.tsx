@@ -175,11 +175,95 @@ function DecryptText({ text, duration = 800 }: { text: string; duration?: number
   return <span ref={ref}>{display || text}</span>;
 }
 
+const FAQS = [
+  {
+    q: "What is CloudCode?",
+    a: "CloudCode is a cloud-powered development environment that lets you write, run, debug, and deploy applications from anywhere. Every workspace runs inside an isolated container with a full development environment, integrated terminal, AI assistance, Git support, and live previews."
+  },
+  {
+    q: "Do I need to install anything?",
+    a: "No. CloudCode runs entirely in the cloud. Simply create a workspace and start coding instantly without installing SDKs, compilers, or language runtimes on your device."
+  },
+  {
+    q: "How fast are workspaces created?",
+    a: "Most workspaces are ready within a few seconds. CloudCode provisions isolated development containers on demand so you can start building almost immediately."
+  },
+  {
+    q: "Which programming languages are supported?",
+    a: "CloudCode supports virtually any language that can run inside a Linux container, including: JavaScript / TypeScript, Python, Java, Go, Rust, PHP, C / C++, Ruby, Node.js, Bun, and Deno. You can also install additional runtimes inside your workspace."
+  },
+  {
+    q: "Can I connect my GitHub repositories?",
+    a: "Yes. You can connect your GitHub account, clone repositories, commit changes, create branches, and push updates directly from CloudCode."
+  },
+  {
+    q: "Is every workspace isolated?",
+    a: "Absolutely. Every project runs inside its own secure container with isolated storage, processes, and networking to ensure security and consistency."
+  },
+  {
+    q: "Can I use CloudCode from my phone or tablet?",
+    a: "Yes. CloudCode is designed with a mobile-first experience while still providing professional developer tools. You can code, run terminals, preview applications, and manage projects from virtually any device."
+  },
+  {
+    q: "Does CloudCode include AI?",
+    a: "Yes. CloudCode includes an integrated AI coding assistant that can generate code, explain code, fix bugs, refactor files, generate tests, answer project questions, and assist directly inside your workspace."
+  },
+  {
+    q: "Can I choose my own AI model?",
+    a: "Yes. Depending on your plan, you can use CloudCode's built-in AI models or connect your own API keys for supported providers."
+  },
+  {
+    q: "Is my source code private?",
+    a: "Yes. Your code remains private. CloudCode does not use your private repositories to train public AI models, and all workspaces run in isolated environments with encrypted communication."
+  },
+  {
+    q: "Can I collaborate with my team?",
+    a: "Yes. CloudCode supports collaborative workflows through shared projects, Git integration, and team workspaces, making it easy to build together."
+  },
+  {
+    q: "Does CloudCode support Docker?",
+    a: "Yes. Since every workspace runs inside a containerized environment, you can work with Docker-based projects and custom development environments where supported."
+  },
+  {
+    q: "Can I install packages and dependencies?",
+    a: "Absolutely. You have full terminal access, allowing you to install packages, libraries, frameworks, and tools just as you would on a local Linux machine."
+  },
+  {
+    q: "Can I preview my application?",
+    a: "Yes. CloudCode provides live application previews so you can instantly test web applications while developing."
+  },
+  {
+    q: "Does CloudCode include a terminal?",
+    a: "Yes. Every workspace includes a fully featured Linux terminal with package managers, compilers, shells, and common developer utilities pre-installed."
+  },
+  {
+    q: "Can I import an existing project?",
+    a: "Yes. You can import projects from GitHub or upload your own code to continue development without changing your workflow."
+  },
+  {
+    q: "Is there a free plan?",
+    a: "Yes. CloudCode offers a free tier so you can explore the platform and start building without a credit card. Paid plans unlock additional compute resources, AI usage, storage, and collaboration features."
+  },
+  {
+    q: "Who is CloudCode built for?",
+    a: "CloudCode is designed for individual developers, students, open-source contributors, freelancers, startup teams, and enterprise engineering teams. Whether you're building your first app or managing production systems, CloudCode provides a consistent development environment."
+  },
+  {
+    q: "Can I deploy applications from CloudCode?",
+    a: "Yes. You can build, test, and deploy applications using your preferred deployment workflow or integrated deployment providers."
+  },
+  {
+    q: "Why choose CloudCode over a local development setup?",
+    a: "CloudCode eliminates environment setup, dependency conflicts, and machine limitations. Every workspace is reproducible, accessible from anywhere, and ready to code in seconds, allowing you to focus on building instead of configuring."
+  }
+];
+
 export default function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mounted, setMounted] = useState(false);
   const [activeStory, setActiveStory] = useState<number>(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [showAllFaq, setShowAllFaq] = useState(false);
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
@@ -822,42 +906,52 @@ export default function Home() {
             </div>
           </ScrollReveal>
 
-          <div className="space-y-3">
-            {[
-              {
-                q: "Can I use GitHub?",
-                a: "Yes. CloudCode integrates fully with GitHub. You can sign in using GitHub OAuth, clone private repositories, commit changes, create branches, and push directly back to GitHub."
-              },
-              {
-                q: "Can I use my own AI model?",
-                a: "Yes. In your settings, you can configure your own API keys for OpenAI, Anthropic, or Gemini to power the AI code assistant and autonomous agent."
-              },
-              {
-                q: "Can I run Docker?",
-                a: "Yes. Our cloud sandboxes are running in isolated Linux containers. You have full root access to run Docker, compilers, and install any packages you need."
-              },
-              {
-                q: "Do I need a laptop?",
-                a: "No. CloudCode is designed to let you write, compile, test, and deploy production software entirely from your mobile device or tablet."
-              }
-            ].map((faq, idx) => (
-              <ScrollReveal key={idx} delay={idx * 100}>
-                <div className={`border ${colors.border} ${colors.card} rounded-lg overflow-hidden`}>
-                  <button
-                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                    className="w-full px-5 py-3.5 flex justify-between items-center text-left text-xs font-bold cursor-pointer hover:bg-[#0f111508] dark:hover:bg-[#161821] transition-all"
+          <div className="relative">
+            <div className={`space-y-3 transition-all duration-500 overflow-hidden ${!showAllFaq ? "max-h-[500px]" : "max-h-none pb-12"}`}>
+              {FAQS.map((faq, idx) => (
+                <ScrollReveal key={idx} delay={(idx % 10) * 50}>
+                  <div className={`border ${colors.border} ${colors.card} rounded-lg overflow-hidden`}>
+                    <button
+                      onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                      className="w-full px-5 py-3.5 flex justify-between items-center text-left text-xs font-bold cursor-pointer hover:bg-[#0f111508] dark:hover:bg-[#161821] transition-all"
+                    >
+                      <span>{faq.q}</span>
+                      <span className="text-gray-400">{openFaq === idx ? "-" : "+"}</span>
+                    </button>
+                    {openFaq === idx && (
+                      <div className={`px-5 pb-3.5 pt-1 text-[11px] ${colors.textSecondary} leading-relaxed border-t ${colors.border}`}>
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+
+            {/* Faded Background & Show More Button */}
+            {!showAllFaq && (
+              <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-[#FAFAFA] dark:from-[#030303] via-[#FAFAFA]/90 dark:via-[#030303]/90 to-transparent flex items-end justify-center pb-2 z-20 pointer-events-none">
+                <div className="pointer-events-auto">
+                  <button 
+                    onClick={() => setShowAllFaq(true)}
+                    className="px-6 py-2 bg-[#FAFAFA] dark:bg-[#030303] hover:bg-[#F3F4F6] dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-xs font-bold transition-all cursor-pointer text-zinc-900 dark:text-zinc-50 shadow-md"
                   >
-                    <span>{faq.q}</span>
-                    <span className="text-gray-400">{openFaq === idx ? "-" : "+"}</span>
+                    {"Show More FAQs"}
                   </button>
-                  {openFaq === idx && (
-                    <div className={`px-5 pb-3.5 pt-1 text-[11px] ${colors.textSecondary} leading-relaxed border-t ${colors.border}`}>
-                      {faq.a}
-                    </div>
-                  )}
                 </div>
-              </ScrollReveal>
-            ))}
+              </div>
+            )}
+
+            {showAllFaq && (
+              <div className="flex justify-center mt-6">
+                <button 
+                  onClick={() => setShowAllFaq(false)}
+                  className="px-6 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-xs font-bold transition-all cursor-pointer text-zinc-900 dark:text-zinc-50"
+                >
+                  {"Show Less FAQs"}
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
