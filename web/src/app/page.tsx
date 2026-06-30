@@ -1321,6 +1321,48 @@ const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light"
   }
 };
 
+const KEYFRAMES = [
+  { p: 0.0, rx: 15, ry: -20, rz: 10, s: 0.9, tx: 0, ty: 10, tz: 0 },      // initial
+  { p: 0.2, rx: 8, ry: -12, rz: 5, s: 1.0, tx: -20, ty: 0, tz: 20 },     // environments
+  { p: 0.4, rx: 5, ry: 5, rz: -3, s: 1.15, tx: 10, ty: -10, tz: 50 },    // terminal
+  { p: 0.6, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: -20, tz: 100 },     // editor
+  { p: 0.8, rx: 8, ry: 15, rz: -5, s: 1.1, tx: 20, ty: 10, tz: 30 },     // git
+  { p: 1.0, rx: 0, ry: 0, rz: 0, s: 1.05, tx: 0, ty: 0, tz: 10 }         // previews
+];
+
+const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mouseY: number) => {
+  let idx = 0;
+  for (let i = 0; i < KEYFRAMES.length - 1; i++) {
+    if (progress >= KEYFRAMES[i].p && progress <= KEYFRAMES[i + 1].p) {
+      idx = i;
+      break;
+    }
+  }
+  
+  const k1 = KEYFRAMES[idx];
+  const k2 = KEYFRAMES[idx + 1];
+  
+  const range = k2.p - k1.p;
+  const t = range === 0 ? 0 : (progress - k1.p) / range;
+  
+  const lerp = (a: number, b: number) => a + (b - a) * t;
+  
+  const factor = isMobile ? 0.2 : 1.0;
+  
+  const mouseRx = isMobile ? 0 : mouseY * -15;
+  const mouseRy = isMobile ? 0 : mouseX * 15;
+  
+  const rx = (lerp(k1.rx, k2.rx) + mouseRx) * factor;
+  const ry = (lerp(k1.ry, k2.ry) + mouseRy) * factor;
+  const rz = lerp(k1.rz, k2.rz) * factor;
+  const s = lerp(k1.s, k2.s) * (isMobile ? 0.85 : 1.0);
+  const tx = lerp(k1.tx, k2.tx) * factor;
+  const ty = lerp(k1.ty, k2.ty) * factor;
+  const tz = lerp(k1.tz, k2.tz) * factor;
+  
+  return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
+};
+
 const PhoneMockup = ({ children, scrollProgress, theme }: { children: React.ReactNode, scrollProgress: number, theme: "light" | "dark" }) => {
   const glareX = (scrollProgress * 400) - 200;
   const isDark = theme === "dark";
