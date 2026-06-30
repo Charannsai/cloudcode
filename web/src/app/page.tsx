@@ -48,6 +48,133 @@ function ScrollReveal({ children, delay = 0 }: { children: React.ReactNode; dela
   );
 }
 
+// Counts up numbers smoothly from zero when scrolled into view
+function AnimatedNumber({ 
+  value, 
+  suffix = "", 
+  prefix = "", 
+  decimals = 0, 
+  duration = 1000 
+}: { 
+  value: number; 
+  suffix?: string; 
+  prefix?: string; 
+  decimals?: number; 
+  duration?: number 
+}) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasStarted(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.05 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    let start = 0;
+    const end = value;
+    const totalFrames = Math.round(duration / 16);
+    let frame = 0;
+
+    const timer = setInterval(() => {
+      frame++;
+      const progress = frame / totalFrames;
+      const currentVal = start + (end - start) * (progress * (2 - progress));
+      
+      if (frame >= totalFrames) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(currentVal);
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [hasStarted, value, duration]);
+
+  return (
+    <span ref={ref}>
+      {prefix}
+      {count.toFixed(decimals)}
+      {suffix}
+    </span>
+  );
+}
+
+// Decrypts text character-by-character when scrolled into view
+function DecryptText({ text, duration = 800 }: { text: string; duration?: number }) {
+  const [display, setDisplay] = useState("");
+  const ref = useRef<HTMLSpanElement>(null);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasStarted(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.05 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_#@$";
+    let iterations = 0;
+    const totalSteps = text.length * 3;
+    
+    const interval = setInterval(() => {
+      setDisplay(
+        text
+          .split("")
+          .map((char, index) => {
+            if (index < iterations / 3) {
+              return text[index];
+            }
+            if (char === " ") return " ";
+            return chars[Math.floor(Math.random() * chars.length)];
+          })
+          .join("")
+      );
+
+      iterations++;
+      if (iterations >= totalSteps) {
+        setDisplay(text);
+        clearInterval(interval);
+      }
+    }, duration / totalSteps);
+
+    return () => clearInterval(interval);
+  }, [hasStarted, text, duration]);
+
+  return <span ref={ref}>{display || text}</span>;
+}
+
 export default function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mounted, setMounted] = useState(false);
@@ -291,25 +418,33 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <ScrollReveal delay={100}>
               <div>
-                <div className="text-3xl font-bold text-indigo-500">{"< 5s"}</div>
+                <div className={`text-3xl font-bold tracking-tighter ${colors.text}`}>
+                  <AnimatedNumber value={5} prefix="< " suffix="s" />
+                </div>
                 <div className="text-xs font-semibold mt-1">{"Workspace Startup"}</div>
               </div>
             </ScrollReveal>
             <ScrollReveal delay={200}>
               <div>
-                <div className="text-3xl font-bold text-app-blue">{"50ms"}</div>
+                <div className={`text-3xl font-bold tracking-tighter ${colors.text}`}>
+                  <AnimatedNumber value={50} suffix="ms" />
+                </div>
                 <div className="text-xs font-semibold mt-1">{"Terminal Latency"}</div>
               </div>
             </ScrollReveal>
             <ScrollReveal delay={300}>
               <div>
-                <div className="text-3xl font-bold text-app-purple">{"99.9%"}</div>
+                <div className={`text-3xl font-bold tracking-tighter ${colors.text}`}>
+                  <AnimatedNumber value={99.9} suffix="%" decimals={1} />
+                </div>
                 <div className="text-xs font-semibold mt-1">{"System Uptime"}</div>
               </div>
             </ScrollReveal>
             <ScrollReveal delay={400}>
               <div>
-                <div className="text-3xl font-bold text-app-green">{"AES-256"}</div>
+                <div className={`text-3xl font-bold tracking-tighter ${colors.text}`}>
+                  <DecryptText text="AES-256" />
+                </div>
                 <div className="text-xs font-semibold mt-1">{"Workspace Encryption"}</div>
               </div>
             </ScrollReveal>
