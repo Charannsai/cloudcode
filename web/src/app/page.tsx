@@ -1376,7 +1376,10 @@ const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scro
       <div className={`flex items-center justify-between px-3 py-1.5 border-b ${
         isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-55 border-black/5"
       }`}>
-        <span className={`text-[8px] font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}>Counter.tsx</span>
+        <div className="flex items-center gap-1">
+          <i className="devicon-typescript-plain colored text-[8px] shrink-0" />
+          <span className={`text-[8px] font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}>Counter.tsx</span>
+        </div>
         <span className={`text-[7px] font-mono px-1 py-0.5 rounded ${isDark ? "bg-white/10 text-white" : "bg-black/5 text-black"}`}>TypeScript</span>
       </div>
 
@@ -1525,13 +1528,21 @@ const GitScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollP
                 <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
                   isDark ? "bg-white/5 border-white/5" : "bg-gray-50 border-black/5"
                 }`}>
-                  <span className="font-mono font-bold">M  Counter.tsx</span>
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="font-bold text-[#E2C08D]">M</span>
+                    <i className="devicon-typescript-plain colored text-[9px] shrink-0" />
+                    <span>Counter.tsx</span>
+                  </div>
                   <span className="text-[7px] text-gray-500 font-mono">Modified</span>
                 </div>
                 <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
                   isDark ? "bg-white/5 border-white/5" : "bg-gray-50 border-black/5"
                 }`}>
-                  <span className="font-mono font-bold">M  page.tsx</span>
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="font-bold text-[#E2C08D]">M</span>
+                    <i className="devicon-nextjs-plain text-[9px] shrink-0 text-black dark:text-white" />
+                    <span>page.tsx</span>
+                  </div>
                   <span className="text-[7px] text-gray-500 font-mono">Modified</span>
                 </div>
               </div>
@@ -1910,6 +1921,7 @@ const WorkspaceIDE = ({ activeStep, theme, scrollProgress }: { activeStep: strin
                   }`}>
                     <div className="flex items-center gap-1.5">
                       <span className="font-bold font-mono">M</span>
+                      <i className="devicon-typescript-plain colored text-[9px] shrink-0" />
                       <span className="font-mono text-gray-400">Counter.tsx</span>
                     </div>
                   </div>
@@ -1940,10 +1952,8 @@ const WorkspaceIDE = ({ activeStep, theme, scrollProgress }: { activeStep: strin
                       </svg>
                       components
                     </div>
-                    <div className="pl-3 font-bold text-white dark:text-white">
-                      <svg className="w-2.5 h-2.5 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
-                      </svg>
+                    <div className="pl-3 font-bold text-white dark:text-white flex items-center">
+                      <i className="devicon-typescript-plain colored text-[9px] mr-1.5 shrink-0" />
                       Counter.tsx
                     </div>
                   </div>
@@ -1959,14 +1969,12 @@ const WorkspaceIDE = ({ activeStep, theme, scrollProgress }: { activeStep: strin
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* Editor Tabs */}
             <div className={`h-8 flex border-b ${
-              isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-50 border-black/5"
+              isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-55 border-black/5"
             }`}>
               <div className={`px-4 flex items-center gap-2 border-r text-[8px] font-mono ${
                 isDark ? "bg-[#0F1117] border-white/5 text-white" : "bg-white border-black/5 text-black"
               }`}>
-                <svg className="w-2.5 h-2.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M13 2v7h7" />
-                </svg>
+                <i className="devicon-typescript-plain colored text-[9px] shrink-0" />
                 <span>Counter.tsx</span>
                 <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-white" : "bg-black"}`} />
               </div>
