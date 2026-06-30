@@ -3,6 +3,51 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
+// Reusable ScrollReveal helper component for smooth blur-reveal transitions
+function ScrollReveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      {
+        threshold: 0.05,
+        rootMargin: "0px 0px -40px 0px",
+      }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        transitionDelay: `${delay}ms`,
+      }}
+      className={`transition-all duration-1000 ease-out transform ${
+        isVisible 
+          ? "opacity-100 blur-0 translate-y-0" 
+          : "opacity-0 blur-md translate-y-8"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mounted, setMounted] = useState(false);
@@ -136,84 +181,98 @@ export default function Home() {
         {/* ==================== EVERYTHING YOU NEED SECTION ==================== */}
         <section className="w-full max-w-5xl px-6 py-24 z-10">
           {/* Header */}
-          <div className="mb-16 text-left">
-            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Platform"}</span>
-            <h2 className={`text-3xl font-semibold tracking-tighter mt-2 ${colors.text}`}>{"everything you need"}</h2>
-          </div>
+          <ScrollReveal>
+            <div className="mb-16 text-left">
+              <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Platform"}</span>
+              <h2 className={`text-3xl font-semibold tracking-tighter mt-2 ${colors.text}`}>{"everything you need"}</h2>
+            </div>
+          </ScrollReveal>
 
           {/* Seamless Content Flow Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             {/* LEFT COLUMN: Cloud Sandbox (spans 8 cols) */}
-            <div className="lg:col-span-8 space-y-6">
-              <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-[#fafafa] dark:bg-[#0A0A0A]">
-                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#05070B] via-transparent to-transparent z-10 pointer-events-none"></div>
-                <img 
-                  alt="System Core Architecture" 
-                  className="w-full grayscale opacity-85 filter contrast-125 brightness-95 dark:brightness-75 object-cover" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCynieWEkovurckRwBDGbYKl7T8sD-DC2mgvxMe09pqe8FcomXYoQD6fI2o9BERaM5iYAF5LPxyGiFdZNHLdEse5HmQQ66NdylKUHuitv4l2NDKdbtsVIUNA5u-8oUpxaM6jUxX3UcxtAZe0GAwFzRBmJXmeKHxoWL850yZq5_NyK-7A2CClMmiPPNzZJP4jdMYb1KQBAubq-7bMV7RuQmmYyWRG6pqSQz1LQ68_BpGveEWd-F5ey0H2666xKaFduBmzT45CRpe5w"
-                />
-              </div>
-              
-              <div className="max-w-2xl space-y-2">
-                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">
-                  {"01 / Infrastructure"}
-                </span>
-                <h3 className={`text-xl md:text-2xl font-semibold tracking-tighter ${colors.text}`}>
-                  {"create workspaces or clone your repos"}
-                </h3>
-                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
-                  {"Spin up containerized workspaces in under 5 seconds. Connect directly to your GitHub, clone any branch, and start coding instantly with full environment parity."}
-                </p>
-              </div>
+            <div className="lg:col-span-8">
+              <ScrollReveal delay={100}>
+                <div className="space-y-6">
+                  <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-[#fafafa] dark:bg-[#0A0A0A]">
+                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#05070B] via-transparent to-transparent z-10 pointer-events-none"></div>
+                    <img 
+                      alt="System Core Architecture" 
+                      className="w-full grayscale opacity-85 filter contrast-125 brightness-95 dark:brightness-75 object-cover" 
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCynieWEkovurckRwBDGbYKl7T8sD-DC2mgvxMe09pqe8FcomXYoQD6fI2o9BERaM5iYAF5LPxyGiFdZNHLdEse5HmQQ66NdylKUHuitv4l2NDKdbtsVIUNA5u-8oUpxaM6jUxX3UcxtAZe0GAwFzRBmJXmeKHxoWL850yZq5_NyK-7A2CClMmiPPNzZJP4jdMYb1KQBAubq-7bMV7RuQmmYyWRG6pqSQz1LQ68_BpGveEWd-F5ey0H2666xKaFduBmzT45CRpe5w"
+                    />
+                  </div>
+                  
+                  <div className="max-w-2xl space-y-2">
+                    <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">
+                      {"01 / Infrastructure"}
+                    </span>
+                    <h3 className={`text-xl md:text-2xl font-semibold tracking-tighter ${colors.text}`}>
+                      {"create workspaces or clone your repos"}
+                    </h3>
+                    <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                      {"Spin up containerized workspaces in under 5 seconds. Connect directly to your GitHub, clone any branch, and start coding instantly with full environment parity."}
+                    </p>
+                  </div>
+                </div>
+              </ScrollReveal>
             </div>
 
             {/* RIGHT COLUMN: Vertical Feature Flow (spans 4 cols) */}
             <div className="lg:col-span-4 space-y-8">
               
               {/* Feature 02: Terminal */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
-                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"02"}</span>
-                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
-                  {"Terminal"}
-                </h4>
-                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
-                  {"Raw Linux container shell with full toolchain support and native package managers."}
-                </p>
-              </div>
+              <ScrollReveal delay={150}>
+                <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                  <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"02"}</span>
+                  <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
+                    {"Terminal"}
+                  </h4>
+                  <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                    {"Raw Linux container shell with full toolchain support and native package managers."}
+                  </p>
+                </div>
+              </ScrollReveal>
 
               {/* Feature 03: AI Agent */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
-                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"03"}</span>
-                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
-                  {"AI Agent"}
-                </h4>
-                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
-                  {"Autonomous companions that execute builds, resolve conflicts, and optimize deployments."}
-                </p>
-              </div>
+              <ScrollReveal delay={250}>
+                <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                  <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"03"}</span>
+                  <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
+                    {"AI Agent"}
+                  </h4>
+                  <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                    {"Autonomous companions that execute builds, resolve conflicts, and optimize deployments."}
+                  </p>
+                </div>
+              </ScrollReveal>
 
               {/* Feature 04: Web Preview */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
-                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"04"}</span>
-                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
-                  {"Web Preview"}
-                </h4>
-                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
-                  {"Instant hot-reloading in a secure sandbox with integrated developer diagnostics."}
-                </p>
-              </div>
+              <ScrollReveal delay={350}>
+                <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                  <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"04"}</span>
+                  <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
+                    {"Web Preview"}
+                  </h4>
+                  <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                    {"Instant hot-reloading in a secure sandbox with integrated developer diagnostics."}
+                  </p>
+                </div>
+              </ScrollReveal>
 
               {/* Feature 05: Git Workflows */}
-              <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
-                <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"05"}</span>
-                <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
-                  {"Git Workflows"}
-                </h4>
-                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
-                  {"Seamless version control with visual diffing and automated pull request management."}
-                </p>
-              </div>
+              <ScrollReveal delay={450}>
+                <div className={`group border-t ${colors.border} pt-6 space-y-1.5`}>
+                  <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">{"05"}</span>
+                  <h4 className={`text-base md:text-lg font-semibold tracking-tighter ${colors.text}`}>
+                    {"Git Workflows"}
+                  </h4>
+                  <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                    {"Seamless version control with visual diffing and automated pull request management."}
+                  </p>
+                </div>
+              </ScrollReveal>
 
             </div>
 
@@ -222,95 +281,115 @@ export default function Home() {
 
         {/* ==================== 8. PERFORMANCE ==================== */}
         <section className="w-full max-w-5xl px-6 py-28 z-10 text-center">
-          <div className="mb-16">
-            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Infrastructure"}</span>
-            <h2 className="text-3xl font-semibold tracking-tighter mt-2">{"CloudCode boots in seconds."}</h2>
-          </div>
+          <ScrollReveal>
+            <div className="mb-16">
+              <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Infrastructure"}</span>
+              <h2 className="text-3xl font-semibold tracking-tighter mt-2">{"CloudCode boots in seconds."}</h2>
+            </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <div className="text-3xl font-bold text-indigo-500">{"< 5s"}</div>
-              <div className="text-xs font-semibold mt-1">{"Workspace Startup"}</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-app-blue">{"50ms"}</div>
-              <div className="text-xs font-semibold mt-1">{"Terminal Latency"}</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-app-purple">{"99.9%"}</div>
-              <div className="text-xs font-semibold mt-1">{"System Uptime"}</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-app-green">{"AES-256"}</div>
-              <div className="text-xs font-semibold mt-1">{"Workspace Encryption"}</div>
-            </div>
+            <ScrollReveal delay={100}>
+              <div>
+                <div className="text-3xl font-bold text-indigo-500">{"< 5s"}</div>
+                <div className="text-xs font-semibold mt-1">{"Workspace Startup"}</div>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={200}>
+              <div>
+                <div className="text-3xl font-bold text-app-blue">{"50ms"}</div>
+                <div className="text-xs font-semibold mt-1">{"Terminal Latency"}</div>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={300}>
+              <div>
+                <div className="text-3xl font-bold text-app-purple">{"99.9%"}</div>
+                <div className="text-xs font-semibold mt-1">{"System Uptime"}</div>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={400}>
+              <div>
+                <div className="text-3xl font-bold text-app-green">{"AES-256"}</div>
+                <div className="text-xs font-semibold mt-1">{"Workspace Encryption"}</div>
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* ==================== 10. PRICING ==================== */}
         <section className="w-full max-w-5xl px-6 py-28 z-10 text-center">
-          <div className="mb-16">
-            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Pricing"}</span>
-            <h2 className="text-3xl font-semibold tracking-tighter mt-2">{"Simple, transparent pricing."}</h2>
-          </div>
+          <ScrollReveal>
+            <div className="mb-16">
+              <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Pricing"}</span>
+              <h2 className="text-3xl font-semibold tracking-tighter mt-2">{"Simple, transparent pricing."}</h2>
+            </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {/* Free */}
-            <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left`}>
-              <div>
-                <span className="text-[10px] font-mono text-gray-450 uppercase">{"[Free]"}</span>
-                <h3 className="text-2xl font-bold mt-2 mb-4">{"$0"}</h3>
-                <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-450 font-medium">
-                  <li>{"- 1 Active Sandbox"}</li>
-                  <li>{"- 512MB RAM / 1 Core"}</li>
-                  <li>{"- Basic AI autocomplete"}</li>
-                </ul>
+            <ScrollReveal delay={100}>
+              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full`}>
+                <div>
+                  <span className="text-[10px] font-mono text-gray-450 uppercase">{"[Free]"}</span>
+                  <h3 className="text-2xl font-bold mt-2 mb-4">{"$0"}</h3>
+                  <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-455 font-medium">
+                    <li>{"- 1 Active Sandbox"}</li>
+                    <li>{"- 512MB RAM / 1 Core"}</li>
+                    <li>{"- Basic AI autocomplete"}</li>
+                  </ul>
+                </div>
+                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
+                  {"Get Started"}
+                </button>
               </div>
-              <button className={`w-full mt-8 bg-transparent hover:bg-app-highlight-light dark:hover:bg-app-highlight-dark ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
-                {"Get Started"}
-              </button>
-            </div>
+            </ScrollReveal>
 
             {/* Pro */}
-            <div className={`p-8 rounded-xl border border-indigo-500/40 bg-indigo-500/5 dark:bg-[#0B0C10] flex flex-col justify-between text-left relative`}>
-              <span className="absolute top-3 right-3 text-[8px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">{"POPULAR"}</span>
-              <div>
-                <span className="text-[10px] font-mono text-indigo-400 uppercase">{"[Pro]"}</span>
-                <h3 className="text-2xl font-bold mt-2 mb-4">{"$19"}<span className="text-xs font-normal text-gray-500">{"/mo"}</span></h3>
-                <ul className="space-y-2.5 text-xs text-app-text-light dark:text-app-text-dark font-medium">
-                  <li>{"- Unlimited Sandboxes"}</li>
-                  <li>{"- 4GB RAM / 4 Dedicated Cores"}</li>
-                  <li>{"- Autonomous AI agent"}</li>
-                </ul>
+            <ScrollReveal delay={200}>
+              <div className={`p-8 rounded-xl border border-indigo-500/40 bg-indigo-500/5 dark:bg-[#0B0C10] flex flex-col justify-between text-left relative h-full`}>
+                <span className="absolute top-3 right-3 text-[8px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">{"POPULAR"}</span>
+                <div>
+                  <span className="text-[10px] font-mono text-indigo-400 uppercase">{"[Pro]"}</span>
+                  <h3 className="text-2xl font-bold mt-2 mb-4">{"$19"}<span className="text-xs font-normal text-gray-500">{"/mo"}</span></h3>
+                  <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    <li>{"- Unlimited Sandboxes"}</li>
+                    <li>{"- 4GB RAM / 4 Dedicated Cores"}</li>
+                    <li>{"- Autonomous AI agent"}</li>
+                  </ul>
+                </div>
+                <button className={`w-full mt-8 ${colors.btnPrimary} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
+                  {"Get Started with Pro"}
+                </button>
               </div>
-              <button className={`w-full mt-8 ${colors.btnPrimary} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
-                {"Get Started with Pro"}
-              </button>
-            </div>
+            </ScrollReveal>
 
             {/* Enterprise */}
-            <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left`}>
-              <div>
-                <span className="text-[10px] font-mono text-gray-450 uppercase">{"[Enterprise]"}</span>
-                <h3 className="text-2xl font-bold mt-2 mb-4">{"Custom"}</h3>
-                <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  <li>{"- Dedicated host clusters"}</li>
-                  <li>{"- Custom configurations"}</li>
-                  <li>{"- SLA & dedicated accounts"}</li>
-                </ul>
+            <ScrollReveal delay={300}>
+              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full`}>
+                <div>
+                  <span className="text-[10px] font-mono text-gray-450 uppercase">{"[Enterprise]"}</span>
+                  <h3 className="text-2xl font-bold mt-2 mb-4">{"Custom"}</h3>
+                  <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    <li>{"- Dedicated host clusters"}</li>
+                    <li>{"- Custom configurations"}</li>
+                    <li>{"- SLA & dedicated accounts"}</li>
+                  </ul>
+                </div>
+                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
+                  {"Contact Sales"}
+                </button>
               </div>
-              <button className={`w-full mt-8 bg-transparent hover:bg-app-highlight-light dark:hover:bg-app-highlight-dark ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
-                {"Contact Sales"}
-              </button>
-            </div>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* ==================== 11. FAQ ==================== */}
         <section className="w-full max-w-2xl px-6 py-28 z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold tracking-tighter">{"Frequently Asked Questions"}</h2>
-          </div>
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tighter">{"Frequently Asked Questions"}</h2>
+            </div>
+          </ScrollReveal>
 
           <div className="space-y-3">
             {[
@@ -331,20 +410,22 @@ export default function Home() {
                 a: "No. CloudCode is designed to let you write, compile, test, and deploy production software entirely from your mobile device or tablet."
               }
             ].map((faq, idx) => (
-              <div key={idx} className={`border ${colors.border} ${colors.card} rounded-lg overflow-hidden`}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full px-5 py-3.5 flex justify-between items-center text-left text-xs font-bold cursor-pointer hover:bg-app-highlight-light dark:hover:bg-app-highlight-dark transition-all"
-                >
-                  <span>{faq.q}</span>
-                  <span className="text-gray-400">{openFaq === idx ? "-" : "+"}</span>
-                </button>
-                {openFaq === idx && (
-                  <div className={`px-5 pb-3.5 pt-1 text-[11px] ${colors.textSecondary} leading-relaxed border-t ${colors.border}`}>
-                    {faq.a}
-                  </div>
-                )}
-              </div>
+              <ScrollReveal key={idx} delay={idx * 100}>
+                <div className={`border ${colors.border} ${colors.card} rounded-lg overflow-hidden`}>
+                  <button
+                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                    className="w-full px-5 py-3.5 flex justify-between items-center text-left text-xs font-bold cursor-pointer hover:bg-[#0f111508] dark:hover:bg-[#161821] transition-all"
+                  >
+                    <span>{faq.q}</span>
+                    <span className="text-gray-400">{openFaq === idx ? "-" : "+"}</span>
+                  </button>
+                  {openFaq === idx && (
+                    <div className={`px-5 pb-3.5 pt-1 text-[11px] ${colors.textSecondary} leading-relaxed border-t ${colors.border}`}>
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              </ScrollReveal>
             ))}
           </div>
         </section>
