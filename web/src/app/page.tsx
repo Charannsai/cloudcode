@@ -2076,7 +2076,7 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
   const rz = lerp(k1.rz, k2.rz) * factor;
   const s = lerp(k1.s, k2.s) * (isMobile ? 0.8 : 1.0);
   const tx = lerp(k1.tx, k2.tx) * factor;
-  const ty = lerp(k1.ty, k2.ty) * factor;
+  const ty = lerp(k1.ty, k2.ty);
   const tz = lerp(k1.tz, k2.tz) * factor;
   
   return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
@@ -2333,11 +2333,13 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   const isDark = theme === "dark";
 
   // Calculate Opacities and Scales for the transition and splash
-  const mockupOpacity = scrollProgress < 0.33 
-    ? 1 
-    : scrollProgress > 0.35 
-      ? 0 
-      : 1 - (scrollProgress - 0.33) / 0.02;
+  const mockupOpacity = scrollProgress < 0.08
+    ? (scrollProgress / 0.08)
+    : scrollProgress < 0.33 
+      ? 1 
+      : scrollProgress > 0.35 
+        ? 0 
+        : 1 - (scrollProgress - 0.33) / 0.02;
 
   const logoOpacity = scrollProgress < 0.33 
     ? 0 
