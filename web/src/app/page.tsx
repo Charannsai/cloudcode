@@ -936,31 +936,35 @@ const TerminalScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", sc
         )}
       </div>
     </div>
-  );
-};
-
 const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
   const isDark = theme === "dark";
   
   // Calculate local progress t from 0.78 to 0.86
   const t = Math.max(0, Math.min(1, (scrollProgress - 0.78) / 0.08));
 
-  const showHighlight = t >= 0.25 && t < 0.55;
-  const showAIPanel = t >= 0.55 && t < 0.75;
-  const showNewCode = t >= 0.75;
+  const showHighlight = t >= 0.20 && t < 0.40;
+  const showPopup = t >= 0.20 && t < 0.40;
+  const isPressed = t >= 0.35 && t < 0.40;
+  const showAIPanel = t >= 0.40;
+  const showNewCode = t >= 0.70;
+
+  // AI Prompt Typing Effect
+  const promptText = "add transition and log the count";
+  const promptLength = Math.floor(Math.max(0, Math.min(1, (t - 0.40) / 0.15)) * promptText.length);
+  const currentPrompt = promptText.slice(0, promptLength);
 
   return (
     <div className={`w-full h-full flex flex-col justify-between overflow-hidden relative transition-colors duration-300 ${
       isDark ? "bg-[#0F1117]" : "bg-white"
     }`}>
       <div className={`flex items-center justify-between px-3 py-1.5 border-b ${
-        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-50 border-black/5"
+        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-55 border-black/5"
       }`}>
         <span className={`text-[8px] font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}>Counter.tsx</span>
         <span className={`text-[7px] font-mono px-1 py-0.5 rounded ${isDark ? "bg-white/10 text-white" : "bg-black/5 text-black"}`}>TypeScript</span>
       </div>
 
-      <div className={`flex-1 p-3 font-mono text-[9px] space-y-1 overflow-y-auto leading-relaxed ${
+      <div className={`flex-1 p-3 font-mono text-[9px] space-y-1 overflow-y-auto leading-relaxed relative ${
         isDark ? "text-gray-300" : "text-gray-700"
       }`}>
         {!showNewCode ? (
@@ -972,13 +976,43 @@ const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scro
               <span className="font-bold">const</span> [count, setCount] = <span className="underline decoration-gray-550">useState</span>(<span className="font-bold">0</span>);
             </div>
             <div className="pl-3"><span className="font-bold">return</span> (</div>
-            <div className={`pl-6 transition-all duration-300 ${
-              showHighlight 
-                ? (isDark ? "bg-white/10 border-l-2 border-white rounded" : "bg-black/5 border-l-2 border-black rounded") 
-                : ""
-            }`}>
-              &lt;<span className="font-bold">button</span> <span className="text-gray-500">onClick</span>=&#123;() =&gt; <span>setCount</span>(count + <span className="font-bold">1</span>)&#125;&gt;
+            
+            <div className="relative">
+              {/* Ask AI Tooltip Popup */}
+              {showPopup && (
+                <div 
+                  className={`absolute left-6 -top-7 px-2 py-1 rounded text-[8px] font-sans font-bold shadow-lg flex items-center gap-1 border transition-all duration-150 z-20 ${
+                    isPressed 
+                      ? (isDark ? "bg-white text-black border-white scale-95" : "bg-black text-white border-black scale-95")
+                      : (isDark ? "bg-[#161821] text-white border-white/10" : "bg-white text-black border-black/10")
+                  }`}
+                >
+                  <span>Ask AI</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isPressed ? "bg-gray-400" : "bg-indigo-500 animate-pulse"}`} />
+                </div>
+              )}
+
+              {/* Simulated Cursor for Ask AI */}
+              {showPopup && (
+                <div 
+                  className="absolute w-2 h-2 bg-black dark:bg-white rounded-full border border-white dark:border-black pointer-events-none transition-all duration-75 shadow-md z-30"
+                  style={{
+                    left: t < 0.35 ? `${40 - ((t - 0.20) / 0.15) * 20}%` : "20%",
+                    top: t < 0.35 ? `${15 - ((t - 0.20) / 0.15) * 25}%` : "-10%",
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              )}
+
+              <div className={`pl-6 transition-all duration-350 ${
+                showHighlight 
+                  ? (isDark ? "bg-white/10 border-l-2 border-white rounded" : "bg-black/5 border-l-2 border-black rounded") 
+                  : ""
+              }`}>
+                &lt;<span className="font-bold">button</span> <span className="text-gray-500">onClick</span>=&#123;() =&gt; <span>setCount</span>(count + <span className="font-bold">1</span>)&#125;&gt;
+              </div>
             </div>
+
             <div className="pl-9">Count: &#123;count&#125;</div>
             <div className="pl-6">&lt;/<span className="font-bold">button</span>&gt;</div>
             <div className="pl-3">);</div>
@@ -1014,23 +1048,41 @@ const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scro
         )}
       </div>
 
-      {/* AI Assistant Panel (Slides up when active) */}
-      <div className={`absolute bottom-0 left-0 right-0 p-3 border-t transition-all duration-500 transform ${
+      {/* AI Assistant Chat Interface (Slides up when active) */}
+      <div className={`absolute bottom-0 left-0 right-0 p-3 border-t transition-all duration-500 transform space-y-2 ${
         showAIPanel ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
       } ${
-        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-50 border-black/5"
+        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-55 border-black/5"
       }`}>
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2">
           <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDark ? "bg-white" : "bg-black"}`} />
           <span className="text-[7px] font-mono uppercase font-bold">CloudCode AI</span>
         </div>
-        <div className={`text-[8px] font-mono p-1.5 rounded border ${
-          isDark ? "bg-white/5 border-white/5 text-white" : "bg-black/5 border-black/5 text-black"
-        }`}>
-          {"✨ Refactoring: Adding transition and console.log..."}
+        
+        <div className="space-y-1">
+          {/* User Prompt */}
+          <div className={`text-[7px] font-mono p-1 rounded ${
+            isDark ? "bg-white/5 text-gray-300" : "bg-black/5 text-gray-700"
+          }`}>
+            <span className="text-gray-500">User:</span> {currentPrompt}
+            {t >= 0.40 && t < 0.55 && <span className="animate-pulse">|</span>}
+          </div>
+          
+          {/* AI Response Status */}
+          {t >= 0.55 && (
+            <div className={`text-[7px] font-mono p-1 rounded border ${
+              showNewCode 
+                ? (isDark ? "bg-white/5 border-white/5 text-white" : "bg-black/5 border-black/5 text-black")
+                : (isDark ? "bg-white/5 border-white/5 text-gray-400 animate-pulse" : "bg-black/5 border-black/5 text-gray-500 animate-pulse")
+            }`}>
+              <span className="text-gray-500">AI:</span> {showNewCode ? "Done! Added transition and useEffect hook." : "Refactoring code..."}
+            </div>
+          )}
         </div>
       </div>
     </div>
+  );
+};iv>
   );
 };
 
@@ -1541,10 +1593,14 @@ const KEYFRAMES = [
   { p: 0.58, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
   // 5. Sandbox Load (0.58 - 0.68) - Centered
   { p: 0.68, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 6. Terminal (0.68 - 0.78) - Terminal screen on phone
-  { p: 0.78, rx: -8, ry: 12, rz: -3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 7. Editor (0.78 - 0.86) - Editor screen on phone
-  { p: 0.86, rx: 8, ry: -12, rz: 3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 6. Terminal (0.68 - 0.78) - Zoom in completely to terminal
+  { p: 0.71, rx: 0, ry: 0, rz: 0, s: 3.0, tx: 0, ty: 0, tz: 150, bezelOpacity: 0 },
+  { p: 0.78, rx: 0, ry: 0, rz: 0, s: 3.0, tx: 0, ty: 0, tz: 150, bezelOpacity: 0 },
+  // 7. Editor (0.78 - 0.86) - Zoom out to select code, then zoom back in for AI refactor
+  { p: 0.79, rx: 6, ry: -8, rz: 2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 }, // zoom out for selection
+  { p: 0.82, rx: 0, ry: 0, rz: 0, s: 3.0, tx: 0, ty: 0, tz: 150, bezelOpacity: 0 },  // zoom in for AI popup
+  { p: 0.84, rx: 0, ry: 0, rz: 0, s: 2.2, tx: 0, ty: 0, tz: 100, bezelOpacity: 0.5 }, // zoom out slightly for AI panel
+  { p: 0.86, rx: 0, ry: 0, rz: 0, s: 2.2, tx: 0, ty: 0, tz: 100, bezelOpacity: 0.5 },
   // 8. Git (0.86 - 0.92) - Git screen on phone
   { p: 0.92, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
   // 9. Previews (0.92 - 0.96) - Starts on phone, then deep zooms to fullscreen desktop preview
