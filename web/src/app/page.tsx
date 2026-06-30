@@ -536,17 +536,27 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {/* Free */}
             <ScrollReveal delay={100}>
-              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full`}>
+              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full hover:border-gray-400 dark:hover:border-zinc-700 transition-all duration-300`}>
                 <div>
-                  <span className="text-[10px] font-mono text-gray-450 uppercase">{"[Free]"}</span>
-                  <h3 className="text-2xl font-bold mt-2 mb-4">{"$0"}</h3>
-                  <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-455 font-medium">
-                    <li>{"- 1 Active Sandbox"}</li>
-                    <li>{"- 512MB RAM / 1 Core"}</li>
-                    <li>{"- Basic AI autocomplete"}</li>
+                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase">{"[Free Plan]"}</span>
+                  <h3 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">$0 <span className="text-xs font-normal text-gray-500">{"/ month"}</span></h3>
+                  
+                  {/* Hardware specs */}
+                  <div className="flex gap-2 mb-6">
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"0.5 Core CPU"}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"512 MB RAM"}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"5 GB SSD"}</span>
+                  </div>
+
+                  <ul className="space-y-3 text-xs text-gray-500 dark:text-gray-400">
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Workspaces:"}</span><span className="font-semibold">{"3 Max"}</span></li>
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Monthly AI Tokens:"}</span><span className="font-semibold">{"50K"}</span></li>
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Network Speed:"}</span><span className="font-semibold">{"15 Mbps Cap"}</span></li>
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"API Limits:"}</span><span className="font-semibold">{"25 req/min"}</span></li>
+                    <li className="flex justify-between"><span>{"Auto-Stop Timeout:"}</span><span className="font-semibold">{"10 min"}</span></li>
                   </ul>
                 </div>
-                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
+                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
                   {"Get Started"}
                 </button>
               </div>
@@ -554,37 +564,57 @@ export default function Home() {
 
             {/* Pro */}
             <ScrollReveal delay={200}>
-              <div className={`p-8 rounded-xl border border-indigo-500/40 bg-indigo-500/5 dark:bg-[#0B0C10] flex flex-col justify-between text-left relative h-full`}>
+              <div className={`p-8 rounded-xl border border-indigo-500/40 bg-indigo-500/5 dark:bg-[#0B0C10] flex flex-col justify-between text-left h-full relative hover:border-indigo-500/70 transition-all duration-300`}>
                 <span className="absolute top-3 right-3 text-[8px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">{"POPULAR"}</span>
                 <div>
-                  <span className="text-[10px] font-mono text-indigo-400 uppercase">{"[Pro]"}</span>
-                  <h3 className="text-2xl font-bold mt-2 mb-4">{"$19"}<span className="text-xs font-normal text-gray-500">{"/mo"}</span></h3>
-                  <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                    <li>{"- Unlimited Sandboxes"}</li>
-                    <li>{"- 4GB RAM / 4 Dedicated Cores"}</li>
-                    <li>{"- Autonomous AI agent"}</li>
+                  <span className="text-[10px] font-mono text-indigo-400 uppercase">{"[Pro Developer]"}</span>
+                  <h3 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">$25 <span className="text-xs font-normal text-gray-500">{"/ month"}</span></h3>
+                  
+                  {/* Hardware specs */}
+                  <div className="flex gap-2 mb-6">
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{"4 Cores CPU"}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{"8 GB RAM"}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{"50 GB SSD"}</span>
+                  </div>
+
+                  <ul className="space-y-3 text-xs text-gray-650 dark:text-gray-300">
+                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"Workspaces:"}</span><span className="font-semibold text-indigo-400">{"20 Max"}</span></li>
+                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"Monthly AI Tokens:"}</span><span className="font-semibold text-indigo-400">{"5M"}</span></li>
+                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"Network Speed:"}</span><span className="font-semibold text-indigo-400">{"Uncapped"}</span></li>
+                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"API Limits:"}</span><span className="font-semibold text-indigo-400">{"500 req/min"}</span></li>
+                    <li className="flex justify-between"><span>{"Auto-Stop Timeout:"}</span><span className="font-semibold text-indigo-400">{"60 min"}</span></li>
                   </ul>
                 </div>
-                <button className={`w-full mt-8 ${colors.btnPrimary} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
-                  {"Get Started with Pro"}
+                <button className={`w-full mt-8 ${colors.btnPrimary} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
+                  {"Upgrade to Pro"}
                 </button>
               </div>
             </ScrollReveal>
 
-            {/* Enterprise */}
+            {/* Advanced */}
             <ScrollReveal delay={300}>
-              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full`}>
+              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full hover:border-gray-400 dark:hover:border-zinc-700 transition-all duration-300`}>
                 <div>
-                  <span className="text-[10px] font-mono text-gray-450 uppercase">{"[Enterprise]"}</span>
-                  <h3 className="text-2xl font-bold mt-2 mb-4">{"Custom"}</h3>
-                  <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                    <li>{"- Dedicated host clusters"}</li>
-                    <li>{"- Custom configurations"}</li>
-                    <li>{"- SLA & dedicated accounts"}</li>
+                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase">{"[Advanced Team]"}</span>
+                  <h3 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">$99 <span className="text-xs font-normal text-gray-500">{"/ month"}</span></h3>
+                  
+                  {/* Hardware specs */}
+                  <div className="flex gap-2 mb-6">
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"8 Cores CPU"}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"32 GB RAM"}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"200 GB SSD"}</span>
+                  </div>
+
+                  <ul className="space-y-3 text-xs text-gray-500 dark:text-gray-400">
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Workspaces:"}</span><span className="font-semibold">{"Unlimited"}</span></li>
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Monthly AI Tokens:"}</span><span className="font-semibold">{"Unlimited"}</span></li>
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Network Speed:"}</span><span className="font-semibold">{"Uncapped"}</span></li>
+                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"API Limits:"}</span><span className="font-semibold">{"Uncapped"}</span></li>
+                    <li className="flex justify-between"><span>{"Auto-Stop Timeout:"}</span><span className="font-semibold">{"Always-On"}</span></li>
                   </ul>
                 </div>
-                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2 rounded-lg text-xs transition-all cursor-pointer`}>
-                  {"Contact Sales"}
+                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
+                  {"Upgrade to Advanced"}
                 </button>
               </div>
             </ScrollReveal>
