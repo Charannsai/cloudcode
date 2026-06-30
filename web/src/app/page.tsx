@@ -1865,6 +1865,9 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   
   const [activeStep, setActiveStep] = useState<string>("phone_rise");
   const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const scrollProgressRef = useRef<number>(0);
+  scrollProgressRef.current = scrollProgress;
+
   const [isMobile, setIsMobile] = useState(false);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
 
@@ -1938,8 +1941,8 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         ctx.stroke();
       }
 
-      // Horizontal scrolling grid lines
-      const scrollOffset = (scrollProgress * 220) % gridGap;
+      // Horizontal scrolling grid lines (using ref to avoid rebuilding useEffect on scroll)
+      const scrollOffset = (scrollProgressRef.current * 220) % gridGap;
       for (let y = cy; y < canvas.height; y += gridGap) {
         const dy = y + scrollOffset;
         ctx.beginPath();
@@ -1959,7 +1962,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       window.removeEventListener("resize", resizeCanvas);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [scrollProgress, theme, mouseOffset]);
+  }, [theme]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isMobile) return;
