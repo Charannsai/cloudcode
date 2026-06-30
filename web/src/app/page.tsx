@@ -123,17 +123,21 @@ export default function Home() {
           )}
 
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/15 text-[10px] font-mono text-indigo-400 mb-6">
-            {"Mobile-First Engineering Workspace"}
+            {"Introducing CloudCode"}
           </div>
 
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tighter leading-[1.1] max-w-3xl mb-6">
-            {"The command center"}
+          <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] max-w-4xl mb-6 ${
+            theme === "dark" 
+              ? "bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/50" 
+              : "text-[#0F1115]"
+          }`}>
+            {"The Mobile-First"}
             <br />
-            {"for your mobile coding."}
+            {"Engineering Workspace."}
           </h1>
           
-          <p className={`text-sm md:text-base ${colors.textSecondary} max-w-xl mb-8 leading-relaxed`}>
-            {"CloudCode combines a professional cloud IDE, autonomous AI agents, and isolated Linux environments into a single mobile-first workspace."}
+          <p className={`text-sm md:text-base ${colors.textSecondary} max-w-2xl mb-8 leading-relaxed`}>
+            {"CloudCode brings a professional cloud IDE, autonomous AI agents, and isolated Linux containers into a single, seamless workspace engineered entirely for mobile devices."}
           </p>
 
           <div className="flex gap-3 justify-center mb-16">
@@ -622,15 +626,14 @@ export default function Home() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-indigo-600/10 blur-3xl animate-pulse-glow pointer-events-none z-0" />
           )}
 
-          <div className="w-full max-w-2xl px-6 flex flex-col items-center z-10 space-y-6">
             <h2 className="text-3xl md:text-5xl font-semibold tracking-tighter leading-none">
-              {"The future of software"}
+              {"The mobile-first"}
               <br />
-              {"development fits in your pocket."}
+              {"engineering workspace."}
             </h2>
 
             <p className={`text-xs ${colors.textSecondary} max-w-sm`}>
-              {"Join developers building software wherever inspiration strikes."}
+              {"Fits right in your pocket. Join developers building software wherever inspiration strikes."}
             </p>
 
             <div className="flex gap-3 justify-center">
