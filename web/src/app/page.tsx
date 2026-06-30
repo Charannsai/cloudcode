@@ -1788,7 +1788,7 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 const STEPS = [
   { id: "phone_rise", title: "", description: "", cardType: "standard" },
   { id: "welcome_phase", title: "", description: "", cardType: "standard" },
-  { id: "arrival", title: "The Mobile-First Workspace", description: "Your phone is now a fully-equipped engineering environment. Tracing and booting the CloudCode sandbox.", cardType: "standard" },
+  { id: "arrival", title: "The Mobile-First Workspace", description: "Welcome to CloudCode, the first engineering workspace you can carry in your pocket. Spin up, code, and preview full-stack applications anywhere, anytime.", cardType: "standard" },
   { id: "sandbox_orbit", title: "Create Dev Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox" },
   { id: "sandbox_load", title: "Container Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox" },
   { id: "terminal", title: "Isolated Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions right on your mobile screen.", cardType: "terminal" },
