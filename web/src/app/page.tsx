@@ -696,58 +696,17 @@ export default function Home() {
 
 // ==================== INTERACTIVE SHOWCASE SUBCOMPONENTS ====================
 
-const STEPS = [
-  {
-    id: "initial",
-    title: "The Mobile-First Workspace",
-    badge: "01 / BOOTING",
-    description: "Your phone is now a fully-equipped engineering environment. Scroll to boot up your mobile-first workspace.",
-  },
-  {
-    id: "environments",
-    title: "Create Dev Environments",
-    badge: "02 / SANDBOXES",
-    description: "Launch isolated workspaces for any language or framework in seconds. Pre-configured Docker environments with zero setup required.",
-  },
-  {
-    id: "terminal",
-    title: "Isolated Terminal Sessions",
-    badge: "03 / TERMINAL",
-    description: "Get full root access with isolated, persistent Linux terminal sessions. Run compilers, install dependencies, and manage processes.",
-  },
-  {
-    id: "editor",
-    title: "AI-Powered Editor",
-    badge: "04 / CODE EDITOR",
-    description: "Edit files manually with a desktop-grade editor, or select code and let our built-in AI assistant refactor, explain, or write it for you.",
-  },
-  {
-    id: "git",
-    title: "Git & PR Workflows",
-    badge: "05 / VERSION CONTROL",
-    description: "Manage your source control directly from your phone. Commit, push, raise pull requests, and review code changes seamlessly.",
-  },
-  {
-    id: "previews",
-    title: "Native Browser Previews",
-    badge: "06 / LIVE PREVIEW",
-    description: "Test your web applications with an integrated browser preview. Supports hot-reloading, console logging, and inspect elements.",
-  }
-];
-
-const HONEYCOMB_CELLS = [
-  { label: "React", name: "React", x: -160, y: -160 },
-  { label: "Node.js", name: "Node", x: 160, y: -160 },
-  { label: "Python", name: "Python", x: -280, y: -60 },
-  { label: "Docker", name: "Docker", x: 0, y: -240 }, // Top center
-  { label: "Go", name: "Go", x: 280, y: -60 },
-  { label: "Rust", name: "Rust", x: -160, y: 160 },
-  { label: "TypeScript", name: "TS", x: 160, y: 160 },
-  { label: "Next.js", name: "Next.js", x: -280, y: 60 },
-  { label: "Tailwind", name: "Tailwind", x: 0, y: 240 }, // Bottom center
-  { label: "Git", name: "Git", x: 280, y: 60 },
-  { label: "Postgres", name: "Postgres", x: -160, y: 0 },
-  { label: "Linux", name: "Linux", x: 160, y: 0 },
+const TECH_NODES = [
+  { label: "React", name: "React", bx: -180, by: -180 },
+  { label: "Node.js", name: "Node", bx: 180, by: -180 },
+  { label: "Python", name: "Python", bx: -280, by: -60 },
+  { label: "Docker", name: "Docker", bx: 0, by: -260 },
+  { label: "Go", name: "Go", bx: 280, by: -60 },
+  { label: "Rust", name: "Rust", bx: -180, by: 180 },
+  { label: "TypeScript", name: "TS", bx: 180, by: 180 },
+  { label: "Next.js", name: "Next.js", bx: -280, by: 60 },
+  { label: "Tailwind", name: "Tailwind", bx: 0, by: 260 },
+  { label: "Git", name: "Git", bx: 280, by: 60 }
 ];
 
 const getIcon = (name: string) => {
@@ -856,7 +815,7 @@ const InitialScreen = ({ theme }: { theme: "light" | "dark" }) => {
             : "bg-black/5 border-black/5 text-gray-600"
         }`}>
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
-          <span>Scroll to Boot</span>
+          <span>Syncing Workspace...</span>
         </div>
       </div>
     </div>
@@ -881,7 +840,7 @@ const EnvironmentsScreen = ({ active, theme }: { active: boolean, theme: "light"
     const t2 = setTimeout(() => {
       setLoading(false);
       setComplete(true);
-    }, 3000);
+    }, 2500);
 
     return () => {
       clearTimeout(t1);
@@ -929,11 +888,11 @@ const EnvironmentsScreen = ({ active, theme }: { active: boolean, theme: "light"
         {complete && (
           <div className={`border p-2 rounded text-left space-y-1 font-mono text-[8px] animate-fade-in-up ${
             theme === "dark" 
-              ? "bg-emerald-500/15 border-emerald-500/20 text-gray-450" 
+              ? "bg-emerald-500/15 border-emerald-500/20 text-gray-400" 
               : "bg-emerald-500/5 border-emerald-500/15 text-gray-600"
           }`}>
             <div className="text-emerald-400 font-bold">● Workspace Online</div>
-            <div className="text-gray-455">ID: sandbox-node-1</div>
+            <div className="text-gray-400">ID: sandbox-node-1</div>
             <div className="text-gray-500">Resources: 4 Cores / 4GB RAM</div>
           </div>
         )}
@@ -980,7 +939,7 @@ const TerminalScreen = ({ active }: { active: boolean }) => {
       } else {
         clearInterval(interval);
       }
-    }, 800);
+    }, 600);
     
     return () => clearInterval(interval);
   }, [active]);
@@ -989,7 +948,7 @@ const TerminalScreen = ({ active }: { active: boolean }) => {
     <div className="w-full h-full bg-[#08090E] p-3 font-mono text-[9px] text-gray-300 flex flex-col justify-between overflow-hidden">
       <div className="flex items-center justify-between border-b border-white/5 pb-1 mb-2">
         <span className="text-gray-500">bash - session-1</span>
-        <span className="text-emerald-450">● online</span>
+        <span className="text-emerald-455">● online</span>
       </div>
       <div className="flex-1 space-y-1.5 overflow-y-auto">
         {lines.map((line, idx) => {
@@ -1024,9 +983,9 @@ const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "da
       return;
     }
 
-    const t1 = setTimeout(() => setStep(1), 1500);
-    const t2 = setTimeout(() => setStep(2), 3000);
-    const t3 = setTimeout(() => setStep(3), 4500);
+    const t1 = setTimeout(() => setStep(1), 1200); // highlight code
+    const t2 = setTimeout(() => setStep(2), 2400); // show AI prompt
+    const t3 = setTimeout(() => setStep(3), 3600); // replace with AI code
 
     return () => {
       clearTimeout(t1);
@@ -1042,7 +1001,7 @@ const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "da
       isDark ? "bg-[#0F1117]" : "bg-white"
     }`}>
       <div className={`flex items-center justify-between px-3 py-1.5 border-b ${
-        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-55 border-black/5"
+        isDark ? "bg-[#0A0B0F] border-white/5" : "bg-gray-50 border-black/5"
       }`}>
         <span className={`text-[8px] font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}>Counter.tsx</span>
         <span className="text-[7px] font-mono text-indigo-400 bg-indigo-500/10 px-1 py-0.5 rounded">TypeScript</span>
@@ -1055,9 +1014,9 @@ const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "da
           <>
             <div><span className="text-purple-500">import</span> &#123; useState  &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
             <div className="h-1" />
-            <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
+            <div><span className="text-purple-500">export function</span> <span className="text-blue-500">Counter</span>() &#123;</div>
             <div className="pl-3">
-              <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
+              <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-500">useState</span>(<span className="text-orange-550">0</span>);
             </div>
             <div className="pl-3"><span className="text-purple-500">return</span> (</div>
             <div className={`pl-6 transition-all duration-500 ${
@@ -1065,7 +1024,7 @@ const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "da
                 ? (isDark ? "bg-indigo-500/20 border-l-2 border-indigo-500 rounded" : "bg-indigo-500/10 border-l-2 border-indigo-500 rounded") 
                 : ""
             }`}>
-              &lt;<span className="text-blue-550">button</span> <span className="text-yellow-650">onClick</span>=&#123;() =&gt; <span className="text-blue-550">setCount</span>(count + <span className="text-orange-550">1</span>)&#125;&gt;
+              &lt;<span className="text-blue-500">button</span> <span className="text-yellow-600">onClick</span>=&#123;() =&gt; <span className="text-blue-500">setCount</span>(count + <span className="text-orange-550">1</span>)&#125;&gt;
             </div>
             <div className="pl-9">Count: &#123;count&#125;</div>
             <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
@@ -1074,34 +1033,35 @@ const EditorScreen = ({ active, theme }: { active: boolean, theme: "light" | "da
           </>
         ) : (
           <>
-            <div><span className="text-purple-400">import</span> &#123; useState, useEffect &#125; <span className="text-purple-400">from</span> <span className="text-emerald-400">&apos;react&apos;</span>;</div>
+            <div><span className="text-purple-500">import</span> &#123; useState, useEffect  &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
             <div className="h-1" />
-            <div><span className="text-purple-400">export function</span> <span className="text-blue-455">Counter</span>() &#123;</div>
+            <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
             <div className="pl-3">
-              <span className="text-purple-400">const</span> [count, setCount] = <span className="text-blue-455">useState</span>(<span className="text-orange-400">0</span>);
+              <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
             </div>
             <div className={`pl-3 border-l-2 rounded py-0.5 my-1 ${
               isDark ? "bg-emerald-500/10 border-emerald-500" : "bg-emerald-500/5 border-emerald-500"
             }`}>
-              <span className="text-blue-455">useEffect</span>(() =&gt; &#123;
-              <div className="pl-3">console.<span className="text-blue-455">log</span>(<span className="text-emerald-400">&quot;Count is&quot;</span>, count);</div>
+              <span className="text-blue-550">useEffect</span>(() =&gt; &#123;
+              <div className="pl-3">console.<span className="text-blue-550">log</span>(<span className="text-emerald-600">&quot;Count is&quot;</span>, count);</div>
               &#125;, [count]);
             </div>
-            <div className="pl-3"><span className="text-purple-400">return</span> (</div>
+            <div className="pl-3"><span className="text-purple-500">return</span> (</div>
             <div className="pl-6">
-              &lt;<span className="text-blue-455">button</span> 
+              &lt;<span className="text-blue-550">button</span> 
             </div>
-            <div className="pl-9 text-yellow-400">onClick<span className={isDark ? "text-gray-350" : "text-gray-600"}>=&#123;() =&gt;</span> <span className="text-blue-455">setCount</span>(count + <span className="text-orange-400">1</span>)&#125;</div>
-            <div className="pl-9 text-yellow-400">className<span className={isDark ? "text-gray-350" : "text-gray-600"}>=&quot;active:scale-95 transition-all&quot;</span></div>
+            <div className="pl-9 text-yellow-600">onClick<span className={isDark ? "text-gray-400" : "text-gray-600"}>=&#123;() =&gt;</span> <span className="text-blue-555">setCount</span>(count + <span className="text-orange-550">1</span>)&#125;</div>
+            <div className="pl-9 text-yellow-600">className<span className={isDark ? "text-gray-400" : "text-gray-600"}>=&quot;active:scale-95 transition-all&quot;</span></div>
             <div className="pl-6">&gt;</div>
             <div className="pl-9">Count: &#123;count&#125;</div>
-            <div className="pl-6">&lt;/<span className="text-blue-455">button</span>&gt;</div>
+            <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
             <div className="pl-3">);</div>
             <div>&#125;</div>
           </>
         )}
       </div>
 
+      {/* AI Assistant Panel */}
       <div className={`absolute bottom-0 left-0 right-0 p-3 border-t transition-all duration-500 transform ${
         step >= 2 && step < 3 ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
       } ${
@@ -1130,9 +1090,9 @@ const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark"
       return;
     }
 
-    const t1 = setTimeout(() => setStep(1), 1500);
-    const t2 = setTimeout(() => setStep(2), 3000);
-    const t3 = setTimeout(() => setStep(3), 4500);
+    const t1 = setTimeout(() => setStep(1), 1200); // commit
+    const t2 = setTimeout(() => setStep(2), 2400); // pr screen
+    const t3 = setTimeout(() => setStep(3), 3600); // merge
 
     return () => {
       clearTimeout(t1);
@@ -1159,14 +1119,14 @@ const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark"
                 <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
                   isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
                 }`}>
-                  <span className="font-mono text-emerald-400">M  Counter.tsx</span>
-                  <span className="text-[7px] text-gray-500">Modified</span>
+                  <span className="font-mono text-emerald-450">M  Counter.tsx</span>
+                  <span className="text-[7px] text-gray-500 font-mono">Modified</span>
                 </div>
                 <div className={`flex items-center justify-between p-1.5 rounded border text-[9px] ${
                   isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
                 }`}>
-                  <span className="font-mono text-emerald-400">M  page.tsx</span>
-                  <span className="text-[7px] text-gray-500">Modified</span>
+                  <span className="font-mono text-emerald-455">M  page.tsx</span>
+                  <span className="text-[7px] text-gray-500 font-mono">Modified</span>
                 </div>
               </div>
             </div>
@@ -1198,13 +1158,13 @@ const GitScreen = ({ active, theme }: { active: boolean, theme: "light" | "dark"
           <div className="flex-1 py-3 space-y-3">
             <div className="space-y-1">
               <h5 className={`font-bold text-[10px] ${isDark ? "text-white" : "text-gray-800"}`}>feat: improve counter interactivity</h5>
-              <p className="text-[8px] text-gray-400">Merged 2 commits from <code className="font-mono bg-white/5 px-1 rounded text-indigo-400">feat/counter</code> into <code className="font-mono bg-white/5 px-1 rounded text-gray-350">main</code></p>
+              <p className="text-[8px] text-gray-455 font-mono">Merged 2 commits from <code className="font-mono bg-white/5 px-1 rounded text-indigo-400">feat/counter</code> into <code className="font-mono bg-white/5 px-1 rounded text-gray-350 font-mono">main</code></p>
             </div>
             <div className={`p-2 rounded border text-[8px] space-y-1 font-mono ${
               isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
             }`}>
-              <div className="text-emerald-450">✓ All checks passed (100%)</div>
-              <div className="text-gray-500">✓ No conflicts with base branch</div>
+              <div className="text-emerald-455 font-bold font-mono">✓ All checks passed (100%)</div>
+              <div className="text-gray-500 font-mono">✓ No conflicts with base branch</div>
             </div>
           </div>
           
@@ -1235,20 +1195,20 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
     const t1 = setTimeout(() => {
       setIsClicking(true);
       setCount(1);
-    }, 1500);
+    }, 1200);
 
     const t2 = setTimeout(() => {
       setIsClicking(false);
-    }, 1800);
+    }, 1500);
 
     const t3 = setTimeout(() => {
       setIsClicking(true);
       setCount(2);
-    }, 3000);
+    }, 2700);
 
     const t4 = setTimeout(() => {
       setIsClicking(false);
-    }, 3300);
+    }, 3000);
 
     return () => {
       clearTimeout(t1);
@@ -1266,7 +1226,7 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
           <span>localhost:3000</span>
           <span>🔒</span>
         </div>
-        <span className="text-[8px] text-gray-400">↻</span>
+        <span className="text-[8px] text-gray-400 font-mono">↻</span>
       </div>
 
       <div className="flex-1 p-4 flex flex-col items-center justify-center bg-gray-55 relative">
@@ -1304,10 +1264,13 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
 
 const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
   switch (activeStep) {
-    case "initial":
+    case "arrival":
+    case "float":
+    case "camera":
       return <InitialScreen theme={theme} />;
-    case "environments":
-      return <EnvironmentsScreen active={activeStep === "environments"} theme={theme} />;
+    case "sandbox_orbit":
+    case "sandbox_load":
+      return <EnvironmentsScreen active={activeStep === "sandbox_load"} theme={theme} />;
     case "terminal":
       return <TerminalScreen active={activeStep === "terminal"} />;
     case "editor":
@@ -1316,18 +1279,238 @@ const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light"
       return <GitScreen active={activeStep === "git"} theme={theme} />;
     case "previews":
       return <PreviewsScreen active={activeStep === "previews"} />;
+    case "exit":
+      return <InitialScreen theme={theme} />;
     default:
       return <InitialScreen theme={theme} />;
   }
 };
 
+const GitDiffView = ({ theme }: { theme: "light" | "dark" }) => {
+  return (
+    <div className="w-full h-full flex text-[9px] font-mono divide-x divide-white/5 overflow-y-auto">
+      {/* Left Side: Old Code */}
+      <div className="w-1/2 p-3 space-y-1 bg-red-500/5 opacity-80 select-none">
+        <div className="text-red-500 font-bold border-b border-red-500/10 pb-1 mb-2">Counter.tsx (Before)</div>
+        <div><span className="text-purple-500">import</span> &#123; useState &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
+        <div className="h-1" />
+        <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
+        <div className="pl-3">
+          <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
+        </div>
+        <div className="pl-3"><span className="text-purple-500">return</span> (</div>
+        <div className="pl-6 bg-red-500/10 text-red-400">
+          - &lt;<span className="text-blue-550">button</span> <span className="text-yellow-650">onClick</span>=&#123;() =&gt; <span className="text-blue-550">setCount</span>(count + 1)&#125;&gt;
+        </div>
+        <div className="pl-9">Count: &#123;count&#125;</div>
+        <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
+        <div className="pl-3">);</div>
+        <div>&#125;</div>
+      </div>
+
+      {/* Right Side: New Code */}
+      <div className="w-1/2 p-3 space-y-1 bg-emerald-500/5">
+        <div className="text-emerald-500 font-bold border-b border-emerald-500/10 pb-1 mb-2">Counter.tsx (After)</div>
+        <div><span className="text-purple-500">import</span> &#123; useState, useEffect &#125; <span className="text-purple-500">from</span> <span className="text-emerald-600">&apos;react&apos;</span>;</div>
+        <div className="h-1" />
+        <div><span className="text-purple-500">export function</span> <span className="text-blue-550">Counter</span>() &#123;</div>
+        <div className="pl-3">
+          <span className="text-purple-500">const</span> [count, setCount] = <span className="text-blue-550">useState</span>(<span className="text-orange-550">0</span>);
+        </div>
+        <div className="pl-3 bg-emerald-500/10 text-emerald-400">
+          + <span className="text-blue-550">useEffect</span>(() =&gt; &#123;
+          <div className="pl-3">console.<span className="text-blue-550">log</span>(<span className="text-emerald-600">&quot;Count is&quot;</span>, count);</div>
+          + &#125;, [count]);
+        </div>
+        <div className="pl-3"><span className="text-purple-500">return</span> (</div>
+        <div className="pl-6 bg-emerald-500/10 text-emerald-400">
+          + &lt;<span className="text-blue-550">button</span> <span className="text-yellow-650">onClick</span>=&#123;() =&gt; <span className="text-blue-550">setCount</span>(count + 1)&#125; className=&quot;active:scale-95&quot;&gt;
+        </div>
+        <div className="pl-9">Count: &#123;count&#125;</div>
+        <div className="pl-6">&lt;/<span className="text-blue-550">button</span>&gt;</div>
+        <div className="pl-3">);</div>
+        <div>&#125;</div>
+      </div>
+    </div>
+  );
+};
+
+const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
+  const isDark = theme === "dark";
+  const showSidebar = activeStep === "terminal" || activeStep === "editor" || activeStep === "git";
+  const showTerminal = activeStep === "terminal";
+  const showPreview = activeStep === "previews";
+
+  return (
+    <div className={`w-full h-full flex flex-col transition-colors duration-300 ${
+      isDark ? "bg-[#08090C] text-gray-300" : "bg-gray-100 text-[#0F1115]"
+    }`}>
+      {/* Top Title Bar */}
+      <div className={`h-9 px-4 flex items-center justify-between border-b text-xs ${
+        isDark ? "bg-[#0D0E12] border-white/5 text-gray-400" : "bg-white border-black/5 text-gray-650"
+      }`}>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
+          </div>
+          <span className="ml-4 font-mono text-[10px]">cloudcode-sandbox-1 (Workspace)</span>
+        </div>
+        <div className="flex items-center gap-4 text-[10px]">
+          <span>⚡ Connected</span>
+          <span>Node.js v20.10.0</span>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Activity Bar (Icons) */}
+        <div className={`w-12 flex flex-col items-center py-4 gap-6 border-r ${
+          isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-50 border-black/5"
+        }`}>
+          {["📁", "🔍", "🌿", "⚙️"].map((icon, idx) => (
+            <span 
+              key={idx} 
+              className={`text-base cursor-pointer hover:opacity-100 transition-opacity ${
+                idx === 2 && activeStep === "git" ? "opacity-100 scale-110" : "opacity-50"
+              }`}
+            >
+              {icon}
+            </span>
+          ))}
+        </div>
+
+        {/* Sidebar */}
+        <div className={`transition-all duration-500 overflow-hidden flex flex-col border-r ${
+          showSidebar 
+            ? "w-52" 
+            : "w-0 border-r-0"
+        } ${
+          isDark ? "bg-[#0B0C10] border-white/5" : "bg-white border-black/5"
+        }`}>
+          {activeStep === "git" ? (
+            <div className="p-3 flex-1 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-555 font-mono">Source Control</div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-mono text-gray-550 font-mono">CHANGES</span>
+                  <div className={`p-1.5 rounded border text-[9px] flex justify-between ${
+                    isDark ? "bg-white/5 border-white/5" : "bg-gray-55 border-black/5"
+                  }`}>
+                    <span className="font-mono text-emerald-450 font-mono">M  Counter.tsx</span>
+                    <span className="text-[7px] text-gray-505 font-mono">Modified</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className={`p-2 rounded border text-[9px] font-mono ${
+                  isDark ? "bg-white/5 border-white/5 text-white" : "bg-gray-55 border-black/5 text-black"
+                }`}>
+                  feat: improve counter interactivity
+                </div>
+                <button className="w-full py-1.5 bg-indigo-500 text-white rounded text-[9px] font-bold hover:bg-indigo-600 transition-all">
+                  Commit & Push
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 space-y-4 font-mono text-[9px]">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-555">Explorer</div>
+              <div className="space-y-2">
+                <div className="text-indigo-400 font-bold">📂 project</div>
+                <div className="pl-3 space-y-2">
+                  <div>📂 src</div>
+                  <div className="pl-3 space-y-2">
+                    <div className="text-gray-500">📂 components</div>
+                    <div className="pl-3 text-indigo-400 font-bold">📄 Counter.tsx</div>
+                    <div className="pl-3">📄 Header.tsx</div>
+                  </div>
+                  <div>📄 package.json</div>
+                  <div>📄 tsconfig.json</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Main Editor & Terminal Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Editor Container */}
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            {/* Editor Tabs */}
+            <div className={`h-8 flex border-b ${
+              isDark ? "bg-[#090A0E] border-white/5" : "bg-gray-50 border-black/5"
+            }`}>
+              <div className={`px-4 flex items-center gap-2 border-r text-[9px] font-mono ${
+                isDark ? "bg-[#0F1117] border-white/5 text-white" : "bg-white border-black/5 text-black"
+              }`}>
+                <span>📄 Counter.tsx</span>
+                <span className="text-emerald-500 font-mono">●</span>
+              </div>
+            </div>
+
+            {/* Code Content */}
+            <div className="flex-1 overflow-auto">
+              {activeStep === "git" ? (
+                <GitDiffView theme={theme} />
+              ) : (
+                <EditorScreen active={activeStep === "editor"} theme={theme} />
+              )}
+            </div>
+          </div>
+
+          {/* Terminal Panel */}
+          <div className={`transition-all duration-500 overflow-hidden border-t ${
+            showTerminal 
+              ? "h-48" 
+              : "h-0 border-t-0"
+          } ${
+            isDark ? "border-white/5" : "border-black/5"
+          }`}>
+            <TerminalScreen active={activeStep === "terminal"} />
+          </div>
+        </div>
+
+        {/* Live Preview Panel (Right) */}
+        <div className={`transition-all duration-500 overflow-hidden flex flex-col border-l ${
+          showPreview 
+            ? "w-[45%]" 
+            : "w-0 border-l-0"
+        } ${
+          isDark ? "border-white/5" : "border-black/5"
+        }`}>
+          <PreviewsScreen active={activeStep === "previews"} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const KEYFRAMES = [
-  { p: 0.0, rx: 15, ry: -20, rz: 10, s: 0.9, tx: 0, ty: 10, tz: 0 },      // initial
-  { p: 0.2, rx: 8, ry: -12, rz: 5, s: 1.0, tx: -20, ty: 0, tz: 20 },     // environments
-  { p: 0.4, rx: 5, ry: 5, rz: -3, s: 1.15, tx: 10, ty: -10, tz: 50 },    // terminal
-  { p: 0.6, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: -20, tz: 100 },     // editor
-  { p: 0.8, rx: 8, ry: 15, rz: -5, s: 1.1, tx: 20, ty: 10, tz: 30 },     // git
-  { p: 1.0, rx: 0, ry: 0, rz: 0, s: 1.05, tx: 0, ty: 0, tz: 10 }         // previews
+  // 1. Arrival (0.0 - 0.08) - Phone assembles from below
+  { p: 0.0, rx: 40, ry: -60, rz: 15, s: 0.2, tx: 0, ty: 300, tz: -200, bezelOpacity: 1 },
+  { p: 0.08, rx: 15, ry: -20, rz: 10, s: 0.9, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 2. Float (0.08 - 0.16) - Ambient drifting
+  { p: 0.16, rx: 12, ry: -15, rz: 8, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 3. Camera Turn (0.16 - 0.24) - Orbiting left to right
+  { p: 0.24, rx: 8, ry: 20, rz: -5, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 4. Sandbox Orbit (0.24 - 0.32) - Spanning outward, preparing to zoom
+  { p: 0.32, rx: 5, ry: 0, rz: 0, s: 1.4, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 5. Sandbox Load (0.32 - 0.40) - Centered zoom
+  { p: 0.40, rx: 0, ry: 0, rz: 0, s: 1.4, tx: 0, ty: 0, tz: 80, bezelOpacity: 1 },
+  // 6. Portal Zoom (WOW) (0.40 - 0.48) - Deep zoom, bezel disappearing
+  { p: 0.48, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 7. Terminal (0.48 - 0.58) - Fullscreen IDE
+  { p: 0.58, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 8. AI Refactor (0.58 - 0.68) - Fullscreen IDE
+  { p: 0.68, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 9. Git Flow (0.68 - 0.78) - Fullscreen IDE
+  { p: 0.78, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 10. Live Preview (0.78 - 0.88) - Fullscreen IDE
+  { p: 0.88, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 11. Exit (0.88 - 1.0) - Re-emerge to floating phone
+  { p: 1.0, rx: 15, ry: -20, rz: 10, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 }
 ];
 
 const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mouseY: number) => {
@@ -1345,9 +1528,11 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
   const range = k2.p - k1.p;
   const t = range === 0 ? 0 : (progress - k1.p) / range;
   
-  const lerp = (a: number, b: number) => a + (b - a) * t;
+  // Cubic easing for transitions
+  const ease = t * t * (3 - 2 * t);
+  const lerp = (a: number, b: number) => a + (b - a) * ease;
   
-  const factor = isMobile ? 0.2 : 1.0;
+  const factor = isMobile ? 0.25 : 1.0;
   
   const mouseRx = isMobile ? 0 : mouseY * -15;
   const mouseRy = isMobile ? 0 : mouseX * 15;
@@ -1355,7 +1540,7 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
   const rx = (lerp(k1.rx, k2.rx) + mouseRx) * factor;
   const ry = (lerp(k1.ry, k2.ry) + mouseRy) * factor;
   const rz = lerp(k1.rz, k2.rz) * factor;
-  const s = lerp(k1.s, k2.s) * (isMobile ? 0.85 : 1.0);
+  const s = lerp(k1.s, k2.s) * (isMobile ? 0.8 : 1.0);
   const tx = lerp(k1.tx, k2.tx) * factor;
   const ty = lerp(k1.ty, k2.ty) * factor;
   const tz = lerp(k1.tz, k2.tz) * factor;
@@ -1363,9 +1548,61 @@ const get3DTransform = (progress: number, isMobile: boolean, mouseX: number, mou
   return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
 };
 
-const PhoneMockup = ({ children, scrollProgress, theme }: { children: React.ReactNode, scrollProgress: number, theme: "light" | "dark" }) => {
-  const glareX = (scrollProgress * 400) - 200;
+const getCardPositionClass = (stepId: string, isMobile: boolean) => {
+  if (isMobile) {
+    if (stepId === "portal_zoom" || stepId === "terminal" || stepId === "editor" || stepId === "git" || stepId === "previews") {
+      return "bottom-4 left-4 right-4 scale-95 opacity-90 z-50 p-4";
+    }
+    return "bottom-4 left-4 right-4 scale-100 opacity-100 z-50";
+  }
+
+  switch (stepId) {
+    case "arrival":
+      return "top-10 left-1/2 -translate-x-1/2 scale-100 opacity-100";
+    case "float":
+      return "left-12 top-[35%] -translate-y-1/2 scale-100 opacity-100";
+    case "camera":
+      return "right-12 top-[35%] -translate-y-1/2 scale-100 opacity-100";
+    case "sandbox_orbit":
+      return "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-110 opacity-100 z-30";
+    case "sandbox_load":
+      return "left-12 top-[65%] -translate-y-1/2 scale-100 opacity-100";
+    case "portal_zoom":
+      return "scale-90 opacity-0 pointer-events-none";
+    case "terminal":
+      return "bottom-12 left-1/2 -translate-x-1/2 scale-100 opacity-100 z-50";
+    case "editor":
+      return "right-12 bottom-[15%] scale-100 opacity-100 z-50";
+    case "git":
+      return "left-12 top-[25%] scale-100 opacity-100 z-50";
+    case "previews":
+      return "right-12 top-[25%] scale-100 opacity-100 z-50";
+    case "exit":
+      return "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100 opacity-100";
+    default:
+      return "opacity-0 scale-90";
+  }
+};
+
+const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { children: React.ReactNode, scrollProgress: number, theme: "light" | "dark", mouseOffset: { x: number, y: number } }) => {
+  const glareX = (scrollProgress * 400) - 200 + (mouseOffset.x * 100);
+  const glareY = (scrollProgress * 200) - 100 + (mouseOffset.y * 100);
   const isDark = theme === "dark";
+
+  // Dynamic Island status indicator based on scrollProgress
+  const getIslandIcon = () => {
+    if (scrollProgress < 0.24) return <span className="text-[6px] text-indigo-400 animate-pulse font-mono">Syncing...</span>;
+    if (scrollProgress >= 0.24 && scrollProgress < 0.40) return <span className="text-[6px] text-emerald-400 animate-spin font-mono">⏳</span>;
+    if (scrollProgress >= 0.40 && scrollProgress < 0.58) return <span className="text-[6px] text-indigo-400 font-mono">bash</span>;
+    if (scrollProgress >= 0.58 && scrollProgress < 0.68) return <span className="text-[6px] text-purple-400 font-bold font-mono">✨ AI</span>;
+    return <span className="text-[6px] text-emerald-500 font-mono">● Live</span>;
+  };
+
+  const shadowX = -8 - (mouseOffset.x * 15);
+  const shadowY = 8 + (mouseOffset.y * 15);
+
+  const screenRx = mouseOffset.y * -4;
+  const screenRy = mouseOffset.x * 4;
 
   return (
     <div 
@@ -1379,18 +1616,19 @@ const PhoneMockup = ({ children, scrollProgress, theme }: { children: React.Reac
             -2px 2px 0px 0px rgba(255, 255, 255, 0.05),
             -4px 4px 0px 0px #1a1c24,
             -8px 8px 0px 0px #111217,
-            -12px 12px 20px 0px rgba(0, 0, 0, 0.7),
-            -24px 24px 50px 0px rgba(0, 0, 0, 0.5)
+            ${shadowX}px ${shadowY}px 25px 0px rgba(0, 0, 0, 0.7),
+            ${shadowX * 2}px ${shadowY * 2}px 50px 0px rgba(0, 0, 0, 0.5)
           `
           : `
             -2px 2px 0px 0px rgba(0, 0, 0, 0.03),
             -4px 4px 0px 0px #E5E7EB,
             -8px 8px 0px 0px #D1D5DB,
-            -12px 12px 20px 0px rgba(0, 0, 0, 0.12),
-            -24px 24px 50px 0px rgba(0, 0, 0, 0.08)
+            ${shadowX}px ${shadowY}px 25px 0px rgba(0, 0, 0, 0.12),
+            ${shadowX * 2}px ${shadowY * 2}px 50px 0px rgba(0, 0, 0, 0.08)
           `,
       }}
     >
+      {/* 3D Side Buttons */}
       <div 
         className={`absolute left-[-3px] top-24 w-[3px] h-10 rounded-l font-sans ${isDark ? "bg-[#2D3039]" : "bg-gray-400"}`} 
         style={{ transform: "translateZ(-8px)" }}
@@ -1404,35 +1642,41 @@ const PhoneMockup = ({ children, scrollProgress, theme }: { children: React.Reac
         style={{ transform: "translateZ(-8px)" }}
       />
 
+      {/* Screen container with translateZ to pop it forward in 3D */}
       <div 
         className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border ${
           isDark ? "bg-[#030303] border-black/50" : "bg-white border-gray-200"
         }`}
         style={{
-          transform: "translateZ(8px)",
+          transform: `translateZ(8px) rotateX(${screenRx}deg) rotateY(${screenRy}deg)`,
           transformStyle: "preserve-3d",
+          transition: "transform 0.15s ease-out",
         }}
       >
+        {/* Glass Glare Reflection Effect */}
         <div 
           className="absolute inset-0 z-25 pointer-events-none opacity-20 mix-blend-overlay"
           style={{
             background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 100%)',
-            transform: `translateX(${glareX}px) translateY(${glareX * 0.5}px) translateZ(12px)`,
-            transition: 'transform 0.1s ease-out',
+            transform: `translateX(${glareX}px) translateY(${glareY}px) translateZ(12px)`,
+            transition: 'transform 0.15s ease-out',
           }}
         />
 
+        {/* Dynamic Island (Camera Cutout) */}
         <div 
-          className={`absolute top-3 left-1/2 -translate-x-1/2 w-20 h-4.5 rounded-full z-30 flex items-center justify-center border ${
+          className={`absolute top-3 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full z-30 flex items-center justify-between px-3 border ${
             isDark ? "bg-black border-white/5" : "bg-[#0F1115] border-black/5"
           }`}
-          style={{ transform: "translateZ(10px)" }}
+          style={{ transform: "translateZ(10px)", transition: "all 0.3s ease-in-out" }}
         >
-          <div className="w-2 h-2 rounded-full bg-[#101118] ml-auto mr-2 flex items-center justify-center">
-            <div className="w-1 h-1 rounded-full bg-[#1c2d5a]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-[#1c2d5a] flex items-center justify-center">
+            <div className="w-0.5 h-0.5 rounded-full bg-[#101118]" />
           </div>
+          {getIslandIcon()}
         </div>
 
+        {/* Status bar */}
         <div className={`h-8 pt-2.5 px-6 flex justify-between items-center text-[8px] font-mono z-20 select-none ${
           isDark ? "text-gray-455" : "text-gray-500"
         }`}>
@@ -1443,10 +1687,12 @@ const PhoneMockup = ({ children, scrollProgress, theme }: { children: React.Reac
           </div>
         </div>
 
-        <div className="flex-1 w-full relative overflow-hidden">
+        {/* Screen Content */}
+        <div className="flex-1 w-full relative overflow-hidden font-sans">
           {children}
         </div>
 
+        {/* Home Indicator */}
         <div className="h-3 w-full flex items-center justify-center z-25">
           <div className={`w-16 h-0.5 rounded-full ${isDark ? "bg-gray-700" : "bg-gray-300"}`} />
         </div>
@@ -1455,73 +1701,26 @@ const PhoneMockup = ({ children, scrollProgress, theme }: { children: React.Reac
   );
 };
 
-const HoneycombBackground = ({ scrollProgress, activeStep, theme }: { scrollProgress: number, activeStep: string, theme: "light" | "dark" }) => {
-  const translateY = (scrollProgress - 0.25) * -160;
-  const isEnvironments = activeStep === "environments";
-  const isDark = theme === "dark";
-
-  return (
-    <div 
-      className="absolute inset-0 pointer-events-none transition-transform duration-300 ease-out"
-      style={{
-        transform: `translateY(${translateY}px)`,
-      }}
-    >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px]">
-        {HONEYCOMB_CELLS.map((cell, idx) => {
-          const isActive = isEnvironments || (
-            (activeStep === "terminal" && (cell.name === "Linux" || cell.name === "Docker")) ||
-            (activeStep === "editor" && (cell.name === "TS" || cell.name === "React" || cell.name === "Next.js")) ||
-            (activeStep === "git" && cell.name === "Git") ||
-            (activeStep === "previews" && (cell.name === "Next.js" || cell.name === "React" || cell.name === "Node"))
-          );
-
-          return (
-            <div 
-              key={idx}
-              className={`absolute transition-all duration-700 animate-float ${
-                isActive 
-                  ? 'opacity-80 scale-100' 
-                  : (isDark ? 'opacity-10 scale-90 blur-[0.5px]' : 'opacity-25 scale-90 blur-[0.5px]')
-              }`}
-              style={{
-                left: `calc(50% + ${cell.x}px)`,
-                top: `calc(50% + ${cell.y}px)`,
-                width: '82px',
-                height: '95px',
-                transform: 'translate(-50%, -50%)',
-                animationDelay: `${idx * 0.4}s`,
-              }}
-            >
-              <div 
-                className={`w-full h-full flex flex-col items-center justify-center relative shadow-lg transition-all duration-500 border ${
-                  isActive 
-                    ? (isDark ? 'bg-indigo-500/10 border-indigo-500/30 shadow-indigo-500/5' : 'bg-indigo-500/5 border-indigo-500/20 shadow-md shadow-indigo-500/5') 
-                    : (isDark ? 'bg-[#0B0C10]/80 border-white/5' : 'bg-white/90 border-black/5 shadow-sm')
-                }`}
-                style={{
-                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
-                }}
-              >
-                {isActive && (
-                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent animate-pulse" />
-                )}
-                <div className="mb-1">{getIcon(cell.name)}</div>
-                <span className={`text-[7px] font-mono font-bold tracking-tight transition-colors ${
-                  isActive ? (isDark ? 'text-white' : 'text-[#0F1115]') : 'text-gray-500'
-                }`}>{cell.label}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+const STEPS = [
+  { id: "arrival", title: "The Mobile-First Workspace", badge: "01 / ARRIVAL", description: "Your phone is now a fully-equipped engineering environment. Watch it assemble from stardust.", cardType: "standard" },
+  { id: "float", title: "Ambient Floating", badge: "02 / FLOAT", description: "Frictionless virtual device suspended in space, responding to ambient physics.", cardType: "standard" },
+  { id: "camera", title: "Continuous 3D Orbit", badge: "03 / CAMERA ORBIT", description: "The camera walks around the hardware, showcasing its ultra-thin profile.", cardType: "standard" },
+  { id: "sandbox_orbit", title: "Interactive Sandbox", badge: "04 / CONSTELLATION", description: "Watch technology nodes orbit like atoms, locking into the device to assemble your sandbox.", cardType: "sandbox" },
+  { id: "sandbox_load", title: "Container Online", badge: "05 / SANDBOX", description: "Launch isolated workspaces for any language or framework in seconds with zero configuration.", cardType: "sandbox" },
+  { id: "portal_zoom", title: "Entering the Workspace", badge: "06 / PORTAL ZOOM", description: "Dolly zoom directly into the screen. The bezel fades, and the IDE becomes your browser.", cardType: "standard" },
+  { id: "terminal", title: "Isolated Terminal", badge: "07 / TERMINAL", description: "Get full root access with isolated, persistent Linux terminal sessions emerging from the side.", cardType: "terminal" },
+  { id: "editor", title: "AI-Powered Editor", badge: "08 / CODE EDITOR", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor" },
+  { id: "git", title: "Git & PR Workflows", badge: "09 / VERSION CONTROL", description: "Manage source control, commit changes, and merge pull requests with animated branch graphs.", cardType: "git" },
+  { id: "previews", title: "Live Browser Preview", badge: "10 / LIVE PREVIEW", description: "Test your web applications with an integrated browser preview featuring hot-reloading and console logging.", cardType: "preview" },
+  { id: "exit", title: "Return to Orbit", badge: "11 / EXIT", description: "Pull back out of the workspace. The phone frame reappears, settling into its floating position.", cardType: "standard" }
+];
 
 export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeStep, setActiveStep] = useState<string>("initial");
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
+  
+  const [activeStep, setActiveStep] = useState<string>("arrival");
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
@@ -1532,22 +1731,200 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    
+
     const handleScroll = () => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
       setScrollProgress(progress);
-      const steps = ["initial", "environments", "terminal", "editor", "git", "previews"];
-      setActiveStep(steps[Math.min(Math.floor(progress * steps.length), steps.length - 1)]);
+
+      const steps = [
+        "arrival", "float", "camera", "sandbox_orbit", "sandbox_load",
+        "portal_zoom", "terminal", "editor", "git", "previews", "exit"
+      ];
+      const stepIndex = Math.min(
+        Math.floor(progress * steps.length),
+        steps.length - 1
+      );
+      setActiveStep(steps[stepIndex]);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    // 60FPS Canvas Stars & Connecting Lines Animation Loop
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId = 0;
+    const stars: { x: number, y: number, size: number, speed: number, alpha: number }[] = [];
+    for (let i = 0; i < 60; i++) {
+      stars.push({
+        x: Math.random(),
+        y: Math.random(),
+        size: Math.random() * 1.2 + 0.5,
+        speed: Math.random() * 0.01 + 0.002,
+        alpha: Math.random()
+      });
+    }
+
+    const resizeCanvas = () => {
+      canvas.width = containerRef.current?.clientWidth || window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const animLoop = () => {
+      const time = performance.now();
+      const isDark = theme === "dark";
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. Draw Starfield
+      stars.forEach(star => {
+        star.alpha += star.speed;
+        if (star.alpha > 1 || star.alpha < 0) {
+          star.speed = -star.speed;
+        }
+        ctx.fillStyle = isDark 
+          ? `rgba(255, 255, 255, ${Math.max(0.1, star.alpha * 0.25)})` 
+          : `rgba(0, 0, 0, ${Math.max(0.05, star.alpha * 0.12)})`;
+        ctx.beginPath();
+        ctx.arc(star.x * w, star.y * h, star.size, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+
+      // 2. Draw subtle grid in the background
+      ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.008)";
+      ctx.lineWidth = 1;
+      const gridSize = 100;
+      for (let x = 0; x < w; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // 3. Calculate HTML Tech Nodes positions dynamically
+      const positions = TECH_NODES.map((node, idx) => {
+        let x = node.bx;
+        let y = node.by;
+        let opacity = 0.8;
+        let scale = 1.0;
+
+        // Stage 1: Arrival (0.0 - 0.08) - Nodes fly in from outer space
+        if (scrollProgress < 0.08) {
+          const t = scrollProgress / 0.08;
+          const outerFactor = 3.5 - 2.5 * t;
+          x = node.bx * outerFactor;
+          y = node.by * outerFactor;
+          opacity = t * 0.8;
+          scale = 0.4 + t * 0.6;
+        }
+        // Stage 2 & 3: Float & Orbit (0.08 - 0.24) - standard floating
+        else if (scrollProgress >= 0.08 && scrollProgress < 0.24) {
+          x = node.bx;
+          y = node.by;
+          opacity = 0.8;
+          scale = 1.0;
+        }
+        // Stage 4: Sandbox Orbit (0.24 - 0.32) - spiral collapse
+        else if (scrollProgress >= 0.24 && scrollProgress < 0.32) {
+          const t = (scrollProgress - 0.24) / 0.08;
+          const angle = (idx * (2 * Math.PI)) / TECH_NODES.length + (time * 0.0008) + (t * Math.PI * 1.5);
+          const R = 240 * (1 - t);
+          x = Math.cos(angle) * R;
+          y = Math.sin(angle) * R;
+          opacity = (1 - t) * 0.8;
+          scale = 1.0 - t * 0.7;
+        }
+        // Stage 5 to 10: Sandbox Load to Preview (0.32 - 0.88) - hidden inside phone
+        else if (scrollProgress >= 0.32 && scrollProgress < 0.88) {
+          x = 0;
+          y = 0;
+          opacity = 0;
+          scale = 0;
+        }
+        // Stage 11: Exit (0.88 - 1.0) - expand back out
+        else if (scrollProgress >= 0.88) {
+          const t = (scrollProgress - 0.88) / 0.12;
+          x = node.bx * t;
+          y = node.by * t;
+          opacity = t * 0.8;
+          scale = t;
+        }
+
+        // Ambient floating drift
+        const floatX = Math.sin(time * 0.0008 + idx) * 8;
+        const floatY = Math.cos(time * 0.0008 + idx) * 8;
+
+        // Mouse parallax
+        const pmX = mouseOffset.x * 25;
+        const pmY = mouseOffset.y * 25;
+
+        const finalX = cx + x + floatX + pmX;
+        const finalY = cy + y + floatY + pmY;
+
+        // Update HTML element styles directly at 60fps for performance
+        const el = nodeRefs.current[idx];
+        if (el) {
+          el.style.transform = `translate3d(${finalX}px, ${finalY}px, 0) translate(-50%, -50%) scale(${scale})`;
+          el.style.opacity = `${opacity}`;
+        }
+
+        return { x: finalX, y: finalY, opacity };
+      });
+
+      // 4. Draw Connecting Constellation Lines
+      ctx.lineWidth = 1;
+      for (let i = 0; i < positions.length; i++) {
+        for (let j = i + 1; j < positions.length; j++) {
+          const p1 = positions[i];
+          const p2 = positions[j];
+          if (p1.opacity === 0 || p2.opacity === 0) continue;
+
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 220) {
+            const alpha = (1 - dist / 220) * 0.16 * Math.min(p1.opacity, p2.opacity);
+            ctx.strokeStyle = isDark 
+              ? `rgba(99, 102, 241, ${alpha})` 
+              : `rgba(79, 70, 229, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(animLoop);
+    };
+
+    animLoop();
+
     return () => {
       window.removeEventListener("resize", checkMobile);
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [scrollProgress, theme, mouseOffset]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isMobile) return;
@@ -1560,55 +1937,131 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
 
   const handleMouseLeave = () => setMouseOffset({ x: 0, y: 0 });
 
-  const transformStyle = get3DTransform(scrollProgress, isMobile, mouseOffset.x, mouseOffset.y);
   const currentStepData = STEPS.find(s => s.id === activeStep) || STEPS[0];
+  const transformStyle = get3DTransform(scrollProgress, isMobile, mouseOffset.x, mouseOffset.y);
   const isDark = theme === "dark";
+
+  // Interpolate mockup opacity: disappears during fullscreen zoom
+  let mockupOpacity = 1;
+  if (scrollProgress >= 0.40 && scrollProgress < 0.48) {
+    mockupOpacity = 1 - (scrollProgress - 0.40) / 0.08;
+  } else if (scrollProgress >= 0.48 && scrollProgress < 0.88) {
+    mockupOpacity = 0;
+  } else if (scrollProgress >= 0.88 && scrollProgress < 0.95) {
+    mockupOpacity = (scrollProgress - 0.88) / 0.07;
+  }
+
+  // Determine if we show the fullscreen desktop IDE overlay
+  const showFullscreenIDE = scrollProgress >= 0.44 && scrollProgress < 0.95;
 
   return (
     <div 
       ref={containerRef} 
-      className={`relative w-full h-[500vh] border-y transition-colors duration-300 ${
+      className={`relative w-full h-[1200vh] border-y transition-colors duration-300 ${
         isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
       }`}
     >
-      <div className="sticky top-0 h-screen w-full flex flex-col md:flex-row items-center justify-between px-6 md:px-24 overflow-hidden z-20">
-        <div className="w-full md:w-[40%] h-[30vh] md:h-full flex flex-col justify-center order-2 md:order-1 text-center md:text-left pb-8 md:pb-0">
-          <div key={activeStep} className="space-y-4 animate-fade-in-up">
-            <span className={`inline-block text-[9px] font-mono font-bold tracking-widest px-2.5 py-1 rounded-full uppercase ${
+      {/* 1. HTML Floating Technology Nodes */}
+      <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+        {TECH_NODES.map((node, idx) => (
+          <div 
+            key={idx}
+            ref={el => { nodeRefs.current[idx] = el; }}
+            className="absolute transition-transform duration-75 ease-out"
+            style={{
+              width: '56px',
+              height: '56px',
+              transform: 'translate3d(0, 0, 0) scale(0)',
+              opacity: 0,
+            }}
+          >
+            <div className={`w-full h-full flex flex-col items-center justify-center rounded-xl border shadow-lg ${
               isDark 
-                ? "text-indigo-400 bg-indigo-500/10 border border-indigo-500/20" 
-                : "text-indigo-600 bg-indigo-600/5 border border-indigo-600/15"
+                ? 'bg-[#0B0C10]/90 border-white/10 shadow-indigo-500/5' 
+                : 'bg-white/90 border-black/10 shadow-sm'
             }`}>
-              {currentStepData.badge}
-            </span>
-            <h3 className={`text-2xl md:text-5xl font-bold tracking-tight leading-tight font-sans ${
-              isDark ? "text-white" : "text-[#0F1115]"
-            }`}>
-              {currentStepData.title}
-            </h3>
-            <p className={`text-xs md:text-sm leading-relaxed max-w-md mx-auto md:mx-0 ${
-              isDark ? "text-gray-400" : "text-gray-650"
-            }`}>
-              {currentStepData.description}
-            </p>
+              <div className="scale-90">{getIcon(node.name)}</div>
+              <span className={`text-[6px] font-mono font-bold mt-0.5 tracking-tight ${
+                isDark ? 'text-gray-400' : 'text-gray-655'
+              }`}>{node.label}</span>
+            </div>
           </div>
+        ))}
+      </div>
+
+      {/* 2. Interactive Canvas Background (Stars and Grid Lines) */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden pointer-events-none z-0">
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      </div>
+
+      {/* 3. Fullscreen Workspace IDE Takeover */}
+      <div 
+        className="fixed inset-0 w-screen h-screen z-40 transition-all duration-500 p-4 md:p-8 flex items-center justify-center pointer-events-none"
+        style={{
+          opacity: showFullscreenIDE ? 1 : 0,
+          transform: showFullscreenIDE ? "scale(1)" : "scale(0.92)",
+          pointerEvents: showFullscreenIDE ? "auto" : "none"
+        }}
+      >
+        <div className="w-full h-full max-w-6xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl">
+          <WorkspaceIDE activeStep={activeStep} theme={theme} />
+        </div>
+      </div>
+
+      {/* 4. Center Sticky Stage Container (Mockup & Floating Cards) */}
+      <div 
+        className="fixed inset-0 h-screen w-full flex items-center justify-center overflow-hidden z-20"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Glowing Aura behind phone */}
+        <div 
+          className="absolute w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none transition-opacity duration-300"
+          style={{ opacity: mockupOpacity }}
+        />
+        
+        {/* 3D Phone Wrapper */}
+        <div 
+          className="relative z-10 transition-all duration-300 ease-out"
+          style={{
+            transform: transformStyle,
+            transformStyle: "preserve-3d",
+            opacity: mockupOpacity,
+            pointerEvents: mockupOpacity > 0.1 ? "auto" : "none"
+          }}
+        >
+          <PhoneMockup scrollProgress={scrollProgress} theme={theme} mouseOffset={mouseOffset}>
+            <PhoneScreen activeStep={activeStep} theme={theme} />
+          </PhoneMockup>
         </div>
 
+        {/* Orbiting / Attached Content Cards */}
         <div 
-          className="w-full md:w-[60%] h-[55vh] md:h-full relative flex items-center justify-center overflow-hidden order-1 md:order-2"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
+          className={`absolute transition-all duration-700 ease-out p-6 bg-opacity-90 border backdrop-blur-md rounded-2xl shadow-2xl max-w-sm z-35 ${getCardPositionClass(activeStep, isMobile)} ${
+            isDark ? "bg-[#0B0C10] border-white/10" : "bg-white border-black/10"
+          }`}
+          style={{
+            transitionProperty: "all",
+            transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
+          }}
         >
-          <HoneycombBackground scrollProgress={scrollProgress} activeStep={activeStep} theme={theme} />
-          <div className="absolute w-[260px] h-[260px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
-          <div 
-            className="relative z-10 transition-transform duration-300 ease-out"
-            style={{ transform: transformStyle, transformStyle: "preserve-3d" }}
-          >
-            <PhoneMockup scrollProgress={scrollProgress} theme={theme}>
-              <PhoneScreen activeStep={activeStep} theme={theme} />
-            </PhoneMockup>
-          </div>
+          <span className={`inline-block text-[9px] font-mono font-bold tracking-widest px-2.5 py-1 rounded-full uppercase mb-3 ${
+            isDark 
+              ? "text-indigo-400 bg-indigo-500/10 border border-indigo-500/20" 
+              : "text-indigo-600 bg-indigo-600/5 border border-indigo-600/15"
+          }`}>
+            {currentStepData.badge}
+          </span>
+          <h3 className={`text-xl md:text-2xl font-bold tracking-tight leading-tight font-sans mb-2 ${
+            isDark ? "text-white" : "text-[#0F1115]"
+          }`}>
+            {currentStepData.title}
+          </h3>
+          <p className={`text-xs leading-relaxed ${
+            isDark ? "text-gray-400" : "text-gray-650"
+          }`}>
+            {currentStepData.description}
+          </p>
         </div>
       </div>
     </div>
