@@ -795,27 +795,74 @@ const getIcon = (name: string) => {
   }
 };
 
+const CLOUD_PATH = "M744.133 448.718L745.663 450.478C749.573 448.638 756.023 442.638 759.343 439.478C801.523 399.328 807.143 335.468 773.443 288.286C752.363 258.958 720.453 239.246 684.793 233.516C627.733 224.495 571.543 240.02 532.953 284.215C513.333 306.683 501.953 327.078 486.903 352.228L446.383 419.478C424.033 456.788 407.123 486.278 370.333 511.798C322.653 544.868 277.043 552.878 220.513 550.948C199.333 550.218 189.463 551.898 167.033 548.058C111.983 538.618 66.3532 511.758 33.9532 466.048C4.72322 424.818 -6.02688 369.558 3.23312 320.198C19.2031 235.074 86.2132 173.155 171.333 161.818C178.423 160.874 215.733 159.576 216.813 157.721C221.973 148.846 231.733 123.239 239.273 112.014C258.803 82.9043 278.733 62.4333 306.733 42.3943C378.113 -8.68767 483.363 -13.7167 560.263 27.9013C568.783 32.5103 577.823 38.6133 586.293 44.0923C591.413 47.4043 600.223 56.2653 605.963 58.4383C606.413 58.4743 606.863 58.5104 607.323 58.5464C625.333 70.3774 639.813 94.3024 651.953 111.494C653.613 113.836 663.243 137.014 663.103 140.089C659.363 141.274 631.283 140.277 624.573 140.763C613.183 141.589 588.323 150.591 580.113 150.2C577.063 142.857 564.713 129.099 559.173 122.493C559.073 117.483 555.773 114.043 552.203 110.704C491.283 53.7463 386.263 57.7693 331.443 121.487C304.553 152.739 287.003 190.663 285.093 232.343C219.143 232.831 161.143 218.294 109.883 270.641C87.5331 293.249 75.2332 323.908 75.7732 355.698C76.5632 387.998 90.4232 418.588 114.173 440.488C147.973 472.268 189.523 480.028 234.743 478.448C279.973 476.878 316.993 460.968 348.503 427.798C362.653 412.718 372.893 395.008 384.023 377.728C434.863 298.804 467.723 210.738 563.753 176.305C645.703 146.92 740.993 155.774 808.173 214.497C846.483 247.982 870.443 294.617 873.453 345.588C873.823 351.568 873.993 374.398 873.413 379.908C869.123 419.878 851.813 457.338 824.153 486.518C786.803 525.918 735.413 548.968 681.153 550.678C669.933 551.018 658.523 550.698 647.273 550.768C569.733 551.188 491.963 549.938 414.443 550.988C420.043 546.248 432.513 537.208 433.173 530.618C439.673 521.988 452.193 510.948 458.973 500.978C461.403 497.408 474.013 475.968 476.413 475.308C482.143 473.738 503.713 474.508 510.313 474.548L616.123 474.668C660.013 474.668 701.183 478.218 739.293 451.948C741.343 450.538 742.053 450.628 744.133 448.718Z";
+
 const InitialScreen = ({ theme }: { theme: "light" | "dark" }) => {
+  const isDark = theme === "dark";
   return (
     <div className={`w-full h-full flex flex-col items-center justify-center text-center relative overflow-hidden transition-colors duration-300 ${
-      theme === "dark" ? "bg-[#030303]" : "bg-[#FAFAFA]"
+      isDark ? "bg-[#05070B]" : "bg-[#FAFAFA]"
     }`}>
-      <div className="absolute w-40 h-40 rounded-full bg-indigo-500/10 blur-2xl" />
-      <div className="z-10 space-y-4">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto">
-          <span className="text-white font-bold text-lg font-mono">CC</span>
-        </div>
-        <div className="space-y-1">
-          <h4 className={`font-bold text-xs tracking-tight ${theme === "dark" ? "text-white" : "text-[#0F1115]"}`}>CloudCode Workspace</h4>
-          <p className="text-[9px] text-gray-500 font-mono">v1.0.0-beta</p>
-        </div>
-        <div className={`inline-flex items-center gap-1.5 border px-2.5 py-1 rounded text-[8px] font-mono ${
-          theme === "dark" 
-            ? "bg-white/5 border-white/5 text-gray-400" 
-            : "bg-black/5 border-black/5 text-gray-600"
-        }`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
-          <span>Syncing Workspace...</span>
+      <style>{`
+        .trace-path {
+          stroke-dasharray: 3000;
+          stroke-dashoffset: 3000;
+          animation: trace 2.2s cubic-bezier(0.25, 0.1, 0.25, 1) forwards, fillIn 0.6s ease-out 1.8s forwards;
+        }
+        .fade-in-brand {
+          opacity: 0;
+          transform: translateY(10px);
+          animation: fadeInBrand 0.8s cubic-bezier(0.16, 1, 0.3, 1) 2.0s forwards;
+        }
+        @keyframes trace {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+        @keyframes fillIn {
+          to {
+            fill: url(#logoGradient);
+            fill-opacity: 1;
+            stroke-opacity: 0.15;
+          }
+        }
+        @keyframes fadeInBrand {
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+      
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
+
+      <div className="z-10 flex flex-col items-center gap-6">
+        <svg width="80" height="80" viewBox="0 0 874 552" className="drop-shadow-[0_0_15px_rgba(0,229,255,0.25)]">
+          <defs>
+            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#00E5FF" />
+              <stop offset="50%" stopColor="#2F80ED" />
+              <stop offset="100%" stopColor="#9B51E0" />
+            </linearGradient>
+          </defs>
+          <path
+            d={CLOUD_PATH}
+            fill="none"
+            stroke={isDark ? "rgba(0, 229, 255, 0.65)" : "rgba(47, 128, 237, 0.65)"}
+            strokeWidth="12"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="trace-path"
+          />
+        </svg>
+
+        <div className="fade-in-brand flex flex-col items-center gap-1.5">
+          <h4 className={`text-[13px] font-extrabold tracking-[0.15em] uppercase font-sans ${isDark ? "text-white" : "text-[#0F1115]"}`}>
+            CloudCode
+          </h4>
+          <span className="text-[7px] tracking-[0.25em] text-indigo-500 dark:text-indigo-400 font-mono uppercase">
+            Mobile Workspace
+          </span>
         </div>
       </div>
     </div>
@@ -1488,28 +1535,24 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
 };
 
 const KEYFRAMES = [
-  // 1. Arrival (0.0 - 0.08) - Phone assembles from below
-  { p: 0.0, rx: 40, ry: -60, rz: 15, s: 0.2, tx: 0, ty: 300, tz: -200, bezelOpacity: 1 },
-  { p: 0.08, rx: 15, ry: -20, rz: 10, s: 0.9, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
-  // 2. Float (0.08 - 0.16) - Ambient drifting
-  { p: 0.16, rx: 12, ry: -15, rz: 8, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
-  // 3. Camera Turn (0.16 - 0.24) - Orbiting left to right
-  { p: 0.24, rx: 8, ry: 20, rz: -5, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
-  // 4. Sandbox Orbit (0.24 - 0.32) - Spanning outward, preparing to zoom
-  { p: 0.32, rx: 5, ry: 0, rz: 0, s: 1.4, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 5. Sandbox Load (0.32 - 0.40) - Centered zoom
-  { p: 0.40, rx: 0, ry: 0, rz: 0, s: 1.4, tx: 0, ty: 0, tz: 80, bezelOpacity: 1 },
-  // 6. Portal Zoom (WOW) (0.40 - 0.48) - Deep zoom, bezel disappearing
-  { p: 0.48, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 7. Terminal (0.48 - 0.58) - Fullscreen IDE
-  { p: 0.58, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 8. AI Refactor (0.58 - 0.68) - Fullscreen IDE
-  { p: 0.68, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 9. Git Flow (0.68 - 0.78) - Fullscreen IDE
-  { p: 0.78, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 10. Live Preview (0.78 - 0.88) - Fullscreen IDE
-  { p: 0.88, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 11. Exit (0.88 - 1.0) - Re-emerge to floating phone
+  // 1. Arrival & Boot (0.0 - 0.18) - Phone assembles and boots up
+  { p: 0.0, rx: 35, ry: -45, rz: 12, s: 0.25, tx: 0, ty: 180, tz: -100, bezelOpacity: 1 },
+  { p: 0.18, rx: 12, ry: -15, rz: 5, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 2. Sandbox Orbit (0.18 - 0.32) - Centered, preparing to load
+  { p: 0.32, rx: 5, ry: 0, rz: 0, s: 1.35, tx: 0, ty: 0, tz: 40, bezelOpacity: 1 },
+  // 3. Sandbox Load (0.32 - 0.44) - Centered zoom
+  { p: 0.44, rx: 0, ry: 0, rz: 0, s: 1.35, tx: 0, ty: 0, tz: 60, bezelOpacity: 1 },
+  // 4. Portal Zoom (WOW) (0.44 - 0.52) - Deep zoom, bezel disappearing
+  { p: 0.52, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 5. Terminal (0.52 - 0.64) - Fullscreen IDE
+  { p: 0.64, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 6. AI Refactor (0.64 - 0.74) - Fullscreen IDE
+  { p: 0.74, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 7. Git Flow (0.74 - 0.84) - Fullscreen IDE
+  { p: 0.84, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 8. Live Preview (0.84 - 0.94) - Fullscreen IDE
+  { p: 0.94, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 9. Exit (0.94 - 1.0) - Re-emerge to floating phone
   { p: 1.0, rx: 15, ry: -20, rz: 10, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 }
 ];
 
@@ -1668,23 +1711,34 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 };
 
 const STEPS = [
-  { id: "arrival", title: "The Mobile-First Workspace", badge: "01 / ARRIVAL", description: "Your phone is now a fully-equipped engineering environment. Watch it assemble from stardust.", cardType: "standard" },
-  { id: "float", title: "Ambient Floating", badge: "02 / FLOAT", description: "Frictionless virtual device suspended in space, responding to ambient physics.", cardType: "standard" },
-  { id: "camera", title: "Continuous 3D Orbit", badge: "03 / CAMERA ORBIT", description: "The camera walks around the hardware, showcasing its ultra-thin profile.", cardType: "standard" },
-  { id: "sandbox_orbit", title: "Interactive Sandbox", badge: "04 / CONSTELLATION", description: "Watch technology nodes orbit like atoms, locking into the device to assemble your sandbox.", cardType: "sandbox" },
-  { id: "sandbox_load", title: "Container Online", badge: "05 / SANDBOX", description: "Launch isolated workspaces for any language or framework in seconds with zero configuration.", cardType: "sandbox" },
-  { id: "portal_zoom", title: "Entering the Workspace", badge: "06 / PORTAL ZOOM", description: "Dolly zoom directly into the screen. The bezel fades, and the IDE becomes your browser.", cardType: "standard" },
-  { id: "terminal", title: "Isolated Terminal", badge: "07 / TERMINAL", description: "Get full root access with isolated, persistent Linux terminal sessions emerging from the side.", cardType: "terminal" },
-  { id: "editor", title: "AI-Powered Editor", badge: "08 / CODE EDITOR", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor" },
-  { id: "git", title: "Git & PR Workflows", badge: "09 / VERSION CONTROL", description: "Manage source control, commit changes, and merge pull requests with animated branch graphs.", cardType: "git" },
-  { id: "previews", title: "Live Browser Preview", badge: "10 / LIVE PREVIEW", description: "Test your web applications with an integrated browser preview featuring hot-reloading and console logging.", cardType: "preview" },
-  { id: "exit", title: "Return to Orbit", badge: "11 / EXIT", description: "Pull back out of the workspace. The phone frame reappears, settling into its floating position.", cardType: "standard" }
+  { id: "arrival", title: "The Mobile-First Workspace", description: "Your phone is now a fully-equipped engineering environment. Tracing and booting the CloudCode sandbox.", cardType: "standard" },
+  { id: "sandbox_orbit", title: "Create Dev Environments", description: "Instantly spin up isolated cloud containers from your repositories. Pre-configured Docker environments with zero setup.", cardType: "sandbox" },
+  { id: "sandbox_load", title: "Container Online", description: "Launch isolated workspaces for any language or framework in seconds with root access.", cardType: "sandbox" },
+  { id: "portal_zoom", title: "Entering the Workspace", description: "Dolly zoom directly into the screen. The bezel fades, and the IDE becomes your browser.", cardType: "standard" },
+  { id: "terminal", title: "Isolated Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions emerging from the side.", cardType: "terminal" },
+  { id: "editor", title: "AI-Powered Editor", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor" },
+  { id: "git", title: "Git & PR Workflows", description: "Manage source control, commit changes, and merge pull requests with animated branch graphs.", cardType: "git" },
+  { id: "previews", title: "Live Browser Preview", description: "Test your web applications with an integrated browser preview featuring hot-reloading and console logging.", cardType: "preview" },
+  { id: "exit", title: "Return to Orbit", description: "Pull back out of the workspace. The phone frame reappears, settling into its floating position.", cardType: "standard" }
+];
+
+const HONEYCOMB_CELLS = [
+  { name: "React", label: "React", top: "25%", left: "15%" },
+  { name: "Node", label: "Node.js", top: "45%", left: "10%" },
+  { name: "Python", label: "Python", top: "65%", left: "15%" },
+  { name: "Rust", label: "Rust", top: "35%", left: "22%" },
+  { name: "Go", label: "Go", top: "55%", left: "22%" },
+  
+  { name: "Docker", label: "Docker", top: "25%", right: "15%" },
+  { name: "Git", label: "Git", top: "45%", right: "10%" },
+  { name: "Postgres", label: "Postgres", top: "65%", right: "15%" },
+  { name: "Linux", label: "Linux", top: "35%", right: "22%" },
+  { name: "Tailwind", label: "Tailwind", top: "55%", right: "22%" },
 ];
 
 export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   
   const [activeStep, setActiveStep] = useState<string>("arrival");
   const [scrollProgress, setScrollProgress] = useState<number>(0);
@@ -1704,21 +1758,25 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
       setScrollProgress(progress);
 
-      const steps = [
-        "arrival", "float", "camera", "sandbox_orbit", "sandbox_load",
-        "portal_zoom", "terminal", "editor", "git", "previews", "exit"
-      ];
-      const stepIndex = Math.min(
-        Math.floor(progress * steps.length),
-        steps.length - 1
-      );
-      setActiveStep(steps[stepIndex]);
+      // Determine active step based on progress thresholds
+      let step = "arrival";
+      if (progress < 0.18) step = "arrival";
+      else if (progress >= 0.18 && progress < 0.32) step = "sandbox_orbit";
+      else if (progress >= 0.32 && progress < 0.44) step = "sandbox_load";
+      else if (progress >= 0.44 && progress < 0.52) step = "portal_zoom";
+      else if (progress >= 0.52 && progress < 0.64) step = "terminal";
+      else if (progress >= 0.64 && progress < 0.74) step = "editor";
+      else if (progress >= 0.74 && progress < 0.84) step = "git";
+      else if (progress >= 0.84 && progress < 0.94) step = "previews";
+      else step = "exit";
+
+      setActiveStep(step);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    // 60FPS Canvas Stars & Connecting Lines Animation Loop
+    // 60FPS Canvas Stars Background Loop
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -1728,156 +1786,68 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
     const stars: { x: number, y: number, size: number, speed: number, alpha: number }[] = [];
     for (let i = 0; i < 60; i++) {
       stars.push({
-        x: Math.random(),
-        y: Math.random(),
-        size: Math.random() * 1.2 + 0.5,
-        speed: Math.random() * 0.01 + 0.002,
-        alpha: Math.random()
+        x: Math.random() * 2000 - 1000,
+        y: Math.random() * 2000 - 1000,
+        size: Math.random() * 1.5 + 0.5,
+        speed: Math.random() * 0.05 + 0.02,
+        alpha: Math.random() * 0.5 + 0.3
       });
     }
 
     const resizeCanvas = () => {
-      canvas.width = containerRef.current?.clientWidth || window.innerWidth;
+      canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
     const animLoop = () => {
-      const time = performance.now();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       const isDark = theme === "dark";
-      const w = canvas.width;
-      const h = canvas.height;
-      const cx = w / 2;
-      const cy = h / 2;
 
-      ctx.clearRect(0, 0, w, h);
+      // 1. Draw Subtle Perspective Grid Lines in background
+      ctx.strokeStyle = isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)";
+      ctx.lineWidth = 1;
+      const gridGap = 80;
+      const cy = canvas.height / 2;
+      const cx = canvas.width / 2;
 
-      // 1. Draw Starfield
+      // Vertical perspective lines radiating from center
+      for (let x = -10; x <= 10; x++) {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + x * 300, canvas.height);
+        ctx.stroke();
+      }
+
+      // Horizontal scrolling grid lines
+      const scrollOffset = (scrollProgress * 200) % gridGap;
+      for (let y = cy; y < canvas.height; y += gridGap) {
+        const dy = y + scrollOffset;
+        ctx.beginPath();
+        ctx.moveTo(0, dy);
+        ctx.lineTo(canvas.width, dy);
+        ctx.stroke();
+      }
+
+      // 2. Draw Twinkling Starfield
+      ctx.fillStyle = isDark ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.4)";
       stars.forEach(star => {
         star.alpha += star.speed;
-        if (star.alpha > 1 || star.alpha < 0) {
-          star.speed = -star.speed;
+        if (star.alpha > 1 || star.alpha < 0.2) star.speed = -star.speed;
+
+        // Parallax coordinate offset
+        const px = cx + star.x + (mouseOffset.x * 30);
+        const py = cy + star.y + (mouseOffset.y * 30);
+
+        if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+          ctx.globalAlpha = star.alpha;
+          ctx.beginPath();
+          ctx.arc(px, py, star.size, 0, Math.PI * 2);
+          ctx.fill();
         }
-        ctx.fillStyle = isDark 
-          ? `rgba(255, 255, 255, ${Math.max(0.1, star.alpha * 0.25)})` 
-          : `rgba(0, 0, 0, ${Math.max(0.05, star.alpha * 0.12)})`;
-        ctx.beginPath();
-        ctx.arc(star.x * w, star.y * h, star.size, 0, 2 * Math.PI);
-        ctx.fill();
       });
-
-      // 2. Draw subtle grid in the background
-      ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.008)";
-      ctx.lineWidth = 1;
-      const gridSize = 100;
-      for (let x = 0; x < w; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-      for (let y = 0; y < h; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-
-      // 3. Calculate HTML Tech Nodes positions dynamically
-      const positions = TECH_NODES.map((node, idx) => {
-        let x = node.bx;
-        let y = node.by;
-        let opacity = 0.8;
-        let scale = 1.0;
-
-        // Stage 1: Arrival (0.0 - 0.08) - Nodes fly in from outer space
-        if (scrollProgress < 0.08) {
-          const t = scrollProgress / 0.08;
-          const outerFactor = 3.5 - 2.5 * t;
-          x = node.bx * outerFactor;
-          y = node.by * outerFactor;
-          opacity = t * 0.8;
-          scale = 0.4 + t * 0.6;
-        }
-        // Stage 2 & 3: Float & Orbit (0.08 - 0.24) - standard floating
-        else if (scrollProgress >= 0.08 && scrollProgress < 0.24) {
-          x = node.bx;
-          y = node.by;
-          opacity = 0.8;
-          scale = 1.0;
-        }
-        // Stage 4: Sandbox Orbit (0.24 - 0.32) - spiral collapse
-        else if (scrollProgress >= 0.24 && scrollProgress < 0.32) {
-          const t = (scrollProgress - 0.24) / 0.08;
-          const angle = (idx * (2 * Math.PI)) / TECH_NODES.length + (time * 0.0008) + (t * Math.PI * 1.5);
-          const R = 240 * (1 - t);
-          x = Math.cos(angle) * R;
-          y = Math.sin(angle) * R;
-          opacity = (1 - t) * 0.8;
-          scale = 1.0 - t * 0.7;
-        }
-        // Stage 5 to 10: Sandbox Load to Preview (0.32 - 0.88) - hidden inside phone
-        else if (scrollProgress >= 0.32 && scrollProgress < 0.88) {
-          x = 0;
-          y = 0;
-          opacity = 0;
-          scale = 0;
-        }
-        // Stage 11: Exit (0.88 - 1.0) - expand back out
-        else if (scrollProgress >= 0.88) {
-          const t = (scrollProgress - 0.88) / 0.12;
-          x = node.bx * t;
-          y = node.by * t;
-          opacity = t * 0.8;
-          scale = t;
-        }
-
-        // Ambient floating drift
-        const floatX = Math.sin(time * 0.0008 + idx) * 8;
-        const floatY = Math.cos(time * 0.0008 + idx) * 8;
-
-        // Mouse parallax
-        const pmX = mouseOffset.x * 25;
-        const pmY = mouseOffset.y * 25;
-
-        const finalX = cx + x + floatX + pmX;
-        const finalY = cy + y + floatY + pmY;
-
-        // Update HTML element styles directly at 60fps for performance
-        const el = nodeRefs.current[idx];
-        if (el) {
-          el.style.transform = `translate3d(${finalX}px, ${finalY}px, 0) translate(-50%, -50%) scale(${scale})`;
-          el.style.opacity = `${opacity}`;
-        }
-
-        return { x: finalX, y: finalY, opacity };
-      });
-
-      // 4. Draw Connecting Constellation Lines
-      ctx.lineWidth = 1;
-      for (let i = 0; i < positions.length; i++) {
-        for (let j = i + 1; j < positions.length; j++) {
-          const p1 = positions[i];
-          const p2 = positions[j];
-          if (p1.opacity === 0 || p2.opacity === 0) continue;
-
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 220) {
-            const alpha = (1 - dist / 220) * 0.16 * Math.min(p1.opacity, p2.opacity);
-            ctx.strokeStyle = isDark 
-              ? `rgba(99, 102, 241, ${alpha})` 
-              : `rgba(79, 70, 229, ${alpha})`;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        }
-      }
+      ctx.globalAlpha = 1.0;
 
       animationFrameId = requestAnimationFrame(animLoop);
     };
@@ -1909,16 +1879,16 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
 
   // Interpolate mockup opacity: disappears during fullscreen zoom
   let mockupOpacity = 1;
-  if (scrollProgress >= 0.40 && scrollProgress < 0.48) {
-    mockupOpacity = 1 - (scrollProgress - 0.40) / 0.08;
-  } else if (scrollProgress >= 0.48 && scrollProgress < 0.88) {
+  if (scrollProgress >= 0.44 && scrollProgress < 0.52) {
+    mockupOpacity = 1 - (scrollProgress - 0.44) / 0.08;
+  } else if (scrollProgress >= 0.52 && scrollProgress < 0.94) {
     mockupOpacity = 0;
-  } else if (scrollProgress >= 0.88 && scrollProgress < 0.95) {
-    mockupOpacity = (scrollProgress - 0.88) / 0.07;
+  } else if (scrollProgress >= 0.94 && scrollProgress < 1.0) {
+    mockupOpacity = (scrollProgress - 0.94) / 0.06;
   }
 
   // Determine if we show the fullscreen desktop IDE overlay
-  const showFullscreenIDE = scrollProgress >= 0.44 && scrollProgress < 0.95;
+  const showFullscreenIDE = scrollProgress >= 0.48 && scrollProgress < 0.95;
 
   return (
     <div 
@@ -1927,22 +1897,18 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
       }`}
     >
-      {/* Sticky Container wrapping everything */}
       <div 
         className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden z-20"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {/* A. Canvas Background */}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
-        {/* B. Glowing Aura behind phone */}
         <div 
           className="absolute w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none transition-opacity duration-300 z-5"
           style={{ opacity: mockupOpacity }}
         />
         
-        {/* C. 3D Phone Wrapper */}
         <div 
           className="relative z-10 transition-all duration-300 ease-out"
           style={{
@@ -1957,49 +1923,65 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* D. HTML Floating Technology Nodes */}
-        <div className="absolute inset-0 pointer-events-none z-15 overflow-hidden">
-          {TECH_NODES.map((node, idx) => (
-            <div 
-              key={idx}
-              ref={el => { nodeRefs.current[idx] = el; }}
-              className="absolute transition-transform duration-75 ease-out"
-              style={{
-                width: '56px',
-                height: '56px',
-                transform: 'translate3d(0, 0, 0) scale(0)',
-                opacity: 0,
-              }}
-            >
-              <div className={`w-full h-full flex flex-col items-center justify-center rounded-xl border shadow-lg ${
-                isDark 
-                  ? 'bg-[#0B0C10]/90 border-white/10 shadow-indigo-500/5' 
-                  : 'bg-white/90 border-black/10 shadow-sm'
-              }`}>
-                <div className="scale-90">{getIcon(node.name)}</div>
-                <span className={`text-[6px] font-mono font-bold mt-0.5 tracking-tight ${
-                  isDark ? 'text-gray-400' : 'text-gray-655'
-                }`}>{node.label}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* D. Honeycomb Cells Background (Fixed on left and right sides) */}
+        {!isMobile && (
+          <div 
+            className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
+            style={{ opacity: mockupOpacity }}
+          >
+            {HONEYCOMB_CELLS.map((cell, idx) => {
+              const isLeftCell = 'left' in cell;
+              const posStyle = isLeftCell 
+                ? { top: cell.top, left: cell.left } 
+                : { top: cell.top, right: cell.right };
+                
+              return (
+                <div 
+                  key={idx}
+                  className="absolute flex flex-col items-center justify-center transition-all duration-500 group"
+                  style={{
+                    ...posStyle,
+                    width: '72px',
+                    height: '72px',
+                  }}
+                >
+                  <div 
+                    className={`w-14 h-16 flex items-center justify-center relative border transition-all duration-500 ${
+                      isDark 
+                        ? "bg-white/[0.02] border-white/5 text-indigo-400/80 shadow-indigo-500/5 shadow-inner" 
+                        : "bg-black/[0.01] border-black/5 text-indigo-600/80 shadow-sm"
+                    }`}
+                    style={{
+                      clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                    }}
+                  >
+                    <div className="scale-90 opacity-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-350">
+                      {getIcon(cell.name)}
+                    </div>
+                  </div>
+                  <span className={`text-[7px] font-mono font-bold mt-1.5 tracking-wider uppercase opacity-40 group-hover:opacity-80 transition-opacity ${
+                    isDark ? 'text-gray-400' : 'text-gray-655'
+                  }`}>
+                    {cell.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-        {/* E. Orbiting / Attached Content Typography (No Box Card, Hidden on Mobile Viewport) */}
+        {/* E. Orbiting / Attached Content Typography (No Box Card, Hidden on Mobile Viewport, No Badges) */}
         {!isMobile && (
           <>
             {/* Left Side Copy */}
             <div 
               className="absolute left-20 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
               style={{
-                opacity: (activeStep === "arrival" || activeStep === "float" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 1 : 0,
-                transform: `translateY(-50%) translateX(${(activeStep === "arrival" || activeStep === "float" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 0 : -20}px)`,
-                pointerEvents: (activeStep === "arrival" || activeStep === "float" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? "auto" : "none"
+                opacity: (activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 1 : 0,
+                transform: `translateY(-50%) translateX(${(activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? 0 : -20}px)`,
+                pointerEvents: (activeStep === "arrival" || activeStep === "sandbox_orbit" || activeStep === "sandbox_load" || activeStep === "terminal" || activeStep === "git" || activeStep === "exit") ? "auto" : "none"
               }}
             >
-              <span className="text-[10px] font-mono font-extrabold tracking-[0.2em] text-indigo-500 dark:text-indigo-400 uppercase block mb-2.5 animate-pulse">
-                {currentStepData.badge}
-              </span>
               <h3 className={`text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4 ${
                 isDark ? "text-white" : "text-[#0F1115]"
               }`}>
@@ -2016,14 +1998,11 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             <div 
               className="absolute right-20 top-1/2 -translate-y-1/2 max-w-xs z-30 transition-all duration-500 ease-out text-left"
               style={{
-                opacity: (activeStep === "camera" || activeStep === "editor" || activeStep === "previews") ? 1 : 0,
-                transform: `translateY(-50%) translateX(${(activeStep === "camera" || activeStep === "editor" || activeStep === "previews") ? 0 : 20}px)`,
-                pointerEvents: (activeStep === "camera" || activeStep === "editor" || activeStep === "previews") ? "auto" : "none"
+                opacity: (activeStep === "editor" || activeStep === "previews") ? 1 : 0,
+                transform: `translateY(-50%) translateX(${(activeStep === "editor" || activeStep === "previews") ? 0 : 20}px)`,
+                pointerEvents: (activeStep === "editor" || activeStep === "previews") ? "auto" : "none"
               }}
             >
-              <span className="text-[10px] font-mono font-extrabold tracking-[0.2em] text-indigo-500 dark:text-indigo-400 uppercase block mb-2.5 animate-pulse">
-                {currentStepData.badge}
-              </span>
               <h3 className={`text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4 ${
                 isDark ? "text-white" : "text-[#0F1115]"
               }`}>
@@ -2039,7 +2018,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         )}
       </div>
 
-      {/* 5. Fullscreen Workspace IDE Takeover */}
       <div 
         className="fixed inset-0 w-screen h-screen z-40 transition-all duration-500 p-4 md:p-8 flex items-center justify-center pointer-events-none"
         style={{
