@@ -2108,7 +2108,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         }}
       >
         <div className="w-full h-full max-w-6xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl">
-          <WorkspaceIDE activeStep={activeStep} theme={theme} />
+          <WorkspaceIDE activeStep={activeStep} theme={theme} scrollProgress={scrollProgress} />
         </div>
       </div>
     </div>
