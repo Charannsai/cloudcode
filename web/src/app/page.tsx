@@ -2162,19 +2162,11 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                   }}
                 >
                   {step.description && (
-                    <>
-                      {/* Developer Status Badge */}
-                      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.04] dark:bg-white/[0.04] bg-black/[0.03] border border-white/5 dark:border-white/5 border-black/5 text-[8px] font-mono text-indigo-400 dark:text-indigo-400 text-indigo-600 mb-3.5 uppercase tracking-widest w-fit">
-                        <span className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
-                        {step.badge}
-                      </div>
-                      
-                      <p className={`text-xs md:text-sm leading-relaxed ${
-                        isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-                      }`}>
-                        {step.description}
-                      </p>
-                    </>
+                    <p className={`text-xs md:text-sm leading-relaxed ${
+                      isDark ? "text-[#8E939E]" : "text-[#6B7280]"
+                    }`}>
+                      {step.description}
+                    </p>
                   )}
                 </div>
               );
