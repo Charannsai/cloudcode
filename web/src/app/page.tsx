@@ -133,169 +133,99 @@ export default function Home() {
         {/* ==================== INTERACTIVE SHOWCASE (Includes Hero & Trusted By) ==================== */}
         <InteractiveShowcase theme={theme} colors={colors} />
 
-        {/* ==================== BENTO GRID: EVERYTHING YOU NEED ==================== */}
+        {/* ==================== EVERYTHING YOU NEED SECTION ==================== */}
         <section className="w-full max-w-5xl px-6 py-24 z-10">
-          <div className="text-center md:text-left mb-16 space-y-3">
-            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-widest">
-              {"Core Platform"}
-            </span>
-            <h2 className="text-3xl md:text-5xl font-semibold tracking-tighter leading-tight">
-              {"everything you need"}
-            </h2>
+          {/* Header */}
+          <div className={`flex flex-col md:flex-row md:items-end justify-between border-b ${colors.border} pb-10 mb-16 gap-6`}>
+            <div className="max-w-4xl space-y-4">
+              <p className="font-mono text-[9px] uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                {"System Runtime / Stable v2.4.0"}
+              </p>
+              <h2 className={`text-5xl md:text-7xl font-light tracking-tighter uppercase leading-[0.9] ${colors.text}`}>
+                {"Everything"}<br/>{"you need."}
+              </h2>
+            </div>
+            <div className="md:text-right font-mono text-[9px] text-gray-500 dark:text-gray-400 leading-relaxed uppercase">
+              {"Workspace Nodes: Active"}<br/>
+              {"Response Latency: 14ms"}<br/>
+              {"Edge Status: Optimal"}
+            </div>
           </div>
 
-          {/* Desktop grid is 12 columns, with auto-rows for pixel-perfect vertical stacking */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Seamless Content Flow Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
-            {/* ROW 1: Card 1 (spans 8 cols) & Column Container for Card 2 & 3 (spans 4 cols) */}
-            
-            {/* CARD 1: create workspaces or clone your repos (tall, left-side bento card) */}
-            <div className={`col-span-12 md:col-span-8 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-8 min-h-[360px] md:h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
-              {/* Faded Background Image (z-0, opacity, pointer-events-none) */}
-              <div className="absolute bottom-0 right-0 w-[65%] h-[80%] md:w-[55%] md:h-[85%] z-0 opacity-[0.28] dark:opacity-[0.18] pointer-events-none select-none overflow-hidden origin-bottom-right">
+            {/* LEFT COLUMN: Cloud Sandbox (spans 8 cols) */}
+            <div className="lg:col-span-8 space-y-8">
+              <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-[#fafafa] dark:bg-[#0A0A0A]">
+                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#05070B] via-transparent to-transparent z-10 pointer-events-none"></div>
                 <img 
-                  src="/assets/createdesign.png" 
-                  alt="Create Environments" 
-                  className="w-full h-full object-contain object-bottom-right scale-[1.35] origin-bottom-right transition-transform duration-500 group-hover:scale-[1.4]" 
+                  alt="System Core Architecture" 
+                  className="w-full grayscale opacity-85 filter contrast-125 brightness-95 dark:brightness-75 object-cover" 
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCynieWEkovurckRwBDGbYKl7T8sD-DC2mgvxMe09pqe8FcomXYoQD6fI2o9BERaM5iYAF5LPxyGiFdZNHLdEse5HmQQ66NdylKUHuitv4l2NDKdbtsVIUNA5u-8oUpxaM6jUxX3UcxtAZe0GAwFzRBmJXmeKHxoWL850yZq5_NyK-7A2CClMmiPPNzZJP4jdMYb1KQBAubq-7bMV7RuQmmYyWRG6pqSQz1LQ68_BpGveEWd-F5ey0H2666xKaFduBmzT45CRpe5w"
                 />
               </div>
-
-              {/* Foreground Text Content (z-10, relative) */}
-              <div className="relative z-10 space-y-2 max-w-lg">
-                <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
-                  {"01 / Cloud Sandbox"}
+              
+              <div className="max-w-2xl space-y-3">
+                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block uppercase tracking-widest">
+                  {"01 / Infrastructure"}
                 </span>
-                <h3 className={`text-xl md:text-2xl font-bold tracking-tight ${colors.text} leading-tight`}>
+                <h3 className={`text-2xl md:text-3xl font-light uppercase tracking-tight ${colors.text}`}>
                   {"create workspaces or clone your repos"}
                 </h3>
-                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
-                  {"Spin up containerized workspaces in under 5 seconds. Connect directly to your GitHub, clone any branch, and start coding instantly."}
+                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed font-light`}>
+                  {"Spin up containerized workspaces in under 5 seconds. Connect directly to your GitHub, clone any branch, and start coding instantly with full environment parity."}
                 </p>
               </div>
             </div>
 
-            {/* RIGHT SIDE VERTICAL FLEX CONTAINER: Card 2 & 3 stacked (desktop-only alignment) */}
-            <div className="col-span-12 md:col-span-4 flex flex-col gap-6 h-auto md:h-[380px]">
+            {/* RIGHT COLUMN: Vertical Feature Flow (spans 4 cols) */}
+            <div className="lg:col-span-4 space-y-8">
               
-              {/* CARD 2: terminal sessions with compilers */}
-              <div className={`flex-1 min-h-[170px] md:h-auto group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
-                {/* Faded Background visual (neutral accents) */}
-                <div className="absolute bottom-0 right-0 w-[80%] h-[55%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none font-mono text-[8px] leading-relaxed border-t border-l rounded-tl-xl p-3 shadow-xl bg-transparent border-white/10 dark:border-white/10 text-gray-500 dark:text-gray-400 overflow-hidden">
-                  <div className="text-gray-700 dark:text-gray-300">{"$ clang++ -O3 main.cpp -o app"}</div>
-                  <div className="text-gray-600 dark:text-gray-400">{"✓ compiled successfully (0.4s)"}</div>
-                  <div className="text-gray-700 dark:text-gray-300">{"$ ./app --port 8080"}</div>
-                  <div className="text-gray-500 text-[7px]">{"[OK] server listening at: 8080"}</div>
-                </div>
-
-                <div className="relative z-10 space-y-1.5">
-                  <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
-                    {"02 / Terminal"}
-                  </span>
-                  <h3 className={`text-base md:text-lg font-bold tracking-tight ${colors.text} leading-tight`}>
-                    {"terminal sessions with compilers"}
-                  </h3>
-                  <p className={`text-[11px] ${colors.textSecondary} leading-relaxed`}>
-                    {"Full raw Linux container shell equipped with compilers, runtimes, and package managers."}
-                  </p>
-                </div>
-              </div>
-
-              {/* CARD 3: build with ai agents */}
-              <div className={`flex-1 min-h-[170px] md:h-auto group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
-                {/* Faded Background visual (neutral accents) */}
-                <div className="absolute bottom-0 right-0 w-[80%] h-[55%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none overflow-hidden font-mono text-[8px] border-t border-l rounded-tl-xl p-3 shadow-2xl bg-transparent border-white/10 dark:border-white/10 text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-0.5 text-[7px] mb-1">
-                    <span className="font-bold">{"cloudcode-agent"}</span>
-                    <span>{"THINKING"}</span>
-                  </div>
-                  <div className="space-y-0.5 text-[6.5px] leading-tight">
-                    <div><span className="text-gray-550 dark:text-gray-450">{"[agent]"}</span> <span>{"Mutating main.tsx"}</span></div>
-                    <div><span className="text-gray-550 dark:text-gray-455">{"[patch]"}</span> <span>{"Fixing layout error"}</span></div>
-                    <div className="font-bold">{"✓ build verification passed"}</div>
-                  </div>
-                </div>
-
-                <div className="relative z-10 space-y-1.5">
-                  <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
-                    {"03 / AI Agent"}
-                  </span>
-                  <h3 className={`text-base md:text-lg font-bold tracking-tight ${colors.text} leading-tight`}>
-                    {"build with ai agents"}
-                  </h3>
-                  <p className={`text-[11px] ${colors.textSecondary} leading-relaxed`}>
-                    {"An autonomous companion that directly runs builds, corrects compilers, and writes scripts."}
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
-            {/* ROW 2: Card 4 (spans 5 cols) & Card 5 (spans 7 cols) (Asymmetrical row) */}
-            
-            {/* CARD 4: previews like your native browsers */}
-            <div className={`col-span-12 md:col-span-5 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-7 h-[280px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
-              {/* Preview 3D mock browser design (Faded, z-0, neutral accents) */}
-              <div className="absolute bottom-[-10px] right-[-10px] w-[80%] h-[60%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none border rounded-t-2xl bg-white dark:bg-[#0B0C10] border-gray-200 dark:border-white/10 flex flex-col overflow-hidden shadow-2xl origin-bottom-right transition-transform duration-500 group-hover:scale-[1.02]"
-                   style={{
-                     transform: "perspective(800px) rotateX(8deg) rotateY(-10deg) rotateZ(1deg)",
-                   }}>
-                <div className="bg-gray-100 dark:bg-[#0F1117] px-3 py-1 flex items-center gap-1 border-b border-inherit">
-                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                  <div className="flex-1 bg-white dark:bg-[#030303] px-2 py-0.5 rounded text-[6px] text-gray-400 font-mono ml-1">
-                    {"localhost:3000"}
-                  </div>
-                </div>
-                <div className="flex-1 p-2 flex flex-col gap-1.5">
-                  <div className="h-2 bg-gray-200 dark:bg-white/5 rounded w-12" />
-                  <div className="flex-1 flex items-end gap-1 h-10">
-                    <div className="flex-1 bg-gray-300 dark:bg-white/5 rounded-t-sm h-[60%]" />
-                    <div className="flex-1 bg-gray-300 dark:bg-white/5 rounded-t-sm h-[85%]" />
-                    <div className="flex-1 bg-gray-300 dark:bg-white/5 rounded-t-sm h-[40%]" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative z-10 space-y-2">
-                <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
-                  {"04 / Web Preview"}
-                </span>
-                <h3 className={`text-lg md:text-xl font-bold tracking-tight ${colors.text} leading-tight`}>
-                  {"previews like your native browsers"}
-                </h3>
-                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
-                  {"Live updates as you type, complete with debug logs, inspect modes, and instant network request viewers."}
+              {/* Feature 02: Terminal */}
+              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
+                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"02"}</span>
+                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+                  {"Terminal"}
+                </h4>
+                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                  {"Raw Linux container shell with full toolchain support and native package managers."}
                 </p>
               </div>
-            </div>
 
-            {/* CARD 5: Integrated Git workflows */}
-            <div className={`col-span-12 md:col-span-7 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-7 h-[280px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
-              {/* Elegant Git branch committing simulation graphic (Faded, z-0, neutral accents) */}
-              <div className="absolute bottom-[-10px] right-[-10px] w-[75%] h-[60%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none flex items-end justify-end transition-transform duration-500 group-hover:scale-[1.02]">
-                <svg viewBox="0 0 180 110" className="w-full h-full text-gray-400 dark:text-gray-650">
-                  <path d="M10 80 L160 80" stroke="currentColor" strokeWidth="2" opacity="0.4" />
-                  <path d="M30 80 Q55 45 80 45 L160 45" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
-                  <circle cx="25" cy="80" r="4.5" fill="currentColor" />
-                  <circle cx="70" cy="45" r="4" fill="currentColor" opacity="0.6" />
-                  <circle cx="110" cy="45" r="4" fill="currentColor" opacity="0.6" />
-                  <text x="25" y="93" fontSize="5" fontFamily="monospace" fill="currentColor" opacity="0.6">{"[init]"}</text>
-                  <text x="70" y="35" fontSize="5" fontFamily="monospace" fill="currentColor" opacity="0.6">{"feat/auth"}</text>
-                </svg>
-              </div>
-
-              <div className="relative z-10 space-y-2">
-                <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
-                  {"05 / Git Workflows"}
-                </span>
-                <h3 className={`text-xl md:text-2xl font-bold tracking-tight ${colors.text} leading-tight`}>
-                  {"Integrated Git workflows"}
-                </h3>
-                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
-                  {"Manage commits, view visual diff maps, push codes, merge branches, and resolve syntax conflicts directly in visual source control guides."}
+              {/* Feature 03: AI Agent */}
+              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
+                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"03"}</span>
+                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+                  {"AI Agent"}
+                </h4>
+                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                  {"Autonomous companions that execute builds, resolve conflicts, and optimize deployments."}
                 </p>
               </div>
+
+              {/* Feature 04: Web Preview */}
+              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
+                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"04"}</span>
+                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+                  {"Web Preview"}
+                </h4>
+                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                  {"Instant hot-reloading in a secure sandbox with integrated developer diagnostics."}
+                </p>
+              </div>
+
+              {/* Feature 05: Git Workflows */}
+              <div className={`group border-t ${colors.border} pt-6 space-y-2`}>
+                <span className="font-mono text-[9px] text-gray-500 dark:text-gray-400 block">{"05"}</span>
+                <h4 className={`text-lg font-light uppercase tracking-tight group-hover:text-gray-400 transition-colors ${colors.text}`}>
+                  {"Git Workflows"}
+                </h4>
+                <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                  {"Seamless version control with visual diffing and automated pull request management."}
+                </p>
+              </div>
+
             </div>
 
           </div>
