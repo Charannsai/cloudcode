@@ -533,87 +533,220 @@ export default function Home() {
             </div>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {/* Free */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto">
+            
+            {/* Free Plan */}
             <ScrollReveal delay={100}>
-              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full hover:border-gray-400 dark:hover:border-zinc-700 transition-all duration-300`}>
-                <div>
-                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase">{"[Free Plan]"}</span>
-                  <h3 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">$0 <span className="text-xs font-normal text-gray-500">{"/ month"}</span></h3>
-                  
-                  {/* Hardware specs */}
-                  <div className="flex gap-2 mb-6">
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"0.5 Core CPU"}</span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"512 MB RAM"}</span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"5 GB SSD"}</span>
+              <div className={`p-8 rounded-2xl border ${colors.border} ${colors.card} flex flex-col justify-between h-full hover:border-gray-300 dark:hover:border-zinc-700 transition-all duration-300 shadow-sm hover:shadow-md`}>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className={`text-lg font-semibold tracking-tight ${colors.text}`}>{"Free"}</h3>
+                    <p className={`text-xs ${colors.textSecondary} mt-1`}>{"For students and hobbyists getting started."}</p>
+                    <div className="mt-4 flex items-baseline">
+                      <span className={`text-4xl font-bold tracking-tight ${colors.text}`}>{"$0"}</span>
+                      <span className={`text-xs ${colors.textSecondary} ml-1`}>{"/ month"}</span>
+                    </div>
                   </div>
 
-                  <ul className="space-y-3 text-xs text-gray-500 dark:text-gray-400">
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Workspaces:"}</span><span className="font-semibold">{"3 Max"}</span></li>
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Monthly AI Tokens:"}</span><span className="font-semibold">{"50K"}</span></li>
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Network Speed:"}</span><span className="font-semibold">{"15 Mbps Cap"}</span></li>
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"API Limits:"}</span><span className="font-semibold">{"25 req/min"}</span></li>
-                    <li className="flex justify-between"><span>{"Auto-Stop Timeout:"}</span><span className="font-semibold">{"10 min"}</span></li>
+                  <hr className={`border-t ${colors.border}`} />
+
+                  <ul className="space-y-3.5 text-xs text-gray-500 dark:text-gray-400">
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"0.5 Core CPU"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"512 MB RAM"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"5 GB SSD Storage"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"3 Workspaces Max"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"50K Monthly AI Tokens"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"15 Mbps Network Cap"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"25 API req/min"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"10 min Auto-Stop Timeout"}</span>
+                    </li>
                   </ul>
                 </div>
-                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
+                <button className={`w-full mt-8 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 ${colors.text} border ${colors.border} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
                   {"Get Started"}
                 </button>
               </div>
             </ScrollReveal>
 
-            {/* Pro */}
+            {/* Pro Developer */}
             <ScrollReveal delay={200}>
-              <div className={`p-8 rounded-xl border border-indigo-500/40 bg-indigo-500/5 dark:bg-[#0B0C10] flex flex-col justify-between text-left h-full relative hover:border-indigo-500/70 transition-all duration-300`}>
-                <span className="absolute top-3 right-3 text-[8px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">{"POPULAR"}</span>
-                <div>
-                  <span className="text-[10px] font-mono text-indigo-400 uppercase">{"[Pro Developer]"}</span>
-                  <h3 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">$25 <span className="text-xs font-normal text-gray-500">{"/ month"}</span></h3>
-                  
-                  {/* Hardware specs */}
-                  <div className="flex gap-2 mb-6">
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{"4 Cores CPU"}</span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{"8 GB RAM"}</span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">{"50 GB SSD"}</span>
+              <div className={`p-8 rounded-2xl border-2 border-indigo-500/70 bg-indigo-500/[0.02] dark:bg-[#0B0C10] flex flex-col justify-between h-full relative hover:border-indigo-500 transition-all duration-300 shadow-md hover:shadow-lg`}>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider">{"Most Popular"}</span>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className={`text-lg font-semibold tracking-tight ${colors.text}`}>{"Pro Developer"}</h3>
+                    <p className={`text-xs ${colors.textSecondary} mt-1`}>{"For creators and professional developers."}</p>
+                    <div className="mt-4 flex items-baseline">
+                      <span className={`text-4xl font-bold tracking-tight ${colors.text}`}>{"$25"}</span>
+                      <span className={`text-xs ${colors.textSecondary} ml-1`}>{"/ month"}</span>
+                    </div>
                   </div>
 
-                  <ul className="space-y-3 text-xs text-gray-650 dark:text-gray-300">
-                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"Workspaces:"}</span><span className="font-semibold text-indigo-400">{"20 Max"}</span></li>
-                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"Monthly AI Tokens:"}</span><span className="font-semibold text-indigo-400">{"5M"}</span></li>
-                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"Network Speed:"}</span><span className="font-semibold text-indigo-400">{"Uncapped"}</span></li>
-                    <li className="flex justify-between border-b border-indigo-500/10 pb-2"><span>{"API Limits:"}</span><span className="font-semibold text-indigo-400">{"500 req/min"}</span></li>
-                    <li className="flex justify-between"><span>{"Auto-Stop Timeout:"}</span><span className="font-semibold text-indigo-400">{"60 min"}</span></li>
+                  <hr className="border-t border-indigo-500/20" />
+
+                  <ul className="space-y-3.5 text-xs text-gray-600 dark:text-gray-300">
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"4 Cores CPU"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"8 GB RAM"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"50 GB SSD Storage"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"20 Workspaces Max"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"5M Monthly AI Tokens"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"Uncapped Network Speed"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"500 API req/min"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">{"60 min Auto-Stop Timeout"}</span>
+                    </li>
                   </ul>
                 </div>
-                <button className={`w-full mt-8 ${colors.btnPrimary} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
+                <button className={`w-full mt-8 bg-indigo-600 text-white hover:bg-indigo-500 dark:bg-white dark:text-black dark:hover:bg-zinc-150 font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
                   {"Upgrade to Pro"}
                 </button>
               </div>
             </ScrollReveal>
 
-            {/* Advanced */}
+            {/* Advanced Team */}
             <ScrollReveal delay={300}>
-              <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} flex flex-col justify-between text-left h-full hover:border-gray-400 dark:hover:border-zinc-700 transition-all duration-300`}>
-                <div>
-                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase">{"[Advanced Team]"}</span>
-                  <h3 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">$99 <span className="text-xs font-normal text-gray-500">{"/ month"}</span></h3>
-                  
-                  {/* Hardware specs */}
-                  <div className="flex gap-2 mb-6">
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"8 Cores CPU"}</span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"32 GB RAM"}</span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-zinc-200 dark:border-zinc-800">{"200 GB SSD"}</span>
+              <div className={`p-8 rounded-2xl border ${colors.border} ${colors.card} flex flex-col justify-between h-full hover:border-gray-300 dark:hover:border-zinc-700 transition-all duration-300 shadow-sm hover:shadow-md`}>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className={`text-lg font-semibold tracking-tight ${colors.text}`}>{"Advanced Team"}</h3>
+                    <p className={`text-xs ${colors.textSecondary} mt-1`}>{"For growing startups and scaling teams."}</p>
+                    <div className="mt-4 flex items-baseline">
+                      <span className={`text-4xl font-bold tracking-tight ${colors.text}`}>{"$99"}</span>
+                      <span className={`text-xs ${colors.textSecondary} ml-1`}>{"/ month"}</span>
+                    </div>
                   </div>
 
-                  <ul className="space-y-3 text-xs text-gray-500 dark:text-gray-400">
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Workspaces:"}</span><span className="font-semibold">{"Unlimited"}</span></li>
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Monthly AI Tokens:"}</span><span className="font-semibold">{"Unlimited"}</span></li>
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"Network Speed:"}</span><span className="font-semibold">{"Uncapped"}</span></li>
-                    <li className="flex justify-between border-b border-black/5 dark:border-white/5 pb-2"><span>{"API Limits:"}</span><span className="font-semibold">{"Uncapped"}</span></li>
-                    <li className="flex justify-between"><span>{"Auto-Stop Timeout:"}</span><span className="font-semibold">{"Always-On"}</span></li>
+                  <hr className={`border-t ${colors.border}`} />
+
+                  <ul className="space-y-3.5 text-xs text-gray-500 dark:text-gray-400">
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"8 Cores CPU"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"32 GB RAM"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"200 GB SSD Storage"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"Unlimited Workspaces"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"Unlimited Monthly AI Tokens"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"Uncapped Network Speed"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"Uncapped API Requests"}</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{"Always-On Active Session"}</span>
+                    </li>
                   </ul>
                 </div>
-                <button className={`w-full mt-8 bg-transparent hover:bg-[#0f111508] dark:hover:bg-[#161821] ${colors.text} border ${colors.border} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
+                <button className={`w-full mt-8 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 ${colors.text} border ${colors.border} font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer`}>
                   {"Upgrade to Advanced"}
                 </button>
               </div>
