@@ -933,6 +933,7 @@ const TerminalScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", sc
         })}
         {visibleCount > 0 && visibleCount < allLines.length && (
           <div className={`w-1 h-2.5 inline-block ml-0.5 animate-pulse ${isDark ? "bg-white" : "bg-black"}`} />
+        )}
       </div>
     </div>
   );
@@ -1083,6 +1084,7 @@ const EditorScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scro
         </div>
       </div>
     </div>
+  );
 };
 
 const GitScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
@@ -1592,14 +1594,14 @@ const KEYFRAMES = [
   { p: 0.58, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
   // 5. Sandbox Load (0.58 - 0.68) - Centered
   { p: 0.68, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 6. Terminal (0.68 - 0.78) - Zoom in completely to terminal
-  { p: 0.71, rx: 0, ry: 0, rz: 0, s: 3.0, tx: 0, ty: 0, tz: 150, bezelOpacity: 0 },
-  { p: 0.78, rx: 0, ry: 0, rz: 0, s: 3.0, tx: 0, ty: 0, tz: 150, bezelOpacity: 0 },
+  // 6. Terminal (0.68 - 0.78) - Crisp centered focus (1.6x zoom, low tz for subpixel clarity)
+  { p: 0.71, rx: 0, ry: 0, rz: 0, s: 1.6, tx: 0, ty: 0, tz: 20, bezelOpacity: 1 },
+  { p: 0.78, rx: 0, ry: 0, rz: 0, s: 1.6, tx: 0, ty: 0, tz: 20, bezelOpacity: 1 },
   // 7. Editor (0.78 - 0.86) - Zoom out to select code, then zoom back in for AI refactor
-  { p: 0.79, rx: 6, ry: -8, rz: 2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 }, // zoom out for selection
-  { p: 0.82, rx: 0, ry: 0, rz: 0, s: 3.0, tx: 0, ty: 0, tz: 150, bezelOpacity: 0 },  // zoom in for AI popup
-  { p: 0.84, rx: 0, ry: 0, rz: 0, s: 2.2, tx: 0, ty: 0, tz: 100, bezelOpacity: 0.5 }, // zoom out slightly for AI panel
-  { p: 0.86, rx: 0, ry: 0, rz: 0, s: 2.2, tx: 0, ty: 0, tz: 100, bezelOpacity: 0.5 },
+  { p: 0.79, rx: 6, ry: -8, rz: 2, s: 1.25, tx: 0, ty: 0, tz: 10, bezelOpacity: 1 }, // zoom out for selection
+  { p: 0.82, rx: 0, ry: 0, rz: 0, s: 1.6, tx: 0, ty: 0, tz: 20, bezelOpacity: 1 },  // zoom in for AI popup
+  { p: 0.84, rx: 0, ry: 0, rz: 0, s: 1.45, tx: 0, ty: 0, tz: 15, bezelOpacity: 1 }, // zoom out slightly for AI panel
+  { p: 0.86, rx: 0, ry: 0, rz: 0, s: 1.45, tx: 0, ty: 0, tz: 15, bezelOpacity: 1 },
   // 8. Git (0.86 - 0.92) - Git screen on phone
   { p: 0.92, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
   // 9. Previews (0.92 - 0.96) - Starts on phone, then deep zooms to fullscreen desktop preview
@@ -1684,11 +1686,15 @@ const PhoneMockup = ({
 
   return (
     <div 
-      className={`w-[280px] h-[550px] rounded-[44px] p-3 relative select-none transition-all duration-300 border ${
+      className={`w-[280px] h-[550px] rounded-[44px] p-3 relative select-none transition-all duration-300 border antialiased ${
         isDark ? "bg-[#090A10] border-white/10" : "bg-[#F3F4F6] border-black/10"
       }`}
       style={{
         transformStyle: "preserve-3d",
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
         boxShadow: isDark 
           ? `
             -2px 2px 0px 0px rgba(255, 255, 255, 0.05),
@@ -1722,12 +1728,15 @@ const PhoneMockup = ({
 
       {/* Screen container with translateZ to pop it forward in 3D */}
       <div 
-        className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border transition-all duration-700 ${
+        className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border transition-all duration-700 antialiased ${
           isDark ? "bg-[#030303] border-black/50" : "bg-white border-gray-200"
         }`}
         style={{
           transform: `translateZ(8px) rotateX(${screenRx}deg) rotateY(${screenRy}deg)`,
           transformStyle: "preserve-3d",
+          WebkitFontSmoothing: "antialiased",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
           transition: "transform 0.15s ease-out, box-shadow 0.7s ease-in-out",
           boxShadow: `inset 0 0 20px ${getGlowColorValue(activeStep)}15`
         }}
