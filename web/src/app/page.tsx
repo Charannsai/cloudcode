@@ -1734,13 +1734,14 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 
       {/* Screen container with translateZ to pop it forward in 3D */}
       <div 
-        className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border ${
+        className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border transition-all duration-700 ${
           isDark ? "bg-[#030303] border-black/50" : "bg-white border-gray-200"
         }`}
         style={{
           transform: `translateZ(8px) rotateX(${screenRx}deg) rotateY(${screenRy}deg)`,
           transformStyle: "preserve-3d",
-          transition: "transform 0.15s ease-out",
+          transition: "transform 0.15s ease-out, box-shadow 0.7s ease-in-out",
+          boxShadow: `inset 0 0 20px ${getGlowColorValue(activeStep)}15`
         }}
       >
         {/* Glass Glare Reflection Effect */}
@@ -1786,17 +1787,62 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 };
 
 const STEPS = [
-  { id: "phone_rise", title: "", description: "", cardType: "standard" },
-  { id: "welcome_phase", title: "", description: "", cardType: "standard" },
-  { id: "arrival", title: "The Mobile-First<br />Workspace", description: "Welcome to CloudCode, the first engineering workspace you can carry in your pocket. Spin up, code, and preview full-stack applications anywhere, anytime.", cardType: "standard" },
-  { id: "sandbox_orbit", title: "Create Dev<br />Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox" },
-  { id: "sandbox_load", title: "Container<br />Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox" },
-  { id: "terminal", title: "Isolated<br />Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions right on your mobile screen.", cardType: "terminal" },
-  { id: "editor", title: "AI-Powered<br />Editor", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor" },
-  { id: "git", title: "Git & PR<br />Workflows", description: "Manage source control, commit changes, and review code diffs directly from your device.", cardType: "git" },
-  { id: "previews", title: "Live Browser<br />Preview", description: "Run your previews seamlessly. Previews can be displayed in mobile, and it scrolls just as a native browser does. Transition to desktop to inspect logs and preview side-by-side.", cardType: "preview" },
-  { id: "exit", title: "Return to<br />Orbit", description: "Step back out of the workspace. Your session remains persistent in the cloud, ready whenever you return.", cardType: "standard" }
+  { id: "phone_rise", title: "", description: "", cardType: "system", badge: "SYSTEM: INITIALIZING" },
+  { id: "welcome_phase", title: "", description: "", cardType: "system", badge: "SYSTEM: WELCOME" },
+  { id: "arrival", title: "The Mobile-First<br />Workspace", description: "Welcome to CloudCode, the first engineering workspace you can carry in your pocket. Spin up, code, and preview full-stack applications anywhere, anytime.", cardType: "system", badge: "SYSTEM: ACTIVE" },
+  { id: "sandbox_orbit", title: "Create Dev<br />Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox", badge: "RUNTIME: SANDBOX" },
+  { id: "sandbox_load", title: "Container<br />Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox", badge: "RUNTIME: ONLINE" },
+  { id: "terminal", title: "Isolated<br />Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions right on your mobile screen.", cardType: "terminal", badge: "SHELL: BASH" },
+  { id: "editor", title: "AI-Powered<br />Editor", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor", badge: "IDE: SOURCE" },
+  { id: "git", title: "Git & PR<br />Workflows", description: "Manage source control, commit changes, and review code diffs directly from your device.", cardType: "git", badge: "VCS: GIT" },
+  { id: "previews", title: "Live Browser<br />Preview", description: "Run your previews seamlessly. Previews can be displayed in mobile, and it scrolls just as a native browser does. Transition to desktop to inspect logs and preview side-by-side.", cardType: "preview", badge: "PORT: 3000" },
+  { id: "exit", title: "Return to<br />Orbit", description: "Step back out of the workspace. Your session remains persistent in the cloud, ready whenever you return.", cardType: "system", badge: "SYSTEM: PERSISTENT" }
 ];
+
+const getGlowColor = (step: string, isDark: boolean) => {
+  const op = isDark ? "0.08" : "0.05";
+  switch (step) {
+    case "phone_rise":
+    case "welcome_phase":
+    case "arrival":
+      return `radial-gradient(circle, rgba(99, 102, 241, ${op}) 0%, rgba(99, 102, 241, 0) 70%)`; // Indigo
+    case "sandbox_orbit":
+    case "sandbox_load":
+      return `radial-gradient(circle, rgba(16, 185, 129, ${op}) 0%, rgba(16, 185, 129, 0) 70%)`; // Emerald
+    case "terminal":
+      return `radial-gradient(circle, rgba(59, 130, 246, ${op}) 0%, rgba(59, 130, 246, 0) 70%)`; // Blue
+    case "editor":
+      return `radial-gradient(circle, rgba(139, 92, 246, ${op}) 0%, rgba(139, 92, 246, 0) 70%)`; // Purple
+    case "git":
+      return `radial-gradient(circle, rgba(236, 72, 153, ${op}) 0%, rgba(236, 72, 153, 0) 70%)`; // Pink
+    case "previews":
+      return `radial-gradient(circle, rgba(245, 158, 11, ${op}) 0%, rgba(245, 158, 11, 0) 70%)`; // Amber
+    default:
+      return `radial-gradient(circle, rgba(99, 102, 241, ${op}) 0%, rgba(99, 102, 241, 0) 70%)`;
+  }
+};
+
+const getGlowColorValue = (step: string) => {
+  switch (step) {
+    case "phone_rise":
+    case "welcome_phase":
+    case "arrival":
+      return "#6366F1";
+    case "sandbox_orbit":
+    case "sandbox_load":
+      return "#10B981";
+    case "terminal":
+      return "#3B82F6";
+    case "editor":
+      return "#8B5CF6";
+    case "git":
+      return "#EC4899";
+    case "previews":
+      return "#F59E0B";
+    default:
+      return "#6366F1";
+  }
+};
 
 const WATERMARK_LEFT = ["React", "Node.js", "Python", "Rust", "Go"];
 const WATERMARK_RIGHT = ["Docker", "GitHub", "Postgres", "Linux", "Cloudflare"];
@@ -1859,12 +1905,20 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const isDark = theme === "dark";
 
-      ctx.strokeStyle = isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.012)";
-      ctx.lineWidth = 1;
-      const gridGap = 85;
       const cy = canvas.height / 2;
       const cx = canvas.width / 2;
 
+      // Draw Subtle Perspective Grid Lines with a fading radial gradient stroke
+      const gradient = ctx.createRadialGradient(cx, cy, 10, cx, cy, canvas.width / 1.8);
+      gradient.addColorStop(0, isDark ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.05)");
+      gradient.addColorStop(0.5, isDark ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.012)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+      
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 1.2;
+      const gridGap = 85;
+
+      // Vertical perspective lines radiating from center
       for (let x = -8; x <= 8; x++) {
         ctx.beginPath();
         ctx.moveTo(cx, cy);
@@ -1872,6 +1926,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         ctx.stroke();
       }
 
+      // Horizontal scrolling grid lines
       const scrollOffset = (scrollProgress * 220) % gridGap;
       for (let y = cy; y < canvas.height; y += gridGap) {
         const dy = y + scrollOffset;
@@ -2010,9 +2065,16 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </span>
         </div>
 
+        {/* B. Glowing Aura behind phone (Dynamic Color Shifting) */}
         <div 
-          className="absolute w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none transition-opacity duration-300 z-5"
-          style={{ opacity: mockupOpacity }}
+          className="absolute w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none transition-all duration-1000 ease-in-out z-1"
+          style={{ 
+            opacity: mockupOpacity,
+            background: getGlowColor(activeStep, isDark),
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)"
+          }}
         />
         
         <div 
@@ -2069,7 +2131,7 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         {/* H. Right Side Description Fade Layer (Middle-to-Bottom-Right) */}
         {!isMobile && (
           <div 
-            className="absolute right-28 md:right-[18%] bottom-[28%] w-[240px] h-[150px] z-30 pointer-events-none select-none text-left"
+            className="absolute right-28 md:right-[18%] bottom-[28%] w-[240px] h-[180px] z-30 pointer-events-none select-none text-left"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
               transition: "opacity 0.5s ease-in-out"
@@ -2088,11 +2150,19 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                   }}
                 >
                   {step.description && (
-                    <p className={`text-xs md:text-sm leading-relaxed ${
-                      isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-                    }`}>
-                      {step.description}
-                    </p>
+                    <>
+                      {/* Developer Status Badge */}
+                      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.04] dark:bg-white/[0.04] bg-black/[0.03] border border-white/5 dark:border-white/5 border-black/5 text-[8px] font-mono text-indigo-400 dark:text-indigo-400 text-indigo-600 mb-3.5 uppercase tracking-widest w-fit">
+                        <span className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
+                        {step.badge}
+                      </div>
+                      
+                      <p className={`text-xs md:text-sm leading-relaxed ${
+                        isDark ? "text-[#8E939E]" : "text-[#6B7280]"
+                      }`}>
+                        {step.description}
+                      </p>
+                    </>
                   )}
                 </div>
               );
