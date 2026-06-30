@@ -249,10 +249,6 @@ const FAQS = [
     a: "CloudCode is designed for individual developers, students, open-source contributors, freelancers, startup teams, and enterprise engineering teams. Whether you're building your first app or managing production systems, CloudCode provides a consistent development environment."
   },
   {
-    q: "Can I deploy applications from CloudCode?",
-    a: "Yes. You can build, test, and deploy applications using your preferred deployment workflow or integrated deployment providers."
-  },
-  {
     q: "Why choose CloudCode over a local development setup?",
     a: "CloudCode eliminates environment setup, dependency conflicts, and machine limitations. Every workspace is reproducible, accessible from anywhere, and ready to code in seconds, allowing you to focus on building instead of configuring."
   }
@@ -915,7 +911,7 @@ export default function Home() {
                       onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                       className="w-full py-4 flex justify-between items-center text-left cursor-pointer transition-all duration-250 group"
                     >
-                      <span className={`text-[13px] md:text-sm font-medium tracking-tight ${colors.text} group-hover:text-indigo-400 dark:group-hover:text-white transition-colors`}>
+                      <span className={`text-[13px] md:text-sm font-medium tracking-tight ${colors.text} group-hover:text-zinc-500 dark:group-hover:text-white transition-colors`}>
                         {faq.q}
                       </span>
                       <svg 
