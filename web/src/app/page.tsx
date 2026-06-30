@@ -2026,10 +2026,10 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* G. Vertical Scrolling Text Reel (Hidden on Mobile Viewport, No Badges, Centered Vertically) */}
+        {/* G. Left Side Heading Reel (Slightly larger, closer to center) */}
         {!isMobile && (
           <div 
-            className="absolute left-24 top-1/2 -translate-y-1/2 w-80 h-80 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
+            className="absolute left-20 top-1/2 -translate-y-1/2 w-[380px] h-80 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
             }}
@@ -2055,20 +2055,55 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                     }}
                   >
                     {step.title && (
-                      <>
-                        <h3 className={`text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3 bg-clip-text text-transparent bg-gradient-to-b ${
-                          isDark 
-                            ? "from-white via-white to-white/50" 
-                            : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
-                        }`}>
-                          {step.title}
-                        </h3>
-                        <p className={`text-xs md:text-sm leading-relaxed max-w-[280px] ${
-                          isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-                        }`}>
-                          {step.description}
-                        </p>
-                      </>
+                      <h3 className={`text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] bg-clip-text text-transparent bg-gradient-to-b ${
+                        isDark 
+                          ? "from-white via-white to-white/50" 
+                          : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
+                      }`}>
+                        {step.title}
+                      </h3>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* H. Right-Bottom Description Reel (Leveled with the bottom of the mobile) */}
+        {!isMobile && (
+          <div 
+            className="absolute right-24 bottom-[16%] w-[280px] h-36 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
+            style={{
+              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
+            }}
+          >
+            <div 
+              className="transition-transform duration-750 flex flex-col"
+              style={{
+                transform: `translateY(${- (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 144}px)`,
+                transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
+              }}
+            >
+              {STEPS.map((step) => {
+                const isActive = step.id === activeStep;
+                return (
+                  <div 
+                    key={step.id}
+                    className="h-36 flex flex-col justify-end pb-4 transition-all duration-750"
+                    style={{
+                      opacity: isActive ? 1 : 0.05,
+                      filter: isActive ? "none" : "blur(2px)",
+                      transform: `scale(${isActive ? 1.0 : 0.95})`,
+                      transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
+                    }}
+                  >
+                    {step.description && (
+                      <p className={`text-xs md:text-sm leading-relaxed ${
+                        isDark ? "text-[#8E939E]" : "text-[#6B7280]"
+                      }`}>
+                        {step.description}
+                      </p>
                     )}
                   </div>
                 );
