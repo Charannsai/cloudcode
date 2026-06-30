@@ -130,58 +130,7 @@ export default function Home() {
           </div>
         </nav>
 
-        {/* ==================== 1. HERO SECTION ==================== */}
-        <section className="w-full max-w-5xl px-6 pt-24 pb-16 flex flex-col items-center text-center relative z-10">
-          {/* Subtle Ambient Background Glow */}
-          {theme === "dark" && (
-            <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[500px] h-[350px] rounded-full bg-indigo-500/5 blur-3xl pointer-events-none z-0 animate-pulse-glow" />
-          )}
-
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/15 text-[10px] font-mono text-indigo-400 mb-6">
-            {"Introducing CloudCode"}
-          </div>
-
-          <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] max-w-4xl mb-6 ${
-            theme === "dark" 
-              ? "bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/50" 
-              : "text-[#0F1115]"
-          }`}>
-            {"The Mobile-First"}
-            <br />
-            {"Engineering Workspace."}
-          </h1>
-          
-          <p className={`text-sm md:text-base ${colors.textSecondary} max-w-2xl mb-8 leading-relaxed`}>
-            {"CloudCode brings a professional cloud IDE, autonomous AI agents, and isolated Linux containers into a single, seamless workspace engineered entirely for mobile devices."}
-          </p>
-
-          <div className="flex gap-3 justify-center mb-16">
-            <a href="#" className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
-              {"Download App"}
-            </a>
-            <a href="#" className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
-              {"Watch Demo"}
-            </a>
-          </div>
-        </section>
-
-        {/* ==================== 2. TRUSTED BY SECTION ==================== */}
-        <section className="w-full max-w-5xl px-6 py-12 z-10">
-          <div className="flex flex-col items-center">
-            <p className={`text-[10px] font-mono tracking-widest ${colors.textSecondary} uppercase mb-6`}>
-              {"Built using technologies developers already trust"}
-            </p>
-            <div className="flex flex-wrap gap-x-12 gap-y-4 justify-center items-center opacity-45 dark:opacity-35">
-              {trustedTech.map((logo, idx) => (
-                <span key={idx} className="text-xs font-bold font-mono tracking-wider">
-                  {logo}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ==================== INTERACTIVE SHOWCASE ==================== */}
+        {/* ==================== INTERACTIVE SHOWCASE (Includes Hero & Trusted By) ==================== */}
         <InteractiveShowcase theme={theme} colors={colors} />
 
         {/* ==================== 3. THE PROBLEM ==================== */}
@@ -1311,9 +1260,9 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
 
 const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
   switch (activeStep) {
+    case "phone_rise":
+      return <div className={`w-full h-full ${theme === "dark" ? "bg-[#05070B]" : "bg-[#FAFAFA]"}`} />;
     case "arrival":
-    case "float":
-    case "camera":
       return <InitialScreen theme={theme} />;
     case "sandbox_orbit":
     case "sandbox_load":
@@ -1535,24 +1484,25 @@ const WorkspaceIDE = ({ activeStep, theme }: { activeStep: string, theme: "light
 };
 
 const KEYFRAMES = [
-  // 1. Arrival & Boot (0.0 - 0.15) - Phone assembles and boots up
-  { p: 0.0, rx: 35, ry: -45, rz: 12, s: 0.25, tx: 0, ty: 180, tz: -100, bezelOpacity: 1 },
+  // 1. Phone Rise (0.0 - 0.15) - Phone rises from below, screen is black/off
+  { p: 0.0, rx: 35, ry: -45, rz: 12, s: 0.25, tx: 0, ty: 450, tz: -120, bezelOpacity: 1 },
   { p: 0.15, rx: 12, ry: -15, rz: 5, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
-  // 2. Sandbox Orbit (0.15 - 0.28) - Centered
-  { p: 0.28, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
-  // 3. Sandbox Load (0.28 - 0.40) - Centered
-  { p: 0.40, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 4. Terminal (0.40 - 0.52) - Terminal screen on phone
-  { p: 0.52, rx: -8, ry: 12, rz: -3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 5. Editor (0.52 - 0.64) - Editor screen on phone
-  { p: 0.64, rx: 8, ry: -12, rz: 3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 6. Git (0.64 - 0.78) - Git screen on phone
-  { p: 0.78, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  // 7. Previews (0.78 - 0.92) - Starts on phone, then deep zooms to fullscreen desktop preview
-  { p: 0.82, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
-  { p: 0.88, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  { p: 0.92, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
-  // 8. Exit (0.92 - 1.0) - Re-emerge to floating phone
+  // 2. Arrival & Boot (0.15 - 0.28) - Phone boots (traces logo)
+  { p: 0.28, rx: 8, ry: -10, rz: 3, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 },
+  // 3. Sandbox Orbit (0.28 - 0.40) - Centered
+  { p: 0.40, rx: 5, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 30, bezelOpacity: 1 },
+  // 4. Sandbox Load (0.40 - 0.52) - Centered
+  { p: 0.52, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 5. Terminal (0.52 - 0.64) - Terminal screen on phone
+  { p: 0.64, rx: -8, ry: 12, rz: -3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 6. Editor (0.64 - 0.76) - Editor screen on phone
+  { p: 0.76, rx: 8, ry: -12, rz: 3, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 7. Git (0.76 - 0.86) - Git screen on phone
+  { p: 0.86, rx: 0, ry: 15, rz: -2, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  // 8. Previews (0.86 - 0.94) - Starts on phone, then deep zooms to fullscreen desktop preview
+  { p: 0.90, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: 0, tz: 50, bezelOpacity: 1 },
+  { p: 0.94, rx: 0, ry: 0, rz: 0, s: 6.0, tx: 0, ty: 0, tz: 500, bezelOpacity: 0 },
+  // 9. Exit (0.94 - 1.0) - Re-emerge to floating phone
   { p: 1.0, rx: 15, ry: -20, rz: 10, s: 1.0, tx: 0, ty: 0, tz: 0, bezelOpacity: 1 }
 ];
 
@@ -1711,6 +1661,7 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 };
 
 const STEPS = [
+  { id: "phone_rise", title: "", description: "", cardType: "standard" },
   { id: "arrival", title: "The Mobile-First Workspace", description: "Your phone is now a fully-equipped engineering environment. Tracing and booting the CloudCode sandbox.", cardType: "standard" },
   { id: "sandbox_orbit", title: "Create Dev Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox" },
   { id: "sandbox_load", title: "Container Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox" },
@@ -1721,14 +1672,11 @@ const STEPS = [
   { id: "exit", title: "Return to Orbit", description: "Step back out of the workspace. Your session remains persistent in the cloud, ready whenever you return.", cardType: "standard" }
 ];
 
-const WATERMARK_LEFT = ["React", "Node.js", "Python", "Rust", "Go"];
-const WATERMARK_RIGHT = ["Docker", "GitHub", "Postgres", "Linux", "Cloudflare"];
-
 export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const [activeStep, setActiveStep] = useState<string>("arrival");
+  const [activeStep, setActiveStep] = useState<string>("phone_rise");
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
@@ -1746,15 +1694,15 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
       setScrollProgress(progress);
 
-      // Determine active step based on progress thresholds
-      let step = "arrival";
-      if (progress < 0.18) step = "arrival";
-      else if (progress >= 0.18 && progress < 0.30) step = "sandbox_orbit";
-      else if (progress >= 0.30 && progress < 0.42) step = "sandbox_load";
-      else if (progress >= 0.42 && progress < 0.54) step = "terminal";
-      else if (progress >= 0.54 && progress < 0.66) step = "editor";
-      else if (progress >= 0.66 && progress < 0.78) step = "git";
-      else if (progress >= 0.78 && progress < 0.93) step = "previews";
+      let step = "phone_rise";
+      if (progress < 0.15) step = "phone_rise";
+      else if (progress >= 0.15 && progress < 0.28) step = "arrival";
+      else if (progress >= 0.28 && progress < 0.40) step = "sandbox_orbit";
+      else if (progress >= 0.40 && progress < 0.52) step = "sandbox_load";
+      else if (progress >= 0.52 && progress < 0.64) step = "terminal";
+      else if (progress >= 0.64 && progress < 0.76) step = "editor";
+      else if (progress >= 0.76 && progress < 0.86) step = "git";
+      else if (progress >= 0.86 && progress < 0.94) step = "previews";
       else step = "exit";
 
       setActiveStep(step);
@@ -1763,7 +1711,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    // 60FPS Canvas Background Loop (Clean grid lines, no blinking stars)
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -1782,14 +1729,12 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const isDark = theme === "dark";
 
-      // Draw Subtle Perspective Grid Lines in background
       ctx.strokeStyle = isDark ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.012)";
       ctx.lineWidth = 1;
       const gridGap = 85;
       const cy = canvas.height / 2;
       const cx = canvas.width / 2;
 
-      // Vertical perspective lines radiating from center
       for (let x = -8; x <= 8; x++) {
         ctx.beginPath();
         ctx.moveTo(cx, cy);
@@ -1797,7 +1742,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         ctx.stroke();
       }
 
-      // Horizontal scrolling grid lines
       const scrollOffset = (scrollProgress * 220) % gridGap;
       for (let y = cy; y < canvas.height; y += gridGap) {
         const dy = y + scrollOffset;
@@ -1831,22 +1775,19 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
 
   const handleMouseLeave = () => setMouseOffset({ x: 0, y: 0 });
 
-  const currentStepData = STEPS.find(s => s.id === activeStep) || STEPS[0];
   const transformStyle = get3DTransform(scrollProgress, isMobile, mouseOffset.x, mouseOffset.y);
   const isDark = theme === "dark";
 
-  // Interpolate mockup opacity: disappears during fullscreen zoom (only at previews)
   let mockupOpacity = 1;
-  if (scrollProgress >= 0.82 && scrollProgress < 0.88) {
-    mockupOpacity = 1 - (scrollProgress - 0.82) / 0.06;
-  } else if (scrollProgress >= 0.88 && scrollProgress < 0.94) {
+  if (scrollProgress >= 0.90 && scrollProgress < 0.94) {
+    mockupOpacity = 1 - (scrollProgress - 0.90) / 0.04;
+  } else if (scrollProgress >= 0.94 && scrollProgress < 0.96) {
     mockupOpacity = 0;
-  } else if (scrollProgress >= 0.94 && scrollProgress < 1.0) {
-    mockupOpacity = (scrollProgress - 0.94) / 0.06;
+  } else if (scrollProgress >= 0.96 && scrollProgress < 1.0) {
+    mockupOpacity = (scrollProgress - 0.96) / 0.04;
   }
 
-  // Determine if we show the fullscreen desktop IDE overlay (during previews)
-  const showFullscreenIDE = scrollProgress >= 0.85 && scrollProgress < 0.95;
+  const showFullscreenIDE = scrollProgress >= 0.92 && scrollProgress < 0.97;
 
   return (
     <div 
@@ -1855,22 +1796,93 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         isDark ? "bg-[#030303] border-white/5" : "bg-[#FAFAFA] border-black/5"
       }`}
     >
-      {/* Sticky Container wrapping everything */}
       <div 
         className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden z-20"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {/* A. Canvas Background */}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
-        {/* B. Glowing Aura behind phone */}
+        <div 
+          className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 pointer-events-none"
+          style={{
+            opacity: scrollProgress < 0.15 ? 1 - (scrollProgress / 0.15) : 0,
+            transform: `translateY(${-scrollProgress * 80}px)`,
+            pointerEvents: scrollProgress < 0.10 ? "auto" : "none"
+          }}
+        >
+          {theme === "dark" && (
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[500px] h-[350px] rounded-full bg-indigo-500/5 blur-3xl pointer-events-none z-0 animate-pulse-glow" />
+          )}
+
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/15 text-[10px] font-mono text-indigo-400 mb-6">
+            {"Introducing CloudCode"}
+          </div>
+
+          <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] max-w-4xl mb-6 ${
+            theme === "dark" 
+              ? "bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/50" 
+              : "text-[#0F1115]"
+          }`}>
+            {"The Mobile-First"}
+            <br />
+            {"Engineering Workspace."}
+          </h1>
+          
+          <p className={`text-sm md:text-base ${colors.textSecondary} max-w-2xl mb-8 leading-relaxed`}>
+            {"CloudCode brings a professional cloud IDE, autonomous AI agents, and isolated Linux containers into a single, seamless workspace engineered entirely for mobile devices."}
+          </p>
+
+          <div className="flex gap-3 justify-center mb-10">
+            <a href="#" className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
+              {"Download App"}
+            </a>
+            <a href="#" className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
+              {"Watch Demo"}
+            </a>
+          </div>
+
+          <div className="flex flex-col items-center mt-6">
+            <p className={`text-[10px] font-mono tracking-widest ${colors.textSecondary} uppercase mb-4`}>
+              {"Built using technologies developers already trust"}
+            </p>
+            <div className="flex flex-wrap gap-x-10 gap-y-2 justify-center items-center opacity-45 dark:opacity-35 text-[10px] font-mono">
+              {["React", "Node.js", "Supabase", "Docker", "GitHub", "OpenAI", "Anthropic", "Linux", "Cloudflare"].map((logo, idx) => (
+                <span key={idx} className="font-bold tracking-wider">{logo}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className={`absolute inset-0 z-5 pointer-events-none transition-opacity duration-300 ${
+            isDark ? "bg-[#030303]" : "bg-[#FAFAFA]"
+          }`}
+          style={{
+            opacity: Math.min(1, scrollProgress / 0.15)
+          }}
+        />
+
+        <div 
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-2 overflow-hidden"
+          style={{
+            opacity: scrollProgress < 0.35 
+              ? Math.max(0, Math.sin(Math.min(1, scrollProgress / 0.35) * Math.PI) * (isDark ? 0.03 : 0.05))
+              : 0
+          }}
+        >
+          <span className={`text-[8vw] font-black tracking-[0.15em] uppercase ${
+            isDark ? "text-white" : "text-black"
+          }`}>
+            WELCOME TO CLOUDCODE
+          </span>
+        </div>
+
         <div 
           className="absolute w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none transition-opacity duration-300 z-5"
           style={{ opacity: mockupOpacity }}
         />
         
-        {/* C. 3D Phone Wrapper */}
         <div 
           className="relative z-10 transition-all duration-300 ease-out"
           style={{
@@ -1885,9 +1897,13 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* D. Vertical Scrolling Text Reel (Hidden on Mobile Viewport, No Badges, Centered Vertically in a Viewport) */}
         {!isMobile && (
-          <div className="absolute left-24 top-1/2 -translate-y-1/2 w-80 h-56 overflow-hidden z-30 pointer-events-none select-none">
+          <div 
+            className="absolute left-24 top-1/2 -translate-y-1/2 w-80 h-56 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
+            style={{
+              opacity: activeStep === "phone_rise" || activeStep === "portal_zoom" ? 0 : 1
+            }}
+          >
             <div 
               className="transition-transform duration-750 flex flex-col"
               style={{
@@ -1897,30 +1913,33 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
             >
               {STEPS.map((step) => {
                 const isActive = step.id === activeStep;
-                const isPortal = activeStep === "portal_zoom";
                 return (
                   <div 
                     key={step.id}
                     className="h-56 flex flex-col justify-center transition-all duration-750"
                     style={{
-                      opacity: isActive && !isPortal ? 1 : 0.05,
-                      filter: isActive && !isPortal ? "none" : "blur(2px)",
-                      transform: `scale(${isActive && !isPortal ? 1.0 : 0.92})`,
+                      opacity: isActive ? 1 : 0.05,
+                      filter: isActive ? "none" : "blur(2px)",
+                      transform: `scale(${isActive ? 1.0 : 0.92})`,
                       transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
                     }}
                   >
-                    <h3 className={`text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3 bg-clip-text text-transparent bg-gradient-to-b ${
-                      isDark 
-                        ? "from-white via-white to-white/50" 
-                        : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
-                    }`}>
-                      {step.title}
-                    </h3>
-                    <p className={`text-xs md:text-sm leading-relaxed max-w-[280px] ${
-                      isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-                    }`}>
-                      {step.description}
-                    </p>
+                    {step.title && (
+                      <>
+                        <h3 className={`text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] mb-3 bg-clip-text text-transparent bg-gradient-to-b ${
+                          isDark 
+                            ? "from-white via-white to-white/50" 
+                            : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
+                        }`}>
+                          {step.title}
+                        </h3>
+                        <p className={`text-xs md:text-sm leading-relaxed max-w-[280px] ${
+                          isDark ? "text-[#8E939E]" : "text-[#6B7280]"
+                        }`}>
+                          {step.description}
+                        </p>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -1929,7 +1948,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         )}
       </div>
 
-      {/* 5. Fullscreen Workspace IDE Takeover */}
       <div 
         className="fixed inset-0 w-screen h-screen z-40 transition-all duration-500 p-4 md:p-8 flex items-center justify-center pointer-events-none"
         style={{
