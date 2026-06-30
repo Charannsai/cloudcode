@@ -1788,15 +1788,18 @@ const PhoneMockup = ({ children, scrollProgress, theme, mouseOffset }: { childre
 const STEPS = [
   { id: "phone_rise", title: "", description: "", cardType: "standard" },
   { id: "welcome_phase", title: "", description: "", cardType: "standard" },
-  { id: "arrival", title: "The Mobile-First Workspace", description: "Welcome to CloudCode, the first engineering workspace you can carry in your pocket. Spin up, code, and preview full-stack applications anywhere, anytime.", cardType: "standard" },
-  { id: "sandbox_orbit", title: "Create Dev Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox" },
-  { id: "sandbox_load", title: "Container Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox" },
-  { id: "terminal", title: "Isolated Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions right on your mobile screen.", cardType: "terminal" },
-  { id: "editor", title: "AI-Powered Editor", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor" },
-  { id: "git", title: "Git & PR Workflows", description: "Manage source control, commit changes, and review code diffs directly from your device.", cardType: "git" },
-  { id: "previews", title: "Live Browser Preview", description: "Run your previews seamlessly. Previews can be displayed in mobile, and it scrolls just as a native browser does. Transition to desktop to inspect logs and preview side-by-side.", cardType: "preview" },
-  { id: "exit", title: "Return to Orbit", description: "Step back out of the workspace. Your session remains persistent in the cloud, ready whenever you return.", cardType: "standard" }
+  { id: "arrival", title: "The Mobile-First<br />Workspace", description: "Welcome to CloudCode, the first engineering workspace you can carry in your pocket. Spin up, code, and preview full-stack applications anywhere, anytime.", cardType: "standard" },
+  { id: "sandbox_orbit", title: "Create Dev<br />Environments", description: "Instantly spin up isolated cloud containers from your repositories. Select templates and configure settings with zero friction.", cardType: "sandbox" },
+  { id: "sandbox_load", title: "Container<br />Online", description: "Your remote sandbox is provisioned in seconds, offering a dedicated secure runtime for your code.", cardType: "sandbox" },
+  { id: "terminal", title: "Isolated<br />Terminal", description: "Get full root access with isolated, persistent Linux terminal sessions right on your mobile screen.", cardType: "terminal" },
+  { id: "editor", title: "AI-Powered<br />Editor", description: "Edit files with a desktop-grade editor, or let our built-in AI assistant refactor code line-by-line.", cardType: "editor" },
+  { id: "git", title: "Git & PR<br />Workflows", description: "Manage source control, commit changes, and review code diffs directly from your device.", cardType: "git" },
+  { id: "previews", title: "Live Browser<br />Preview", description: "Run your previews seamlessly. Previews can be displayed in mobile, and it scrolls just as a native browser does. Transition to desktop to inspect logs and preview side-by-side.", cardType: "preview" },
+  { id: "exit", title: "Return to<br />Orbit", description: "Step back out of the workspace. Your session remains persistent in the cloud, ready whenever you return.", cardType: "standard" }
 ];
+
+const WATERMARK_LEFT = ["React", "Node.js", "Python", "Rust", "Go"];
+const WATERMARK_RIGHT = ["Docker", "GitHub", "Postgres", "Linux", "Cloudflare"];
 
 export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark", colors: any }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -2026,10 +2029,10 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* G. Left Side Heading Reel (Slightly larger, closer to center) */}
+        {/* G. Left Side Heading Reel (Slightly larger, closer to center, behind phone) */}
         {!isMobile && (
           <div 
-            className="absolute left-20 top-1/2 -translate-y-1/2 w-[380px] h-80 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
+            className="absolute left-28 md:left-[15%] top-[24%] w-[420px] h-80 overflow-hidden z-8 pointer-events-none select-none transition-opacity duration-500"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
             }}
@@ -2055,13 +2058,12 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
                     }}
                   >
                     {step.title && (
-                      <h3 className={`text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] bg-clip-text text-transparent bg-gradient-to-b ${
-                        isDark 
-                          ? "from-white via-white to-white/50" 
-                          : "from-[#0F1115] via-[#0F1115] to-[#0F1115]/50"
-                      }`}>
-                        {step.title}
-                      </h3>
+                      <h3 
+                        className={`text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] ${
+                          isDark ? "text-white/85" : "text-[#0F1115]/75"
+                        }`}
+                        dangerouslySetInnerHTML={{ __html: step.title }}
+                      />
                     )}
                   </div>
                 );
@@ -2070,10 +2072,10 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </div>
         )}
 
-        {/* H. Right-Bottom Description Reel (Leveled with the bottom of the mobile) */}
+        {/* H. Right-Bottom Description Reel (Leveled with the bottom of the mobile, closer to center) */}
         {!isMobile && (
           <div 
-            className="absolute right-24 bottom-[16%] w-[280px] h-36 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
+            className="absolute right-28 md:right-[18%] bottom-[28%] w-[240px] h-36 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
             style={{
               opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
             }}
