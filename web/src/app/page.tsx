@@ -1728,7 +1728,7 @@ const PhoneMockup = ({
           backfaceVisibility: "hidden",
           WebkitBackfaceVisibility: "hidden",
           transition: "transform 0.15s ease-out, box-shadow 0.7s ease-in-out",
-          boxShadow: `inset 0 0 20px ${getGlowColorValue(activeStep)}15`
+          boxShadow: "inset 0 0 20px rgba(99, 102, 241, 0.15)"
         }}
       >
         {/* Glass Glare Reflection Effect */}
