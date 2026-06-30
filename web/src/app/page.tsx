@@ -75,7 +75,11 @@ export default function Home() {
       <div className={`${colors.bg} ${colors.text} min-h-screen flex flex-col items-center relative font-sans transition-colors duration-350`}>
         
         {/* ==================== NAVBAR ==================== */}
-        <nav className={`sticky top-0 w-full z-50 backdrop-blur-lg ${theme === "dark" ? "bg-[#030303]/75 border-b border-white/5" : "bg-[#FAFAFA]/75 border-b border-black/5"} transition-colors duration-300`}>
+        <nav className={`sticky top-0 w-full z-50 ${
+          theme === "dark" 
+            ? "bg-gradient-to-b from-[#030303]/90 via-[#030303]/40 to-transparent" 
+            : "bg-gradient-to-b from-[#FAFAFA]/90 via-[#FAFAFA]/40 to-transparent"
+        } transition-all duration-300`}>
           <div className="max-w-5xl mx-auto px-6 h-14 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <img 
@@ -83,9 +87,6 @@ export default function Home() {
                 alt="CloudCode" 
                 className="h-6 w-auto object-contain"
               />
-              <span className="text-[8px] uppercase tracking-widest font-mono font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                Beta
-              </span>
             </div>
             
             <div className="flex items-center gap-6">
