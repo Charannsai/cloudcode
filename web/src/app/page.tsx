@@ -1259,18 +1259,85 @@ const PhoneScreen = ({ activeStep }: { activeStep: string }) => {
     case "previews":
       return <PreviewsScreen active={activeStep === "previews"} />;
     default:
-      return <InitialScreen />;
+      return <Inconst KEYFRAMES = [
+  { p: 0.0, rx: 15, ry: -20, rz: 10, s: 0.9, tx: 0, ty: 10, tz: 0 },      // initial
+  { p: 0.2, rx: 8, ry: -12, rz: 5, s: 1.0, tx: -20, ty: 0, tz: 20 },     // environments
+  { p: 0.4, rx: 5, ry: 5, rz: -3, s: 1.15, tx: 10, ty: -10, tz: 50 },    // terminal
+  { p: 0.6, rx: 0, ry: 0, rz: 0, s: 1.25, tx: 0, ty: -20, tz: 100 },     // editor
+  { p: 0.8, rx: 8, ry: 15, rz: -5, s: 1.1, tx: 20, ty: 10, tz: 30 },     // git
+  { p: 1.0, rx: 0, ry: 0, rz: 0, s: 1.05, tx: 0, ty: 0, tz: 10 }         // previews
+];
+
+const get3DTransform = (progress: number, isMobile: boolean) => {
+  let idx = 0;
+  for (let i = 0; i < KEYFRAMES.length - 1; i++) {
+    if (progress >= KEYFRAMES[i].p && progress <= KEYFRAMES[i + 1].p) {
+      idx = i;
+      break;
+    }
   }
+  
+  const k1 = KEYFRAMES[idx];
+  const k2 = KEYFRAMES[idx + 1];
+  
+  const range = k2.p - k1.p;
+  const t = range === 0 ? 0 : (progress - k1.p) / range;
+  
+  const lerp = (a: number, b: number) => a + (b - a) * t;
+  
+  const factor = isMobile ? 0.2 : 1.0;
+  
+  const rx = lerp(k1.rx, k2.rx) * factor;
+  const ry = lerp(k1.ry, k2.ry) * factor;
+  const rz = lerp(k1.rz, k2.rz) * factor;
+  const s = lerp(k1.s, k2.s) * (isMobile ? 0.85 : 1.0);
+  const tx = lerp(k1.tx, k2.tx) * factor;
+  const ty = lerp(k1.ty, k2.ty) * factor;
+  const tz = lerp(k1.tz, k2.tz) * factor;
+  
+  return `perspective(1200px) translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
 };
 
-const PhoneMockup = ({ children }: { children: React.ReactNode }) => {
+const PhoneMockup = ({ children, scrollProgress }: { children: React.ReactNode, scrollProgress: number }) => {
+  const glareX = (scrollProgress * 300) - 150;
+
   return (
-    <div className="w-[260px] h-[520px] bg-[#1E2028] rounded-[36px] p-2 shadow-2xl relative border-2 border-white/10 select-none">
+    <div 
+      className="w-[260px] h-[520px] bg-[#1E2028] rounded-[36px] p-2 relative border border-white/15 select-none transition-all duration-300"
+      style={{
+        boxShadow: `
+          -2px 2px 0px 0px #1a1c24,
+          -4px 4px 0px 0px #15161d,
+          -6px 6px 0px 0px #101116,
+          -8px 8px 12px 0px rgba(0, 0, 0, 0.6),
+          -20px 20px 40px 0px rgba(0, 0, 0, 0.4)
+        `,
+      }}
+    >
+      {/* Side buttons to enhance 3D feel */}
+      <div className="absolute left-[-3px] top-24 w-[3px] h-10 bg-[#2D3039] rounded-l" />
+      <div className="absolute left-[-3px] top-38 w-[3px] h-14 bg-[#2D3039] rounded-l" />
+      <div className="absolute left-[-3px] top-56 w-[3px] h-14 bg-[#2D3039] rounded-l" />
+      <div className="absolute right-[-3px] top-32 w-[3px] h-16 bg-[#2D3039] rounded-r" />
+
+      {/* Speaker ear piece */}
       <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-full z-35 flex items-center justify-center">
         <div className="w-10 h-1 bg-gray-805 rounded-full" />
       </div>
       
+      {/* Screen container */}
       <div className="w-full h-full rounded-[30px] overflow-hidden bg-[#030303] relative border border-black/50 flex flex-col">
+        {/* Glass Glare Reflection Effect */}
+        <div 
+          className="absolute inset-0 z-25 pointer-events-none opacity-15 mix-blend-overlay"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0) 100%)',
+            transform: `translateX(${glareX}px) translateY(${glareX * 0.5}px)`,
+            transition: 'transform 0.1s ease-out',
+          }}
+        />
+
+        {/* Status bar */}
         <div className="h-6 pt-1.5 px-4 flex justify-between items-center text-[7px] font-mono text-gray-450 z-20 select-none">
           <span>09:41</span>
           <div className="flex items-center gap-1">
@@ -1279,10 +1346,12 @@ const PhoneMockup = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
 
+        {/* Screen Content */}
         <div className="flex-1 w-full relative overflow-hidden">
           {children}
         </div>
 
+        {/* Home Indicator */}
         <div className="h-3 w-full flex items-center justify-center z-25">
           <div className="w-16 h-0.5 bg-gray-650 rounded-full" />
         </div>
@@ -1357,8 +1426,15 @@ export function InteractiveShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState<string>("initial");
   const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    
     const handleScroll = () => {
       if (!containerRef.current) return;
       
@@ -1396,9 +1472,12 @@ export function InteractiveShowcase() {
     handleScroll();
     
     return () => {
+      window.removeEventListener("resize", checkMobile);
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  const transformStyle = get3DTransform(scrollProgress, isMobile);
 
   return (
     <div ref={containerRef} className="relative w-full bg-[#030303] border-y border-white/5">
@@ -1406,8 +1485,13 @@ export function InteractiveShowcase() {
       <div className="w-full md:w-1/2 h-[45vh] md:h-screen sticky top-14 md:top-0 md:float-right flex items-center justify-center overflow-hidden z-20 bg-[#030303] md:bg-transparent">
         <HoneycombBackground scrollProgress={scrollProgress} activeStep={activeStep} />
         <div className="absolute w-[260px] h-[260px] rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
-        <div className="relative z-10 transition-transform duration-500">
-          <PhoneMockup>
+        <div 
+          className="relative z-10 transition-transform duration-300 ease-out"
+          style={{
+            transform: transformStyle,
+          }}
+        >
+          <PhoneMockup scrollProgress={scrollProgress}>
             <PhoneScreen activeStep={activeStep} />
           </PhoneMockup>
         </div>
@@ -1437,6 +1521,9 @@ export function InteractiveShowcase() {
       </div>
       
       <div className="clear-both" />
+    </div>
+  );
+}ear-both" />
     </div>
   );
 }
