@@ -1939,17 +1939,19 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
         />
 
         <div 
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-2 overflow-hidden"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-8 overflow-hidden px-6"
           style={{
             opacity: scrollProgress < 0.35 
-              ? Math.max(0, Math.sin(Math.min(1, scrollProgress / 0.35) * Math.PI) * (isDark ? 0.03 : 0.05))
+              ? Math.sin(Math.min(1, scrollProgress / 0.35) * Math.PI) * 0.45
               : 0
           }}
         >
-          <span className={`text-[8vw] font-black tracking-[0.15em] uppercase ${
-            isDark ? "text-white" : "text-black"
+          <span className={`text-[7vw] font-black tracking-[0.18em] text-center uppercase leading-none bg-clip-text text-transparent bg-gradient-to-b ${
+            isDark 
+              ? "from-white/40 to-white/5" 
+              : "from-black/30 to-black/5"
           }`}>
-            WELCOME TO CLOUDCODE
+            WELCOME TO<br />CLOUDCODE
           </span>
         </div>
 
