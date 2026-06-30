@@ -133,284 +133,209 @@ export default function Home() {
         {/* ==================== INTERACTIVE SHOWCASE (Includes Hero & Trusted By) ==================== */}
         <InteractiveShowcase theme={theme} colors={colors} />
 
-        {/* ==================== 3. THE PROBLEM ==================== */}
-        <section className="w-full max-w-5xl px-6 py-28 z-10">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-            {/* Title Block */}
-            <div className="md:col-span-5 text-left space-y-4">
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-tighter leading-tight">
-                {"Development was"}
-                <br />
-                {"never designed"}
-                <br />
-                {"for mobile."}
-              </h2>
-              <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
-                {"Traditional tools bind you to a desk. CloudCode liberates your workflow while retaining full professional capabilities."}
-              </p>
-            </div>
-
-            {/* Comparison Cards */}
-            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Old way */}
-              <div className={`p-6 rounded-xl border ${colors.border} ${colors.card} space-y-4 text-left`}>
-                <span className="text-[10px] font-mono font-bold text-app-red">{"[x] TRADITIONAL"}</span>
-                <ul className="space-y-2.5 text-xs text-gray-500 dark:text-gray-455 font-medium">
-                  <li>{"- Carry a heavy laptop"}</li>
-                  <li>{"- Hard to patch bugs on road"}</li>
-                  <li>{"- No local compilers"}</li>
-                  <li>{"- AI is disconnected"}</li>
-                </ul>
-              </div>
-
-              {/* CloudCode */}
-              <div className={`p-6 rounded-xl border border-indigo-500/25 bg-indigo-500/5 dark:bg-[#0B0C10] space-y-4 text-left`}>
-                <span className="text-[10px] font-mono font-bold text-indigo-400">{"[+] CLOUDCODE"}</span>
-                <ul className="space-y-2.5 text-xs text-app-text-light dark:text-app-text-dark font-medium">
-                  <li>{"- Full cloud IDE on phone"}</li>
-                  <li>{"- Root Linux terminal"}</li>
-                  <li>{"- Integrated compiler"}</li>
-                  <li>{"- Autonomous AI agent"}</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ==================== 4. FEATURE STORY (TIMELINE) ==================== */}
-        <section className="w-full max-w-5xl px-6 py-28 z-10">
-          <div className="flex flex-col md:flex-row gap-12 items-start">
-            
-            {/* Timeline Sidebar */}
-            <div className="w-full md:w-1/4 flex md:flex-col gap-2 pb-4 md:pb-0 sticky top-16 z-20 py-2">
-              {[
-                "Instant Workspace",
-                "Code Editor",
-                "AI Engineer",
-                "Linux Terminal",
-                "Live Preview",
-                "Git Workflows"
-              ].map((name, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveStory(idx)}
-                  className={`px-3 py-2.5 rounded-lg text-left text-xs font-mono transition-all cursor-pointer whitespace-nowrap md:whitespace-normal border ${
-                    activeStory === idx
-                      ? (theme === "dark" ? "bg-[#161821] border-[#2E3039] text-white font-semibold" : "bg-[#E5E7EB] border-[#D1D5DB] text-black font-semibold")
-                      : `border-transparent text-gray-500 ${theme === "dark" ? "hover:text-gray-300" : "hover:text-gray-900"}`
-                  }`}
-                >
-                  {`0${idx + 1}. ${name}`}
-                </button>
-              ))}
-            </div>
-
-            {/* Showcase Panel */}
-            <div className="w-full md:w-3/4">
-              <div className={`rounded-xl border ${colors.border} ${colors.card} p-8 min-h-[360px] flex flex-col justify-between shadow-sm`}>
-                
-                {activeStory === 0 && (
-                  <div className="space-y-4 text-left">
-                    <span className="text-[10px] font-mono text-indigo-400">{"01 / WORKSPACE"}</span>
-                    <h3 className="text-2xl font-bold tracking-tight">{"Isolated Cloud Workspace"}</h3>
-                    <p className={`text-xs ${colors.textSecondary} leading-relaxed max-w-xl`}>
-                      {"Launch isolated cloud environments within seconds. No local installations, no package configuration issues, no battery drain. Just secure, clean Docker containers pre-loaded with your toolchain."}
-                    </p>
-                    <div className={`p-4 rounded-lg ${colors.terminalBg} border ${colors.border} font-mono text-[9px] text-gray-500`}>
-                      <div className="text-app-blue">{"$ cc workspace create --template node"}</div>
-                      <div className="text-app-purple">{"[o] Allocating container..."}</div>
-                      <div className="text-app-green">{"[OK] Workspace online at: https://sandbox-node-1.cloudcode.app"}</div>
-                    </div>
-                  </div>
-                )}
-
-                {activeStory === 1 && (
-                  <div className="space-y-4 text-left">
-                    <span className="text-[10px] font-mono text-indigo-400">{"02 / EDITOR"}</span>
-                    <h3 className="text-2xl font-bold tracking-tight">{"Desktop-Grade Code Editor"}</h3>
-                    <p className={`text-xs ${colors.textSecondary} leading-relaxed max-w-xl`}>
-                      {"A full-featured code editor optimized specifically for touch. Features intelligent auto-complete, code folding, a visual minimap, syntax highlighting for 100+ languages, and inline Git diff decorations."}
-                    </p>
-                    <div className="border border-app-border-light dark:border-app-border-dark rounded-lg overflow-hidden font-mono text-[9px] bg-slate-950 text-gray-400 p-4 space-y-1">
-                      <div><span className="text-app-purple">export const</span> <span className="text-app-blue">useTerminal</span> = () =&gt; &#123;</div>
-                      <div className="pl-3">const [lines, setLines] = useState&lt;string[]&gt;([]);</div>
-                      <div className="pl-3">return &#123; lines &#125;;</div>
-                      <div>&#125;;</div>
-                    </div>
-                  </div>
-                )}
-
-                {activeStory === 2 && (
-                  <div className="space-y-4 text-left">
-                    <span className="text-[10px] font-mono text-indigo-400">{"03 / AI AGENT"}</span>
-                    <h3 className="text-2xl font-bold tracking-tight">{"Autonomous AI Engineer"}</h3>
-                    <p className={`text-xs ${colors.textSecondary} leading-relaxed max-w-xl`}>
-                      {"Not just a simple chat assistant—this is a collaborative engineer. The AI agent understands your entire workspace hierarchy, writes files, runs tests, debugs compilation failures, and presents code reviews for your approval."}
-                    </p>
-                    <div className={`p-4 rounded-lg ${colors.terminalBg} border ${colors.border} font-mono text-[9px] space-y-1`}>
-                      <div className="text-app-blue">{"User: Create a new API route that fetches user projects."}</div>
-                      <div className="text-app-purple">{"AI: Creating `src/app/api/projects/route.ts`..."}</div>
-                      <div className="text-app-green">{"[OK] File created successfully."}</div>
-                    </div>
-                  </div>
-                )}
-
-                {activeStory === 3 && (
-                  <div className="space-y-4 text-left">
-                    <span className="text-[10px] font-mono text-indigo-400">{"04 / TERMINAL"}</span>
-                    <h3 className="text-2xl font-bold tracking-tight">{"Real Linux Shell"}</h3>
-                    <p className={`text-xs ${colors.textSecondary} leading-relaxed max-w-xl`}>
-                      {"A real, fully operational Linux terminal. Not a simulator. Run compilers, manage processes, use git, npm, python, cargo, or docker. Designed with custom touch gestures for quick keys."}
-                    </p>
-                    <div className={`p-4 rounded-lg ${colors.terminalBg} border ${colors.border} font-mono text-[9px] text-app-text-secondary-dark`}>
-                      <div className="flex gap-2"><span className="text-app-green">root@sandbox:~$</span> <span className="text-white">git status</span></div>
-                      <div className="text-app-green">{"nothing to commit, working tree clean"}</div>
-                    </div>
-                  </div>
-                )}
-
-                {activeStory === 4 && (
-                  <div className="space-y-4 text-left">
-                    <span className="text-[10px] font-mono text-indigo-400">{"05 / PREVIEW"}</span>
-                    <h3 className="text-2xl font-bold tracking-tight">{"Instant Live Preview"}</h3>
-                    <p className={`text-xs ${colors.textSecondary} leading-relaxed max-w-xl`}>
-                      {"Preview your running web applications instantly without leaving your workspace. Includes a built-in browser view with an interactive console log, network request inspection, and hot-reload."}
-                    </p>
-                    <div className="border border-app-border-light dark:border-app-border-dark rounded-lg overflow-hidden bg-white dark:bg-[#08090E] p-3">
-                      <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-[#0F1117] rounded text-[8px] text-gray-500">
-                        <span className="w-1.5 h-1.5 rounded-full bg-app-green" />
-                        <span>localhost:3000</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeStory === 5 && (
-                  <div className="space-y-4 text-left">
-                    <span className="text-[10px] font-mono text-indigo-400">{"06 / GIT"}</span>
-                    <h3 className="text-2xl font-bold tracking-tight">{"Integrated Git Workflows"}</h3>
-                    <p className={`text-xs ${colors.textSecondary} leading-relaxed max-w-xl`}>
-                      {"Manage your repositories with ease. View visual diffs, write commits, create and switch branches, review pull requests, and push changes to GitHub."}
-                    </p>
-                    <div className={`p-4 rounded-lg ${colors.terminalBg} border ${colors.border} font-mono text-[9px] space-y-1`}>
-                      <div className="text-app-purple">{"o [main] Commit: Fix authentication bug"}</div>
-                      <div className="text-gray-500">{"|\\"}</div>
-                      <div className="text-app-green">{"| o [feat/auth] Commit: Add verification"}</div>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ==================== 5. EVERYTHING YOU NEED ==================== */}
-        <section className="w-full max-w-5xl px-6 py-28 z-10 text-left">
-          <div className="mb-16">
-            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Features"}</span>
-            <h2 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">{"Everything you need."}</h2>
+        {/* ==================== BENTO GRID: EVERYTHING YOU NEED ==================== */}
+        <section className="w-full max-w-5xl px-6 py-24 z-10">
+          <div className="text-center md:text-left mb-16 space-y-3">
+            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-widest">
+              {"Core Platform"}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-semibold tracking-tighter leading-tight">
+              {"everything you need"}
+            </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { title: "Cloud IDE", desc: "Professional editing with autocomplete, diagnostics, and syntax highlighting." },
-              { title: "AI Engineer", desc: "Autonomous AI agent that writes code, runs commands, and plans multi-step tasks." },
-              { title: "Git", desc: "Visual version control, diff viewer, branch switcher, and full GitHub integration." },
-              { title: "Terminal", desc: "Real Linux shell inside your workspace with shell gestures and keyboard shortcuts." },
-              { title: "Preview", desc: "Preview your web applications instantly with console and network inspection." },
-              { title: "Extensions", desc: "Personalize your workspace with custom compilers, tools, themes, and keymaps." }
-            ].map((feat, idx) => (
-              <div key={idx} className={`p-6 rounded-xl border ${colors.border} ${colors.card} space-y-3`}>
-                {/* Minimalist Monochrome Icon Placeholder */}
-                <div className="w-5 h-5 text-gray-400 dark:text-gray-550">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="8" />
-                    <path d="M12 8v8M8 12h8" />
-                  </svg>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {/* CARD 1: create workspaces or clone your repos */}
+            <div className={`col-span-12 md:col-span-7 lg:col-span-8 group relative overflow-hidden rounded-2xl border ${colors.border} ${colors.card} p-8 md:p-10 min-h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/5 hover:border-indigo-500/30`}>
+              {/* Background gradient & design */}
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-indigo-500/[0.03] dark:to-indigo-500/[0.01]" />
+              <div className="absolute bottom-0 right-0 w-[80%] md:w-[70%] h-[60%] opacity-[0.25] dark:opacity-[0.18] transition-all duration-500 group-hover:scale-[1.02] group-hover:opacity-[0.35] dark:group-hover:opacity-[0.25] pointer-events-none select-none overflow-hidden origin-bottom-right">
+                {/* Visual content: mock repository & workspace environment */}
+                <div className={`w-full h-full border-t border-l rounded-tl-xl p-4 font-mono text-[9px] leading-relaxed ${theme === 'dark' ? 'bg-[#0E1116]/80 border-white/10 text-gray-400' : 'bg-gray-50/80 border-black/10 text-gray-600'} shadow-2xl`}>
+                  <div className="flex items-center justify-between border-b pb-2 mb-3 border-inherit">
+                    <span className="font-bold text-[10px] flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      {"sandbox-node-app"}
+                    </span>
+                    <span className="text-[8px] opacity-75">{"Active"}</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="text-app-blue">{"$ cc workspace clone git@github.com:cloudcode/demo.git"}</div>
+                    <div className="text-app-purple">{"Cloning into 'demo'..."}</div>
+                    <div className="text-app-green">{"✓ Cloned successfully (2.1s)"}</div>
+                    <div className="pl-3 border-l border-indigo-500/30 mt-2 space-y-1 opacity-80">
+                      <div>{"📁 src/"}</div>
+                      <div className="pl-3 text-app-purple">{"📄 page.tsx"}</div>
+                      <div className="pl-3">{"📄 layout.tsx"}</div>
+                      <div>{"📄 package.json"}</div>
+                      <div className="text-indigo-400">{"📄 Dockerfile"}</div>
+                    </div>
+                  </div>
                 </div>
-                <h4 className="font-semibold text-sm">{feat.title}</h4>
-                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>{feat.desc}</p>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ==================== 6. AI SECTION (FLOW DIAGRAM) ==================== */}
-        <section className="w-full max-w-5xl px-6 py-28 z-10 text-center flex flex-col items-center">
-          <div className="max-w-xl mb-16">
-            <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"AI Agent Workflow"}</span>
-            <h2 className="text-3xl font-semibold tracking-tighter mt-2 mb-4">{"Your second engineer."}</h2>
-            <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
-              {"CloudCode's AI agent plans steps, edits your files, runs shell commands, and verifies fixes with compilers."}
-            </p>
-          </div>
-
-          {/* Minimalist SVG Node-Link Diagram */}
-          <div className="w-full max-w-2xl py-8">
-            <svg viewBox="0 0 600 120" className="w-full h-auto text-gray-550 dark:text-gray-600">
-              {/* Nodes */}
-              <circle cx="100" cy="60" r="30" className="fill-indigo-500/5 stroke-indigo-500/35" strokeWidth="1.5" />
-              <circle cx="300" cy="60" r="30" className="fill-purple-500/5 stroke-purple-500/35" strokeWidth="1.5" />
-              <circle cx="500" cy="60" r="30" className="fill-emerald-500/5 stroke-emerald-500/35" strokeWidth="1.5" />
               
-              {/* Labels inside Nodes */}
-              <text x="100" y="63" fontSize="9" fontFamily="monospace" textAnchor="middle" className="fill-indigo-450 font-bold">DEV</text>
-              <text x="300" y="63" fontSize="9" fontFamily="monospace" textAnchor="middle" className="fill-purple-455 font-bold">AGENT</text>
-              <text x="500" y="63" fontSize="9" fontFamily="monospace" textAnchor="middle" className="fill-emerald-450 font-bold">SANDBOX</text>
-
-              {/* Connecting Lines */}
-              <path d="M 130 60 L 270 60" className="stroke-indigo-500/20" strokeWidth="1" />
-              <path d="M 330 60 L 470 60" className="stroke-purple-500/20" strokeWidth="1" />
-              
-              {/* Animated pulses along the path */}
-              <circle cx="100" cy="60" r="3" className="fill-indigo-500/60 animate-line-draw">
-                <animateMotion dur="3s" repeatCount="indefinite" path="M 30 0 L 170 0" />
-              </circle>
-              <circle cx="300" cy="60" r="3" className="fill-purple-500/60 animate-line-draw">
-                <animateMotion dur="3s" repeatCount="indefinite" path="M 30 0 L 170 0" />
-              </circle>
-            </svg>
-          </div>
-          
-          <div className="flex gap-8 text-[10px] font-mono text-gray-500 dark:text-gray-450">
-            <span>{"[o] Autonomous Planning"}</span>
-            <span>{"[o] Code Editing"}</span>
-            <span>{"[o] Compiler Verification"}</span>
-          </div>
-        </section>
-
-        {/* ==================== 7. MOBILE EXPERIENCE ==================== */}
-        <section className="w-full max-w-5xl px-6 py-28 z-10 text-left">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-            <div className="md:col-span-5 space-y-4">
-              <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Design"}</span>
-              <h2 className="text-3xl font-semibold tracking-tighter">
-                {"Built for thumbs,"}
-                <br />
-                {"not mouse pointers."}
-              </h2>
-              <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
-                {"Every gesture, menu, and interface is custom engineered for mobile and tablet screens."}
-              </p>
+              {/* Text Content Overlay */}
+              <div className="relative z-10 space-y-2 max-w-md">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-indigo-400">{"01 / Cloud Sandbox"}</span>
+                <h3 className="text-xl md:text-2xl font-bold tracking-tight">
+                  {"create workspaces or clone your repos"}
+                </h3>
+                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
+                  {"Spin up secure, production-ready development environments or pull your GitHub repositories in under five seconds."}
+                </p>
+              </div>
             </div>
 
-            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className={`p-5 rounded-xl border ${colors.border} ${colors.card} space-y-2`}>
-                <h5 className="font-semibold text-xs text-white">{"Terminal Gestures"}</h5>
-                <p className={`text-[11px] ${colors.textSecondary} leading-relaxed`}>{"Swipe to switch shells, drag to expand history."}</p>
+            {/* CARD 2: terminal sessions with compilers */}
+            <div className={`col-span-12 md:col-span-5 lg:col-span-4 group relative overflow-hidden rounded-2xl border ${colors.border} ${colors.card} p-8 min-h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/5 hover:border-purple-500/30`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-purple-500/[0.03] dark:to-purple-500/[0.01]" />
+              <div className="absolute bottom-[-10px] right-[-10px] w-[90%] h-[55%] opacity-[0.25] dark:opacity-[0.18] transition-all duration-500 group-hover:translate-y-[-4px] group-hover:opacity-[0.35] dark:group-hover:opacity-[0.25] pointer-events-none select-none font-mono text-[8px] leading-snug border-t border-l rounded-tl-xl p-4 shadow-xl origin-bottom-right bg-[#05070B] border-white/5 text-gray-400">
+                <div className="flex justify-between items-center opacity-40 border-b border-white/10 pb-1 mb-2">
+                  <span>{"g++ compiler session"}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                </div>
+                <div className="text-[#388bfd]">{"$ g++ -O3 main.cpp -o app -pthread"}</div>
+                <div className="text-[#3FB950]">{"✓ Compiled main.cpp successfully."}</div>
+                <div className="text-[#8957e5]">{"$ ./app --port 8000"}</div>
+                <div className="text-gray-500 mt-1">{"[info] server running on localhost:8000"}</div>
+                <div className="text-gray-500">{"[info] database connection established"}</div>
+                <span className="inline-block w-1.5 h-3 bg-white ml-0.5 animate-pulse align-middle" />
               </div>
-              <div className={`p-5 rounded-xl border ${colors.border} ${colors.card} space-y-2`}>
-                <h5 className="font-semibold text-xs text-white">{"Floating Menus"}</h5>
-                <p className={`text-[11px] ${colors.textSecondary} leading-relaxed`}>{"Radial actions to trigger builds or commits."}</p>
+
+              <div className="relative z-10 space-y-2">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-purple-400">{"02 / Shell & Tools"}</span>
+                <h3 className="text-xl font-bold tracking-tight">
+                  {"terminal sessions with compilers"}
+                </h3>
+                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
+                  {"A full, raw Linux environment with pre-installed compilers (gcc, clang, rustc, python, node) for local builds."}
+                </p>
               </div>
-              <div className={`p-5 rounded-xl border ${colors.border} ${colors.card} space-y-2`}>
-                <h5 className="font-semibold text-xs text-white">{"Selection Toolbar"}</h5>
-                <p className={`text-[11px] ${colors.textSecondary} leading-relaxed`}>{"Immediate AI refactoring on selected code."}</p>
+            </div>
+
+            {/* CARD 3: build with ai agents */}
+            <div className={`col-span-12 md:col-span-6 lg:col-span-4 group relative overflow-hidden rounded-2xl border ${colors.border} ${colors.card} p-8 min-h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-500/30`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-emerald-500/[0.03] dark:to-emerald-500/[0.01]" />
+              
+              {/* AI Agent Neural Network Background Graphic */}
+              <div className="absolute bottom-0 right-0 w-[85%] h-[55%] opacity-[0.25] dark:opacity-[0.18] transition-all duration-500 group-hover:scale-105 pointer-events-none select-none overflow-hidden flex items-center justify-center">
+                <svg viewBox="0 0 200 120" className="w-full h-auto text-emerald-500">
+                  <defs>
+                    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="currentColor" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                    </radialGradient>
+                  </defs>
+                  <circle cx="100" cy="60" r="30" fill="url(#glow)" className="animate-pulse" style={{ animationDuration: '4s' }} />
+                  {/* Nodes */}
+                  <circle cx="100" cy="60" r="4" fill="currentColor" />
+                  <circle cx="50" cy="30" r="3" fill="currentColor" opacity="0.6" />
+                  <circle cx="150" cy="30" r="3" fill="currentColor" opacity="0.6" />
+                  <circle cx="50" cy="90" r="3" fill="currentColor" opacity="0.6" />
+                  <circle cx="150" cy="90" r="3" fill="currentColor" opacity="0.6" />
+                  {/* Lines */}
+                  <line x1="100" y1="60" x2="50" y2="30" stroke="currentColor" strokeWidth="0.8" opacity="0.4" strokeDasharray="3 3" />
+                  <line x1="100" y1="60" x2="150" y2="30" stroke="currentColor" strokeWidth="0.8" opacity="0.4" strokeDasharray="3 3" />
+                  <line x1="100" y1="60" x2="50" y2="90" stroke="currentColor" strokeWidth="0.8" opacity="0.4" strokeDasharray="3 3" />
+                  <line x1="100" y1="60" x2="150" y2="90" stroke="currentColor" strokeWidth="0.8" opacity="0.4" strokeDasharray="3 3" />
+                  {/* Text labels fading out */}
+                  <text x="100" y="74" fontSize="6" fontFamily="monospace" textAnchor="middle" fill="currentColor" fontWeight="bold">{"AGENT"}</text>
+                  <text x="50" y="22" fontSize="5" fontFamily="monospace" textAnchor="middle" fill="currentColor" opacity="0.8">{"editor.patch"}</text>
+                  <text x="150" y="22" fontSize="5" fontFamily="monospace" textAnchor="middle" fill="currentColor" opacity="0.8">{"shell.run"}</text>
+                  <text x="50" y="100" fontSize="5" fontFamily="monospace" textAnchor="middle" fill="currentColor" opacity="0.8">{"diagnostics"}</text>
+                  <text x="150" y="100" fontSize="5" fontFamily="monospace" textAnchor="middle" fill="currentColor" opacity="0.8">{"git.commit"}</text>
+                </svg>
               </div>
-              <div className={`p-5 rounded-xl border ${colors.border} ${colors.card} space-y-2`}>
-                <h5 className="font-semibold text-xs text-white">{"Keyboard Shortcuts"}</h5>
-                <p className={`text-[11px] ${colors.textSecondary} leading-relaxed`}>{"Dedicated key row for quick coding modifiers."}</p>
+
+              <div className="relative z-10 space-y-2">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-400">{"03 / Autonomous AI"}</span>
+                <h3 className="text-xl font-bold tracking-tight">
+                  {"build with ai agents"}
+                </h3>
+                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
+                  {"Collaborate with an AI engineer that reads context, edits codebases, runs commands, and files commits."}
+                </p>
+              </div>
+            </div>
+
+            {/* CARD 4: previews like your native browsers */}
+            <div className={`col-span-12 md:col-span-6 lg:col-span-4 group relative overflow-hidden rounded-2xl border ${colors.border} ${colors.card} p-8 min-h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/30`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-500/[0.03] dark:to-blue-500/[0.01]" />
+              
+              {/* Preview mock browser design */}
+              <div className="absolute bottom-[-15px] right-[-15px] w-[85%] h-[55%] opacity-[0.25] dark:opacity-[0.18] transition-all duration-500 group-hover:scale-[1.03] group-hover:rotate-[-1deg] pointer-events-none select-none border rounded-t-xl bg-white dark:bg-[#090A0E] border-gray-200 dark:border-white/10 flex flex-col overflow-hidden shadow-2xl origin-bottom-right">
+                <div className="bg-gray-100 dark:bg-[#0F1117] px-3 py-1.5 flex items-center gap-1.5 border-b border-inherit">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  <div className="flex-1 bg-white dark:bg-[#030303] px-2 py-0.5 rounded text-[7px] text-gray-400 font-mono flex items-center justify-between ml-1.5">
+                    <span>{"localhost:3000"}</span>
+                  </div>
+                </div>
+                <div className="flex-1 p-3 flex flex-col gap-2">
+                  <div className="h-2 bg-indigo-500/10 rounded w-16" />
+                  <div className="space-y-1">
+                    <div className="h-1.5 bg-gray-200 dark:bg-white/5 rounded w-full" />
+                    <div className="h-1.5 bg-gray-200 dark:bg-white/5 rounded w-3/4" />
+                  </div>
+                  <div className="mt-2 p-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded font-mono text-[6px] text-emerald-400 flex items-center justify-between">
+                    <span>{"Console: Hot Reload Active"}</span>
+                    <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative z-10 space-y-2">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-blue-400">{"04 / Hot Preview"}</span>
+                <h3 className="text-xl font-bold tracking-tight">
+                  {"previews like your native browsers"}
+                </h3>
+                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
+                  {"Instant visual hot reloading with integrated debug consoles and networking tabs built directly in workspace previews."}
+                </p>
+              </div>
+            </div>
+
+            {/* CARD 5: Integrated Git workflows */}
+            <div className={`col-span-12 md:col-span-12 lg:col-span-4 group relative overflow-hidden rounded-2xl border ${colors.border} ${colors.card} p-8 min-h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/5 hover:border-indigo-500/30`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-indigo-500/[0.03] dark:to-indigo-500/[0.01]" />
+              
+              {/* Git commit tree design */}
+              <div className="absolute bottom-[-15px] right-[-15px] w-[80%] h-[55%] opacity-[0.25] dark:opacity-[0.18] transition-all duration-500 group-hover:translate-x-[-3px] pointer-events-none select-none flex items-end justify-end">
+                <svg viewBox="0 0 160 100" className="w-full h-full text-indigo-400">
+                  {/* Branch lines */}
+                  <path d="M20 80 L140 80" stroke="currentColor" strokeWidth="1.2" opacity="0.3" />
+                  <path d="M40 80 Q60 50 80 50 L140 50" stroke="currentColor" strokeWidth="1.2" opacity="0.3" />
+                  <path d="M80 50 Q100 20 120 20 L140 20" stroke="#8957e5" strokeWidth="1.2" opacity="0.5" />
+                  
+                  {/* Commits */}
+                  <circle cx="30" cy="80" r="3.5" fill="currentColor" className="animate-pulse" />
+                  <circle cx="60" cy="80" r="3.5" fill="currentColor" />
+                  <circle cx="70" cy="50" r="3" fill="currentColor" opacity="0.8" />
+                  <circle cx="95" cy="50" r="3" fill="currentColor" opacity="0.8" />
+                  <circle cx="110" cy="20" r="2.5" fill="#8957e5" />
+                  <circle cx="130" cy="20" r="2.5" fill="#8957e5" />
+                  
+                  {/* Pull Request merge arrow */}
+                  <path d="M135 20 Q145 50 135 80" stroke="#3FB950" strokeWidth="1" strokeDasharray="2 2" fill="none" />
+                  <polygon points="135,80 132,77 138,77" fill="#3FB950" />
+                  
+                  {/* Commit messages */}
+                  <text x="30" y="92" fontSize="5" fontFamily="monospace" fill="currentColor" opacity="0.5">{"init"}</text>
+                  <text x="60" y="92" fontSize="5" fontFamily="monospace" fill="currentColor" opacity="0.5">{"v1.0"}</text>
+                  <text x="70" y="42" fontSize="5" fontFamily="monospace" fill="currentColor" opacity="0.5">{"feat/auth"}</text>
+                  <text x="110" y="12" fontSize="5" fontFamily="monospace" fill="#8957e5" opacity="0.8">{"docs"}</text>
+                </svg>
+              </div>
+
+              <div className="relative z-10 space-y-2">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-indigo-400">{"05 / Git Workflows"}</span>
+                <h3 className="text-xl font-bold tracking-tight">
+                  {"Integrated Git workflows"}
+                </h3>
+                <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
+                  {"Resolve conflicts, commit files, and switch branches visually without running terminal syntax errors."}
+                </p>
               </div>
             </div>
           </div>
@@ -440,17 +365,6 @@ export default function Home() {
               <div className="text-3xl font-bold text-app-green">{"AES-256"}</div>
               <div className="text-xs font-semibold mt-1">{"Workspace Encryption"}</div>
             </div>
-          </div>
-        </section>
-
-        {/* ==================== 9. TESTIMONIALS ==================== */}
-        <section className="w-full max-w-xl px-6 py-16 z-10 text-center">
-          <div className={`p-8 rounded-xl border ${colors.border} ${colors.card} space-y-3`}>
-            <span className="text-[9px] font-mono text-indigo-400 uppercase tracking-widest">{"Access"}</span>
-            <h4 className="font-semibold text-base">{"Join Early Access"}</h4>
-            <p className={`text-xs ${colors.textSecondary} leading-relaxed`}>
-              {"Coming soon. Join early access and shape the future of mobile software engineering."}
-            </p>
           </div>
         </section>
 
@@ -553,34 +467,6 @@ export default function Home() {
                 )}
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* ==================== 12. FINAL CTA ==================== */}
-        <section className="w-full py-32 flex flex-col items-center justify-center relative border-t border-app-border-light dark:border-app-border-dark overflow-hidden bg-gradient-to-t from-[#090a10] to-[#030303] z-10 text-center">
-          {theme === "dark" && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-indigo-600/10 blur-3xl animate-pulse-glow pointer-events-none z-0" />
-          )}
-
-          <div className="w-full max-w-2xl px-6 flex flex-col items-center z-10 space-y-6">
-            <h2 className="text-3xl md:text-5xl font-semibold tracking-tighter leading-none">
-              {"The mobile-first"}
-              <br />
-              {"engineering workspace."}
-            </h2>
-
-            <p className={`text-xs ${colors.textSecondary} max-w-sm`}>
-              {"Fits right in your pocket. Join developers building software wherever inspiration strikes."}
-            </p>
-
-            <div className="flex gap-3 justify-center">
-              <a href="#" className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
-                {"Download CloudCode"}
-              </a>
-              <a href="https://discord.gg" target="_blank" rel="noopener noreferrer" className={`${colors.btnSecondary} border px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
-                {"Join Discord"}
-              </a>
-            </div>
           </div>
         </section>
 
