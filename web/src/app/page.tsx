@@ -2029,88 +2029,47 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
           </PhoneMockup>
         </div>
 
-        {/* G. Left Side Heading Reel (Slightly larger, closer to center, behind phone) */}
+        {/* G. Clean Editorial Content Layer (Watermark Heading + Description, Left-Aligned in Background) */}
         {!isMobile && (
           <div 
-            className="absolute left-28 md:left-[15%] top-[24%] w-[420px] h-80 overflow-hidden z-8 pointer-events-none select-none transition-opacity duration-500"
+            className="absolute left-[10%] md:left-[14%] top-[24%] w-[650px] h-[400px] z-8 pointer-events-none select-none text-left"
             style={{
-              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
+              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1,
+              transition: "opacity 0.5s ease-in-out"
             }}
           >
-            <div 
-              className="transition-transform duration-750 flex flex-col"
-              style={{
-                transform: `translateY(${- (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 320}px)`,
-                transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
-              }}
-            >
-              {STEPS.map((step) => {
-                const isActive = step.id === activeStep;
-                return (
-                  <div 
-                    key={step.id}
-                    className="h-80 flex flex-col justify-center transition-all duration-750"
-                    style={{
-                      opacity: isActive ? 1 : 0.05,
-                      filter: isActive ? "none" : "blur(2px)",
-                      transform: `scale(${isActive ? 1.0 : 0.92})`,
-                      transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
-                    }}
-                  >
-                    {step.title && (
-                      <h3 
-                        className={`text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] ${
-                          isDark ? "text-white/85" : "text-[#0F1115]/75"
-                        }`}
-                        dangerouslySetInnerHTML={{ __html: step.title }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* H. Right-Bottom Description Reel (Leveled with the bottom of the mobile, closer to center) */}
-        {!isMobile && (
-          <div 
-            className="absolute right-28 md:right-[18%] bottom-[28%] w-[240px] h-36 overflow-hidden z-30 pointer-events-none select-none transition-opacity duration-500"
-            style={{
-              opacity: activeStep === "phone_rise" || activeStep === "welcome_phase" || activeStep === "portal_zoom" ? 0 : 1
-            }}
-          >
-            <div 
-              className="transition-transform duration-750 flex flex-col"
-              style={{
-                transform: `translateY(${- (STEPS.findIndex(s => s.id === activeStep) !== -1 ? STEPS.findIndex(s => s.id === activeStep) : 0) * 144}px)`,
-                transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
-              }}
-            >
-              {STEPS.map((step) => {
-                const isActive = step.id === activeStep;
-                return (
-                  <div 
-                    key={step.id}
-                    className="h-36 flex flex-col justify-end pb-4 transition-all duration-750"
-                    style={{
-                      opacity: isActive ? 1 : 0.05,
-                      filter: isActive ? "none" : "blur(2px)",
-                      transform: `scale(${isActive ? 1.0 : 0.95})`,
-                      transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)"
-                    }}
-                  >
-                    {step.description && (
-                      <p className={`text-xs md:text-sm leading-relaxed ${
-                        isDark ? "text-[#8E939E]" : "text-[#6B7280]"
-                      }`}>
-                        {step.description}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {STEPS.map((step) => {
+              const isActive = step.id === activeStep;
+              return (
+                <div 
+                  key={step.id}
+                  className="absolute inset-0 flex flex-col justify-start gap-6 transition-all duration-500 ease-in-out"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    transform: `translateY(${isActive ? 0 : 15}px)`,
+                    pointerEvents: isActive ? "auto" : "none"
+                  }}
+                >
+                  {step.title && (
+                    <h3 
+                      className={`text-[5.5vw] font-black tracking-tight leading-[0.95] uppercase bg-clip-text text-transparent bg-gradient-to-b ${
+                        isDark 
+                          ? "from-white/35 to-white/5" 
+                          : "from-black/25 to-black/5"
+                      }`}
+                      dangerouslySetInnerHTML={{ __html: step.title }}
+                    />
+                  )}
+                  {step.description && (
+                    <p className={`text-xs md:text-sm leading-relaxed max-w-[280px] ${
+                      isDark ? "text-[#8E939E]" : "text-[#6B7280]"
+                    }`}>
+                      {step.description}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
