@@ -451,6 +451,79 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ==================== 9. COMFORT / MANAGEMENT ==================== */}
+        <section className="w-full max-w-5xl px-6 py-24 z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            
+            {/* Left Side: Title & Call-To-Action */}
+            <div className="lg:col-span-5 space-y-6">
+              <ScrollReveal>
+                <div className="space-y-4">
+                  <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">{"Workflow"}</span>
+                  <h2 className={`text-3xl font-semibold tracking-tighter leading-tight ${colors.text}`}>
+                    {"Manage with comfort"}
+                  </h2>
+                  <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                    {"Enjoy a native, streamlined mobile developer experience without sacrificing terminal root power, git version control, or containerized execution speed."}
+                  </p>
+                </div>
+              </ScrollReveal>
+
+              <ScrollReveal delay={100}>
+                <div className="pt-4 space-y-3">
+                  <a 
+                    href="#" 
+                    className={`inline-flex items-center gap-2 ${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}
+                  >
+                    <span>{"Get the app from Playstore"}</span>
+                  </a>
+                  <p className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                    {"* iOS App Store version will be available soon."}
+                  </p>
+                </div>
+              </ScrollReveal>
+            </div>
+
+            {/* Right Side: Numbered Features */}
+            <div className="lg:col-span-7 space-y-6">
+              {[
+                {
+                  num: "01",
+                  title: "Mobile Pull Requests",
+                  desc: "Raise and review PRs smoothly from the mobile itself."
+                },
+                {
+                  num: "02",
+                  title: "Native IDE Sync",
+                  desc: "Sync local changes to your Native-IDE if you don't want to push them."
+                },
+                {
+                  num: "03",
+                  title: "BYOK Integration",
+                  desc: "BYOK for your own AI agentic setup and many more."
+                }
+              ].map((item, idx) => (
+                <ScrollReveal key={idx} delay={150 + idx * 100}>
+                  <div className={`group border-t ${colors.border} pt-6 flex gap-6 items-start`}>
+                    <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider">
+                      {item.num}
+                    </span>
+                    <div className="space-y-1">
+                      <h4 className={`text-base font-semibold tracking-tighter ${colors.text}`}>
+                        {item.title}
+                      </h4>
+                      <p className={`text-xs md:text-sm ${colors.textSecondary} leading-relaxed`}>
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+
+          </div>
+        </section>
+
         {/* ==================== 10. PRICING ==================== */}
         <section className="w-full max-w-5xl px-6 py-28 z-10 text-center">
           <ScrollReveal>
