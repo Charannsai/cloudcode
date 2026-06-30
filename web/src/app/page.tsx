@@ -1251,8 +1251,12 @@ const PreviewsScreen = ({ active }: { active: boolean }) => {
   );
 };
 
-const LockScreen = ({ theme }: { theme: "light" | "dark" }) => {
+const LockScreen = ({ theme, scrollProgress }: { theme: "light" | "dark", scrollProgress: number }) => {
   const isDark = theme === "dark";
+  
+  // Calculate swipe-up interpolation factor as we scroll from 0.25 to 0.35
+  const t = Math.max(0, Math.min(1, (scrollProgress - 0.25) / 0.10));
+
   return (
     <div className={`w-full h-full flex flex-col items-center justify-between py-12 px-6 text-center select-none relative overflow-hidden ${
       isDark ? "bg-[#05070B] text-white/40" : "bg-[#FAFAFA] text-black/35"
@@ -1261,7 +1265,13 @@ const LockScreen = ({ theme }: { theme: "light" | "dark" }) => {
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full bg-indigo-500/5 blur-2xl pointer-events-none" />
 
       {/* Date & Time */}
-      <div className="space-y-0.5">
+      <div 
+        className="space-y-0.5 transition-all duration-75"
+        style={{
+          transform: `translateY(${-t * 150}px)`,
+          opacity: 1 - t
+        }}
+      >
         <div className="text-[6px] font-bold tracking-widest uppercase opacity-60 font-sans">
           Tuesday, June 30
         </div>
@@ -1271,7 +1281,14 @@ const LockScreen = ({ theme }: { theme: "light" | "dark" }) => {
       </div>
 
       {/* Pulsing Cloud Icon Outline */}
-      <div className="animate-pulse flex items-center justify-center" style={{ animationDuration: '3s' }}>
+      <div 
+        className="animate-pulse flex items-center justify-center transition-all duration-75" 
+        style={{ 
+          animationDuration: '3s',
+          transform: `translateY(${-t * 100}px) scale(${1 - t * 0.1})`,
+          opacity: 1 - t
+        }}
+      >
         <svg width="36" height="36" viewBox="0 0 874 552" className="opacity-40">
           <path
             d={CLOUD_PATH}
@@ -1285,7 +1302,13 @@ const LockScreen = ({ theme }: { theme: "light" | "dark" }) => {
       </div>
 
       {/* Bottom Swipe Indicator */}
-      <div className="flex flex-col items-center gap-1.5 opacity-60">
+      <div 
+        className="flex flex-col items-center gap-1.5 opacity-60 transition-all duration-75"
+        style={{
+          transform: `translateY(${-t * 220}px)`,
+          opacity: 1 - t
+        }}
+      >
         <span className="text-[6px] font-mono tracking-widest uppercase">
           Swipe up to unlock
         </span>
@@ -1295,11 +1318,11 @@ const LockScreen = ({ theme }: { theme: "light" | "dark" }) => {
   );
 };
 
-const PhoneScreen = ({ activeStep, theme }: { activeStep: string, theme: "light" | "dark" }) => {
+const PhoneScreen = ({ activeStep, theme, scrollProgress }: { activeStep: string, theme: "light" | "dark", scrollProgress: number }) => {
   switch (activeStep) {
     case "phone_rise":
     case "welcome_phase":
-      return <LockScreen theme={theme} />;
+      return <LockScreen theme={theme} scrollProgress={scrollProgress} />;
     case "arrival":
       return <InitialScreen theme={theme} />;
     case "sandbox_orbit":
