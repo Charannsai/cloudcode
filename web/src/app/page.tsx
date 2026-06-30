@@ -1559,12 +1559,6 @@ export function InteractiveShowcase({ theme, colors }: { theme: "light" | "dark"
   };
 
   const handleMouseLeave = () => setMouseOffset({ x: 0, y: 0 });
-  const get3DTransform = (p: number, m: boolean, ox: number, oy: number) => {
-    const k = KEYFRAMES[Math.min(Math.floor(p * 5), 4)];
-    const rx = (oy * -20) + k.rx;
-    const ry = (ox * 20) + k.ry;
-    return `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${m ? 0.8 : k.s})`;
-  };
 
   const transformStyle = get3DTransform(scrollProgress, isMobile, mouseOffset.x, mouseOffset.y);
   const currentStepData = STEPS.find(s => s.id === activeStep) || STEPS[0];
