@@ -907,22 +907,34 @@ export default function Home() {
           </ScrollReveal>
 
           <div className="relative">
-            <div className={`space-y-3 transition-all duration-500 overflow-hidden ${!showAllFaq ? "max-h-[500px]" : "max-h-none pb-12"}`}>
+            <div className={`transition-all duration-500 overflow-hidden ${!showAllFaq ? "max-h-[480px]" : "max-h-none pb-12"}`}>
               {FAQS.map((faq, idx) => (
                 <ScrollReveal key={idx} delay={(idx % 10) * 50}>
-                  <div className={`border ${colors.border} ${colors.card} rounded-lg overflow-hidden`}>
+                  <div className={`border-b ${colors.border} py-1`}>
                     <button
                       onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                      className="w-full px-5 py-3.5 flex justify-between items-center text-left text-xs font-bold cursor-pointer hover:bg-[#0f111508] dark:hover:bg-[#161821] transition-all"
+                      className="w-full py-4 flex justify-between items-center text-left cursor-pointer transition-all duration-250 group"
                     >
-                      <span>{faq.q}</span>
-                      <span className="text-gray-400">{openFaq === idx ? "-" : "+"}</span>
+                      <span className={`text-[13px] md:text-sm font-medium tracking-tight ${colors.text} group-hover:text-indigo-400 dark:group-hover:text-white transition-colors`}>
+                        {faq.q}
+                      </span>
+                      <svg 
+                        className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-300 ml-4 ${openFaq === idx ? "rotate-180" : ""}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor" 
+                        strokeWidth="2.5"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
                     </button>
-                    {openFaq === idx && (
-                      <div className={`px-5 pb-3.5 pt-1 text-[11px] ${colors.textSecondary} leading-relaxed border-t ${colors.border}`}>
-                        {faq.a}
+                    <div className={`grid transition-all duration-300 ease-in-out ${openFaq === idx ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                      <div className="overflow-hidden">
+                        <div className={`pb-4 pt-1 text-xs md:text-sm ${colors.textSecondary} leading-relaxed font-light`}>
+                          {faq.a}
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </ScrollReveal>
               ))}
