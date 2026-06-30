@@ -150,34 +150,19 @@ export default function Home() {
             {/* ROW 1: Card 1 (spans 8 cols) & Column Container for Card 2 & 3 (spans 4 cols) */}
             
             {/* CARD 1: create workspaces or clone your repos (tall, left-side bento card) */}
-            <div className={`col-span-12 md:col-span-8 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-8 min-h-[360px] md:h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-indigo-500/30`}>
-              {/* Faded Background graphic (z-0, opacity, pointer-events-none) */}
-              <div className="absolute bottom-0 right-0 w-[75%] h-[65%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none overflow-hidden origin-bottom-right transition-transform duration-500 group-hover:scale-[1.02]">
-                <div className={`w-full h-full border-t border-l rounded-tl-2xl p-4 font-mono text-[9px] leading-relaxed ${theme === 'dark' ? 'bg-[#0B0C10] border-white/10 text-gray-400' : 'bg-gray-50 border-black/10 text-gray-600'} shadow-2xl`}>
-                  <div className="flex items-center justify-between border-b pb-2 mb-2 border-inherit">
-                    <span className="font-bold flex items-center gap-1.5 text-inherit">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {"sandbox-node-app"}
-                    </span>
-                    <span className="text-[7px] uppercase tracking-wider font-bold">{"active"}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div>{"$ cc workspace clone git@github.com:cloudcode/demo.git"}</div>
-                    <div className="text-purple-500">{"Cloning into 'demo'..."}</div>
-                    <div className="text-emerald-500 font-bold">{"✓ Workspace successfully mounted."}</div>
-                    <div className="pl-2 border-l border-indigo-500/20 mt-1 space-y-0.5 opacity-80">
-                      <div>{"📁 src"}</div>
-                      <div className="pl-3">{"📄 page.tsx"}</div>
-                      <div className="pl-3">{"📄 layout.tsx"}</div>
-                      <div>{"🐳 Dockerfile"}</div>
-                    </div>
-                  </div>
-                </div>
+            <div className={`col-span-12 md:col-span-8 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-8 min-h-[360px] md:h-[380px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
+              {/* Faded Background Image (z-0, opacity, pointer-events-none) */}
+              <div className="absolute bottom-0 right-0 w-[65%] h-[80%] md:w-[55%] md:h-[85%] z-0 opacity-[0.28] dark:opacity-[0.18] pointer-events-none select-none overflow-hidden origin-bottom-right">
+                <img 
+                  src="/assets/createdesign.png" 
+                  alt="Create Environments" 
+                  className="w-full h-full object-contain object-bottom-right scale-[1.35] origin-bottom-right transition-transform duration-500 group-hover:scale-[1.4]" 
+                />
               </div>
 
               {/* Foreground Text Content (z-10, relative) */}
-              <div className="relative z-10 space-y-2 max-w-md">
-                <span className="text-indigo-600 dark:text-indigo-400 font-mono text-[9px] font-bold uppercase tracking-wider">
+              <div className="relative z-10 space-y-2 max-w-lg">
+                <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
                   {"01 / Cloud Sandbox"}
                 </span>
                 <h3 className={`text-xl md:text-2xl font-bold tracking-tight ${colors.text} leading-tight`}>
@@ -193,17 +178,17 @@ export default function Home() {
             <div className="col-span-12 md:col-span-4 flex flex-col gap-6 h-auto md:h-[380px]">
               
               {/* CARD 2: terminal sessions with compilers */}
-              <div className={`flex-1 min-h-[170px] md:h-auto group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-purple-500/30`}>
-                {/* Faded Background visual */}
-                <div className="absolute bottom-0 right-0 w-[80%] h-[55%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none font-mono text-[8px] leading-relaxed border-t border-l rounded-tl-xl p-3 shadow-xl bg-transparent border-white/10 dark:border-white/10 text-gray-400 overflow-hidden">
-                  <div className="text-sky-450 dark:text-sky-400">{"$ clang++ -O3 main.cpp -o app"}</div>
-                  <div className="text-emerald-500 dark:text-emerald-400">{"✓ compiled successfully (0.4s)"}</div>
-                  <div className="text-purple-550 dark:text-purple-400">{"$ ./app --port 8080"}</div>
+              <div className={`flex-1 min-h-[170px] md:h-auto group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
+                {/* Faded Background visual (neutral accents) */}
+                <div className="absolute bottom-0 right-0 w-[80%] h-[55%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none font-mono text-[8px] leading-relaxed border-t border-l rounded-tl-xl p-3 shadow-xl bg-transparent border-white/10 dark:border-white/10 text-gray-500 dark:text-gray-400 overflow-hidden">
+                  <div className="text-gray-700 dark:text-gray-300">{"$ clang++ -O3 main.cpp -o app"}</div>
+                  <div className="text-gray-600 dark:text-gray-400">{"✓ compiled successfully (0.4s)"}</div>
+                  <div className="text-gray-700 dark:text-gray-300">{"$ ./app --port 8080"}</div>
                   <div className="text-gray-500 text-[7px]">{"[OK] server listening at: 8080"}</div>
                 </div>
 
                 <div className="relative z-10 space-y-1.5">
-                  <span className="text-purple-600 dark:text-purple-400 font-mono text-[9px] font-bold uppercase tracking-wider">
+                  <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
                     {"02 / Terminal"}
                   </span>
                   <h3 className={`text-base md:text-lg font-bold tracking-tight ${colors.text} leading-tight`}>
@@ -216,22 +201,22 @@ export default function Home() {
               </div>
 
               {/* CARD 3: build with ai agents */}
-              <div className={`flex-1 min-h-[170px] md:h-auto group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/30`}>
-                {/* Faded Background visual */}
-                <div className="absolute bottom-0 right-0 w-[80%] h-[55%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none overflow-hidden font-mono text-[8px] border-t border-l rounded-tl-xl p-3 shadow-2xl bg-transparent border-white/10 dark:border-white/10 text-gray-400">
+              <div className={`flex-1 min-h-[170px] md:h-auto group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
+                {/* Faded Background visual (neutral accents) */}
+                <div className="absolute bottom-0 right-0 w-[80%] h-[55%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none overflow-hidden font-mono text-[8px] border-t border-l rounded-tl-xl p-3 shadow-2xl bg-transparent border-white/10 dark:border-white/10 text-gray-500 dark:text-gray-400">
                   <div className="flex items-center justify-between border-b border-white/5 pb-0.5 text-[7px] mb-1">
-                    <span className="text-emerald-500 dark:text-emerald-400 font-bold">{"cloudcode-agent"}</span>
-                    <span className="text-emerald-500 dark:text-emerald-400">{"THINKING"}</span>
+                    <span className="font-bold">{"cloudcode-agent"}</span>
+                    <span>{"THINKING"}</span>
                   </div>
                   <div className="space-y-0.5 text-[6.5px] leading-tight">
-                    <div><span className="text-purple-500 dark:text-purple-400">{"[agent]"}</span> <span className="text-gray-500 dark:text-gray-300">{"Mutating main.tsx"}</span></div>
-                    <div><span className="text-emerald-500 dark:text-emerald-400">{"[patch]"}</span> <span className="text-emerald-500 dark:text-emerald-300">{"Fixing layout error"}</span></div>
-                    <div className="text-emerald-500 dark:text-emerald-400 font-bold">{"✓ build verification passed"}</div>
+                    <div><span className="text-gray-550 dark:text-gray-450">{"[agent]"}</span> <span>{"Mutating main.tsx"}</span></div>
+                    <div><span className="text-gray-550 dark:text-gray-455">{"[patch]"}</span> <span>{"Fixing layout error"}</span></div>
+                    <div className="font-bold">{"✓ build verification passed"}</div>
                   </div>
                 </div>
 
                 <div className="relative z-10 space-y-1.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[9px] font-bold uppercase tracking-wider">
+                  <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
                     {"03 / AI Agent"}
                   </span>
                   <h3 className={`text-base md:text-lg font-bold tracking-tight ${colors.text} leading-tight`}>
@@ -248,32 +233,32 @@ export default function Home() {
             {/* ROW 2: Card 4 (spans 5 cols) & Card 5 (spans 7 cols) (Asymmetrical row) */}
             
             {/* CARD 4: previews like your native browsers */}
-            <div className={`col-span-12 md:col-span-5 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-7 h-[280px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-blue-500/30`}>
-              {/* Preview 3D mock browser design (Faded, z-0) */}
+            <div className={`col-span-12 md:col-span-5 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-7 h-[280px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
+              {/* Preview 3D mock browser design (Faded, z-0, neutral accents) */}
               <div className="absolute bottom-[-10px] right-[-10px] w-[80%] h-[60%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none border rounded-t-2xl bg-white dark:bg-[#0B0C10] border-gray-200 dark:border-white/10 flex flex-col overflow-hidden shadow-2xl origin-bottom-right transition-transform duration-500 group-hover:scale-[1.02]"
                    style={{
                      transform: "perspective(800px) rotateX(8deg) rotateY(-10deg) rotateZ(1deg)",
                    }}>
                 <div className="bg-gray-100 dark:bg-[#0F1117] px-3 py-1 flex items-center gap-1 border-b border-inherit">
-                  <span className="w-1 h-1 rounded-full bg-red-400" />
-                  <span className="w-1 h-1 rounded-full bg-yellow-400" />
-                  <span className="w-1 h-1 rounded-full bg-green-400" />
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
                   <div className="flex-1 bg-white dark:bg-[#030303] px-2 py-0.5 rounded text-[6px] text-gray-400 font-mono ml-1">
                     {"localhost:3000"}
                   </div>
                 </div>
                 <div className="flex-1 p-2 flex flex-col gap-1.5">
-                  <div className="h-2 bg-indigo-500/10 rounded w-12" />
+                  <div className="h-2 bg-gray-200 dark:bg-white/5 rounded w-12" />
                   <div className="flex-1 flex items-end gap-1 h-10">
-                    <div className="flex-1 bg-indigo-500/20 rounded-t-sm h-[60%]" />
-                    <div className="flex-1 bg-indigo-500/20 rounded-t-sm h-[85%]" />
-                    <div className="flex-1 bg-indigo-500/20 rounded-t-sm h-[40%]" />
+                    <div className="flex-1 bg-gray-300 dark:bg-white/5 rounded-t-sm h-[60%]" />
+                    <div className="flex-1 bg-gray-300 dark:bg-white/5 rounded-t-sm h-[85%]" />
+                    <div className="flex-1 bg-gray-300 dark:bg-white/5 rounded-t-sm h-[40%]" />
                   </div>
                 </div>
               </div>
 
               <div className="relative z-10 space-y-2">
-                <span className="text-blue-600 dark:text-blue-400 font-mono text-[9px] font-bold uppercase tracking-wider">
+                <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
                   {"04 / Web Preview"}
                 </span>
                 <h3 className={`text-lg md:text-xl font-bold tracking-tight ${colors.text} leading-tight`}>
@@ -286,23 +271,22 @@ export default function Home() {
             </div>
 
             {/* CARD 5: Integrated Git workflows */}
-            <div className={`col-span-12 md:col-span-7 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-7 h-[280px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-indigo-500/30`}>
-              {/* Elegant Git branch committing simulation graphic (Faded, z-0) */}
+            <div className={`col-span-12 md:col-span-7 group relative overflow-hidden rounded-3xl border ${colors.border} ${colors.card} p-7 h-[280px] flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-gray-400 dark:hover:border-zinc-700`}>
+              {/* Elegant Git branch committing simulation graphic (Faded, z-0, neutral accents) */}
               <div className="absolute bottom-[-10px] right-[-10px] w-[75%] h-[60%] z-0 opacity-[0.12] dark:opacity-[0.08] pointer-events-none select-none flex items-end justify-end transition-transform duration-500 group-hover:scale-[1.02]">
-                <svg viewBox="0 0 180 110" className="w-full h-full text-indigo-450 dark:text-indigo-400">
+                <svg viewBox="0 0 180 110" className="w-full h-full text-gray-400 dark:text-gray-650">
                   <path d="M10 80 L160 80" stroke="currentColor" strokeWidth="2" opacity="0.4" />
-                  <path d="M30 80 Q55 45 80 45 L160 45" stroke="#8957e5" strokeWidth="1.5" opacity="0.3" />
+                  <path d="M30 80 Q55 45 80 45 L160 45" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
                   <circle cx="25" cy="80" r="4.5" fill="currentColor" />
-                  <circle cx="55" cy="90" r="0" />
-                  <circle cx="70" cy="45" r="4" fill="#8957e5" />
-                  <circle cx="110" cy="45" r="4" fill="#8957e5" />
+                  <circle cx="70" cy="45" r="4" fill="currentColor" opacity="0.6" />
+                  <circle cx="110" cy="45" r="4" fill="currentColor" opacity="0.6" />
                   <text x="25" y="93" fontSize="5" fontFamily="monospace" fill="currentColor" opacity="0.6">{"[init]"}</text>
-                  <text x="70" y="35" fontSize="5" fontFamily="monospace" fill="#8957e5" opacity="0.6">{"feat/auth"}</text>
+                  <text x="70" y="35" fontSize="5" fontFamily="monospace" fill="currentColor" opacity="0.6">{"feat/auth"}</text>
                 </svg>
               </div>
 
               <div className="relative z-10 space-y-2">
-                <span className="text-indigo-600 dark:text-indigo-400 font-mono text-[9px] font-bold uppercase tracking-wider">
+                <span className="text-gray-500 dark:text-gray-400 font-mono text-[9px] font-bold uppercase tracking-wider">
                   {"05 / Git Workflows"}
                 </span>
                 <h3 className={`text-xl md:text-2xl font-bold tracking-tight ${colors.text} leading-tight`}>
