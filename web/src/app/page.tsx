@@ -185,11 +185,21 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    let initialTheme: "light" | "dark" = "dark";
     if (savedTheme) {
-      setTheme(savedTheme);
+      initialTheme = savedTheme;
     } else {
       const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(systemPrefersDark ? "dark" : "light");
+      initialTheme = systemPrefersDark ? "dark" : "light";
+    }
+    setTheme(initialTheme);
+    
+    // Sync class list immediately
+    const root = window.document.documentElement;
+    if (initialTheme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
     }
   }, []);
 
@@ -197,6 +207,14 @@ export default function Home() {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
+    
+    // Sync class list on toggle
+    const root = window.document.documentElement;
+    if (newTheme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
   };
 
   if (!mounted) {
