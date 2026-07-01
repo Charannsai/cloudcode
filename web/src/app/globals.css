@@ -43,14 +43,38 @@ body {
   font-family: var(--font-sans);
 }
 
+@property --reveal-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
 /* Custom ink ripple / view transition circular reveal for dark mode toggle */
 ::view-transition-image-pair(root) {
   isolation: auto;
 }
 
-::view-transition-old(root),
+::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  display: block;
+}
+
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
   display: block;
+  mask-image: radial-gradient(
+    circle var(--reveal-radius) at var(--reveal-x) var(--reveal-y),
+    black 0%,
+    black max(0px, calc(var(--reveal-radius) - 150px)),
+    transparent var(--reveal-radius)
+  );
+  -webkit-mask-image: radial-gradient(
+    circle var(--reveal-radius) at var(--reveal-x) var(--reveal-y),
+    black 0%,
+    black max(0px, calc(var(--reveal-radius) - 150px)),
+    transparent var(--reveal-radius)
+  );
+  mask-repeat: no-repeat;
 }
