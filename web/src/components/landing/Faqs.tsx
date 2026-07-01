@@ -45,10 +45,6 @@ const FAQS = [
     a: "Yes. Your code remains private. CloudCode does not use your private repositories to train public AI models, and all workspaces run in isolated environments with encrypted communication."
   },
   {
-    q: "Can I collaborate with my team?",
-    a: "Yes. CloudCode supports collaborative workflows through shared projects, Git integration, and team workspaces, making it easy to build together."
-  },
-  {
     q: "Does CloudCode support Docker?",
     a: "Yes. Since every workspace runs inside a containerized environment, you can work with Docker-based projects and custom development environments where supported."
   },
