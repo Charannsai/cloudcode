@@ -1007,8 +1007,8 @@ export default function Home() {
         </section>
 
         {/* ==================== FOOTER ==================== */}
-        <footer className={`w-full py-10 border-t ${colors.border} z-10`}>
-          <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-left">
+        <footer className={`w-full pt-10 pb-6 border-t ${colors.border} z-10 overflow-hidden`}>
+          <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-left mb-8">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <img 
                 src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
@@ -1045,6 +1045,18 @@ export default function Home() {
                 )}
               </button>
             </div>
+          </div>
+          <div className="w-full flex justify-center pointer-events-none select-none overflow-hidden mt-8 px-6 pb-4">
+            <img 
+              src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
+              alt="CloudCode" 
+              className="w-full max-w-5xl h-auto object-contain opacity-15 hover:opacity-30 transition-all duration-500"
+              style={{
+                filter: theme === "dark" 
+                  ? "drop-shadow(1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(-1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px 1.5px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px -1.5px 0px rgba(255, 255, 255, 0.15))" 
+                  : "drop-shadow(1.5px 0px 0px rgba(0, 0, 0, 0.08)) drop-shadow(-1.5px 0px 0px rgba(0, 0, 0, 0.08)) drop-shadow(0px 1.5px 0px rgba(0, 0, 0, 0.08)) drop-shadow(0px -1.5px 0px rgba(0, 0, 0, 0.08))",
+              }}
+            />
           </div>
         </footer>
 
