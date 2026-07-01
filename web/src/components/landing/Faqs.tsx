@@ -139,25 +139,29 @@ export function Faqs({ colors }: FaqsProps) {
         {/* Faded Background & Show More Button */}
         {!showAllFaq && (
           <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-[#FAFAFA] dark:from-[#030303] via-[#FAFAFA]/90 dark:via-[#030303]/90 to-transparent flex items-end justify-center pb-2 z-20 pointer-events-none">
-            <div className="pointer-events-auto">
+            <div className="pointer-events-auto w-full flex items-center gap-4">
+              <div className={`flex-grow border-t ${colors.border}`}></div>
               <button 
                 onClick={() => setShowAllFaq(true)}
-                className="px-6 py-2 bg-[#FAFAFA] dark:bg-[#030303] hover:bg-[#F3F4F6] dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-xs font-bold transition-all cursor-pointer text-zinc-900 dark:text-zinc-50 shadow-md"
+                className="px-6 py-2 bg-[#FAFAFA] dark:bg-[#030303] hover:bg-[#F3F4F6] dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-xs font-bold transition-all cursor-pointer text-zinc-900 dark:text-zinc-50 shadow-md whitespace-nowrap"
               >
                 {"Show More FAQs"}
               </button>
+              <div className={`flex-grow border-t ${colors.border}`}></div>
             </div>
           </div>
         )}
 
         {showAllFaq && (
-          <div className="flex justify-center mt-6">
+          <div className="flex items-center w-full gap-4 mt-6">
+            <div className={`flex-grow border-t ${colors.border}`}></div>
             <button 
               onClick={() => setShowAllFaq(false)}
-              className="px-6 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-xs font-bold transition-all cursor-pointer text-zinc-900 dark:text-zinc-50"
+              className="px-6 py-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full text-xs font-bold transition-all cursor-pointer text-zinc-900 dark:text-zinc-50 whitespace-nowrap"
             >
               {"Show Less FAQs"}
             </button>
+            <div className={`flex-grow border-t ${colors.border}`}></div>
           </div>
         )}
       </div>
