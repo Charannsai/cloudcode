@@ -63,10 +63,13 @@ export default function Home() {
       Math.max(y, window.innerHeight - y)
     );
 
+    const root = window.document.documentElement;
+    root.style.setProperty("--reveal-x", `${x}px`);
+    root.style.setProperty("--reveal-y", `${y}px`);
+
     const transition = (document as any).startViewTransition(() => {
       setTheme(newTheme);
       localStorage.setItem("theme", newTheme);
-      const root = window.document.documentElement;
       if (newTheme === "dark") {
         root.classList.add("dark");
       } else {
@@ -77,15 +80,11 @@ export default function Home() {
     transition.ready.then(() => {
       document.documentElement.animate(
         {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${endRadius}px at ${x}px ${y}px)`
-          ]
+          "--reveal-radius": ["0px", `${endRadius}px`]
         },
         {
           duration: 500,
-          easing: "ease-in-out",
-          pseudoElement: "::view-transition-new(root)"
+          easing: "ease-in-out"
         }
       );
     });
