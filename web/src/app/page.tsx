@@ -163,9 +163,9 @@ export default function Home() {
           <div className="max-w-5xl mx-auto px-6 h-14 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <img 
-                src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
+                src="/cloudcodelogolight.png" 
                 alt="CloudCode" 
-                className={theme === "dark" ? "h-[21px] my-[1.5px] w-auto object-contain" : "h-6 w-auto object-contain"}
+                className="h-[21px] my-[1.5px] w-auto object-contain dark:invert-0 invert"
               />
             </div>
             
@@ -691,9 +691,9 @@ export default function Home() {
           <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-left mb-8">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <img 
-                src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
+                src="/cloudcodelogolight.png" 
                 alt="CloudCode" 
-                className="h-5 w-auto object-contain"
+                className="h-5 w-auto object-contain dark:invert-0 invert"
               />
               <span className={`text-xs ${colors.textSecondary}`}>
                 {`© ${new Date().getFullYear()} CloudCode, Inc. All rights reserved.`}
@@ -728,13 +728,13 @@ export default function Home() {
           </div>
           <div className="w-full flex justify-center pointer-events-none select-none overflow-hidden mt-8 px-6 pb-4">
             <img 
-              src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
+              src="/cloudcodelogolight.png" 
               alt="CloudCode" 
-              className="w-full max-w-5xl h-[120px] sm:h-[160px] md:h-[200px] object-contain opacity-15 hover:opacity-30 transition-all duration-500"
+              className="w-full max-w-5xl h-auto object-contain opacity-15 hover:opacity-30 transition-all duration-500"
               style={{
                 filter: theme === "dark" 
                   ? "drop-shadow(1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(-1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px 1.5px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px -1.5px 0px rgba(255, 255, 255, 0.15))" 
-                  : "drop-shadow(1.5px 0px 0px rgba(0, 0, 0, 0.08)) drop-shadow(-1.5px 0px 0px rgba(0, 0, 0, 0.08)) drop-shadow(0px 1.5px 0px rgba(0, 0, 0, 0.08)) drop-shadow(0px -1.5px 0px rgba(0, 0, 0, 0.08))",
+                  : "invert(1) drop-shadow(1.5px 0px 0px rgba(0, 0, 0, 0.08)) drop-shadow(-1.5px 0px 0px rgba(0, 0, 0, 0.08)) drop-shadow(0px 1.5px 0px rgba(0, 0, 0, 0.08)) drop-shadow(0px -1.5px 0px rgba(0, 0, 0, 0.08))",
               }}
             />
           </div>
