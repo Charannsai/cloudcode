@@ -38,13 +38,7 @@ export default function Home() {
   const toggleTheme = (event?: React.MouseEvent) => {
     const newTheme = theme === "dark" ? "light" : "dark";
     
-    // Check if browser supports View Transition API
-    if (
-      typeof window === "undefined" ||
-      !event ||
-      !(document as any).startViewTransition ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
+    if (typeof window === "undefined" || !event) {
       setTheme(newTheme);
       localStorage.setItem("theme", newTheme);
       const root = window.document.documentElement;
@@ -63,7 +57,48 @@ export default function Home() {
       Math.max(y, window.innerHeight - y)
     );
 
-    const transition = (document as any).startViewTransition(() => {
+    // Calculate dimensions dynamically for a smooth faded edge circle
+    const size = endRadius * 2.5;
+    
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100vw";
+    overlay.style.height = "100vh";
+    overlay.style.pointerEvents = "none";
+    overlay.style.zIndex = "9999";
+    overlay.style.overflow = "hidden";
+    
+    const circle = document.createElement("div");
+    circle.style.position = "absolute";
+    circle.style.width = `${size}px`;
+    circle.style.height = `${size}px`;
+    circle.style.left = `${x - size / 2}px`;
+    circle.style.top = `${y - size / 2}px`;
+    circle.style.borderRadius = "50%";
+    
+    const newBg = newTheme === "dark" ? "#030303" : "#FAFAFA";
+    
+    // Satisfying radial gradient with faded edges (solid to 68%, then fades to transparent)
+    circle.style.background = `radial-gradient(circle, ${newBg} 0%, ${newBg} 68%, transparent 100%)`;
+    circle.style.transform = "scale(0)";
+    circle.style.opacity = "0";
+    circle.style.willChange = "transform";
+    circle.style.transition = "transform 650ms cubic-bezier(0.1, 0.9, 0.2, 1), opacity 500ms ease";
+    
+    overlay.appendChild(circle);
+    document.body.appendChild(overlay);
+    
+    // Trigger reflow to apply initial transform
+    circle.getBoundingClientRect();
+    
+    // Scale up circle softly
+    circle.style.transform = "scale(1.5)";
+    circle.style.opacity = "1";
+    
+    // Swap React theme states mid-animation as the solid core passes
+    setTimeout(() => {
       setTheme(newTheme);
       localStorage.setItem("theme", newTheme);
       const root = window.document.documentElement;
@@ -72,24 +107,20 @@ export default function Home() {
       } else {
         root.classList.remove("dark");
       }
-    });
-
-    transition.ready.then(() => {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${endRadius}px at ${x}px ${y}px)`
-          ]
-        },
-        {
-          duration: 500,
-          easing: "ease-in-out",
-          pseudoElement: "::view-transition-new(root)"
+    }, 350);
+    
+    // Cleanup overlay element after transition finishes
+    setTimeout(() => {
+      circle.style.transition = "opacity 250ms ease";
+      circle.style.opacity = "0";
+      setTimeout(() => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
         }
-      );
-    });
+      }, 250);
+    }, 650);
   };
+
 
   if (!mounted) {
     return <div className="bg-[#030303] min-h-screen" suppressHydrationWarning />;
