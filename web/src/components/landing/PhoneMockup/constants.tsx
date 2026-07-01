@@ -157,70 +157,66 @@ export const get3DTransform = (progress: number, isMobile: boolean, mouseX: numb
 export const WORKFLOW_TOOLS = [
   {
     name: "GitHub",
-    icon: React.createElement("i", { className: "devicon-github-original text-[15px] shrink-0 text-black dark:text-white" })
+    icon: <i className="devicon-github-original text-[15px] shrink-0 text-black dark:text-white" />
   },
   {
     name: "GitLab",
-    icon: React.createElement("i", { className: "devicon-gitlab-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-gitlab-plain colored text-[15px] shrink-0" />
   },
   {
     name: "VS Code",
-    icon: React.createElement("i", { className: "devicon-vscode-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-vscode-plain colored text-[15px] shrink-0" />
   },
   {
     name: "npm",
-    icon: React.createElement("i", { className: "devicon-npm-original-wordmark colored text-[22px] shrink-0" })
+    icon: <i className="devicon-npm-original-wordmark colored text-[22px] shrink-0" />
   },
   {
     name: "Docker",
-    icon: React.createElement("i", { className: "devicon-docker-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-docker-plain colored text-[15px] shrink-0" />
   },
   {
     name: "Node.js",
-    icon: React.createElement("i", { className: "devicon-nodejs-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-nodejs-plain colored text-[15px] shrink-0" />
   },
   {
     name: "Python",
-    icon: React.createElement("i", { className: "devicon-python-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-python-plain colored text-[15px] shrink-0" />
   },
   {
     name: "Rust",
-    icon: React.createElement("i", { className: "devicon-rust-plain text-[15px] shrink-0 text-black dark:text-white" })
+    icon: <i className="devicon-rust-plain text-[15px] shrink-0 text-black dark:text-white" />
   },
   {
     name: "Go",
-    icon: React.createElement("i", { className: "devicon-go-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-go-plain colored text-[15px] shrink-0" />
   },
   {
     name: "PostgreSQL",
-    icon: React.createElement("i", { className: "devicon-postgresql-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-postgresql-plain colored text-[15px] shrink-0" />
   },
   {
     name: "Next.js",
-    icon: React.createElement("i", { className: "devicon-nextjs-plain text-[15px] shrink-0 text-black dark:text-white" })
+    icon: <i className="devicon-nextjs-plain text-[15px] shrink-0 text-black dark:text-white" />
   },
   {
     name: "TypeScript",
-    icon: React.createElement("i", { className: "devicon-typescript-plain colored text-[15px] shrink-0" })
+    icon: <i className="devicon-typescript-plain colored text-[15px] shrink-0" />
   },
   {
     name: "Antigravity",
-    icon: React.createElement(
-      "svg",
-      { className: "w-3.5 h-3.5 shrink-0", viewBox: "0 0 24 24", fill: "none" },
-      React.createElement(
-        "defs",
-        null,
-        React.createElement(
-          "linearGradient",
-          { id: "antiGCol", x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
-          React.createElement("stop", { offset: "0%", stopColor: "#818CF8" }),
-          React.createElement("stop", { offset: "50%", stopColor: "#A78BFA" }),
-          React.createElement("stop", { offset: "100%", stopColor: "#EC4899" })
-        )
-      ),
-      React.createElement("path", { d: "M12 2L2 12l10 10 10-10L12 2z", fill: "url(#antiGCol)" }),
-      React.createElement("circle", { cx: "12", cy: "12", r: 3.5, fill: "#FFFFFF" })
+    icon: (
+      <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none">
+        <defs>
+          <linearGradient id="antiGCol" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#818CF8" />
+            <stop offset="50%" stopColor="#A78BFA" />
+            <stop offset="100%" stopColor="#EC4899" />
+          </linearGradient>
+        </defs>
+        <path d="M12 2L2 12l10 10 10-10L12 2z" fill="url(#antiGCol)" />
+        <circle cx="12" cy="12" r="3.5" fill="#FFFFFF" />
+      </svg>
     )
   }
 ];
