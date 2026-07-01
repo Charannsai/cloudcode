@@ -693,7 +693,11 @@ export default function Home() {
               <img 
                 src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
                 alt="CloudCode" 
-                className="h-[20px] w-auto object-contain"
+                className={
+                  theme === "dark" 
+                    ? "h-[18px] my-[1px] w-auto object-contain" 
+                    : "h-[20px] w-auto object-contain"
+                }
               />
               <span className={`text-xs ${colors.textSecondary}`}>
                 {`© ${new Date().getFullYear()} CloudCode, Inc. All rights reserved.`}
@@ -730,7 +734,11 @@ export default function Home() {
             <img 
               src={theme === "dark" ? "/cloudcodelogolight.png" : "/cloudcodelogo.png"} 
               alt="CloudCode" 
-              className="w-full max-w-5xl h-auto object-contain opacity-15 hover:opacity-30 transition-all duration-500"
+              className={
+                theme === "dark"
+                  ? "w-full max-w-5xl h-auto object-contain opacity-15 hover:opacity-30 transition-all duration-500"
+                  : "w-[85.5%] max-w-[876px] h-auto object-contain opacity-15 hover:opacity-30 transition-all duration-500"
+              }
               style={{
                 filter: theme === "dark" 
                   ? "drop-shadow(1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(-1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px 1.5px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px -1.5px 0px rgba(255, 255, 255, 0.15))" 
