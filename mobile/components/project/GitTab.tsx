@@ -516,13 +516,20 @@ export default function GitTab({ projectId, isActive }: Props) {
 
       {/* Branch Dropdown Panel */}
       {showBranches && (
-        <View style={[styles.branchDropdown, { backgroundColor: isDark ? '#1C2128' : '#FFFFFF', borderColor: colors.border }]}>
+        <View style={[styles.branchDropdown, { backgroundColor: isDark ? 'rgba(22, 27, 34, 0.95)' : 'rgba(255, 255, 255, 0.98)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
           {branches.map(b => (
-            <TouchableOpacity key={b} style={[styles.branchItem, b === status?.branch && { backgroundColor: isDark ? '#21262D' : '#F3F4F6' }]} onPress={() => handleCheckout(b)}>
+            <TouchableOpacity 
+              key={b} 
+              style={[
+                styles.branchItem, 
+                b === status?.branch && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+              ]} 
+              onPress={() => handleCheckout(b)}
+            >
               <View style={{ width: 14, alignItems: 'center' }}>
-                {b === status?.branch && <Check size={12} color="#3FB950" strokeWidth={3} />}
+                {b === status?.branch && <Check size={13} color="#3FB950" strokeWidth={2.5} />}
               </View>
-              <Text style={[styles.branchItemText, { color: colors.text, fontFamily: b === status?.branch ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>{b}</Text>
+              <Text style={[styles.branchItemText, { color: colors.text, fontFamily: b === status?.branch ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>{b}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -870,20 +877,30 @@ const styles = StyleSheet.create({
   syncBadgeText: { fontSize: 10.5, fontFamily: 'Inter_700Bold' },
   syncBtn: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   branchDropdown: {
-    marginHorizontal: 16, borderRadius: 10, borderWidth: 1,
-    overflow: 'hidden', marginTop: 6,
+    marginHorizontal: 16, 
+    borderRadius: 16, 
+    borderWidth: 1,
+    padding: 6,
+    marginTop: 6,
     position: 'absolute', top: 50, left: 0, right: 0, zIndex: 9999,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
   },
   branchItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 16, paddingVertical: 12,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 10,
+    paddingHorizontal: 12, 
+    paddingVertical: 10,
+    borderRadius: 10,
   },
-  branchItemText: { fontSize: 13 },
+  branchItemText: { 
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+  },
   noChanges: { alignItems: 'center', paddingVertical: 80, gap: 10 },
   cleanIconCircle: {
     width: 56, height: 56, borderRadius: 28,

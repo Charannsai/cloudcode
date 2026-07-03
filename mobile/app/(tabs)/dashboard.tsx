@@ -19,7 +19,11 @@ import {
   ChevronRight,
   Key,
   ArrowUpRight,
-  Zap
+  Zap,
+  User,
+  Settings,
+  CreditCard,
+  LogOut
 } from 'lucide-react-native'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import { ConfirmModal } from '@/components/ConfirmModal'
@@ -722,32 +726,34 @@ export default function DashboardScreen() {
         />
         <Animated.View style={[styles.menuCard, { backgroundColor: cardBg, borderColor: cardBorder }, menuCardAnimatedStyle]}>
           {/* Header User Profile Info */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: cardBorder, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', gap: 12, justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }} numberOfLines={1}>
+                {profileName || user?.name || user?.login}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2, fontFamily: 'Inter_400Regular' }} numberOfLines={1}>
+                {user?.email || `@${user?.login}`}
+              </Text>
+            </View>
             {user?.avatar_url && !avatarLoadError ? (
-              <Image 
-                source={{ uri: user.avatar_url }} 
-                style={{ width: 40, height: 40, borderRadius: 20 }} 
-                onError={() => setAvatarLoadError(true)}
-              />
+              <View style={{ borderWidth: 1.5, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', borderRadius: 20, padding: 2 }}>
+                <Image 
+                  source={{ uri: user.avatar_url }} 
+                  style={{ width: 36, height: 36, borderRadius: 18 }} 
+                  onError={() => setAvatarLoadError(true)}
+                />
+              </View>
             ) : (
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: subtleBg, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'Inter_600SemiBold' }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: subtleBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }}>
+                <Text style={{ color: colors.text, fontSize: 15, fontFamily: 'Inter_600SemiBold' }}>
                   {(profileName || user?.name || user?.login || 'C').substring(0, 1).toUpperCase()}
                 </Text>
               </View>
             )}
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }} numberOfLines={1}>
-                {profileName || user?.name || user?.login}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }} numberOfLines={1}>
-                @{user?.login}
-              </Text>
-            </View>
           </View>
 
           {/* Menu Items */}
-          <View style={{ padding: 6 }}>
+          <View style={{ padding: 6, gap: 2 }}>
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={() => {
@@ -755,9 +761,13 @@ export default function DashboardScreen() {
                 setSettingsSubScreen('profile')
                 router.push('/(tabs)/settings')
               }}
-              style={styles.menuItem}
+              style={[
+                styles.menuItem,
+                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+              ]}
             >
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Go to Profile</Text>
+              <User size={15} color={colors.text} strokeWidth={2} />
+              <Text style={[styles.menuItemText, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>Go to Profile</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -769,7 +779,8 @@ export default function DashboardScreen() {
               }}
               style={styles.menuItem}
             >
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Settings</Text>
+              <Settings size={15} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={[styles.menuItemText, { color: colors.textSecondary }]}>Settings</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -781,10 +792,11 @@ export default function DashboardScreen() {
               }}
               style={styles.menuItem}
             >
-              <Text style={[styles.menuItemText, { color: colors.text }]}>Billing & Usage</Text>
+              <CreditCard size={15} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={[styles.menuItemText, { color: colors.textSecondary }]}>Billing & Usage</Text>
             </TouchableOpacity>
 
-            <View style={{ height: 1, backgroundColor: cardBorder, marginVertical: 4, opacity: 0.5 }} />
+            <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)', marginVertical: 6 }} />
 
             <TouchableOpacity 
               activeOpacity={0.7}
@@ -794,6 +806,7 @@ export default function DashboardScreen() {
               }}
               style={styles.menuItem}
             >
+              <LogOut size={15} color="#F85149" strokeWidth={2} />
               <Text style={[styles.menuItemText, { color: '#F85149', fontFamily: 'Inter_600SemiBold' }]}>Sign Out</Text>
             </TouchableOpacity>
           </View>
@@ -899,22 +912,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   menuCard: {
-    width: 220,
+    width: 230,
     borderRadius: 16,
     borderWidth: 1,
+    padding: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
     elevation: 8,
   },
   menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   menuItemText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontFamily: 'Inter_500Medium',
   },
 })

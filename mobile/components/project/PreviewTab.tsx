@@ -1239,8 +1239,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
             style={[
               styles.menuContainer,
               {
-                backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
-                borderColor: colors.border,
+                backgroundColor: isDark ? 'rgba(22, 27, 34, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                 opacity: menuAnim,
                 transform: [
                   {
@@ -1302,7 +1302,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+            <View style={[styles.menuDivider, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }]} />
 
             {/* General Actions */}
             <TouchableOpacity
@@ -1670,13 +1670,13 @@ const styles = StyleSheet.create({
     top: 50,
     right: 12,
     width: 250,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingVertical: 8,
+    padding: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
     elevation: 8,
     zIndex: 1000,
   },
@@ -1684,7 +1684,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 4,
   },
   menuNavBtn: {
@@ -1697,13 +1697,15 @@ const styles = StyleSheet.create({
   menuDivider: {
     height: 1,
     marginVertical: 6,
+    marginHorizontal: 6,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    gap: 12,
+    gap: 10,
+    borderRadius: 10,
   },
   menuItemText: {
     fontSize: 13,
