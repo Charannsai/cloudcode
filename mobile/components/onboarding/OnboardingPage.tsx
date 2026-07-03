@@ -66,7 +66,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
-    overflow: 'hidden',
   },
   textWrapper: {
     width: '100%',
@@ -74,6 +73,8 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     marginBottom: 20,
+    zIndex: 10,
+    elevation: 10,
   },
   title: {
     fontSize: 42,
