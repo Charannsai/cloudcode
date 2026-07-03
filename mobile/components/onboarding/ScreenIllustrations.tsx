@@ -845,11 +845,11 @@ const styles = StyleSheet.create({
   // Bottom Fade Gradient container overlay (Deep fade covering the bottom half of the phone)
   fadeOverlayContainer: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -130,
     left: 0,
     right: 0,
-    height: 120, // Taller fade overlay to cover the bottom half of the visible phone mockup
-    zIndex: 8,   // Placed above phoneFrame (5) to fade out the bottom device half
+    height: 240,
+    zIndex: 8,
   },
   // Screen 0 Previews
   miniHeader: {
