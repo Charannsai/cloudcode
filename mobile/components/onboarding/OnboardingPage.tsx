@@ -56,7 +56,7 @@ export const OnboardingPage = ({
 const styles = StyleSheet.create({
   pageContainer: {
     width: width,
-    height: '100%',
+    height: height,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   textWrapper: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 160,
     left: 0,
     right: 0,
     paddingHorizontal: 24,

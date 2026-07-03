@@ -1237,8 +1237,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: height * 0.12,
-    height: height * 0.65,
+    top: 0,
+    height: height,
     zIndex: 4,
   },
   scrollViewContent: {
@@ -1272,7 +1272,7 @@ const styles = StyleSheet.create({
     left: 24,
     right: 24,
     bottom: 40,
-    zIndex: 3,
+    zIndex: 10,
   },
   checkListContainer: {
     marginTop: 8,
