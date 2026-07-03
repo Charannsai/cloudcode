@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     overflow: 'visible',
+    zIndex: 4,
   },
   // Positioned at page level — covers from the phone's midsection down past the text
   pageFadeOverlay: {
