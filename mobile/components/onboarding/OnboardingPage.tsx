@@ -6,7 +6,7 @@ const { width, height } = Dimensions.get('window')
 interface OnboardingPageProps {
   index: number
   currentScreen: number
-  illustration: React.ComponentType
+  illustration: React.ComponentType<{ active: boolean }>
   title: string
   description: string
 }
@@ -29,7 +29,7 @@ export const OnboardingPage = ({
   return (
     <View style={styles.pageContainer}>
       <View style={styles.pageIllustrationContainer}>
-        <Illustration />
+        <Illustration active={currentScreen === index} />
       </View>
       <View style={styles.textWrapper}>
         <Text
