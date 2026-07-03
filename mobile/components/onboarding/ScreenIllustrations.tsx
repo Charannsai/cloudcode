@@ -376,11 +376,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  // Mobile Phone Mock frame - giant size (240 x 400)
+  // Mobile Phone Mock frame — large size, pushed down so only top half visible
   phoneFrame: {
-    width: 240,
-    height: 400,
-    borderRadius: 34,
+    width: 290,
+    height: 520,
+    borderRadius: 38,
     borderWidth: 4,
     padding: 0,
     shadowColor: '#000',
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 10,
     position: 'absolute',
-    bottom: 0,
+    bottom: -180,
     zIndex: 5,
   },
   dynamicIsland: {
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   screenInner: {
     flex: 1,
-    borderRadius: 29,
+    borderRadius: 33,
     overflow: 'hidden',
   },
   screenContentCentered: {
