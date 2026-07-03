@@ -541,7 +541,7 @@ export default function AITab({ projectId }: Props) {
   const { user } = useAuthStore()
   const {
     messages, isStreaming, currentStreamText, currentToolCalls, activeProjectId,
-    sendMessage, clearChat, stopGeneration, initConversations, loadConversation, deleteConversation, startNewChat, setActiveProject
+    sendMessage, clearChat, stopGeneration, deleteConversation, syncSessionProjectChat, startNewChat
   } = useAIStore()
 
   const insets = useSafeAreaInsets()
@@ -623,16 +623,7 @@ export default function AITab({ projectId }: Props) {
   // Sync project context and load corresponding thread on mount/change
   useEffect(() => {
     const syncProjectChat = async () => {
-      setActiveProject(projectId)
-      await initConversations()
-      
-      const allThreads = useAIStore.getState().savedConversations
-      const projectThread = allThreads.find(t => t.projectId === projectId)
-      if (projectThread) {
-        await loadConversation(projectThread.id)
-      } else {
-        startNewChat()
-      }
+      await syncSessionProjectChat(projectId)
       await fetchByokAndTier()
     }
     syncProjectChat()
