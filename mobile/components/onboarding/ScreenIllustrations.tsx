@@ -122,9 +122,6 @@ export const MobilePhoneMock = ({ children, isDarkInner = true }: { children: Re
 export const Screen0Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Soft Purple Glow Behind Splash Logo */}
-      <AmbientGlow color="#8B5CF6" />
-
       {/* Bottom Fade Gradient Cover */}
       <BottomFadeOverlay />
     </View>
@@ -137,9 +134,6 @@ export const Screen0Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen1Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Soft Teal Glow Behind Phone */}
-      <AmbientGlow color="#0D9488" />
-
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
         <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
@@ -202,9 +196,6 @@ export const Screen1Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen2Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Soft Indigo Glow Behind Phone */}
-      <AmbientGlow color="#6366F1" />
-
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
         <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
@@ -253,9 +244,6 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen3Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Soft Blue Glow Behind Phone */}
-      <AmbientGlow color="#2563EB" />
-
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
         <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
@@ -303,9 +291,6 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen4Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Soft Emerald Glow Behind Phone */}
-      <AmbientGlow color="#059669" />
-
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
         <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
@@ -361,9 +346,6 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen5Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Soft Gray/Slate Glow Behind Phone - Adapts to Light Mode background */}
-      <AmbientGlow color="#64748B" isDark={false} />
-
       {/* Bezel-less Mobile Phone (Styled with dark internal content to pop against the light screen background) */}
       <MobilePhoneMock isDarkInner={true}>
         <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
@@ -418,15 +400,15 @@ const styles = StyleSheet.create({
     height: 400,
     borderRadius: 34,
     borderWidth: 4,
-    padding: 0, // Bezel-less design screen
+    padding: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.28,
     shadowRadius: 18,
     elevation: 10,
     position: 'absolute',
-    bottom: -130, // Centered/pushed down slightly, drawing behind the absolute textWrapper
-    zIndex: 5,    // Above the floating cards, below the bottom fade overlay
+    bottom: 0,
+    zIndex: 5,
   },
   dynamicIsland: {
     position: 'absolute',
@@ -466,10 +448,10 @@ const styles = StyleSheet.create({
   // Bottom Fade Gradient container overlay (Deep fade covering the bottom half of the phone)
   fadeOverlayContainer: {
     position: 'absolute',
-    bottom: -130,
-    left: 0,
-    right: 0,
-    height: 240,
+    bottom: 0,
+    left: -24,
+    right: -24,
+    height: 220,
     zIndex: 8,
   },
   // Welcome Screen (No Mobile Frame) Styles
