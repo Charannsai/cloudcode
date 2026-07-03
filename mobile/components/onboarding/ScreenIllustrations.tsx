@@ -6,12 +6,10 @@ import Animated, {
   withTiming,
   withDelay,
   withRepeat,
-  withSpring,
   withSequence,
   Easing,
 } from 'react-native-reanimated'
 import Svg, { Path, Defs, Rect, Stop, Line, Circle, LinearGradient, RadialGradient } from 'react-native-svg'
-import { BlurView } from 'expo-blur'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Terminal,
@@ -88,42 +86,6 @@ const BottomFadeOverlay = ({ isDark = true }: { isDark?: boolean }) => {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#fadeGrad)" />
       </Svg>
     </View>
-  )
-}
-
-// -------------------------------------------------------------
-// Helper Component: Subtle Background Giant Logo Watermark
-// -------------------------------------------------------------
-const BackgroundGiantLogo = ({ color = '#00E5FF', opacity = 0.05, active = false }: { color?: string; opacity?: number; active?: boolean }) => {
-  const pulse = useSharedValue(0.98)
-  useEffect(() => {
-    if (active) {
-      pulse.value = withRepeat(
-        withTiming(1.02, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      )
-    } else {
-      pulse.value = 0.98
-    }
-  }, [active])
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }))
-
-  return (
-    <Animated.View style={[styles.backgroundGiantLogoContainer, animatedStyle]} pointerEvents="none">
-      <Svg width={340} height={215} viewBox="0 0 874 552">
-        <Path
-          d={CLOUD_PATH}
-          fill="none"
-          stroke={color}
-          strokeWidth={14}
-          opacity={opacity}
-        />
-      </Svg>
-    </Animated.View>
   )
 }
 
@@ -223,16 +185,13 @@ export const Screen0Illustration = ({ active = false }: { active?: boolean }) =>
 }
 
 // -------------------------------------------------------------
-// Onboarding Illustration Component 1: Cloud Runtimes (With Giant Background Logo)
+// Onboarding Illustration Component 1: Cloud Runtimes
 // -------------------------------------------------------------
 export const Screen1Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
       {/* Soft Teal Glow Behind Phone */}
       <AmbientGlow color="#0D9488" />
-
-      {/* Giant Background Logo Watermark */}
-      <BackgroundGiantLogo color="#0D9488" opacity={0.06} active={active} />
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
@@ -299,9 +258,6 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Indigo Glow Behind Phone */}
       <AmbientGlow color="#6366F1" />
 
-      {/* Giant Background Logo Watermark */}
-      <BackgroundGiantLogo color="#6366F1" opacity={0.06} active={active} />
-
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
         <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
@@ -353,9 +309,6 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Blue Glow Behind Phone */}
       <AmbientGlow color="#2563EB" />
 
-      {/* Giant Background Logo Watermark */}
-      <BackgroundGiantLogo color="#2563EB" opacity={0.06} active={active} />
-
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
         <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
@@ -405,9 +358,6 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
     <View style={styles.showcaseWrapper}>
       {/* Soft Emerald Glow Behind Phone */}
       <AmbientGlow color="#059669" />
-
-      {/* Giant Background Logo Watermark */}
-      <BackgroundGiantLogo color="#059669" opacity={0.06} active={active} />
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
@@ -466,9 +416,6 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
     <View style={styles.showcaseWrapper}>
       {/* Soft Gray/Slate Glow Behind Phone - Adapts to Light Mode background */}
       <AmbientGlow color="#64748B" isDark={false} />
-
-      {/* Giant Background Logo Watermark */}
-      <BackgroundGiantLogo color="#64748B" opacity={0.04} active={active} />
 
       {/* Bezel-less Mobile Phone (Styled with dark internal content to pop against the light screen background) */}
       <MobilePhoneMock isDarkInner={true}>
@@ -577,13 +524,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: 220, // Tall fade overlay
     zIndex: 8,   // Placed above phoneFrame (5) to fade out the bottom device half
-  },
-  // Giant background logo watermark container
-  backgroundGiantLogoContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
   },
   // Welcome Screen (No Mobile Frame) Styles
   welcomeCenterContent: {
