@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, Dimensions } from 'react-native'
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg'
 import { AmbientGlow } from './ScreenIllustrations'
 
 const { width, height } = Dimensions.get('window')
@@ -12,6 +13,26 @@ interface OnboardingPageProps {
   illustration: React.ComponentType<{ active: boolean }>
   title: string
   description: string
+}
+
+// Page-level bottom fade that blends the phone bottom into the background
+const PageBottomFade = ({ isDark = true }: { isDark?: boolean }) => {
+  const bg = isDark ? '#05070B' : '#FAFAFA'
+  return (
+    <View style={styles.pageFadeOverlay} pointerEvents="none">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="pageFade" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor={bg} stopOpacity={0} />
+            <Stop offset="40%" stopColor={bg} stopOpacity={0.6} />
+            <Stop offset="70%" stopColor={bg} stopOpacity={0.95} />
+            <Stop offset="100%" stopColor={bg} stopOpacity={1} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#pageFade)" />
+      </Svg>
+    </View>
+  )
 }
 
 export const OnboardingPage = ({
@@ -35,6 +56,8 @@ export const OnboardingPage = ({
       <View style={styles.pageIllustrationContainer}>
         <Illustration active={currentScreen === index} />
       </View>
+      {/* Page-level fade: covers the zone from phone bottom to text area */}
+      <PageBottomFade isDark={!isLastPage} />
       <View style={styles.textWrapper}>
         <Text
           style={[
@@ -73,6 +96,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     overflow: 'visible',
+  },
+  // Positioned at page level — covers from ~55% of screen down to ~78%
+  // This is the zone where the phone bottom meets the text area
+  pageFadeOverlay: {
+    position: 'absolute',
+    top: height * 0.52,
+    left: 0,
+    right: 0,
+    height: height * 0.26,
+    zIndex: 8,
   },
   textWrapper: {
     position: 'absolute',
