@@ -434,8 +434,7 @@ export default function WelcomeScreen() {
   const watermarkStyle = useAnimatedStyle(() => {
     const targetOpacity = 0.08
     const finalOpacity = targetOpacity * (1 - bgThemeTransition.value)
-    const screenHide = currentScreen === 1 ? 0 : 1
-    return { opacity: interpolate(welcomeTransition.value, [0, 1], [0, finalOpacity]) * screenHide }
+    return { opacity: interpolate(welcomeTransition.value, [0, 1], [0, finalOpacity]) }
   })
 
   const welcomeContentStyle = useAnimatedStyle(() => ({
