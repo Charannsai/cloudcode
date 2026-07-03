@@ -243,23 +243,23 @@ export const Screen0Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={0}
-        x={-145}
-        y={-80}
+        x={-160}
+        y={-100}
         icon={<Sparkles size={14} color="#C084FC" />}
         label="AI Composer"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={145}
-        y={-90}
+        x={160}
+        y={-110}
         icon={<Box size={14} color="#60A5FA" />}
         label="Containers"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-150}
+        x={-165}
         y={10}
         icon={<Terminal size={14} color="#34D399" />}
         label="Remote Shell"
@@ -267,7 +267,7 @@ export const Screen0Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={450}
-        x={150}
+        x={165}
         y={20}
         icon={<Globe size={14} color="#F59E0B" />}
         label="Live Preview"
@@ -275,10 +275,10 @@ export const Screen0Illustration = ({ active = false }: { active?: boolean }) =>
 
       {/* Main Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { padding: 14, paddingTop: 28 }]}>
+        <View style={[styles.screenContentCentered, { padding: 16, paddingTop: 32 }]}>
           <Text style={styles.miniHeader}>CLOUDCODE</Text>
           <Animated.View style={[styles.pulseLogoContainer, logoAnimatedStyle]}>
-            <Svg width={64} height={64} viewBox="0 0 874 552">
+            <Svg width={72} height={72} viewBox="0 0 874 552">
               <Path
                 d={CLOUD_PATH}
                 fill="none"
@@ -315,23 +315,23 @@ export const Screen1Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={0}
-        x={-145}
-        y={-80}
+        x={-160}
+        y={-100}
         icon={<DockerLogo />}
         label="Docker Dev"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={145}
-        y={-90}
+        x={160}
+        y={-110}
         icon={<ReactLogo />}
         label="Node.js"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-150}
+        x={-165}
         y={10}
         icon={<PythonLogo />}
         label="Python 3"
@@ -339,7 +339,7 @@ export const Screen1Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={450}
-        x={130}
+        x={165}
         y={20}
         icon={<TypeScriptLogo />}
         label="TypeScript"
@@ -347,7 +347,7 @@ export const Screen1Illustration = ({ active = false }: { active?: boolean }) =>
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
+        <View style={[styles.screenContentCentered, { paddingTop: 32 }]}>
           <Text style={styles.miniHeader}>CONTAINERS</Text>
           
           <View style={styles.containerStatusList}>
@@ -414,23 +414,23 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={0}
-        x={-145}
-        y={-80}
+        x={-160}
+        y={-100}
         icon={<ClaudeLogo />}
         label="Claude 3.5"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={145}
-        y={-90}
+        x={160}
+        y={-110}
         icon={<OpenAILogo />}
         label="GPT-4o"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-150}
+        x={-165}
         y={10}
         icon={<GeminiLogo />}
         label="Gemini Flash"
@@ -438,7 +438,7 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={450}
-        x={150}
+        x={165}
         y={20}
         icon={<DeepSeekLogo />}
         label="DeepSeek"
@@ -446,7 +446,7 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
+        <View style={[styles.screenContentCentered, { paddingTop: 32 }]}>
           <Text style={styles.miniHeader}>AI COMPOSER</Text>
 
           <View style={styles.chatContainer}>
@@ -499,23 +499,23 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={0}
-        x={-145}
-        y={-80}
+        x={-160}
+        y={-100}
         icon={<Terminal size={14} color="#00E5FF" />}
         label="Remote Shell"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={145}
-        y={-90}
+        x={160}
+        y={-110}
         icon={<GitBranch size={14} color="#A78BFA" />}
         label="Branching"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-150}
+        x={-165}
         y={10}
         icon={<Lock size={14} color="#34D399" />}
         label="Secrets"
@@ -523,7 +523,7 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={450}
-        x={150}
+        x={165}
         y={20}
         icon={<CheckCircle size={14} color="#60A5FA" />}
         label="PR Verified"
@@ -531,7 +531,7 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
+        <View style={[styles.screenContentCentered, { paddingTop: 32 }]}>
           <Text style={styles.miniHeader}>WORKFLOWS</Text>
 
           {/* Terminal Console Mock */}
@@ -583,23 +583,23 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={0}
-        x={-145}
-        y={-80}
+        x={-160}
+        y={-100}
         icon={<Shield size={14} color="#34D399" />}
         label="TLS Tunnel"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={145}
-        y={-90}
+        x={160}
+        y={-110}
         icon={<ExternalLink size={14} color="#00E5FF" />}
         label="Live URL"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-150}
+        x={-165}
         y={10}
         icon={<Lock size={14} color="#A78BFA" />}
         label="SSL Secure"
@@ -607,7 +607,7 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={450}
-        x={150}
+        x={165}
         y={20}
         icon={<Server size={14} color="#F59E0B" />}
         label="Edge Deploy"
@@ -615,7 +615,7 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
+        <View style={[styles.screenContentCentered, { paddingTop: 32 }]}>
           <Text style={styles.miniHeader}>LIVE PREVIEW</Text>
 
           {/* Faux Web Browser Screen */}
@@ -675,8 +675,8 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={0}
-        x={-145}
-        y={-80}
+        x={-160}
+        y={-100}
         icon={<CheckCircle size={14} color="#10B981" />}
         label="Workspace Ready"
         isDarkTheme={false}
@@ -684,8 +684,8 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={150}
-        x={145}
-        y={-90}
+        x={160}
+        y={-110}
         icon={<Code size={14} color="#0F172A" />}
         label="GitHub Auth"
         isDarkTheme={false}
@@ -693,7 +693,7 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={300}
-        x={-150}
+        x={-165}
         y={10}
         icon={<Box size={14} color="#3B82F6" />}
         label="Cloud Box"
@@ -702,7 +702,7 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={450}
-        x={145}
+        x={165}
         y={20}
         icon={<Sparkles size={14} color="#8B5CF6" />}
         label="Start Coding"
@@ -711,7 +711,7 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
 
       {/* Bezel-less Mobile Phone (Styled with dark internal content to pop against the light screen background) */}
       <MobilePhoneMock isDarkInner={true}>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
+        <View style={[styles.screenContentCentered, { paddingTop: 32 }]}>
           <Text style={styles.miniHeader}>DASHBOARD</Text>
           
           <View style={styles.summaryDashboardMock}>
@@ -757,10 +757,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  // Mobile Phone Mock frame - larger screen size (210 x 350)
+  // Mobile Phone Mock frame - giant size (240 x 400)
   phoneFrame: {
-    width: 210,
-    height: 350,
+    width: 240,
+    height: 400,
     borderRadius: 34,
     borderWidth: 4,
     padding: 0, // Bezel-less design screen
@@ -770,17 +770,17 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 10,
     position: 'absolute',
-    bottom: 20, // Centered/pushed down slightly, drawing behind the absolute textWrapper
+    bottom: 10, // Centered/pushed down slightly, drawing behind the absolute textWrapper
     zIndex: 5,    // Above the floating cards, below the bottom fade overlay
   },
   dynamicIsland: {
     position: 'absolute',
-    top: 10,
+    top: 12,
     left: '50%',
-    marginLeft: -28,
-    width: 56,
-    height: 12,
-    borderRadius: 6,
+    marginLeft: -32,
+    width: 64,
+    height: 13,
+    borderRadius: 6.5,
     backgroundColor: '#000000',
     zIndex: 99,
   },
@@ -805,8 +805,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 14,
-    paddingTop: 30,
+    padding: 16,
+    paddingTop: 32,
   },
   // Floating popup cards positioned behind the phone (horizontal pill-shape badges 96x36)
   floatingCardContainer: {
@@ -858,22 +858,22 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.45)',
     fontFamily: 'Inter_700Bold',
     letterSpacing: 1.5,
-    marginBottom: 10,
+    marginBottom: 12,
     textTransform: 'uppercase',
   },
   pulseLogoContainer: {
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginVertical: 4,
+    marginVertical: 6,
   },
   logoAura: {
     position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: 'rgba(0, 229, 255, 0.1)',
     zIndex: -1,
   },
@@ -881,17 +881,17 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 8,
-    padding: 6,
-    marginTop: 10,
+    padding: 8,
+    marginTop: 12,
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.05)',
   },
   editorLineText: {
-    fontSize: 6,
+    fontSize: 7,
     color: '#E2E8F0',
     fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 8,
-    marginBottom: 2,
+    lineHeight: 10,
+    marginBottom: 3,
   },
   keywordColor: {
     color: '#F472B6',
@@ -902,69 +902,69 @@ const styles = StyleSheet.create({
   // Screen 1 Previews
   containerStatusList: {
     width: '100%',
-    gap: 5,
-    marginVertical: 8,
+    gap: 6,
+    marginVertical: 10,
   },
   containerStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 8,
-    padding: 6,
+    padding: 8,
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.05)',
   },
   logoContainerSmall: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
     borderRadius: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   containerRowTitle: {
-    fontSize: 7,
+    fontSize: 8,
     color: '#FFFFFF',
     fontFamily: 'Inter_600SemiBold',
   },
   containerRowDesc: {
-    fontSize: 6,
+    fontSize: 6.5,
     color: 'rgba(255,255,255,0.4)',
     fontFamily: 'Inter_400Regular',
     marginTop: 1,
   },
   statusIndicator: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     marginLeft: 4,
   },
   miniInfraFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 8,
   },
   infraStatsText: {
-    fontSize: 5.5,
+    fontSize: 6,
     color: 'rgba(255, 255, 255, 0.35)',
     fontFamily: 'JetBrainsMono_400Regular',
   },
   // Screen 2 Previews
   chatContainer: {
     width: '100%',
-    gap: 8,
-    marginTop: 4,
+    gap: 10,
+    marginTop: 6,
   },
   chatBubbleUser: {
     alignSelf: 'flex-end',
     backgroundColor: '#6366F1',
     borderRadius: 8,
     borderBottomRightRadius: 2,
-    padding: 6,
+    padding: 8,
     maxWidth: '85%',
   },
   chatTextUser: {
-    fontSize: 6.5,
+    fontSize: 7.5,
     color: '#FFFFFF',
     fontFamily: 'Inter_500Medium',
   },
@@ -973,28 +973,28 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 8,
     borderBottomLeftRadius: 2,
-    padding: 6,
+    padding: 8,
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.06)',
     width: '95%',
   },
   chatTextAi: {
-    fontSize: 6,
+    fontSize: 7,
     color: 'rgba(255,255,255,0.8)',
     fontFamily: 'Inter_400Regular',
-    lineHeight: 8.5,
+    lineHeight: 9.5,
   },
   miniCheckList: {
-    marginTop: 6,
-    gap: 3.5,
+    marginTop: 8,
+    gap: 4,
   },
   miniCheckRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   miniCheckText: {
-    fontSize: 5.5,
+    fontSize: 6.5,
     color: '#A7F3D0',
     fontFamily: 'Inter_600SemiBold',
   },
@@ -1010,53 +1010,53 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
-    marginVertical: 6,
+    marginVertical: 8,
   },
   miniTerminalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#0F172A',
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   terminalDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginRight: 2.5,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginRight: 3,
   },
   terminalTitleText: {
-    fontSize: 5.5,
+    fontSize: 6,
     color: 'rgba(255,255,255,0.4)',
     fontFamily: 'Inter_500Medium',
-    marginLeft: 3,
+    marginLeft: 4,
   },
   miniTerminalBody: {
-    padding: 6,
-    gap: 3,
+    padding: 8,
+    gap: 4,
   },
   terminalTextLine: {
-    fontSize: 5.5,
+    fontSize: 6,
     color: '#E2E8F0',
     fontFamily: 'JetBrainsMono_400Regular',
   },
   terminalTextLineSuccess: {
-    fontSize: 5.5,
+    fontSize: 6,
     color: '#10B981',
     fontFamily: 'JetBrainsMono_400Regular',
   },
   gitVisualContainer: {
     width: '100%',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 6,
   },
   gitStatusBadgeText: {
-    fontSize: 5.5,
+    fontSize: 6,
     color: 'rgba(255,255,255,0.45)',
     fontFamily: 'Inter_500Medium',
-    marginTop: 2,
+    marginTop: 3,
   },
   // Screen 4 Previews
   miniBrowserWindow: {
@@ -1066,50 +1066,50 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
-    marginVertical: 4,
+    marginVertical: 6,
   },
   miniBrowserAddressBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#111827',
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   miniBrowserUrlText: {
-    fontSize: 5,
+    fontSize: 5.5,
     color: 'rgba(255,255,255,0.45)',
     fontFamily: 'Inter_400Regular',
   },
   miniBrowserContent: {
-    padding: 6,
+    padding: 8,
   },
   browserTitleText: {
-    fontSize: 6,
+    fontSize: 7,
     color: '#10B981',
     fontFamily: 'Inter_700Bold',
-    marginBottom: 4,
+    marginBottom: 5,
   },
   browserStatsRow: {
     flexDirection: 'row',
-    gap: 4,
-    marginTop: 6,
+    gap: 5,
+    marginTop: 8,
   },
   browserStatBox: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 4,
-    padding: 3,
+    padding: 4,
     alignItems: 'center',
   },
   browserStatVal: {
-    fontSize: 7,
+    fontSize: 8,
     color: '#FFFFFF',
     fontFamily: 'Inter_700Bold',
   },
   browserStatLbl: {
-    fontSize: 4.5,
+    fontSize: 5,
     color: 'rgba(255,255,255,0.3)',
     textTransform: 'uppercase',
   },
@@ -1120,27 +1120,27 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.08)',
-    padding: 8,
-    marginVertical: 4,
+    padding: 10,
+    marginVertical: 6,
   },
   summaryDashboardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255,255,255,0.06)',
-    paddingBottom: 5,
-    marginBottom: 6,
+    paddingBottom: 6,
+    marginBottom: 8,
   },
   summaryDashboardTitle: {
-    fontSize: 6.5,
+    fontSize: 7.5,
     color: '#FFFFFF',
     fontFamily: 'Inter_600SemiBold',
   },
   summaryMetricsGrid: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 6,
+    gap: 8,
+    marginBottom: 8,
   },
   summaryMetricItem: {
     flex: 1,
@@ -1148,24 +1148,24 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.05)',
     borderRadius: 4,
-    padding: 4,
+    padding: 5,
     alignItems: 'center',
   },
   summaryMetricVal: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#00E5FF',
     fontFamily: 'Inter_700Bold',
   },
   summaryMetricLbl: {
-    fontSize: 5,
+    fontSize: 6,
     color: 'rgba(255,255,255,0.4)',
     fontFamily: 'Inter_500Medium',
   },
   editorLineTextSmallContainer: {
-    gap: 2,
+    gap: 3,
   },
   editorLineTextSmall: {
-    fontSize: 5.5,
+    fontSize: 6,
     color: 'rgba(255,255,255,0.5)',
     fontFamily: 'JetBrainsMono_400Regular',
   },
