@@ -272,8 +272,8 @@ function AnimatedDropdownCard({
     ]
   }))
 
-  const containerBg = isDark ? 'rgba(22, 27, 34, 0.94)' : 'rgba(255, 255, 255, 0.94)'
-  const cardBorderColor = isDark ? '#30363D' : '#D0D7DE'
+  const containerBg = isDark ? 'rgba(22, 27, 34, 0.95)' : 'rgba(255, 255, 255, 0.98)'
+  const cardBorderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'
 
   return (
     <Reanimated.View
@@ -291,7 +291,7 @@ function AnimatedDropdownCard({
     >
       {Platform.OS === 'ios' && (
         <BlurView
-          intensity={50}
+          intensity={40}
           tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
@@ -307,14 +307,14 @@ function AnimatedDropdownCard({
                   item.onPress()
                   onClose()
                 }}
-                activeOpacity={0.6}
+                activeOpacity={0.7}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   {IconComponent && (
                     <IconComponent 
-                      size={14} 
-                      color={item.danger ? '#F85149' : (isDark ? '#8B949E' : '#6A737D')} 
-                      strokeWidth={1.8}
+                      size={15} 
+                      color={item.danger ? '#F85149' : colors.textSecondary} 
+                      strokeWidth={2}
                     />
                   )}
                   <Text
@@ -330,7 +330,7 @@ function AnimatedDropdownCard({
                   </Text>
                 </View>
               </TouchableOpacity>
-              {item.divider && <View style={[styles.dropdownDivider, { backgroundColor: isDark ? '#21262D' : '#D8DEE4' }]} />}
+              {item.divider && <View style={[styles.dropdownDivider, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }]} />}
             </View>
           )
         })}
@@ -1321,30 +1321,31 @@ const styles = StyleSheet.create({
   },
   dropdownMenuAnimated: {
     position: 'absolute',
-    borderRadius: 6,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
     minWidth: 190,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
   },
   dropdownInner: {
-    paddingVertical: 4,
+    padding: 6,
   },
   dropdownItem: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   dropdownItemText: {
     fontSize: 13,
   },
   dropdownDivider: {
     height: 1,
-    marginVertical: 4,
-    marginHorizontal: 8,
+    marginVertical: 6,
+    marginHorizontal: 6,
   },
   floatingAskAIContainer: {
     position: 'absolute',

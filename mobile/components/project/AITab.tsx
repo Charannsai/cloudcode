@@ -1018,13 +1018,14 @@ export default function AITab({ projectId }: Props) {
             borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
             backgroundColor: isDark ? 'rgba(28, 31, 38, 0.95)' : 'rgba(255, 255, 255, 0.98)',
             top: 56,
-            width: 220,
-            borderRadius: 14,
           }
         ]}
       >
         <TouchableOpacity
-          style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingHorizontal: 16 }]}
+          style={[
+            styles.inlineModelItem,
+            selectedModel === 'gemini' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+          ]}
           onPress={() => {
             if (isByokActive && !hasGeminiKey) {
               showAlert(
@@ -1041,7 +1042,7 @@ export default function AITab({ projectId }: Props) {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Cpu size={14} color="#3FB950" />
-              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
+              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
                 Gemini 3.5 Flash
               </Text>
             </View>
@@ -1050,7 +1051,11 @@ export default function AITab({ projectId }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.inlineModelItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingHorizontal: 16, opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
+          style={[
+            styles.inlineModelItem,
+            { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 },
+            selectedModel === 'openai' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+          ]}
           onPress={() => {
             if (userTier === 'free' && !isByokActive) {
               showAlert(
@@ -1073,7 +1078,7 @@ export default function AITab({ projectId }: Props) {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Shield size={14} color="#2F80ED" />
-              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
+              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
                 ChatGPT 5.5
               </Text>
             </View>
@@ -1086,7 +1091,11 @@ export default function AITab({ projectId }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.inlineModelItem, { borderBottomWidth: 0, paddingHorizontal: 16, opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 }]}
+          style={[
+            styles.inlineModelItem,
+            { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 },
+            selectedModel === 'anthropic' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+          ]}
           onPress={() => {
             if (userTier === 'free' && !isByokActive) {
               showAlert(
@@ -1109,7 +1118,7 @@ export default function AITab({ projectId }: Props) {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Sparkles size={14} color="#9B51E0" />
-              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
+              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
                 Claude 4.6 Opus
               </Text>
             </View>
@@ -1137,49 +1146,41 @@ export default function AITab({ projectId }: Props) {
             borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
             borderWidth: 1,
             backgroundColor: isDark ? 'rgba(28, 31, 38, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-            borderRadius: 14,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.12,
-            shadowRadius: 10,
-            elevation: 6,
-            paddingVertical: 4,
-            width: 190,
             top: 56,
           }
         ]}
       >
         <TouchableOpacity
-          style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+          style={styles.dropdownMenuItemRow}
           onPress={() => {
             setMenuVisible(false)
             startNewChat()
           }}
         >
-          <Plus size={16} color={colors.text} />
-          <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>New Chat</Text>
+          <Plus size={15} color={colors.textSecondary} strokeWidth={2} />
+          <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>New Chat</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.dropdownMenuItemRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+          style={styles.dropdownMenuItemRow}
           onPress={() => {
             setMenuVisible(false)
             setModelSelectorVisible(true)
           }}
         >
-          <Cpu size={16} color={colors.text} />
-          <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>Switch Model</Text>
+          <Cpu size={15} color={colors.textSecondary} strokeWidth={2} />
+          <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>Switch Model</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.dropdownMenuItemRow, { borderBottomWidth: 0, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+          style={styles.dropdownMenuItemRow}
           onPress={() => {
             setMenuVisible(false)
             router.push('/activity')
           }}
         >
-          <History size={16} color={colors.text} />
-          <Text style={[styles.dropdownMenuItemLabel, { color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }]}>History & Limits</Text>
+          <History size={15} color={colors.textSecondary} strokeWidth={2} />
+          <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>History & Limits</Text>
         </TouchableOpacity>
       </AnimatedDropdown>
 
@@ -1705,16 +1706,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 42,
     right: 12,
-    width: 160,
-    borderRadius: 8,
+    width: 190,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingVertical: 4,
+    padding: 6,
     zIndex: 1000,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
   },
   dropdownMenuItemRow: {
     flexDirection: 'row',
@@ -1722,10 +1723,11 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderBottomWidth: 0.5,
+    borderRadius: 10,
+    borderBottomWidth: 0,
   },
   dropdownMenuItemLabel: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontFamily: 'Inter_500Medium',
   },
   headerTitle: {
@@ -1742,27 +1744,28 @@ const styles = StyleSheet.create({
   inlineModelDropdown: {
     position: 'absolute',
     alignSelf: 'center',
-    width: 200,
-    borderRadius: 12,
+    width: 230,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingVertical: 4,
+    padding: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
     zIndex: 9999,
   },
   inlineModelItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderBottomWidth: 0,
   },
   inlineModelLabel: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontFamily: 'Inter_500Medium',
   },
   errorModalBackdrop: {
