@@ -121,10 +121,7 @@ export const MobilePhoneMock = ({ children, isDarkInner = true }: { children: Re
 // -------------------------------------------------------------
 export const Screen0Illustration = ({ active = false }: { active?: boolean }) => {
   return (
-    <View style={styles.showcaseWrapper}>
-      {/* Bottom Fade Gradient Cover */}
-      <BottomFadeOverlay />
-    </View>
+    <View style={styles.showcaseWrapper} />
   )
 }
 
@@ -183,9 +180,6 @@ export const Screen1Illustration = ({ active = false }: { active?: boolean }) =>
           </View>
         </View>
       </MobilePhoneMock>
-
-      {/* Bottom Fade Gradient Cover */}
-      <BottomFadeOverlay />
     </View>
   )
 }
@@ -231,9 +225,6 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
           </View>
         </View>
       </MobilePhoneMock>
-
-      {/* Bottom Fade Gradient Cover */}
-      <BottomFadeOverlay />
     </View>
   )
 }
@@ -278,9 +269,6 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
           </View>
         </View>
       </MobilePhoneMock>
-
-      {/* Bottom Fade Gradient Cover */}
-      <BottomFadeOverlay />
     </View>
   )
 }
@@ -333,9 +321,6 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
           </View>
         </View>
       </MobilePhoneMock>
-
-      {/* Bottom Fade Gradient Cover */}
-      <BottomFadeOverlay />
     </View>
   )
 }
@@ -376,9 +361,6 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
           </View>
         </View>
       </MobilePhoneMock>
-
-      {/* Bottom Fade Gradient Cover (Light Mode version) */}
-      <BottomFadeOverlay isDark={false} />
     </View>
   )
 }
