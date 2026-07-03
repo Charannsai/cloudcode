@@ -1,7 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet, Dimensions } from 'react-native'
+import { AmbientGlow } from './ScreenIllustrations'
 
 const { width, height } = Dimensions.get('window')
+
+const GLOW_COLORS = ['#8B5CF6', '#0D9488', '#6366F1', '#2563EB', '#059669', '#64748B']
 
 interface OnboardingPageProps {
   index: number
@@ -28,6 +31,7 @@ export const OnboardingPage = ({
 
   return (
     <View style={styles.pageContainer}>
+      <AmbientGlow color={GLOW_COLORS[index]} isDark={!isLastPage} />
       <View style={styles.pageIllustrationContainer}>
         <Illustration active={currentScreen === index} />
       </View>
@@ -61,13 +65,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pageIllustrationContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    width: '100%',
+    height: height * 0.38,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 20,
+    zIndex: 5,
   },
   textWrapper: {
     position: 'absolute',
