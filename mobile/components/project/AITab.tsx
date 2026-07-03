@@ -536,6 +536,180 @@ interface Props {
   projectId: string
 }
 
+function ModelMessageBody({ msg, colors, isDark, mdStyles }: { msg: ChatMessage; colors: any; isDark: boolean; mdStyles: any }) {
+  const [expanded, setExpanded] = useState(false)
+
+  const hasTools = msg.toolCalls && msg.toolCalls.length > 0
+  const hasChecklist = msg.text.includes('[ ]') || msg.text.includes('[x]')
+  const isThoughtOnly = hasTools || hasChecklist
+
+  if (!isThoughtOnly) {
+    return (
+      <Markdown style={mdStyles}>
+        {msg.text}
+      </Markdown>
+    )
+  }
+
+  const timeText = msg.thinkingTime ? `for ${msg.thinkingTime} seconds` : ''
+  const headerLabel = `Thought ${timeText}`.trim()
+
+  return (
+    <View style={{ width: '100%' }}>
+      <TouchableOpacity
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          paddingVertical: 6,
+          paddingHorizontal: 10,
+          backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+          borderRadius: 6,
+          borderWidth: 0.5,
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+          marginBottom: 8,
+          alignSelf: 'flex-start'
+        }}
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+      >
+        <Sparkles size={12} color={isDark ? '#A78BFA' : '#8B5CF6'} />
+        <Text style={{
+          color: colors.textSecondary,
+          fontSize: 12,
+          fontFamily: 'Inter_500Medium'
+        }}>
+          {headerLabel}
+        </Text>
+        <ChevronDown
+          size={12}
+          color={colors.textSecondary}
+          style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }}
+        />
+      </TouchableOpacity>
+
+      {expanded && msg.text.trim() !== '' && (
+        <View style={{
+          backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
+          borderColor: isDark ? '#21262D' : '#D8DEE4',
+          borderWidth: 0.8,
+          borderRadius: 8,
+          padding: 12,
+          marginBottom: 8,
+        }}>
+          <Markdown style={mdStyles}>
+            {msg.text}
+          </Markdown>
+        </View>
+      )}
+
+      {msg.toolCalls && msg.toolCalls.length > 0 && (
+        <View style={{ gap: 6, marginTop: 4 }}>
+          {msg.toolCalls.map((tc, tcIdx) => (
+            <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
+          ))}
+        </View>
+      )}
+    </View>
+  )
+}
+
+function StreamingMessageBody({
+  streamText,
+  toolCalls,
+  colors,
+  isDark,
+  mdStyles
+}: {
+  streamText: string
+  toolCalls: ToolCallInfo[]
+  colors: any
+  isDark: boolean
+  mdStyles: any
+}) {
+  const [elapsed, setElapsed] = useState(1)
+  const [expanded, setExpanded] = useState(true)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsed((prev) => prev + 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const hasTools = toolCalls.length > 0
+  const hasChecklist = streamText.includes('[ ]') || streamText.includes('[x]')
+  const isThoughtOnly = hasTools || hasChecklist
+
+  if (!isThoughtOnly && streamText.trim() !== '') {
+    return (
+      <Markdown style={mdStyles}>
+        {streamText}
+      </Markdown>
+    )
+  }
+
+  return (
+    <View style={{ width: '100%' }}>
+      <TouchableOpacity
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          paddingVertical: 6,
+          paddingHorizontal: 10,
+          backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+          borderRadius: 6,
+          borderWidth: 0.5,
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+          marginBottom: 8,
+          alignSelf: 'flex-start'
+        }}
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+      >
+        <ActivityIndicator size="small" color={isDark ? '#A78BFA' : '#8B5CF6'} style={{ width: 12, height: 12 }} />
+        <Text style={{
+          color: colors.textSecondary,
+          fontSize: 12,
+          fontFamily: 'Inter_500Medium'
+        }}>
+          Thinking for {elapsed} seconds...
+        </Text>
+        <ChevronDown
+          size={12}
+          color={colors.textSecondary}
+          style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }}
+        />
+      </TouchableOpacity>
+
+      {expanded && streamText.trim() !== '' && (
+        <View style={{
+          backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
+          borderColor: isDark ? '#21262D' : '#D8DEE4',
+          borderWidth: 0.8,
+          borderRadius: 8,
+          padding: 12,
+          marginBottom: 8,
+        }}>
+          <Markdown style={mdStyles}>
+            {streamText}
+          </Markdown>
+        </View>
+      )}
+
+      {toolCalls.length > 0 && (
+        <View style={{ gap: 6, marginTop: 4 }}>
+          {toolCalls.map((tc, tcIdx) => (
+            <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
+          ))}
+        </View>
+      )}
+    </View>
+  )
+}
+
+
 export default function AITab({ projectId }: Props) {
   const { colors, isDark } = useAppTheme()
   const { user } = useAuthStore()
@@ -1057,20 +1231,7 @@ export default function AITab({ projectId }: Props) {
                         {msg.text}
                       </Text>
                     ) : (
-                      <View style={{ width: '100%' }}>
-                        {msg.toolCalls && msg.toolCalls.length > 0 && (
-                          <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
-                            {msg.toolCalls.map((tc, tcIdx) => (
-                              <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
-                            ))}
-                          </View>
-                        )}
-                        {msg.text.trim() !== '' && (
-                          <Markdown style={mdStyles}>
-                            {msg.text}
-                          </Markdown>
-                        )}
-                      </View>
+                      <ModelMessageBody msg={msg} colors={colors} isDark={isDark} mdStyles={mdStyles} />
                     )}
                   </View>
                 </View>
@@ -1081,24 +1242,13 @@ export default function AITab({ projectId }: Props) {
             {isStreaming && (
               <View style={styles.modelBubbleWrapper}>
                 <View style={[styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
-                  <View style={{ width: '100%' }}>
-                    {currentToolCalls.length > 0 && (
-                      <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
-                        {currentToolCalls.map((tc, tcIdx) => (
-                          <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
-                        ))}
-                      </View>
-                    )}
-                    {currentStreamText.trim() !== '' ? (
-                      <Markdown style={mdStyles}>
-                        {currentStreamText}
-                      </Markdown>
-                    ) : (
-                      currentStreamText.trim() === '' && (
-                        <ThinkingIndicator colors={colors} isDark={isDark} />
-                      )
-                    )}
-                  </View>
+                  <StreamingMessageBody
+                    streamText={currentStreamText}
+                    toolCalls={currentToolCalls}
+                    colors={colors}
+                    isDark={isDark}
+                    mdStyles={mdStyles}
+                  />
                 </View>
               </View>
             )}

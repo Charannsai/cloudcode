@@ -19,6 +19,7 @@ export interface ChatMessage {
   text: string
   toolCalls?: ToolCallInfo[]
   timestamp: number
+  thinkingTime?: number
 }
 
 export interface ToolCallInfo {
@@ -96,6 +97,7 @@ export const useAIStore = create<AIState>((set, get) => ({
   setPinnedFile: (pinnedFile) => set({ pinnedFile }),
 
   sendMessage: async (text, projectId, openFile, model) => {
+    const startTime = Date.now()
     let threadId = get().currentThreadId
     if (!threadId) {
       threadId = uuidv4()
@@ -285,12 +287,14 @@ export const useAIStore = create<AIState>((set, get) => ({
     const hasTools = toolCalls.length > 0
 
     if (hasStreamed || hasTools) {
+      const thinkingTime = Math.max(1, Math.round((Date.now() - startTime) / 1000))
       const modelMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
         text: fullText || (hasTools ? '' : '(No response)'),
         toolCalls: hasTools ? toolCalls : undefined,
         timestamp: Date.now(),
+        thinkingTime,
       }
 
       const updatedMessages = [...get().messages, modelMsg]
