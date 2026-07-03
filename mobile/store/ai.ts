@@ -516,5 +516,20 @@ export const useAIStore = create<AIState>((set, get) => ({
       console.error('[AI Store] Failed to load stateful conversation:', err)
       throw err
     }
+  },
+
+  syncSessionProjectChat: async (projectId) => {
+    set({ activeProjectId: projectId })
+    await get().initConversations()
+
+    // Retrieve active thread for this project in the current app run session
+    const sessionThreadId = sessionActiveThreads[projectId]
+    if (sessionThreadId) {
+      // Load the session's active thread
+      await get().loadConversation(sessionThreadId)
+    } else {
+      // New app session for this project, start with a clean state
+      get().startNewChat()
+    }
   }
 }))
