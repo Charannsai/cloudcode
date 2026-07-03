@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
+    overflow: 'hidden',
   },
   textWrapper: {
     width: '100%',
