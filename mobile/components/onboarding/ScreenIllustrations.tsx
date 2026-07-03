@@ -117,66 +117,13 @@ export const MobilePhoneMock = ({ children, isDarkInner = true }: { children: Re
 }
 
 // -------------------------------------------------------------
-// Onboarding Illustration Component 0: Glowing CC Logo (Splash - No Mobile Frame)
+// Onboarding Illustration Component 0: Glowing CC Logo (Splash - Empty Foreground)
 // -------------------------------------------------------------
 export const Screen0Illustration = ({ active = false }: { active?: boolean }) => {
-  const pulse = useSharedValue(0.96)
-
-  useEffect(() => {
-    if (active) {
-      pulse.value = withRepeat(
-        withTiming(1.04, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      )
-    } else {
-      pulse.value = 0.96
-    }
-  }, [active])
-
-  const logoAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }))
-
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Soft Purple Glow Behind Logo */}
+      {/* Soft Purple Glow Behind Splash Logo */}
       <AmbientGlow color="#8B5CF6" />
-
-      {/* Pulsing Giant Logo and Code Editor Floating in Center */}
-      <View style={styles.welcomeCenterContent}>
-        <Animated.View style={[styles.pulseLogoContainerLarge, logoAnimatedStyle]}>
-          <Svg width={100} height={100} viewBox="0 0 874 552">
-            <Path
-              d={CLOUD_PATH}
-              fill="none"
-              stroke="#00E5FF"
-              strokeWidth={16}
-            />
-          </Svg>
-          <View style={styles.logoAuraLarge} />
-        </Animated.View>
-
-        <View style={styles.editorGlassCard}>
-          <View style={styles.editorGlassHeader}>
-            <View style={[styles.terminalDot, { backgroundColor: '#EF4444' }]} />
-            <View style={[styles.terminalDot, { backgroundColor: '#F59E0B' }]} />
-            <View style={[styles.terminalDot, { backgroundColor: '#10B981' }]} />
-            <Text style={styles.editorGlassTitle}>main.tsx</Text>
-          </View>
-          <View style={styles.editorGlassBody}>
-            <Text style={styles.editorLineTextLarge}>
-              <Text style={styles.keywordColor}>import</Text> CloudCode <Text style={styles.keywordColor}>from</Text> <Text style={styles.stringColor}>'@cloudcode/sdk'</Text>
-            </Text>
-            <Text style={styles.editorLineTextLarge}>
-              <Text style={styles.keywordColor}>const</Text> workspace = <Text style={styles.keywordColor}>await</Text> CloudCode.connect()
-            </Text>
-            <Text style={styles.editorLineTextLarge}>
-              <Text style={styles.keywordColor}>await</Text> workspace.spinUp(<Text style={styles.stringColor}>'react-env'</Text>)
-            </Text>
-          </View>
-        </View>
-      </View>
 
       {/* Bottom Fade Gradient Cover */}
       <BottomFadeOverlay />
