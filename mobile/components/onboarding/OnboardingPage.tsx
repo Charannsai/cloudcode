@@ -15,21 +15,22 @@ interface OnboardingPageProps {
   description: string
 }
 
-// Page-level bottom fade that blends the phone bottom into the background
-const PageBottomFade = ({ isDark = true }: { isDark?: boolean }) => {
+// Inner fade overlay — rendered INSIDE the illustration container
+// so it shares the same stacking context as the phone frame
+const InnerBottomFade = ({ isDark = true }: { isDark?: boolean }) => {
   const bg = isDark ? '#05070B' : '#FAFAFA'
   return (
-    <View style={styles.pageFadeOverlay} pointerEvents="none">
+    <View style={styles.innerFadeOverlay} pointerEvents="none">
       <Svg width="100%" height="100%">
         <Defs>
-          <LinearGradient id="pageFade" x1="0%" y1="0%" x2="0%" y2="100%">
+          <LinearGradient id="innerFade" x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0%" stopColor={bg} stopOpacity={0} />
-            <Stop offset="40%" stopColor={bg} stopOpacity={0.6} />
-            <Stop offset="70%" stopColor={bg} stopOpacity={0.95} />
+            <Stop offset="35%" stopColor={bg} stopOpacity={0.5} />
+            <Stop offset="65%" stopColor={bg} stopOpacity={0.92} />
             <Stop offset="100%" stopColor={bg} stopOpacity={1} />
           </LinearGradient>
         </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#pageFade)" />
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#innerFade)" />
       </Svg>
     </View>
   )
@@ -45,8 +46,6 @@ export const OnboardingPage = ({
   const isWelcomePage = index === 0
   const isLastPage = index === 5
 
-  // Screen 5 (index 5) has a light background, so we use dark text.
-  // Other screens have a dark background, so we use light text.
   const textColor = isLastPage ? '#0F172A' : '#FFFFFF'
   const subTextColor = isLastPage ? '#475569' : '#8B929A'
 
@@ -55,9 +54,9 @@ export const OnboardingPage = ({
       <AmbientGlow color={GLOW_COLORS[index]} isDark={!isLastPage} />
       <View style={styles.pageIllustrationContainer}>
         <Illustration active={currentScreen === index} />
+        {/* Inner fade — same stacking context as the phone, higher zIndex */}
+        <InnerBottomFade isDark={!isLastPage} />
       </View>
-      {/* Page-level fade: covers the zone from phone bottom to text area */}
-      <PageBottomFade isDark={!isLastPage} />
       <View style={styles.textWrapper}>
         <Text
           style={[
@@ -92,20 +91,20 @@ const styles = StyleSheet.create({
     top: height * 0.08,
     left: 0,
     right: 0,
-    bottom: height * 0.32,
+    bottom: height * 0.22,
     justifyContent: 'flex-end',
     alignItems: 'center',
-    overflow: 'visible',
-    zIndex: 4,
+    overflow: 'hidden',
   },
-  // Positioned at page level — covers from the phone's midsection down past the text
-  pageFadeOverlay: {
+  // Inside the illustration container, covering the bottom 55%
+  // zIndex 20 ensures it paints OVER the phone (zIndex 5)
+  innerFadeOverlay: {
     position: 'absolute',
-    top: height * 0.42,
+    bottom: 0,
     left: 0,
     right: 0,
-    height: height * 0.36,
-    zIndex: 8,
+    height: '55%',
+    zIndex: 20,
   },
   textWrapper: {
     position: 'absolute',
