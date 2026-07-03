@@ -144,52 +144,68 @@ export const Screen0Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen1Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
-          <Text style={styles.miniHeader}>CONTAINERS</Text>
-          
-          <View style={styles.containerStatusList}>
-            {/* Row 1: Node.js Container */}
-            <View style={styles.containerStatusRow}>
-              <View style={styles.logoContainerSmall}>
-                <ReactLogo />
-              </View>
-              <View style={{ flex: 1, marginLeft: 6 }}>
-                <Text style={styles.containerRowTitle}>Nodejs Runtime</Text>
-                <Text style={styles.containerRowDesc}>Port 3000 · Active</Text>
-              </View>
-              <View style={[styles.statusIndicator, { backgroundColor: '#10B981' }]} />
-            </View>
-
-            {/* Row 2: Python Container */}
-            <View style={styles.containerStatusRow}>
-              <View style={styles.logoContainerSmall}>
-                <PythonLogo />
-              </View>
-              <View style={{ flex: 1, marginLeft: 6 }}>
-                <Text style={styles.containerRowTitle}>Python 3 Box</Text>
-                <Text style={styles.containerRowDesc}>WSGI · Sleeping</Text>
-              </View>
-              <View style={[styles.statusIndicator, { backgroundColor: '#F59E0B' }]} />
-            </View>
-
-            {/* Row 3: Docker Container */}
-            <View style={styles.containerStatusRow}>
-              <View style={styles.logoContainerSmall}>
-                <DockerLogo />
-              </View>
-              <View style={{ flex: 1, marginLeft: 6 }}>
-                <Text style={styles.containerRowTitle}>Docker Engine</Text>
-                <Text style={styles.containerRowDesc}>Active · 1.4 GB</Text>
-              </View>
-              <View style={[styles.statusIndicator, { backgroundColor: '#10B981' }]} />
+        <View style={styles.phoneScreenContent}>
+          {/* Top Header */}
+          <View style={styles.phoneHeader}>
+            <Text style={styles.phoneHeaderTitle}>Environments</Text>
+            <View style={styles.badgeActive}>
+              <Text style={styles.badgeActiveText}>3 Active</Text>
             </View>
           </View>
 
-          <View style={styles.miniInfraFooter}>
-            <Activity size={10} color="#00E5FF" style={{ marginRight: 4 }} />
-            <Text style={styles.infraStatsText}>CPU: 1.2%  RAM: 512MB / 2GB</Text>
+          {/* Runtimes list */}
+          <View style={styles.phoneCardList}>
+            <View style={styles.phoneItemCard}>
+              <View style={styles.phoneItemLeft}>
+                <View style={[styles.phoneItemIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+                  <ReactLogo />
+                </View>
+                <View>
+                  <Text style={styles.phoneItemTitle}>Node.js Runtime</Text>
+                  <Text style={styles.phoneItemSubtitle}>Port 3000 · main-server</Text>
+                </View>
+              </View>
+              <View style={styles.phoneStatusDotGreen} />
+            </View>
+
+            <View style={styles.phoneItemCard}>
+              <View style={styles.phoneItemLeft}>
+                <View style={[styles.phoneItemIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
+                  <PythonLogo />
+                </View>
+                <View>
+                  <Text style={styles.phoneItemTitle}>Python 3.11 Box</Text>
+                  <Text style={styles.phoneItemSubtitle}>Port 8000 · ai-model</Text>
+                </View>
+              </View>
+              <View style={styles.phoneStatusDotGreen} />
+            </View>
+
+            <View style={styles.phoneItemCard}>
+              <View style={styles.phoneItemLeft}>
+                <View style={[styles.phoneItemIconContainer, { backgroundColor: 'rgba(56, 189, 248, 0.1)' }]}>
+                  <DockerLogo />
+                </View>
+                <View>
+                  <Text style={styles.phoneItemTitle}>PostgreSQL DB</Text>
+                  <Text style={styles.phoneItemSubtitle}>Port 5432 · postgres</Text>
+                </View>
+              </View>
+              <View style={styles.phoneStatusDotGreen} />
+            </View>
+          </View>
+
+          {/* Resource stats */}
+          <View style={styles.phoneResourceStats}>
+            <View style={styles.statBoxCol}>
+              <Text style={styles.statBoxLabel}>CPU USAGE</Text>
+              <Text style={styles.statBoxValue}>1.4%</Text>
+            </View>
+            <View style={styles.statBoxCol}>
+              <Text style={styles.statBoxLabel}>RAM ALLOCATED</Text>
+              <Text style={styles.statBoxValue}>512 MB</Text>
+            </View>
           </View>
         </View>
       </MobilePhoneMock>
@@ -203,35 +219,40 @@ export const Screen1Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen2Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
-          <Text style={styles.miniHeader}>AI COMPOSER</Text>
+        <View style={styles.phoneScreenContent}>
+          {/* Top Header */}
+          <View style={styles.phoneHeader}>
+            <Text style={styles.phoneHeaderTitle}>AI Composer</Text>
+            <Sparkles size={14} color="#A78BFA" />
+          </View>
 
-          <View style={styles.chatContainer}>
-            {/* User Prompt */}
-            <View style={styles.chatBubbleUser}>
-              <Text style={styles.chatTextUser}>Create express auth API...</Text>
+          {/* Chat message bubbles */}
+          <View style={styles.phoneChatList}>
+            {/* User message */}
+            <View style={styles.phoneChatUserBubble}>
+              <Text style={styles.phoneChatUserText}>Create express app with JWT auth and Postgres DB</Text>
             </View>
 
-            {/* AI Assistant Output */}
-            <View style={styles.chatBubbleAi}>
-              <Text style={styles.chatTextAi}>Spinning up Docker workspace. Running code assembly...</Text>
+            {/* AI Response Card */}
+            <View style={styles.phoneChatAiCard}>
+              <Text style={styles.phoneChatAiText}>
+                I'm generating the workspace files and containers now...
+              </Text>
+              <View style={styles.phoneAiSeparator} />
               
-              <View style={styles.miniCheckList}>
-                <View style={styles.miniCheckRow}>
-                  <Check size={8} color="#34D399" strokeWidth={3} />
-                  <Text style={styles.miniCheckText}>PostgreSQL DB active</Text>
+              <View style={styles.phoneAiTaskList}>
+                <View style={styles.phoneAiTaskRow}>
+                  <CheckCircle size={10} color="#10B981" />
+                  <Text style={styles.phoneAiTaskTextDone}>Docker compose configured</Text>
                 </View>
-                <View style={styles.miniCheckRow}>
-                  <Check size={8} color="#34D399" strokeWidth={3} />
-                  <Text style={styles.miniCheckText}>Express routes generated</Text>
+                <View style={styles.phoneAiTaskRow}>
+                  <CheckCircle size={10} color="#10B981" />
+                  <Text style={styles.phoneAiTaskTextDone}>Express auth routes created</Text>
                 </View>
-                <View style={styles.miniCheckRow}>
-                  <Animated.View style={styles.spinningIndicatorContainer}>
-                    <RefreshCw size={8} color="#00E5FF" />
-                  </Animated.View>
-                  <Text style={[styles.miniCheckText, { color: '#00E5FF' }]}>Bundling JWT auth...</Text>
+                <View style={styles.phoneAiTaskRow}>
+                  <RefreshCw size={10} color="#00E5FF" />
+                  <Text style={styles.phoneAiTaskTextActive}>Provisioning PostgreSQL DB...</Text>
                 </View>
               </View>
             </View>
@@ -248,37 +269,43 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen3Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
-          <Text style={styles.miniHeader}>WORKFLOWS</Text>
-
-          {/* Terminal Console Mock */}
-          <View style={styles.miniTerminalWindow}>
-            <View style={styles.miniTerminalHeader}>
-              <View style={[styles.terminalDot, { backgroundColor: '#EF4444' }]} />
-              <View style={[styles.terminalDot, { backgroundColor: '#F59E0B' }]} />
-              <View style={[styles.terminalDot, { backgroundColor: '#10B981' }]} />
-              <Text style={styles.terminalTitleText}>bash · auth</Text>
-            </View>
-            <View style={styles.miniTerminalBody}>
-              <Text style={styles.terminalTextLine}>$ git checkout -b feat/jwt</Text>
-              <Text style={styles.terminalTextLine}>$ git commit -m "feat: jwt auth"</Text>
-              <Text style={styles.terminalTextLineSuccess}>[feat/jwt 4c82b9] commit OK</Text>
+        <View style={styles.phoneScreenContent}>
+          {/* Top Header */}
+          <View style={styles.phoneHeader}>
+            <Text style={styles.phoneHeaderTitle}>Workflows</Text>
+            <View style={styles.badgeGitBranch}>
+              <GitBranch size={10} color="#818CF8" style={{ marginRight: 3 }} />
+              <Text style={styles.badgeGitBranchText}>main</Text>
             </View>
           </View>
 
-          {/* Visual Branch Diagram */}
-          <View style={styles.gitVisualContainer}>
-            <Svg width="100%" height={26} viewBox="0 0 100 26">
-              <Line x1="5" y1="13" x2="95" y2="13" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-              <Path d="M 25 13 Q 48 3 70 13" fill="none" stroke="#A78BFA" strokeWidth="1.5" />
-              <Circle cx="12" cy="13" r="3" fill="#10B981" />
-              <Circle cx="25" cy="13" r="2" fill="#FFFFFF" />
-              <Circle cx="48" cy="7" r="2.5" fill="#A78BFA" />
-              <Circle cx="70" cy="13" r="2.5" fill="#00E5FF" />
-            </Svg>
-            <Text style={styles.gitStatusBadgeText}>✓ Branch synchronized</Text>
+          {/* Terminal Box */}
+          <View style={styles.phoneTerminalBox}>
+            <View style={styles.phoneTerminalHeader}>
+              <View style={styles.phoneTerminalDots}>
+                <View style={[styles.terminalDot, { backgroundColor: '#EF4444' }]} />
+                <View style={[styles.terminalDot, { backgroundColor: '#F59E0B' }]} />
+                <View style={[styles.terminalDot, { backgroundColor: '#10B981' }]} />
+              </View>
+              <Text style={styles.phoneTerminalTitle}>sh — cloudcode</Text>
+            </View>
+            <View style={styles.phoneTerminalBody}>
+              <Text style={styles.phoneTermLine}>
+                <Text style={{ color: '#818CF8' }}>$ </Text>git checkout -b feat/auth
+              </Text>
+              <Text style={styles.phoneTermLineDim}>Switched to branch 'feat/auth'</Text>
+              <Text style={styles.phoneTermLine}>
+                <Text style={{ color: '#818CF8' }}>$ </Text>git commit -am "add jwt"
+              </Text>
+              <Text style={styles.phoneTermLineGreen}>[feat/auth 9a2b8e] commit success</Text>
+            </View>
+          </View>
+
+          {/* Action indicator */}
+          <View style={styles.phoneActionIndicator}>
+            <CheckCircle size={12} color="#10B981" />
+            <Text style={styles.phoneActionIndicatorText}>Branch auto-synced with remote</Text>
           </View>
         </View>
       </MobilePhoneMock>
@@ -292,42 +319,48 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen4Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
-          <Text style={styles.miniHeader}>LIVE PREVIEW</Text>
-
-          {/* Faux Web Browser Screen */}
-          <View style={styles.miniBrowserWindow}>
-            <View style={styles.miniBrowserAddressBar}>
-              <Lock size={6} color="#10B981" style={{ marginRight: 2 }} />
-              <Text style={styles.miniBrowserUrlText}>my-app.cloudcode.live</Text>
+        <View style={styles.phoneScreenContent}>
+          {/* Top Header */}
+          <View style={styles.phoneHeader}>
+            <Text style={styles.phoneHeaderTitle}>Live Preview</Text>
+            <View style={styles.badgeStatusGreen}>
+              <Text style={styles.badgeStatusGreenText}>Online</Text>
             </View>
-            <View style={styles.miniBrowserContent}>
-              <Text style={styles.browserTitleText}>Traffic Analytics</Text>
+          </View>
+
+          {/* Browser Address Bar */}
+          <View style={styles.phoneBrowserBox}>
+            <View style={styles.phoneBrowserAddressBar}>
+              <Lock size={8} color="#10B981" style={{ marginRight: 4 }} />
+              <Text style={styles.phoneBrowserUrl}>my-app.cloudcode.live</Text>
+            </View>
+            
+            <View style={styles.phoneBrowserBody}>
+              <Text style={styles.phoneBrowserTitle}>Dashboard Analytics</Text>
               
               {/* Svg Graph */}
-              <Svg width="100%" height={22} viewBox="0 0 80 22">
+              <Svg width="100%" height={32} viewBox="0 0 100 32">
                 <Path
-                  d="M 0 16 Q 20 5 40 13 T 80 6"
+                  d="M 0 24 C 20 8, 40 32, 60 12 C 80 -4, 100 16, 120 16"
                   fill="none"
-                  stroke="#00E5FF"
-                  strokeWidth="1.5"
+                  stroke="#10B981"
+                  strokeWidth="2"
                 />
                 <Path
-                  d="M 0 16 Q 20 5 40 13 T 80 6 L 80 22 L 0 22 Z"
-                  fill="rgba(0, 229, 255, 0.08)"
+                  d="M 0 24 C 20 8, 40 32, 60 12 C 80 -4, 100 16, 120 16 L 120 32 L 0 32 Z"
+                  fill="rgba(16, 185, 129, 0.08)"
                 />
               </Svg>
 
-              <View style={styles.browserStatsRow}>
-                <View style={styles.browserStatBox}>
-                  <Text style={styles.browserStatVal}>12.4k</Text>
-                  <Text style={styles.browserStatLbl}>visits</Text>
+              <View style={styles.phoneBrowserMetrics}>
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricCardVal}>99.9%</Text>
+                  <Text style={styles.metricCardLbl}>Uptime</Text>
                 </View>
-                <View style={styles.browserStatBox}>
-                  <Text style={styles.browserStatVal}>99.9%</Text>
-                  <Text style={styles.browserStatLbl}>uptime</Text>
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricCardVal}>42 ms</Text>
+                  <Text style={styles.metricCardLbl}>Latency</Text>
                 </View>
               </View>
             </View>
@@ -344,32 +377,47 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
 export const Screen5Illustration = ({ active = false }: { active?: boolean }) => {
   return (
     <View style={styles.showcaseWrapper}>
-      {/* Bezel-less Mobile Phone (Styled with dark internal content to pop against the light screen background) */}
       <MobilePhoneMock isDarkInner={true}>
-        <View style={[styles.screenContentCentered, { paddingTop: 28 }]}>
-          <Text style={styles.miniHeader}>DASHBOARD</Text>
-          
-          <View style={styles.summaryDashboardMock}>
-            <View style={styles.summaryDashboardHeader}>
-              <CheckCircle size={10} color="#10B981" />
-              <Text style={styles.summaryDashboardTitle}>Workspace Configured</Text>
+        <View style={styles.phoneScreenContent}>
+          {/* Top Header */}
+          <View style={styles.phoneHeader}>
+            <Text style={styles.phoneHeaderTitle}>Overview</Text>
+            <View style={styles.badgeStatusGreen}>
+              <Text style={styles.badgeStatusGreenText}>Connected</Text>
             </View>
-            
-            <View style={styles.summaryMetricsGrid}>
-              <View style={styles.summaryMetricItem}>
-                <Text style={styles.summaryMetricVal}>4</Text>
-                <Text style={styles.summaryMetricLbl}>Runtimes</Text>
+          </View>
+
+          {/* Summary Dashboard Mock */}
+          <View style={styles.phoneDashboardMock}>
+            <View style={styles.phoneDashboardHeader}>
+              <CheckCircle size={12} color="#10B981" />
+              <Text style={styles.phoneDashboardTitle}>All Systems Operational</Text>
+            </View>
+
+            <View style={styles.phoneDashboardMetrics}>
+              <View style={styles.dashMetricItem}>
+                <Text style={styles.dashMetricVal}>3</Text>
+                <Text style={styles.dashMetricLbl}>Services</Text>
               </View>
-              <View style={styles.summaryMetricItem}>
-                <Text style={styles.summaryMetricVal}>2</Text>
-                <Text style={styles.summaryMetricLbl}>Containers</Text>
+              <View style={styles.dashMetricItem}>
+                <Text style={styles.dashMetricVal}>2.4 GB</Text>
+                <Text style={styles.dashMetricLbl}>Storage</Text>
+              </View>
+              <View style={styles.dashMetricItem}>
+                <Text style={styles.dashMetricVal}>1</Text>
+                <Text style={styles.dashMetricLbl}>Preview</Text>
               </View>
             </View>
 
-            <View style={styles.editorLineTextSmallContainer}>
-              <Text style={styles.editorLineTextSmall}>· Node.js v20 (active)</Text>
-              <Text style={styles.editorLineTextSmall}>· PostgreSQL (ready)</Text>
-              <Text style={styles.editorLineTextSmall}>· Secure TLS tunnel (OK)</Text>
+            <View style={styles.dashStatusList}>
+              <View style={styles.dashStatusRow}>
+                <Server size={10} color="#10B981" />
+                <Text style={styles.dashStatusText}>Node.js v20 (online)</Text>
+              </View>
+              <View style={styles.dashStatusRow}>
+                <Globe size={10} color="#10B981" />
+                <Text style={styles.dashStatusText}>Database (operational)</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -498,373 +546,393 @@ const styles = StyleSheet.create({
     width: width - 48,
     zIndex: 5,
   },
-  pulseLogoContainerLarge: {
-    width: 130,
-    height: 130,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginBottom: 20,
+
+  // NEW MOCKUP STYLES: Top-aligned modern layouts
+  phoneScreenContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    backgroundColor: '#05070B',
   },
-  logoAuraLarge: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0, 229, 255, 0.08)',
-    zIndex: -1,
-  },
-  editorGlassCard: {
-    width: 270,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  editorGlassHeader: {
+  mockStatusBar: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-    paddingBottom: 6,
-    marginBottom: 8,
-  },
-  editorGlassTitle: {
-    fontSize: 8,
-    color: 'rgba(255, 255, 255, 0.4)',
-    fontFamily: 'Inter_500Medium',
-    marginLeft: 6,
-  },
-  editorGlassBody: {
-    gap: 4,
-  },
-  editorLineTextLarge: {
-    fontSize: 7.5,
-    color: '#F8FAFC',
-    fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 12,
-  },
-  // Screen 0 Previews
-  miniHeader: {
-    fontSize: 8,
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: 1.5,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  pulseLogoContainer: {
-    width: 90,
-    height: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginVertical: 6,
-  },
-  logoAura: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 229, 255, 0.1)',
-    zIndex: -1,
-  },
-  miniEditorMock: {
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
-    padding: 8,
-    marginTop: 12,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  editorLineText: {
-    fontSize: 7,
-    color: '#E2E8F0',
-    fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 10,
-    marginBottom: 3,
-  },
-  keywordColor: {
-    color: '#F472B6',
-  },
-  stringColor: {
-    color: '#34D399',
-  },
-  // Screen 1 Previews
-  containerStatusList: {
-    width: '100%',
-    gap: 6,
-    marginVertical: 10,
-  },
-  containerStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
-    padding: 8,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  logoContainerSmall: {
-    width: 20,
     height: 20,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 10,
   },
-  containerRowTitle: {
-    fontSize: 8,
-    color: '#FFFFFF',
+  mockTime: {
+    color: '#E2E8F0',
+    fontSize: 10,
     fontFamily: 'Inter_600SemiBold',
   },
-  containerRowDesc: {
-    fontSize: 6.5,
-    color: 'rgba(255,255,255,0.4)',
+  mockSignalGroup: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+    marginRight: 4,
+  },
+  mockSignalBar: {
+    width: 2.5,
+    height: 4,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 0.5,
+  },
+  phoneHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  phoneHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontFamily: 'Inter_700Bold',
+  },
+  badgeActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 99,
+  },
+  badgeActiveText: {
+    color: '#10B981',
+    fontSize: 8,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  badgeGitBranch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeGitBranchText: {
+    color: '#818CF8',
+    fontSize: 8,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  badgeStatusGreen: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeStatusGreenText: {
+    color: '#10B981',
+    fontSize: 8,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  phoneCardList: {
+    gap: 8,
+    marginBottom: 12,
+  },
+  phoneItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F172A',
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 0.8,
+    borderRadius: 10,
+    padding: 8.5,
+  },
+  phoneItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  phoneItemIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  phoneItemTitle: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  phoneItemSubtitle: {
+    color: '#64748B',
+    fontSize: 8,
     fontFamily: 'Inter_400Regular',
     marginTop: 1,
   },
-  statusIndicator: {
+  phoneStatusDotGreen: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginLeft: 4,
+    backgroundColor: '#10B981',
   },
-  miniInfraFooter: {
+  phoneResourceStats: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
+    gap: 8,
+    backgroundColor: '#0F172A',
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 0.8,
+    borderRadius: 10,
+    padding: 10,
   },
-  infraStatsText: {
-    fontSize: 6,
-    color: 'rgba(255, 255, 255, 0.35)',
-    fontFamily: 'JetBrainsMono_400Regular',
+  statBoxCol: {
+    flex: 1,
   },
-  // Screen 2 Previews
-  chatContainer: {
-    width: '100%',
+  statBoxLabel: {
+    color: '#64748B',
+    fontSize: 7,
+    fontFamily: 'Inter_500Medium',
+    letterSpacing: 0.5,
+  },
+  statBoxValue: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
+    marginTop: 2,
+  },
+
+  // AI Composer UI
+  phoneChatList: {
     gap: 10,
-    marginTop: 6,
   },
-  chatBubbleUser: {
+  phoneChatUserBubble: {
     alignSelf: 'flex-end',
     backgroundColor: '#6366F1',
-    borderRadius: 8,
+    borderRadius: 10,
     borderBottomRightRadius: 2,
-    padding: 8,
+    padding: 10,
     maxWidth: '85%',
   },
-  chatTextUser: {
-    fontSize: 7.5,
+  phoneChatUserText: {
     color: '#FFFFFF',
+    fontSize: 9.5,
     fontFamily: 'Inter_500Medium',
+    lineHeight: 13,
   },
-  chatBubbleAi: {
+  phoneChatAiCard: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
-    borderBottomLeftRadius: 2,
-    padding: 8,
-    borderWidth: 0.5,
+    backgroundColor: '#0F172A',
     borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 0.8,
+    borderRadius: 10,
+    borderBottomLeftRadius: 2,
+    padding: 10,
     width: '95%',
   },
-  chatTextAi: {
-    fontSize: 7,
-    color: 'rgba(255,255,255,0.8)',
+  phoneChatAiText: {
+    color: '#E2E8F0',
+    fontSize: 9,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 9.5,
+    lineHeight: 13.5,
   },
-  miniCheckList: {
-    marginTop: 8,
-    gap: 4,
-  },
-  miniCheckRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  miniCheckText: {
-    fontSize: 6.5,
-    color: '#A7F3D0',
-    fontFamily: 'Inter_600SemiBold',
-  },
-  spinningIndicatorContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Screen 3 Previews
-  miniTerminalWindow: {
-    width: '100%',
-    backgroundColor: '#020617',
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
+  phoneAiSeparator: {
+    height: 0.8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     marginVertical: 8,
   },
-  miniTerminalHeader: {
+  phoneAiTaskList: {
+    gap: 5,
+  },
+  phoneAiTaskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  phoneAiTaskTextDone: {
+    color: '#A7F3D0',
+    fontSize: 8,
+    fontFamily: 'Inter_500Medium',
+  },
+  phoneAiTaskTextActive: {
+    color: '#00E5FF',
+    fontSize: 8,
+    fontFamily: 'Inter_500Medium',
+  },
+
+  // Terminal & Git UI
+  phoneTerminalBox: {
+    backgroundColor: '#020617',
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 0.8,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  phoneTerminalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#0F172A',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderBottomWidth: 0.8,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  phoneTerminalDots: {
+    flexDirection: 'row',
+    gap: 4.5,
   },
   terminalDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginRight: 3,
+    width: 5.5,
+    height: 5.5,
+    borderRadius: 2.75,
   },
-  terminalTitleText: {
-    fontSize: 6,
-    color: 'rgba(255,255,255,0.4)',
+  phoneTerminalTitle: {
+    color: '#64748B',
+    fontSize: 7.5,
     fontFamily: 'Inter_500Medium',
-    marginLeft: 4,
+    marginLeft: 10,
   },
-  miniTerminalBody: {
-    padding: 8,
-    gap: 4,
+  phoneTerminalBody: {
+    padding: 10,
+    gap: 4.5,
   },
-  terminalTextLine: {
-    fontSize: 6,
-    color: '#E2E8F0',
+  phoneTermLine: {
+    color: '#F8FAFC',
+    fontSize: 8.5,
     fontFamily: 'JetBrainsMono_400Regular',
+    lineHeight: 12,
   },
-  terminalTextLineSuccess: {
-    fontSize: 6,
+  phoneTermLineDim: {
+    color: '#64748B',
+    fontSize: 8,
+    fontFamily: 'JetBrainsMono_400Regular',
+    lineHeight: 12.5,
+  },
+  phoneTermLineGreen: {
     color: '#10B981',
+    fontSize: 8,
     fontFamily: 'JetBrainsMono_400Regular',
+    lineHeight: 12.5,
   },
-  gitVisualContainer: {
-    width: '100%',
+  phoneActionIndicator: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
-  },
-  gitStatusBadgeText: {
-    fontSize: 6,
-    color: 'rgba(255,255,255,0.45)',
-    fontFamily: 'Inter_500Medium',
-    marginTop: 3,
-  },
-  // Screen 4 Previews
-  miniBrowserWindow: {
-    width: '100%',
-    backgroundColor: '#030712',
+    gap: 6.5,
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
     borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-    marginVertical: 6,
+    padding: 8,
   },
-  miniBrowserAddressBar: {
+  phoneActionIndicatorText: {
+    color: '#A7F3D0',
+    fontSize: 8.5,
+    fontFamily: 'Inter_600SemiBold',
+  },
+
+  // Browser Preview UI
+  phoneBrowserBox: {
+    backgroundColor: '#020617',
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 0.8,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  phoneBrowserAddressBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#111827',
-    paddingVertical: 4,
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#0F172A',
+    paddingVertical: 5,
+    borderBottomWidth: 0.8,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  miniBrowserUrlText: {
-    fontSize: 5.5,
-    color: 'rgba(255,255,255,0.45)',
+  phoneBrowserUrl: {
+    color: '#64748B',
+    fontSize: 8,
     fontFamily: 'Inter_400Regular',
   },
-  miniBrowserContent: {
-    padding: 8,
+  phoneBrowserBody: {
+    padding: 12,
   },
-  browserTitleText: {
-    fontSize: 7,
+  phoneBrowserTitle: {
     color: '#10B981',
+    fontSize: 9.5,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 5,
-  },
-  browserStatsRow: {
-    flexDirection: 'row',
-    gap: 5,
-    marginTop: 8,
-  },
-  browserStatBox: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 4,
-    padding: 4,
-    alignItems: 'center',
-  },
-  browserStatVal: {
-    fontSize: 8,
-    color: '#FFFFFF',
-    fontFamily: 'Inter_700Bold',
-  },
-  browserStatLbl: {
-    fontSize: 5,
-    color: 'rgba(255,255,255,0.3)',
-    textTransform: 'uppercase',
-  },
-  // Screen 5 Previews
-  summaryDashboardMock: {
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: 10,
-    marginVertical: 6,
-  },
-  summaryDashboardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    paddingBottom: 6,
     marginBottom: 8,
   },
-  summaryDashboardTitle: {
-    fontSize: 7.5,
+  phoneBrowserMetrics: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 10,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+    borderRadius: 6,
+    padding: 6,
+    alignItems: 'center',
+  },
+  metricCardVal: {
     color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'Inter_700Bold',
+  },
+  metricCardLbl: {
+    color: '#64748B',
+    fontSize: 6.5,
+    fontFamily: 'Inter_500Medium',
+    marginTop: 1,
+  },
+
+  // Final Overview UI
+  phoneDashboardMock: {
+    backgroundColor: '#0F172A',
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 0.8,
+    borderRadius: 10,
+    padding: 10,
+  },
+  phoneDashboardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderBottomWidth: 0.8,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    paddingBottom: 8,
+    marginBottom: 10,
+  },
+  phoneDashboardTitle: {
+    color: '#FFFFFF',
+    fontSize: 10.5,
     fontFamily: 'Inter_600SemiBold',
   },
-  summaryMetricsGrid: {
+  phoneDashboardMetrics: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 10,
   },
-  summaryMetricItem: {
+  dashMetricItem: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.02)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 4,
-    padding: 5,
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 6,
+    padding: 6,
     alignItems: 'center',
   },
-  summaryMetricVal: {
-    fontSize: 10,
+  dashMetricVal: {
     color: '#00E5FF',
+    fontSize: 11,
     fontFamily: 'Inter_700Bold',
   },
-  summaryMetricLbl: {
-    fontSize: 6,
-    color: 'rgba(255,255,255,0.4)',
+  dashMetricLbl: {
+    color: '#64748B',
+    fontSize: 7,
     fontFamily: 'Inter_500Medium',
+    marginTop: 1.5,
   },
-  editorLineTextSmallContainer: {
-    gap: 3,
+  dashStatusList: {
+    gap: 6,
   },
-  editorLineTextSmall: {
-    fontSize: 6,
-    color: 'rgba(255,255,255,0.5)',
-    fontFamily: 'JetBrainsMono_400Regular',
+  dashStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dashStatusText: {
+    color: '#E2E8F0',
+    fontSize: 8.5,
+    fontFamily: 'Inter_500Medium',
   },
 })
