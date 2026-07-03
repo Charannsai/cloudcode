@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
   phoneScreenContent: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 36,
     backgroundColor: '#05070B',
   },
   mockStatusBar: {
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     height: 20,
-    marginTop: 20,
+    marginTop: 0,
     marginBottom: 10,
   },
   mockTime: {
