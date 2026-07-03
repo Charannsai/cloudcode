@@ -98,17 +98,20 @@ export const MobilePhoneMock = ({ children, isDarkInner = true }: { children: Re
     <View style={[
       styles.phoneFrame,
       {
-        borderColor: isDark ? '#1E293B' : '#E2E8F0',
-        backgroundColor: isDark ? '#090D16' : '#FFFFFF',
+        borderColor: isDark ? '#2A3244' : '#C8CDD5',
+        backgroundColor: isDark ? '#111827' : '#F1F3F5',
       }
     ]}>
-      {/* Notch / Dynamic Island */}
+      {/* Dynamic Island */}
       <View style={styles.dynamicIsland} />
-      
-      {/* Reflective Sheen Highlights */}
-      <View style={styles.reflectionOverlay} />
 
-      {/* Internal Phone Screen Container */}
+      {/* Top edge metallic highlight */}
+      <View style={styles.topEdgeHighlight} />
+
+      {/* Side button (power) */}
+      <View style={styles.sideButton} />
+
+      {/* Internal Phone Screen */}
       <View style={[styles.screenInner, { backgroundColor: isDarkInner ? '#05070B' : '#FAFAFA' }]}>
         {children}
       </View>
@@ -376,48 +379,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  // Mobile Phone Mock frame — large size, pushed down so only top half visible
+  // Mobile Phone Mock frame — realistic thin-bezel design
   phoneFrame: {
     width: 290,
     height: 520,
-    borderRadius: 38,
-    borderWidth: 4,
-    padding: 0,
+    borderRadius: 42,
+    borderWidth: 2.5,
+    padding: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
     position: 'absolute',
-    bottom: -160,
+    bottom: -120,
     zIndex: 5,
   },
   dynamicIsland: {
     position: 'absolute',
-    top: 12,
+    top: 14,
     left: '50%',
-    marginLeft: -32,
-    width: 64,
-    height: 13,
-    borderRadius: 6.5,
+    marginLeft: -42,
+    width: 84,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: '#000000',
     zIndex: 99,
   },
-  reflectionOverlay: {
+  topEdgeHighlight: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    pointerEvents: 'none',
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 1,
+    zIndex: 98,
+  },
+  sideButton: {
+    position: 'absolute',
+    right: -3,
+    top: 120,
+    width: 3,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
     zIndex: 98,
   },
   screenInner: {
     flex: 1,
-    borderRadius: 33,
+    borderRadius: 38,
     overflow: 'hidden',
   },
   screenContentCentered: {
