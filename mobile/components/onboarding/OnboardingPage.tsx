@@ -97,14 +97,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'visible',
   },
-  // Positioned at page level — covers from ~55% of screen down to ~78%
-  // This is the zone where the phone bottom meets the text area
+  // Positioned at page level — covers from the phone's midsection down past the text
   pageFadeOverlay: {
     position: 'absolute',
-    top: height * 0.52,
+    top: height * 0.42,
     left: 0,
     right: 0,
-    height: height * 0.26,
+    height: height * 0.36,
     zIndex: 8,
   },
   textWrapper: {
