@@ -50,7 +50,7 @@ const CLOUD_PATH = "M744.133 448.718L745.663 450.478C749.573 448.638 756.023 442
 // -------------------------------------------------------------
 // Helper Component: Soft Ambient Background Glow
 // -------------------------------------------------------------
-const AmbientGlow = ({ color, isDark = true }: { color: string; isDark?: boolean }) => {
+export const AmbientGlow = ({ color, isDark = true }: { color: string; isDark?: boolean }) => {
   const bg = isDark ? '#05070B' : '#FAFAFA'
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -70,7 +70,7 @@ const AmbientGlow = ({ color, isDark = true }: { color: string; isDark?: boolean
 // -------------------------------------------------------------
 // Helper Component: Bottom Fading Gradient Overlay (Fades bottom half)
 // -------------------------------------------------------------
-const BottomFadeOverlay = ({ isDark = true }: { isDark?: boolean }) => {
+export const BottomFadeOverlay = ({ isDark = true }: { isDark?: boolean }) => {
   const bg = isDark ? '#05070B' : '#FAFAFA'
   return (
     <View style={styles.fadeOverlayContainer} pointerEvents="none">
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 10,
     position: 'absolute',
-    bottom: 10, // Centered/pushed down slightly, drawing behind the absolute textWrapper
+    bottom: -130, // Centered/pushed down slightly, drawing behind the absolute textWrapper
     zIndex: 5,    // Above the floating cards, below the bottom fade overlay
   },
   dynamicIsland: {
@@ -466,11 +466,11 @@ const styles = StyleSheet.create({
   // Bottom Fade Gradient container overlay (Deep fade covering the bottom half of the phone)
   fadeOverlayContainer: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -130,
     left: 0,
     right: 0,
-    height: 220, // Tall fade overlay
-    zIndex: 8,   // Placed above phoneFrame (5) to fade out the bottom device half
+    height: 240,
+    zIndex: 8,
   },
   // Welcome Screen (No Mobile Frame) Styles
   welcomeCenterContent: {
