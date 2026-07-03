@@ -57,7 +57,7 @@ const AmbientGlow = ({ color, isDark = true }: { color: string; isDark?: boolean
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Svg style={StyleSheet.absoluteFill}>
         <Defs>
-          <RadialGradient id="radialGlow" cx="50%" cy="40%" rx="48%" ry="48%">
+          <RadialGradient id="radialGlow" cx="50%" cy="30%" rx="48%" ry="48%">
             <Stop offset="0%" stopColor={color} stopOpacity={isDark ? 0.32 : 0.2} />
             <Stop offset="100%" stopColor={bg} stopOpacity={0} />
           </RadialGradient>
@@ -69,7 +69,7 @@ const AmbientGlow = ({ color, isDark = true }: { color: string; isDark?: boolean
 }
 
 // -------------------------------------------------------------
-// Helper Component: Bottom Fading Gradient Overlay
+// Helper Component: Bottom Fading Gradient Overlay (Fades bottom half)
 // -------------------------------------------------------------
 const BottomFadeOverlay = ({ isDark = true }: { isDark?: boolean }) => {
   const bg = isDark ? '#05070B' : '#FAFAFA'
@@ -79,7 +79,7 @@ const BottomFadeOverlay = ({ isDark = true }: { isDark?: boolean }) => {
         <Defs>
           <LinearGradient id="fadeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0%" stopColor={bg} stopOpacity={0} />
-            <Stop offset="45%" stopColor={bg} stopOpacity={0.6} />
+            <Stop offset="35%" stopColor={bg} stopOpacity={0.5} />
             <Stop offset="100%" stopColor={bg} stopOpacity={1} />
           </LinearGradient>
         </Defs>
@@ -238,46 +238,46 @@ export const Screen0Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Purple Glow Behind Phone */}
       <AmbientGlow color="#8B5CF6" />
 
-      {/* Floating Cards Popup & Hover (Layered behind phone) */}
+      {/* Floating Cards Popup & Hover (Layered behind phone, positioned fully outside) */}
       <FloatingCard
         active={active}
         delay={0}
-        x={-120}
-        y={-70}
+        x={-135}
+        y={-100}
         icon={<Sparkles size={16} color="#C084FC" />}
         label="AI Composer"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={120}
-        y={-80}
+        x={135}
+        y={-105}
         icon={<Box size={16} color="#60A5FA" />}
         label="Containers"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-125}
-        y={15}
+        x={-145}
+        y={10}
         icon={<Terminal size={16} color="#34D399" />}
         label="Remote Shell"
       />
       <FloatingCard
         active={active}
         delay={450}
-        x={125}
-        y={25}
+        x={145}
+        y={20}
         icon={<Globe size={16} color="#F59E0B" />}
         label="Live Preview"
       />
 
       {/* Main Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={[styles.screenContentCentered, { padding: 12 }]}>
+        <View style={[styles.screenContentCentered, { padding: 14, paddingTop: 24 }]}>
           <Text style={styles.miniHeader}>CLOUDCODE</Text>
           <Animated.View style={[styles.pulseLogoContainer, logoAnimatedStyle]}>
-            <Svg width={64} height={64} viewBox="0 0 874 552">
+            <Svg width={72} height={72} viewBox="0 0 874 552">
               <Path
                 d={CLOUD_PATH}
                 fill="none"
@@ -310,43 +310,43 @@ export const Screen1Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Teal Glow Behind Phone */}
       <AmbientGlow color="#0D9488" />
 
-      {/* Floating Cards (Runtimes - Layered behind phone) */}
+      {/* Floating Cards (Runtimes - Layered behind phone, positioned fully outside) */}
       <FloatingCard
         active={active}
         delay={0}
-        x={-120}
-        y={-70}
+        x={-135}
+        y={-100}
         icon={<DockerLogo />}
         label="Docker Dev"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={120}
-        y={-80}
+        x={135}
+        y={-105}
         icon={<ReactLogo />}
         label="Node.js"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-125}
-        y={15}
+        x={-145}
+        y={10}
         icon={<PythonLogo />}
         label="Python 3"
       />
       <FloatingCard
         active={active}
         delay={450}
-        x={125}
-        y={25}
+        x={145}
+        y={20}
         icon={<TypeScriptLogo />}
         label="TypeScript"
       />
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={styles.screenContentCentered}>
+        <View style={[styles.screenContentCentered, { paddingTop: 24 }]}>
           <Text style={styles.miniHeader}>CONTAINERS</Text>
           
           <View style={styles.containerStatusList}>
@@ -409,43 +409,43 @@ export const Screen2Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Indigo Glow Behind Phone */}
       <AmbientGlow color="#6366F1" />
 
-      {/* Floating Cards (AI Models - Layered behind phone) */}
+      {/* Floating Cards (AI Models - Layered behind phone, positioned fully outside) */}
       <FloatingCard
         active={active}
         delay={0}
-        x={-120}
-        y={-70}
+        x={-135}
+        y={-100}
         icon={<ClaudeLogo />}
         label="Claude 3.5"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={120}
-        y={-80}
+        x={135}
+        y={-105}
         icon={<OpenAILogo />}
         label="GPT-4o"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-125}
-        y={15}
+        x={-145}
+        y={10}
         icon={<GeminiLogo />}
         label="Gemini Flash"
       />
       <FloatingCard
         active={active}
         delay={450}
-        x={125}
-        y={25}
+        x={145}
+        y={20}
         icon={<DeepSeekLogo />}
         label="DeepSeek"
       />
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={styles.screenContentCentered}>
+        <View style={[styles.screenContentCentered, { paddingTop: 24 }]}>
           <Text style={styles.miniHeader}>AI COMPOSER</Text>
 
           <View style={styles.chatContainer}>
@@ -494,43 +494,43 @@ export const Screen3Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Blue Glow Behind Phone */}
       <AmbientGlow color="#2563EB" />
 
-      {/* Floating Cards (Git/Terminal - Layered behind phone) */}
+      {/* Floating Cards (Git/Terminal - Layered behind phone, positioned fully outside) */}
       <FloatingCard
         active={active}
         delay={0}
-        x={-120}
-        y={-70}
+        x={-135}
+        y={-100}
         icon={<Terminal size={16} color="#00E5FF" />}
         label="Remote Shell"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={120}
-        y={-80}
+        x={135}
+        y={-105}
         icon={<GitBranch size={16} color="#A78BFA" />}
         label="Branching"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-125}
-        y={15}
+        x={-145}
+        y={10}
         icon={<Lock size={16} color="#34D399" />}
         label="Secrets"
       />
       <FloatingCard
         active={active}
         delay={450}
-        x={125}
-        y={25}
+        x={145}
+        y={20}
         icon={<CheckCircle size={16} color="#60A5FA" />}
         label="PR Verified"
       />
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={styles.screenContentCentered}>
+        <View style={[styles.screenContentCentered, { paddingTop: 24 }]}>
           <Text style={styles.miniHeader}>WORKFLOWS</Text>
 
           {/* Terminal Console Mock */}
@@ -578,43 +578,43 @@ export const Screen4Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Emerald Glow Behind Phone */}
       <AmbientGlow color="#059669" />
 
-      {/* Floating Cards (SSL / Previews - Layered behind phone) */}
+      {/* Floating Cards (SSL / Previews - Layered behind phone, positioned fully outside) */}
       <FloatingCard
         active={active}
         delay={0}
-        x={-120}
-        y={-70}
+        x={-135}
+        y={-100}
         icon={<Shield size={16} color="#34D399" />}
         label="TLS Tunnel"
       />
       <FloatingCard
         active={active}
         delay={150}
-        x={120}
-        y={-80}
+        x={135}
+        y={-105}
         icon={<ExternalLink size={16} color="#00E5FF" />}
         label="Live URL"
       />
       <FloatingCard
         active={active}
         delay={300}
-        x={-125}
-        y={15}
+        x={-145}
+        y={10}
         icon={<Lock size={16} color="#A78BFA" />}
         label="SSL Secure"
       />
       <FloatingCard
         active={active}
         delay={450}
-        x={125}
-        y={25}
+        x={145}
+        y={20}
         icon={<Server size={16} color="#F59E0B" />}
         label="Edge Deploy"
       />
 
       {/* Bezel-less Mobile Phone */}
       <MobilePhoneMock>
-        <View style={styles.screenContentCentered}>
+        <View style={[styles.screenContentCentered, { paddingTop: 24 }]}>
           <Text style={styles.miniHeader}>LIVE PREVIEW</Text>
 
           {/* Faux Web Browser Screen */}
@@ -670,12 +670,12 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       {/* Soft Gray/Slate Glow Behind Phone - Adapts to Light Mode background */}
       <AmbientGlow color="#64748B" isDark={false} />
 
-      {/* Floating Cards (Light Mode styled cards since Screen 5 background is light - Layered behind phone) */}
+      {/* Floating Cards (Light Mode styled cards since Screen 5 background is light - Layered behind phone, positioned fully outside) */}
       <FloatingCard
         active={active}
         delay={0}
-        x={-120}
-        y={-70}
+        x={-135}
+        y={-100}
         icon={<CheckCircle size={16} color="#10B981" />}
         label="Workspace Ready"
         isDarkTheme={false}
@@ -683,8 +683,8 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={150}
-        x={120}
-        y={-80}
+        x={135}
+        y={-105}
         icon={<Code size={16} color="#0F172A" />}
         label="GitHub Auth"
         isDarkTheme={false}
@@ -692,8 +692,8 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={300}
-        x={-125}
-        y={15}
+        x={-145}
+        y={10}
         icon={<Box size={16} color="#3B82F6" />}
         label="Cloud Box"
         isDarkTheme={false}
@@ -701,8 +701,8 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
       <FloatingCard
         active={active}
         delay={450}
-        x={125}
-        y={25}
+        x={145}
+        y={20}
         icon={<Sparkles size={16} color="#8B5CF6" />}
         label="Start Coding"
         isDarkTheme={false}
@@ -710,7 +710,7 @@ export const Screen5Illustration = ({ active = false }: { active?: boolean }) =>
 
       {/* Bezel-less Mobile Phone (Styled with dark internal content to pop against the light screen background) */}
       <MobilePhoneMock isDarkInner={true}>
-        <View style={styles.screenContentCentered}>
+        <View style={[styles.screenContentCentered, { paddingTop: 24 }]}>
           <Text style={styles.miniHeader}>DASHBOARD</Text>
           
           <View style={styles.summaryDashboardMock}>
@@ -756,30 +756,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  // Mobile Phone Mock frame - larger and cut off at the bottom
+  // Mobile Phone Mock frame - giant size, positioned to crop exactly the bottom half
   phoneFrame: {
-    width: 160,
-    height: 285,
-    borderRadius: 30,
-    borderWidth: 6,
-    padding: 4,
+    width: 220,
+    height: 380,
+    borderRadius: 36,
+    borderWidth: 8,
+    padding: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
     position: 'absolute',
-    bottom: -65, // Positioned so bottom half is out of bounding box and gets faded
-    zIndex: 5,  // Above the floating cards, below the bottom fade overlay
+    bottom: -190, // Pushed exactly half-way down (380 / 2 = 190)
+    zIndex: 5,    // Above the floating cards, below the bottom fade overlay
   },
   dynamicIsland: {
     position: 'absolute',
-    top: 7,
+    top: 12,
     left: '50%',
-    marginLeft: -25,
-    width: 50,
-    height: 11,
-    borderRadius: 5.5,
+    marginLeft: -32,
+    width: 64,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: '#000000',
     zIndex: 99,
   },
@@ -789,30 +789,30 @@ const styles = StyleSheet.create({
     left: 0,
     width: '100%',
     height: '100%',
-    borderRadius: 24,
-    borderWidth: 1.2,
+    borderRadius: 28,
+    borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     pointerEvents: 'none',
     zIndex: 98,
   },
   screenInner: {
     flex: 1,
-    borderRadius: 22,
+    borderRadius: 26,
     overflow: 'hidden',
   },
   screenContentCentered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10,
-    paddingTop: 16,
+    padding: 14,
+    paddingTop: 28,
   },
-  // Floating popup cards positioned behind the phone
+  // Floating popup cards positioned behind the phone (compact 70x70 size)
   floatingCardContainer: {
     position: 'absolute',
-    width: 76,
-    height: 76,
-    borderRadius: 16,
+    width: 70,
+    height: 70,
+    borderRadius: 14,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -826,31 +826,31 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 6,
+    padding: 4,
   },
   floatingCardIconWrapper: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   floatingCardLabel: {
-    fontSize: 8,
+    fontSize: 7.5,
     textAlign: 'center',
-    lineHeight: 10,
+    lineHeight: 9.5,
     letterSpacing: -0.1,
   },
-  // Bottom Fade Gradient container overlay
+  // Bottom Fade Gradient container overlay (Deep fade covering the bottom half of the phone)
   fadeOverlayContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
-    zIndex: 8, // Placed above phoneFrame (5) to fade out the bottom of the device
+    height: 180, // Taller fade overlay to cover the bottom half of the phone
+    zIndex: 8,   // Placed above phoneFrame (5) to fade out the bottom device half
   },
   // Screen 0 Previews
   miniHeader: {
