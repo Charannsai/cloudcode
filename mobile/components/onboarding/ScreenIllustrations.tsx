@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 10,
     position: 'absolute',
-    bottom: -180,
+    bottom: -240,
     zIndex: 5,
   },
   dynamicIsland: {
