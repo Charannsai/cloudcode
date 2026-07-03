@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useProjectsStore } from './projects'
 import { useUIStore } from './ui'
 
+const sessionActiveThreads: Record<string, string> = {}
+
 const uuidv4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -72,6 +74,7 @@ interface AIState {
   // Stateful & Non-blocking Approval actions
   submitApproval: (approvalId: string, action: 'approve' | 'reject') => Promise<void>
   loadStatefulConversation: (runId: string) => Promise<void>
+  syncSessionProjectChat: (projectId: string) => Promise<void>
 }
 
 export const useAIStore = create<AIState>((set, get) => ({
@@ -98,6 +101,7 @@ export const useAIStore = create<AIState>((set, get) => ({
       threadId = uuidv4()
       set({ currentThreadId: threadId })
     }
+    sessionActiveThreads[projectId] = threadId
 
     let updatedUserMessages = [...get().messages]
     const isResume = text === ''
@@ -345,6 +349,7 @@ export const useAIStore = create<AIState>((set, get) => ({
   loadConversation: async (threadId) => {
     const thread = get().savedConversations.find(t => t.id === threadId)
     if (thread) {
+      sessionActiveThreads[thread.projectId] = thread.id
       set({
         messages: thread.messages,
         currentThreadId: thread.id,
@@ -375,6 +380,10 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   startNewChat: () => {
+    const activeProject = get().activeProjectId
+    if (activeProject) {
+      delete sessionActiveThreads[activeProject]
+    }
     set({ messages: [], currentStreamText: '', currentToolCalls: [], currentThreadId: null })
   },
 
