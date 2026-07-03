@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 10,
     position: 'absolute',
-    bottom: -130, // Pushed down so exactly the bottom part of the screen is hidden inside overflow-clipped container
+    bottom: 40, // Centered/pushed down slightly, drawing behind the absolute textWrapper
     zIndex: 5,    // Above the floating cards, below the bottom fade overlay
   },
   dynamicIsland: {
@@ -845,10 +845,10 @@ const styles = StyleSheet.create({
   // Bottom Fade Gradient container overlay (Deep fade covering the bottom half of the phone)
   fadeOverlayContainer: {
     position: 'absolute',
-    bottom: -130,
+    bottom: 0,
     left: 0,
     right: 0,
-    height: 240,
+    height: 180,
     zIndex: 8,
   },
   // Screen 0 Previews
