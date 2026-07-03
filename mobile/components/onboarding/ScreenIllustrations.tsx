@@ -94,6 +94,7 @@ export const BottomFadeOverlay = ({ isDark = true }: { isDark?: boolean }) => {
 // -------------------------------------------------------------
 export const MobilePhoneMock = ({ children, isDarkInner = true }: { children: React.ReactNode; isDarkInner?: boolean }) => {
   const { isDark } = useAppTheme()
+  const btnColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'
   return (
     <View style={[
       styles.phoneFrame,
@@ -108,8 +109,17 @@ export const MobilePhoneMock = ({ children, isDarkInner = true }: { children: Re
       {/* Top edge metallic highlight */}
       <View style={styles.topEdgeHighlight} />
 
-      {/* Side button (power) */}
-      <View style={styles.sideButton} />
+      {/* Left side: Mute toggle switch */}
+      <View style={[styles.muteToggle, { backgroundColor: btnColor }]} />
+
+      {/* Left side: Volume Up */}
+      <View style={[styles.volumeUp, { backgroundColor: btnColor }]} />
+
+      {/* Left side: Volume Down */}
+      <View style={[styles.volumeDown, { backgroundColor: btnColor }]} />
+
+      {/* Right side: Power button */}
+      <View style={[styles.powerButton, { backgroundColor: btnColor }]} />
 
       {/* Internal Phone Screen */}
       <View style={[styles.screenInner, { backgroundColor: isDarkInner ? '#05070B' : '#FAFAFA' }]}>
@@ -381,9 +391,9 @@ const styles = StyleSheet.create({
   },
   // Mobile Phone Mock frame — realistic thin-bezel design
   phoneFrame: {
-    width: 290,
-    height: 520,
-    borderRadius: 42,
+    width: 320,
+    height: 580,
+    borderRadius: 46,
     borderWidth: 2.5,
     padding: 4,
     shadowColor: '#000',
@@ -392,44 +402,75 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
     position: 'absolute',
-    bottom: -120,
+    bottom: -160,
     zIndex: 5,
   },
   dynamicIsland: {
     position: 'absolute',
-    top: 14,
+    top: 16,
     left: '50%',
-    marginLeft: -42,
-    width: 84,
-    height: 22,
-    borderRadius: 11,
+    marginLeft: -46,
+    width: 92,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#000000',
     zIndex: 99,
   },
   topEdgeHighlight: {
     position: 'absolute',
     top: 0,
-    left: 20,
-    right: 20,
+    left: 24,
+    right: 24,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 1,
     zIndex: 98,
   },
-  sideButton: {
+  // Left side buttons
+  muteToggle: {
     position: 'absolute',
-    right: -3,
-    top: 120,
-    width: 3,
-    height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    left: -3.5,
+    top: 100,
+    width: 3.5,
+    height: 24,
+    borderTopLeftRadius: 2,
+    borderBottomLeftRadius: 2,
+    zIndex: 98,
+  },
+  volumeUp: {
+    position: 'absolute',
+    left: -3.5,
+    top: 142,
+    width: 3.5,
+    height: 42,
+    borderTopLeftRadius: 2,
+    borderBottomLeftRadius: 2,
+    zIndex: 98,
+  },
+  volumeDown: {
+    position: 'absolute',
+    left: -3.5,
+    top: 196,
+    width: 3.5,
+    height: 42,
+    borderTopLeftRadius: 2,
+    borderBottomLeftRadius: 2,
+    zIndex: 98,
+  },
+  // Right side button
+  powerButton: {
+    position: 'absolute',
+    right: -3.5,
+    top: 150,
+    width: 3.5,
+    height: 52,
     borderTopRightRadius: 2,
     borderBottomRightRadius: 2,
     zIndex: 98,
   },
   screenInner: {
     flex: 1,
-    borderRadius: 38,
+    borderRadius: 42,
     overflow: 'hidden',
   },
   screenContentCentered: {
