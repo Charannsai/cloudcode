@@ -536,14 +536,40 @@ interface Props {
   projectId: string
 }
 
+function splitReasoningAndChecklist(text: string) {
+  const lines = text.split('\n')
+  const reasoningLines: string[] = []
+  const checklistLines: string[] = []
+
+  for (const line of lines) {
+    const isChecklistItem = line.trim().startsWith('- [ ]') || 
+                           line.trim().startsWith('- [x]') || 
+                           line.trim().startsWith('* [ ]') || 
+                           line.trim().startsWith('* [x]') ||
+                           line.trim().startsWith('[ ]') ||
+                           line.trim().startsWith('[x]')
+    if (isChecklistItem) {
+      checklistLines.push(line)
+    } else {
+      reasoningLines.push(line)
+    }
+  }
+
+  return {
+    reasoning: reasoningLines.join('\n').trim(),
+    checklist: checklistLines.join('\n').trim()
+  }
+}
+
 function ModelMessageBody({ msg, colors, isDark, mdStyles }: { msg: ChatMessage; colors: any; isDark: boolean; mdStyles: any }) {
   const [expanded, setExpanded] = useState(false)
 
-  const hasTools = msg.toolCalls && msg.toolCalls.length > 0
-  const hasChecklist = msg.text.includes('[ ]') || msg.text.includes('[x]')
-  const isThoughtOnly = hasTools || hasChecklist
+  const { reasoning, checklist } = splitReasoningAndChecklist(msg.text)
 
-  if (!isThoughtOnly) {
+  const hasTools = msg.toolCalls && msg.toolCalls.length > 0
+  const hasChecklist = checklist.length > 0
+
+  if (!hasTools && !hasChecklist) {
     return (
       <Markdown style={mdStyles}>
         {msg.text}
@@ -556,51 +582,61 @@ function ModelMessageBody({ msg, colors, isDark, mdStyles }: { msg: ChatMessage;
 
   return (
     <View style={{ width: '100%' }}>
-      <TouchableOpacity
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-          paddingVertical: 6,
-          paddingHorizontal: 10,
-          backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-          borderRadius: 6,
-          borderWidth: 0.5,
-          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-          marginBottom: 8,
-          alignSelf: 'flex-start'
-        }}
-        onPress={() => setExpanded(!expanded)}
-        activeOpacity={0.7}
-      >
-        <Sparkles size={12} color={isDark ? '#A78BFA' : '#8B5CF6'} />
-        <Text style={{
-          color: colors.textSecondary,
-          fontSize: 12,
-          fontFamily: 'Inter_500Medium'
-        }}>
-          {headerLabel}
-        </Text>
-        <ChevronDown
-          size={12}
-          color={colors.textSecondary}
-          style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }}
-        />
-      </TouchableOpacity>
+      {(hasTools || reasoning !== '') && (
+        <>
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              paddingVertical: 6,
+              paddingHorizontal: 10,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              borderRadius: 6,
+              borderWidth: 0.5,
+              borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+              marginBottom: 8,
+              alignSelf: 'flex-start'
+            }}
+            onPress={() => setExpanded(!expanded)}
+            activeOpacity={0.7}
+          >
+            <Sparkles size={12} color={isDark ? '#A78BFA' : '#8B5CF6'} />
+            <Text style={{
+              color: colors.textSecondary,
+              fontSize: 12,
+              fontFamily: 'Inter_500Medium'
+            }}>
+              {headerLabel}
+            </Text>
+            <ChevronDown
+              size={12}
+              color={colors.textSecondary}
+              style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }}
+            />
+          </TouchableOpacity>
 
-      {expanded && msg.text.trim() !== '' && (
-        <View style={{
-          backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
-          borderColor: isDark ? '#21262D' : '#D8DEE4',
-          borderWidth: 0.8,
-          borderRadius: 8,
-          padding: 12,
-          marginBottom: 8,
-        }}>
-          <Markdown style={mdStyles}>
-            {msg.text}
-          </Markdown>
-        </View>
+          {expanded && reasoning !== '' && (
+            <View style={{
+              backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
+              borderColor: isDark ? '#21262D' : '#D8DEE4',
+              borderWidth: 0.8,
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 8,
+            }}>
+              <Markdown style={mdStyles}>
+                {reasoning}
+              </Markdown>
+            </View>
+          )}
+        </>
+      )}
+
+      {checklist !== '' && (
+        <Markdown style={mdStyles}>
+          {checklist}
+        </Markdown>
       )}
 
       {msg.toolCalls && msg.toolCalls.length > 0 && (
@@ -637,11 +673,12 @@ function StreamingMessageBody({
     return () => clearInterval(timer)
   }, [])
 
-  const hasTools = toolCalls.length > 0
-  const hasChecklist = streamText.includes('[ ]') || streamText.includes('[x]')
-  const isThoughtOnly = hasTools || hasChecklist
+  const { reasoning, checklist } = splitReasoningAndChecklist(streamText)
 
-  if (!isThoughtOnly && streamText.trim() !== '') {
+  const hasTools = toolCalls.length > 0
+  const hasChecklist = checklist.length > 0
+
+  if (!hasTools && !hasChecklist) {
     return (
       <Markdown style={mdStyles}>
         {streamText}
@@ -651,51 +688,61 @@ function StreamingMessageBody({
 
   return (
     <View style={{ width: '100%' }}>
-      <TouchableOpacity
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-          paddingVertical: 6,
-          paddingHorizontal: 10,
-          backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-          borderRadius: 6,
-          borderWidth: 0.5,
-          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-          marginBottom: 8,
-          alignSelf: 'flex-start'
-        }}
-        onPress={() => setExpanded(!expanded)}
-        activeOpacity={0.7}
-      >
-        <ActivityIndicator size="small" color={isDark ? '#A78BFA' : '#8B5CF6'} style={{ width: 12, height: 12 }} />
-        <Text style={{
-          color: colors.textSecondary,
-          fontSize: 12,
-          fontFamily: 'Inter_500Medium'
-        }}>
-          Thinking for {elapsed} seconds...
-        </Text>
-        <ChevronDown
-          size={12}
-          color={colors.textSecondary}
-          style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }}
-        />
-      </TouchableOpacity>
+      {(hasTools || reasoning !== '') && (
+        <>
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              paddingVertical: 6,
+              paddingHorizontal: 10,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              borderRadius: 6,
+              borderWidth: 0.5,
+              borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+              marginBottom: 8,
+              alignSelf: 'flex-start'
+            }}
+            onPress={() => setExpanded(!expanded)}
+            activeOpacity={0.7}
+          >
+            <ActivityIndicator size="small" color={isDark ? '#A78BFA' : '#8B5CF6'} style={{ width: 12, height: 12 }} />
+            <Text style={{
+              color: colors.textSecondary,
+              fontSize: 12,
+              fontFamily: 'Inter_500Medium'
+            }}>
+              Thinking for {elapsed} seconds...
+            </Text>
+            <ChevronDown
+              size={12}
+              color={colors.textSecondary}
+              style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }}
+            />
+          </TouchableOpacity>
 
-      {expanded && streamText.trim() !== '' && (
-        <View style={{
-          backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
-          borderColor: isDark ? '#21262D' : '#D8DEE4',
-          borderWidth: 0.8,
-          borderRadius: 8,
-          padding: 12,
-          marginBottom: 8,
-        }}>
-          <Markdown style={mdStyles}>
-            {streamText}
-          </Markdown>
-        </View>
+          {expanded && reasoning !== '' && (
+            <View style={{
+              backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
+              borderColor: isDark ? '#21262D' : '#D8DEE4',
+              borderWidth: 0.8,
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 8,
+            }}>
+              <Markdown style={mdStyles}>
+                {reasoning}
+              </Markdown>
+            </View>
+          )}
+        </>
+      )}
+
+      {checklist !== '' && (
+        <Markdown style={mdStyles}>
+          {checklist}
+        </Markdown>
       )}
 
       {toolCalls.length > 0 && (
