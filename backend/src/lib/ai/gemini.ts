@@ -803,7 +803,7 @@ export async function* executeLangGraph(
   );
 
   const runCommand = tool(
-    async ({ command }) => {
+    async ({ command }, config?: any) => {
       if (!activeContainerId || activeContainerId === 'global' || activeContainerId === 'none') {
         return JSON.stringify({ error: "No active workspace selected. You must first use list_workspaces to see your projects, and select_workspace to activate one." })
       }
@@ -821,11 +821,13 @@ export async function* executeLangGraph(
       }
 
       // 2. STATELESS MODE BLOCKING APPROVAL (STALLS GRAPH THREAD IN MEMORY)
-      const approvalId = uuidv4()
+      const approvalId = config?.runId || config?.run_id || uuidv4()
       const approvalPromise = new Promise<boolean>((resolve) => {
-        (global as any).pendingCommands.set(approvalId, { 
-          resolve: (global as any).pendingCommands.get(approvalId)?.resolve || (() => {}), 
-          command 
+        const existing = (global as any).pendingCommands.get(approvalId)
+        ;(global as any).pendingCommands.set(approvalId, { 
+          resolve, 
+          command,
+          ...(existing || {})
         })
       })
 
@@ -998,11 +1000,11 @@ export async function* executeLangGraph(
 
         // For stateless run_command, hook up approvalId so blocking works
         if (name === 'run_command' && !runCtx) {
-          const approvalId = uuidv4()
+          const approvalId = toolCallId
           args.approvalId = approvalId
-          const existingResolve = (global as any).pendingCommands.get(approvalId)?.resolve
+          const existing = (global as any).pendingCommands.get(approvalId)
           ;(global as any).pendingCommands.set(approvalId, { 
-            resolve: existingResolve || (() => {}), 
+            resolve: existing?.resolve || (() => {}), 
             command: args.command 
           })
           yield {

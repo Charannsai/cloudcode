@@ -414,7 +414,22 @@ export const useAIStore = create<AIState>((set, get) => ({
         return m
       })
 
-      set({ messages: updatedMessages })
+      // Also update the active streaming tool calls if currently streaming
+      const updatedCurrentToolCalls = get().currentToolCalls.map((tc) => {
+        if (tc.name === 'run_command' && tc.args?.approvalId === approvalId) {
+          return {
+            ...tc,
+            status: action === 'approve' ? 'done' : ('error' as any),
+            result: action === 'approve' ? 'Running command...' : 'Command execution rejected by user.'
+          }
+        }
+        return tc
+      })
+
+      set({ 
+        messages: updatedMessages,
+        currentToolCalls: updatedCurrentToolCalls
+      })
 
       // Save updated conversation locally
       const threadId = get().currentThreadId
@@ -428,8 +443,8 @@ export const useAIStore = create<AIState>((set, get) => ({
         }
       }
 
-      // 3. If approved, automatically trigger chat resumption to stream results
-      if (action === 'approve') {
+      // 3. If approved and not already streaming, trigger chat resumption to stream results
+      if (action === 'approve' && !get().isStreaming) {
         await get().sendMessage("", get().activeProjectId || 'global', get().pinnedFile || undefined)
       }
     } catch (err) {
