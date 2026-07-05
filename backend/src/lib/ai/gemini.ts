@@ -1151,3 +1151,23 @@ export async function* chatWithAnthropic(
     yield chunk
   }
 }
+
+/**
+ * Backward-compatible wrapper for Groq
+ */
+export async function* chatWithGroq(
+  messages: { role: 'user' | 'model' | 'assistant'; text: string }[],
+  containerId: string,
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
+  customApiKey?: string
+): AsyncGenerator<StreamChunk> {
+  const mappedHistory = messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    text: m.text
+  }))
+
+  const generator = executeLangGraph('groq', mappedHistory, containerId, context, customApiKey)
+  for await (const chunk of generator) {
+    yield chunk
+  }
+}
