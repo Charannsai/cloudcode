@@ -13,6 +13,7 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
   const customOpenaiKey = await AsyncStorage.getItem('custom_openai_key')
   const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
+  const customGroqKey = await AsyncStorage.getItem('custom_groq_key')
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
@@ -23,6 +24,7 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
       ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
       ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
       ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
+      ...(byokEnabled === 'true' && customGroqKey ? { 'x-groq-key': customGroqKey } : {}),
       ...(options.headers as Record<string, string> || {}),
     },
   })
@@ -307,6 +309,7 @@ export const api = {
       const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
       const customOpenaiKey = await AsyncStorage.getItem('custom_openai_key')
       const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
+      const customGroqKey = await AsyncStorage.getItem('custom_groq_key')
 
       return new Promise<void>((resolve, reject) => {
         let aborted = false
@@ -319,6 +322,7 @@ export const api = {
             ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
             ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
             ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
+            ...(byokEnabled === 'true' && customGroqKey ? { 'x-groq-key': customGroqKey } : {}),
           },
           body: JSON.stringify({ newMessage, openFile }),
         })
@@ -393,6 +397,7 @@ export const api = {
       const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
       const customOpenaiKey = await AsyncStorage.getItem('custom_openai_key')
       const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
+      const customGroqKey = await AsyncStorage.getItem('custom_groq_key')
 
       return new Promise<void>((resolve, reject) => {
         let aborted = false
@@ -405,6 +410,7 @@ export const api = {
             ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
             ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
             ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
+            ...(byokEnabled === 'true' && customGroqKey ? { 'x-groq-key': customGroqKey } : {}),
           },
           body: JSON.stringify({ projectId, messages, openFile, model, threadId }),
         })
