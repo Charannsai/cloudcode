@@ -111,6 +111,7 @@ export default function SettingsScreen() {
   const [showGeminiKey, setShowGeminiKey] = useState(false)
   const [showOpenaiKey, setShowOpenaiKey] = useState(false)
   const [showAnthropicKey, setShowAnthropicKey] = useState(false)
+  const [showGroqKey, setShowGroqKey] = useState(false)
 
   // Profile settings state
   const [profileName, setProfileName] = useState('')
@@ -130,6 +131,7 @@ export default function SettingsScreen() {
   const [initialGeminiKey, setInitialGeminiKey] = useState('')
   const [initialOpenaiKey, setInitialOpenaiKey] = useState('')
   const [initialAnthropicKey, setInitialAnthropicKey] = useState('')
+  const [initialGroqKey, setInitialGroqKey] = useState('')
 
   // Track settings tab screen focus state
   useFocusEffect(
@@ -610,8 +612,9 @@ export default function SettingsScreen() {
   const [customGeminiKey, setCustomGeminiKey] = useState('')
   const [customOpenaiKey, setCustomOpenaiKey] = useState('')
   const [customAnthropicKey, setCustomAnthropicKey] = useState('')
+  const [customGroqKey, setCustomGroqKey] = useState('')
   const [savingAiKeys, setSavingAiKeys] = useState(false)
-  const [selectedByokModel, setSelectedByokModel] = useState<'gemini' | 'openai' | 'anthropic'>('gemini')
+  const [selectedByokModel, setSelectedByokModel] = useState<'gemini' | 'openai' | 'anthropic' | 'groq'>('gemini')
 
   const fetchRuntimesData = useCallback(async (silent = false) => {
     const shouldShowLoader = !silent || runtimesList.length === 0
@@ -722,6 +725,7 @@ export default function SettingsScreen() {
       const cachedGemini = await AsyncStorage.getItem('custom_gemini_key')
       const cachedOpenai = await AsyncStorage.getItem('custom_openai_key')
       const cachedAnthropic = await AsyncStorage.getItem('custom_anthropic_key')
+      const cachedGroq = await AsyncStorage.getItem('custom_groq_key')
 
       if (cachedByok) {
         setByokMode(cachedByok === 'true')
@@ -738,6 +742,10 @@ export default function SettingsScreen() {
       if (cachedAnthropic) {
         setCustomAnthropicKey(cachedAnthropic)
         setInitialAnthropicKey(cachedAnthropic)
+      }
+      if (cachedGroq) {
+        setCustomGroqKey(cachedGroq)
+        setInitialGroqKey(cachedGroq)
       }
 
       // 3. Load Profile settings
@@ -2643,10 +2651,12 @@ export default function SettingsScreen() {
       await AsyncStorage.setItem('custom_gemini_key', customGeminiKey.trim())
       await AsyncStorage.setItem('custom_openai_key', customOpenaiKey.trim())
       await AsyncStorage.setItem('custom_anthropic_key', customAnthropicKey.trim())
+      await AsyncStorage.setItem('custom_groq_key', customGroqKey.trim())
       setInitialByokMode(byokMode)
       setInitialGeminiKey(customGeminiKey.trim())
       setInitialOpenaiKey(customOpenaiKey.trim())
       setInitialAnthropicKey(customAnthropicKey.trim())
+      setInitialGroqKey(customGroqKey.trim())
       showModal('Success', 'AI Key and Provider settings saved successfully.', 'success')
     } catch (err) {
       showModal('Error', (err as Error).message, 'error')
@@ -2683,6 +2693,7 @@ export default function SettingsScreen() {
       await AsyncStorage.removeItem('custom_gemini_key')
       await AsyncStorage.removeItem('custom_openai_key')
       await AsyncStorage.removeItem('custom_anthropic_key')
+      await AsyncStorage.removeItem('custom_groq_key')
 
       // Sign out
       await signOut()
