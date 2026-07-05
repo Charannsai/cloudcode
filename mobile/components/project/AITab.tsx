@@ -955,6 +955,10 @@ export default function AITab({ projectId }: Props) {
         showAlert('API Key Required', 'Please configure your Claude 4.6 Opus API key in Settings to use this model.', 'warning')
         return
       }
+      if (selectedModel === 'groq' && !hasGroqKey) {
+        showAlert('API Key Required', 'Please configure your Groq API key in Settings to use this model.', 'warning')
+        return
+      }
     }
 
     const prompt = inputText.trim()
@@ -1042,7 +1046,7 @@ export default function AITab({ projectId }: Props) {
             activeOpacity={0.7}
           >
             <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_600SemiBold' }}>
-              {selectedModel === 'gemini' ? 'Gemini 3.5 Flash' : selectedModel === 'openai' ? 'ChatGPT 5.5' : 'Claude 4.6 Opus'}
+              {selectedModel === 'gemini' ? 'Gemini 3.5 Flash' : selectedModel === 'openai' ? 'ChatGPT 5.5' : selectedModel === 'anthropic' ? 'Claude 4.6 Opus' : 'Groq'}
             </Text>
             <ChevronDown size={11} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -1176,6 +1180,46 @@ export default function AITab({ projectId }: Props) {
               <Lock size={13} color={colors.textSecondary} />
             ) : (
               selectedModel === 'anthropic' && <Check size={14} color="#9B51E0" />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.inlineModelItem,
+            { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 },
+            selectedModel === 'groq' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+          ]}
+          onPress={() => {
+            if (userTier === 'free' && !isByokActive) {
+              showAlert(
+                'Premium Model Locked',
+                'Groq is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.',
+                'warning'
+              )
+            } else if (isByokActive && !hasGroqKey) {
+              showAlert(
+                'API Key Required',
+                'Please configure your Groq API key in Settings to use this model.',
+                'warning'
+              )
+            } else {
+              setSelectedModel('groq')
+              setModelSelectorVisible(false)
+            }
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Zap size={14} color="#F55036" />
+              <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'groq' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
+                Groq
+              </Text>
+            </View>
+            {(userTier === 'free' && !isByokActive) ? (
+              <Lock size={13} color={colors.textSecondary} />
+            ) : (
+              selectedModel === 'groq' && <Check size={14} color="#F55036" />
             )}
           </View>
         </TouchableOpacity>
