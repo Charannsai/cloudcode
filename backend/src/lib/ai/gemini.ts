@@ -519,7 +519,7 @@ export async function* executeLangGraph(
   modelProvider: 'gemini' | 'openai' | 'anthropic' | 'groq',
   rawMessages: any[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string; userWorkspaces?: { id: string; name: string; status: string }[] },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   let activeContainerId = containerId
@@ -593,14 +593,14 @@ export async function* executeLangGraph(
   
   // Define tools dynamically bound to activeContainerId and contexts
   const createProject = tool(
-    async ({ name, type }) => {
+    async ({ name, setupCommands }) => {
       if (!context?.userId) return JSON.stringify({ error: 'Unauthorized: User context missing' })
       try {
         const resourceCtx = await PlanningGuard.loadContext(context.userId)
         if (resourceCtx.workspacesLimit !== 0 && resourceCtx.workspacesUsed >= resourceCtx.workspacesLimit) {
           return JSON.stringify({ error: `Workspace limit exceeded. You have already used ${resourceCtx.workspacesUsed} out of ${resourceCtx.workspacesLimit} workspaces.` })
         }
-        const project = await createProjectInternal(context.userId, name, type as any)
+        const project = await createProjectInternal(context.userId, name, 'empty')
         
         let projectContainerId: string | null = null
         for (let i = 0; i < 30; i++) {
@@ -615,6 +615,20 @@ export async function* executeLangGraph(
             break
           }
         }
+
+        // Auto-run setup commands to scaffold any tech stack
+        if (projectContainerId && setupCommands && setupCommands.length > 0) {
+          for (const cmd of setupCommands) {
+            try {
+              let output = ''
+              await execInContainer(projectContainerId, ['sh', '-c', `cd /workspace && ${cmd}`], (data) => { output += data })
+            } catch (e) {
+              // Non-fatal: log but continue with remaining commands
+              console.error(`[CreateProject] Setup command failed: ${cmd}`, (e as Error).message)
+            }
+          }
+        }
+
         return JSON.stringify({ success: true, project, container_id: projectContainerId })
       } catch (err) {
         return JSON.stringify({ error: (err as Error).message })
@@ -622,10 +636,10 @@ export async function* executeLangGraph(
     },
     {
       name: 'create_project',
-      description: 'Create a new project/workspace with the given name and template type. Valid templates are "node", "react", "empty", "flask", "fastapi", "rust", "gin", "nextjs".',
+      description: 'Create a new project workspace and optionally scaffold it with shell commands. Always creates an empty workspace first, then runs setupCommands to install any framework/tech stack. Examples: setupCommands=["npx -y create-next-app@latest . --ts --eslint --tailwind --app --use-npm"] or ["npx -y create-vite . --template react-ts", "npm install"] or ["pip install django", "django-admin startproject myapp ."]',
       schema: z.object({
         name: z.string().describe('The name of the project to create'),
-        type: z.enum(['node', 'react', 'empty', 'flask', 'fastapi', 'rust', 'gin', 'nextjs']).describe('The template type'),
+        setupCommands: z.array(z.string()).optional().describe('Shell commands to run inside the workspace to scaffold the project. Runs sequentially without user approval. Use npx -y for npm init scripts.'),
       })
     }
   );
@@ -654,16 +668,45 @@ export async function* executeLangGraph(
     async ({ workspaceIdOrName }) => {
       if (!context?.userId) return JSON.stringify({ error: 'Unauthorized: User context missing' })
       try {
-        // Find project by ID or Name
-        const { data: project } = await supabaseAdmin
+        // 1. Try exact match by ID or Name
+        let { data: project } = await supabaseAdmin
           .from('projects')
           .select('*')
           .eq('user_github_id', context.userId)
           .or(`id.eq.${workspaceIdOrName},name.eq.${workspaceIdOrName}`)
           .maybeSingle()
 
+        // 2. Fallback: case-insensitive + fuzzy partial match
         if (!project) {
-          return JSON.stringify({ error: `Workspace '${workspaceIdOrName}' not found.` })
+          const { data: allProjects } = await supabaseAdmin
+            .from('projects')
+            .select('*')
+            .eq('user_github_id', context.userId)
+
+          if (allProjects && allProjects.length > 0) {
+            const searchLower = workspaceIdOrName.toLowerCase()
+            // Try exact case-insensitive match first
+            project = allProjects.find(p => p.name.toLowerCase() === searchLower) || null
+            // Then try partial/contains match
+            if (!project) {
+              project = allProjects.find(p => 
+                p.name.toLowerCase().includes(searchLower) || 
+                searchLower.includes(p.name.toLowerCase())
+              ) || null
+            }
+          }
+        }
+
+        if (!project) {
+          // Return available workspace names so the AI can self-correct
+          const { data: all } = await supabaseAdmin
+            .from('projects')
+            .select('name, id')
+            .eq('user_github_id', context.userId)
+          return JSON.stringify({ 
+            error: `Workspace '${workspaceIdOrName}' not found.`,
+            available_workspaces: all?.map(p => ({ name: p.name, id: p.id })) || []
+          })
         }
 
         // Auto-wake container if asleep/sleeping
@@ -693,9 +736,9 @@ export async function* executeLangGraph(
     },
     {
       name: 'select_workspace',
-      description: 'Select and activate a project workspace. This will automatically wake up the container if it is sleeping.',
+      description: 'Select and activate a project workspace by name or ID. Supports fuzzy matching (case-insensitive). This will automatically wake up the container if it is sleeping.',
       schema: z.object({
-        workspaceIdOrName: z.string().describe('The ID or Name of the project workspace to activate'),
+        workspaceIdOrName: z.string().describe('The ID or Name of the project workspace to activate. Case-insensitive matching is supported.'),
       }),
     }
   );
@@ -870,17 +913,17 @@ export async function* executeLangGraph(
   const modelWithTools = model.bindTools(tools)
 
   // 4. State Graph Assembly
+  const userWorkspaces = context?.userWorkspaces || []
+  const workspaceListStr = userWorkspaces.length > 0 
+    ? `\n\nThe user has the following workspaces available:\n${userWorkspaces.map(w => `- "${w.name}" (ID: ${w.id}, Status: ${w.status})`).join('\n')}\n` 
+    : ''
+
   const agentNode = async (state: typeof AgentState.State) => {
     const currentMessages = [...state.messages]
     const hasContainer = activeContainerId && activeContainerId !== 'global' && activeContainerId !== 'none'
     const systemPromptText = hasContainer 
       ? SYSTEM_INSTRUCTION 
-      : `You are CloudCode AI — an autonomous coding agent. You can work across any of the user's projects.
-      
-      CORE BEHAVIOR RULES:
-      1. Do NOT invoke any tools (e.g., list_workspaces, select_workspace) for simple greetings, social chit-chat, or general questions that do not require project context (e.g., "Hi", "Hello", "How are you?"). Just respond politely and directly in pure English without using tools.
-      2. Only call list_workspaces or select_workspace if the user explicitly asks to work on their projects, inspect their workspaces, run terminal commands, or perform changes on their code.
-      3. If the user asks you to perform a task that requires a workspace but has not specified which one, do NOT eagerly select a workspace. Instead, ask them politely in pure English which workspace/project they would like to open first.`
+      : SYSTEM_INSTRUCTION + `\n\nYou are currently in GLOBAL mode — no workspace is selected yet. Follow these additional rules:\n1. For simple greetings or general questions ("Hi", "What is a closure?"), respond directly WITHOUT calling any tools.\n2. When the user references a project/workspace by name (even partially), IMMEDIATELY call select_workspace with that name to activate it. Do NOT ask "which workspace" — deduce it from context and act.\n3. If the user asks to work on code but doesn't mention a specific workspace: if they have only ONE workspace, auto-select it. If they have multiple, briefly list them and ask which one.\n4. After selecting a workspace, proceed to execute the user's task completely — read files, edit code, run commands — just like you would inside a project.\n5. If a workspace name doesn't match exactly, select_workspace supports fuzzy matching, so pass what the user said directly.${workspaceListStr}`
 
     const systemMessage = new SystemMessage(systemPromptText + '\n' + capabilityPrompt)
     const response = await modelWithTools.invoke([systemMessage, ...currentMessages])
@@ -937,9 +980,18 @@ export async function* executeLangGraph(
     return { messages: newMessages }
   }
 
+  const MAX_AGENT_ITERATIONS = 15
+
   const shouldContinue = (state: typeof AgentState.State) => {
     const lastMessage = state.messages[state.messages.length - 1]
     const toolCalls = lastMessage.additional_kwargs.tool_calls || (lastMessage as any).tool_calls || []
+    
+    // Circuit breaker: prevent infinite tool-call loops
+    const toolMessages = state.messages.filter(m => m._getType() === 'tool')
+    if (toolMessages.length >= MAX_AGENT_ITERATIONS) {
+      return "end"
+    }
+    
     if (toolCalls.length > 0) {
       return "continue"
     }
