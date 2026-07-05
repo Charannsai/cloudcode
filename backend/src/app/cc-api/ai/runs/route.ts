@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
     const customGeminiKey = req.headers.get('x-gemini-key') || undefined
     const customOpenaiKey = req.headers.get('x-openai-key') || undefined
     const customAnthropicKey = req.headers.get('x-anthropic-key') || undefined
-    const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey)
+    const customGroqKey = req.headers.get('x-groq-key') || undefined
+    const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey || customGroqKey)
 
     const byokEnabledHeader = req.headers.get('x-byok-enabled') === 'true'
     if (byokEnabledHeader) {
@@ -48,6 +49,8 @@ export async function POST(req: NextRequest) {
         missingKeyModel = 'ChatGPT 5.5'
       } else if (model === 'anthropic' && !customAnthropicKey) {
         missingKeyModel = 'Claude 4.6 Opus'
+      } else if (model === 'groq' && !customGroqKey) {
+        missingKeyModel = 'Groq'
       } else if ((model === 'gemini' || !model) && !customGeminiKey) {
         missingKeyModel = 'Gemini 3.5 Flash'
       }
@@ -57,7 +60,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if ((model === 'openai' || model === 'anthropic') && userTier === 'free' && !isBYOK) {
+    if ((model === 'openai' || model === 'anthropic' || model === 'groq') && userTier === 'free' && !isBYOK) {
       return errorResponse(`LIMIT_EXCEEDED: ${model === 'openai' ? 'gpt-4o' : 'Claude Opus 4.6'} is a premium model restricted to Pro and Advanced subscriptions. Please upgrade your billing plan in Settings.`, 403)
     }
 
