@@ -10,7 +10,7 @@ import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
   Shield, Lock, Square, MoreVertical, Plus, Mic, ArrowLeft, Folder,
-  Plug, MessageSquare, Check
+  Plug, MessageSquare, Check, Zap
 } from 'lucide-react-native'
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
@@ -564,6 +564,7 @@ export default function AIScreen() {
   const [hasGeminiKey, setHasGeminiKey] = useState(false)
   const [hasOpenaiKey, setHasOpenaiKey] = useState(false)
   const [hasAnthropicKey, setHasAnthropicKey] = useState(false)
+  const [hasGroqKey, setHasGroqKey] = useState(false)
 
   const [modalConfig, setModalConfig] = useState<{
     visible: boolean
@@ -609,9 +610,11 @@ export default function AIScreen() {
       const geminiKey = await AsyncStorage.getItem('custom_gemini_key')
       const openaiKey = await AsyncStorage.getItem('custom_openai_key')
       const anthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
+      const groqKey = await AsyncStorage.getItem('custom_groq_key')
       setHasGeminiKey(!!(geminiKey && geminiKey.trim()))
       setHasOpenaiKey(!!(openaiKey && openaiKey.trim()))
       setHasAnthropicKey(!!(anthropicKey && anthropicKey.trim()))
+      setHasGroqKey(!!(groqKey && groqKey.trim()))
 
       const billing = await api.billing.status()
       if (billing?.tier?.name) {
@@ -786,6 +789,10 @@ export default function AIScreen() {
         showAlert('API Key Required', 'Please configure your Claude 4.6 Opus API key in Settings to use this model.', 'warning')
         return
       }
+      if (selectedModel === 'groq' && !hasGroqKey) {
+        showAlert('API Key Required', 'Please configure your Groq API key in Settings to use this model.', 'warning')
+        return
+      }
     }
 
     const prompt = inputText.trim()
@@ -859,7 +866,7 @@ export default function AIScreen() {
               activeOpacity={0.7}
             >
               <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_600SemiBold' }}>
-                {selectedModel === 'gemini' ? 'Gemini 3.5 Flash' : selectedModel === 'openai' ? 'ChatGPT 5.5' : 'Claude 4.6 Opus'}
+                {selectedModel === 'gemini' ? 'Gemini 3.5 Flash' : selectedModel === 'openai' ? 'ChatGPT 5.5' : selectedModel === 'anthropic' ? 'Claude 4.6 Opus' : 'Groq'}
               </Text>
               <ChevronDown size={11} color={colors.textSecondary} />
             </TouchableOpacity>
