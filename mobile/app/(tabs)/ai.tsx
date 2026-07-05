@@ -1002,6 +1002,46 @@ export default function AIScreen() {
               )}
             </View>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.inlineModelItem,
+              { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 },
+              selectedModel === 'groq' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+            ]}
+            onPress={() => {
+              if (userTier === 'free' && !isByokActive) {
+                showAlert(
+                  'Premium Model Locked',
+                  'Groq is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.',
+                  'warning'
+                )
+              } else if (isByokActive && !hasGroqKey) {
+                showAlert(
+                  'API Key Required',
+                  'Please configure your Groq API key in Settings to use this model.',
+                  'warning'
+                )
+              } else {
+                setSelectedModel('groq')
+                setModelSelectorVisible(false)
+              }
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Zap size={14} color="#F55036" />
+                <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'groq' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
+                  Groq
+                </Text>
+              </View>
+              {(userTier === 'free' && !isByokActive) ? (
+                <Lock size={13} color={colors.textSecondary} />
+              ) : (
+                selectedModel === 'groq' && <Check size={14} color="#F55036" />
+              )}
+            </View>
+          </TouchableOpacity>
         </AnimatedDropdown>
 
         {/* Action Dropdown Menu */}
