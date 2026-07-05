@@ -102,8 +102,8 @@ export async function executeTool(
         }
 
         const name = args.name as string
-        const type = args.type as any
-        const project = await createProjectInternal(userId, name, type)
+        const setupCommands = args.setupCommands as string[] | undefined
+        const project = await createProjectInternal(userId, name, 'empty')
         
         let projectContainerId: string | null = null
         for (let i = 0; i < 30; i++) {
@@ -119,6 +119,17 @@ export async function executeTool(
           }
           if (updatedProject?.status === 'error') {
             return { success: true, project, container_id: null, message: 'Project created but container failed to provision.' }
+          }
+        }
+
+        // Auto-run setup commands to scaffold any tech stack
+        if (projectContainerId && setupCommands && setupCommands.length > 0) {
+          for (const cmd of setupCommands) {
+            try {
+              await execInContainer(projectContainerId, ['sh', '-c', `cd /workspace && ${cmd}`], () => {})
+            } catch (e) {
+              console.error(`[CreateProject] Setup command failed: ${cmd}`, (e as Error).message)
+            }
           }
         }
         
