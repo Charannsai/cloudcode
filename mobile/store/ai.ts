@@ -379,7 +379,11 @@ export const useAIStore = create<AIState>((set, get) => ({
   checkByokStatus: async () => {
     const byokEnabled = (await AsyncStorage.getItem('byok_enabled')) === 'true'
     const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
-    const byokConfigured = !!(customGeminiKey && customGeminiKey.trim())
+    const customGroqKey = await AsyncStorage.getItem('custom_groq_key')
+    const byokConfigured = !!(
+      (customGeminiKey && customGeminiKey.trim()) ||
+      (customGroqKey && customGroqKey.trim())
+    )
     set({ byokEnabled, byokConfigured })
   },
 
