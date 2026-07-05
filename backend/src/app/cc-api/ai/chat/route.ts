@@ -3,7 +3,7 @@
 import { NextRequest } from 'next/server'
 import { getUserFromRequest, errorResponse } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { chatWithGemini, chatWithOpenAI, chatWithAnthropic, GeminiMessage } from '@/lib/ai/gemini'
+import { chatWithGemini, chatWithOpenAI, chatWithAnthropic, chatWithGroq, GeminiMessage } from '@/lib/ai/gemini'
 import { execInContainer, ensureContainerRunning } from '@/lib/docker'
 
 import { getTierConfig } from '@/lib/tiers'
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   const customGeminiKey = req.headers.get('x-gemini-key') || undefined
   const customOpenaiKey = req.headers.get('x-openai-key') || undefined
   const customAnthropicKey = req.headers.get('x-anthropic-key') || undefined
+  const customGroqKey = req.headers.get('x-groq-key') || undefined
 
   const body = await req.json()
   const { projectId, messages, openFile, model, threadId } = body as {
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     console.error('[AI Chat] Failed to fetch user tier/tokens:', err)
   }
 
-  const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey)
+  const isBYOK = !!(customGeminiKey || customOpenaiKey || customAnthropicKey || customGroqKey)
   const tier = getTierConfig(userTier)
 
   const byokEnabledHeader = req.headers.get('x-byok-enabled') === 'true'
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
       missingKeyModel = 'ChatGPT 5.5'
     } else if (model === 'anthropic' && !customAnthropicKey) {
       missingKeyModel = 'Claude 4.6 Opus'
+    } else if (model === 'groq' && !customGroqKey) {
+      missingKeyModel = 'Groq'
     } else if ((model === 'gemini' || !model) && !customGeminiKey) {
       missingKeyModel = 'Gemini 3.5 Flash'
     }
@@ -104,7 +107,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  if ((model === 'openai' || model === 'anthropic') && userTier === 'free' && !isBYOK) {
+  if ((model === 'openai' || model === 'anthropic' || model === 'groq') && userTier === 'free' && !isBYOK) {
     const encoder = new TextEncoder()
     const errMsg = JSON.stringify({
       type: 'error',
@@ -190,6 +193,8 @@ export async function POST(req: NextRequest) {
       return chatWithOpenAI(threadId ? [] : messages, containerId, context, customOpenaiKey)
     } else if (model === 'anthropic') {
       return chatWithAnthropic(threadId ? [] : messages, containerId, context, customAnthropicKey)
+    } else if (model === 'groq') {
+      return chatWithGroq(threadId ? [] : messages, containerId, context, customGroqKey)
     } else {
       const geminiMessages: GeminiMessage[] = threadId ? [] : messages.map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
