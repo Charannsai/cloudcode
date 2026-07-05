@@ -3261,9 +3261,9 @@ export default function SettingsScreen() {
                   
                   {/* Model Selector */}
                   <View style={{ flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 12, padding: 4, borderWidth: 1, borderColor: colors.border }}>
-                    {(['gemini', 'openai', 'anthropic'] as const).map((m) => {
+                    {(['gemini', 'openai', 'anthropic', 'groq'] as const).map((m) => {
                       const isActive = selectedByokModel === m
-                      const label = m === 'gemini' ? 'Gemini 3.5 Flash' : m === 'openai' ? 'ChatGPT 5.5' : 'Claude 4.6 Opus'
+                      const label = m === 'gemini' ? 'Gemini 3.5 Flash' : m === 'openai' ? 'ChatGPT 5.5' : m === 'anthropic' ? 'Claude 4.6 Opus' : 'Groq'
                       return (
                         <TouchableOpacity
                           key={m}
@@ -3400,6 +3400,42 @@ export default function SettingsScreen() {
                       </View>
                     </View>
                   )}
+
+                  {/* Groq API Key */}
+                  {selectedByokModel === 'groq' && (
+                    <View style={{ gap: 6 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Zap size={14} color="#F55036" />
+                        <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Groq API Key</Text>
+                      </View>
+                      <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.inputBackground }]}>
+                        <TextInput
+                          value={customGroqKey}
+                          onChangeText={setCustomGroqKey}
+                          secureTextEntry={!showGroqKey}
+                          placeholder="Enter Groq API Key..."
+                          placeholderTextColor={colors.textSecondary + '70'}
+                          style={[styles.textInput, { color: colors.text }]}
+                          autoCapitalize="none"
+                          autoComplete="off"
+                          autoCorrect={false}
+                        />
+                        {customGroqKey.length > 0 && (
+                          <TouchableOpacity 
+                            onPress={() => setShowGroqKey(!showGroqKey)}
+                            style={styles.eyeBtn}
+                            activeOpacity={0.7}
+                          >
+                            {showGroqKey ? (
+                              <EyeOff size={16} color={colors.textSecondary} />
+                            ) : (
+                              <Eye size={16} color={colors.textSecondary} />
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  )}
                 </View>
               </>
             )}
@@ -3407,7 +3443,8 @@ export default function SettingsScreen() {
             {(byokMode !== initialByokMode ||
               customGeminiKey.trim() !== initialGeminiKey ||
               customOpenaiKey.trim() !== initialOpenaiKey ||
-              customAnthropicKey.trim() !== initialAnthropicKey) && (
+              customAnthropicKey.trim() !== initialAnthropicKey ||
+              customGroqKey.trim() !== initialGroqKey) && (
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={[styles.primaryBtn, { backgroundColor: colors.primary, marginTop: 8 }]}
