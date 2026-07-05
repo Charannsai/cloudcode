@@ -10,6 +10,7 @@ import { BaseMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage } from
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
 import { ChatOpenAI } from '@langchain/openai'
 import { ChatAnthropic } from '@langchain/anthropic'
+import { ChatGroq } from '@langchain/groq'
 import { Annotation, StateGraph, START, END } from '@langchain/langgraph'
 
 export function estimateTokens(text: string): number {
@@ -53,6 +54,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = 'gemini-2.5-flash'
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
+const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
 
 const SYSTEM_INSTRUCTION = `You are CloudCode AI — an autonomous coding agent embedded in a cloud IDE. You have full access to the user's project files inside a Docker container. You are NOT a chatbot. You are an AGENT.
 
@@ -480,7 +482,7 @@ function rehydrateLangChainHistory(dbSteps: any[]): BaseMessage[] {
 }
 
 function getModelInstance(
-  provider: 'gemini' | 'openai' | 'anthropic',
+  provider: 'gemini' | 'openai' | 'anthropic' | 'groq',
   customApiKey?: string
 ) {
   if (provider === 'openai') {
@@ -493,6 +495,12 @@ function getModelInstance(
     return new ChatAnthropic({
       apiKey: customApiKey || ANTHROPIC_API_KEY,
       modelName: 'claude-3-5-sonnet-latest',
+      temperature: 0.7,
+    })
+  } else if (provider === 'groq') {
+    return new ChatGroq({
+      apiKey: customApiKey || GROQ_API_KEY,
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.7,
     })
   } else {
@@ -508,7 +516,7 @@ function getModelInstance(
  * Core LangGraph Shared Executor
  */
 export async function* executeLangGraph(
-  modelProvider: 'gemini' | 'openai' | 'anthropic',
+  modelProvider: 'gemini' | 'openai' | 'anthropic' | 'groq',
   rawMessages: any[],
   containerId: string,
   context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
