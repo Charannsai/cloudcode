@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const getGenerator = (containerId: string, context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string }) => {
+  const getGenerator = (containerId: string, context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string; userWorkspaces?: { id: string; name: string; status: string }[] }) => {
     if (model === 'openai') {
       return chatWithOpenAI(threadId ? [] : messages, containerId, context, customOpenaiKey)
     } else if (model === 'anthropic') {
