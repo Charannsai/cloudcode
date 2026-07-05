@@ -1161,7 +1161,7 @@ export async function* executeLangGraph(
 export async function* chatWithGemini(
   messages: GeminiMessage[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string; userWorkspaces?: { id: string; name: string; status: string }[] },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const mappedHistory = messages.map(m => ({
@@ -1181,7 +1181,7 @@ export async function* chatWithGemini(
 export async function* chatWithOpenAI(
   messages: { role: 'user' | 'model' | 'assistant'; text: string }[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string; userWorkspaces?: { id: string; name: string; status: string }[] },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const mappedHistory = messages.map(m => ({
@@ -1201,7 +1201,7 @@ export async function* chatWithOpenAI(
 export async function* chatWithAnthropic(
   messages: { role: 'user' | 'model' | 'assistant'; text: string }[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string; userWorkspaces?: { id: string; name: string; status: string }[] },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const mappedHistory = messages.map(m => ({
@@ -1221,7 +1221,7 @@ export async function* chatWithAnthropic(
 export async function* chatWithGroq(
   messages: { role: 'user' | 'model' | 'assistant'; text: string }[],
   containerId: string,
-  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string },
+  context?: { fileTree?: string; openFile?: { path: string; content: string }; userId?: string; runId?: string; userWorkspaces?: { id: string; name: string; status: string }[] },
   customApiKey?: string
 ): AsyncGenerator<StreamChunk> {
   const mappedHistory = messages.map(m => ({
