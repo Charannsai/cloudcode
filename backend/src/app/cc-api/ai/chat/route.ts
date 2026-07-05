@@ -205,12 +205,24 @@ export async function POST(req: NextRequest) {
   }
 
   if (projectId === 'global') {
+    // Pre-fetch user's workspaces so the AI has context in global mode
+    let userWorkspaces: { id: string; name: string; status: string }[] = []
+    try {
+      const { data } = await supabaseAdmin
+        .from('projects')
+        .select('id, name, status')
+        .eq('user_github_id', user.id)
+      userWorkspaces = data || []
+    } catch (e) {
+      console.error('[AI Chat] Failed to pre-fetch workspaces:', e)
+    }
+
     // Stream response using SSE without docker or database checks
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = getGenerator('global', { userId: user.id, runId: threadId })
+          const generator = getGenerator('global', { userId: user.id, runId: threadId, userWorkspaces })
 
           for await (const chunk of generator) {
             const data = JSON.stringify(chunk) + '\n'
