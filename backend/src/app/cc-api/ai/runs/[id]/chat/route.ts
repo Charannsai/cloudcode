@@ -174,11 +174,26 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       }
     }
 
+    // Pre-fetch user workspaces for global mode context
+    let userWorkspaces: { id: string; name: string; status: string }[] = []
+    if (!projectId) {
+      try {
+        const { data } = await supabaseAdmin
+          .from('projects')
+          .select('id, name, status')
+          .eq('user_github_id', user.id)
+        userWorkspaces = data || []
+      } catch (e) {
+        console.error('[Stateful AI Chat] Failed to pre-fetch workspaces:', e)
+      }
+    }
+
     const context = {
       fileTree: fileTree || undefined,
       openFile,
       userId: user.id,
-      runId: run.id
+      runId: run.id,
+      userWorkspaces
     }
 
     // Setup generator
