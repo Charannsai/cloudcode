@@ -1,39 +1,41 @@
+"use client";
+
 import Link from "next/link";
+import { useTheme } from "@/hooks/useTheme";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export default function TermsOfService() {
+  const { theme, mounted, toggleTheme, colors } = useTheme();
+
+  if (!mounted) {
+    return <div className="bg-[#030303] min-h-screen" suppressHydrationWarning />;
+  }
+
   return (
-    <div className="bg-[#030712] text-gray-100 min-h-screen flex flex-col items-center relative overflow-x-hidden font-sans">
+    <div className={`${colors.bg} ${colors.text} min-h-screen flex flex-col items-center relative overflow-x-hidden font-sans transition-colors duration-350`}>
       {/* Background Ambient Glow */}
-      <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.1)_0%,rgba(0,0,0,0)_70%)] pointer-events-none z-0" />
+      {theme === "dark" && (
+        <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.1)_0%,rgba(0,0,0,0)_70%)] pointer-events-none z-0" />
+      )}
 
       {/* Header */}
-      <header className="w-full max-w-5xl px-6 py-6 flex justify-between items-center z-10">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white to-indigo-300 bg-clip-text text-transparent">
-            CloudCode
-          </Link>
-          <span className="text-[10px] uppercase tracking-wider font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">
-            Beta
-          </span>
-        </div>
-        <nav className="flex items-center gap-6">
-          <Link href="/" className="text-sm text-gray-400 hover:text-white transition-colors">
-            Home
-          </Link>
-          <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
-            Privacy
-          </Link>
-        </nav>
-      </header>
+      <Header theme={theme} colors={colors} />
 
       {/* Legal Content */}
       <main className="w-full max-w-3xl px-6 pt-16 pb-32 text-left z-10">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-2 bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent">
+        <h1 className={`text-4xl font-extrabold tracking-tight mb-2 ${
+          theme === "dark" 
+            ? "bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent" 
+            : "text-[#0F1115]"
+        }`}>
           Terms of Service
         </h1>
         <p className="text-xs text-gray-500 mb-12">Last Updated: June 29, 2026</p>
 
-        <div className="space-y-8 text-gray-300 leading-relaxed text-sm">
+        <div className={`space-y-8 leading-relaxed text-sm ${
+          theme === "dark" ? "text-gray-300" : "text-gray-700"
+        }`}>
           <p>
             These Terms of Service ("Terms") constitute a legally binding agreement between you ("User", "you", or "your") and CloudCode, Inc. ("Company", "we", "us", or "our") governing your access to and use of the CloudCode mobile application (the "App"), our website located at https://cloudcode.app, and all related cloud development, container hosting, and artificial intelligence services (collectively, the "Service").
           </p>
@@ -42,7 +44,13 @@ export default function TermsOfService() {
           </p>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">1. Eligibility & Authentication</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              1. Eligibility & Authentication
+            </h2>
             <p className="mb-4">
               To access and use the Service, you must be at least 13 years of age (or the minimum age of digital consent in your country). If you are under 18, you represent that you have received parental or guardian consent to use the Service.
             </p>
@@ -52,7 +60,13 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">2. Acceptable Use of Cloud Sandboxes</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              2. Acceptable Use of Cloud Sandboxes
+            </h2>
             <p className="mb-4">
               CloudCode provides you with isolated, cloud-hosted Linux container environments ("Sandboxes") for software development, compilation, and testing. You are granted a limited, non-transferable, revocable license to use these Sandboxes.
             </p>
@@ -73,7 +87,13 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">3. User Code & Intellectual Property</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              3. User Code & Intellectual Property
+            </h2>
             <p className="mb-4">
               <strong>Ownership:</strong> You retain sole ownership and all intellectual property rights in and to any source code, project files, assets, or repositories that you write, import, compile, or deploy within our Sandboxes. CloudCode claims no ownership, license, or proprietary rights over your code.
             </p>
@@ -83,7 +103,13 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">4. Subscriptions, Resource Limits & Billing</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              4. Subscriptions, Resource Limits & Billing
+            </h2>
             <p className="mb-4">
               Certain subscription tiers provide access to enhanced container resources (such as dedicated CPU cores, persistent SSD storage, or increased RAM limits).
             </p>
@@ -95,13 +121,19 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">5. Account Deletion & Termination</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              5. Account Deletion & Termination
+            </h2>
             <p className="mb-4">
               You can terminate these Terms at any time by permanently deleting your account:
             </p>
             <ul className="list-disc list-inside space-y-1 pl-2 mb-4">
-              <li><strong>In-App:</strong> Under <span className="text-white font-medium">Settings &gt; Profile &gt; Delete Account</span>.</li>
-              <li><strong>Web:</strong> Via our secure <Link href="/delete-account" className="text-indigo-400 underline hover:text-indigo-300">Account Deletion Page</Link>.</li>
+              <li><strong>In-App:</strong> Under <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>Settings &gt; Profile &gt; Delete Account</span>.</li>
+              <li><strong>Web:</strong> Via our secure <Link href="/delete-account" className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 underline font-medium">Account Deletion Page</Link>.</li>
             </ul>
             <p>
               Upon deletion, your user profile, active container instances, workspace files, and billing history will be permanently and irreversibly destroyed. We reserve the right to suspend or terminate your account at our sole discretion, without notice, if you breach these Terms.
@@ -109,39 +141,48 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">6. Disclaimer of Warranties</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              6. Disclaimer of Warranties
+            </h2>
             <p>
               THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, TIMELY, OR ERROR-FREE, OR THAT YOUR WORKSPACE FILES WILL NOT BE SUBJECT TO DATA LOSS. YOU ARE SOLELY RESPONSIBLE FOR MAINTAINING INDEPENDENT BACKUPS OF YOUR SOURCE CODE.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">7. Limitation of Liability</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              7. Limitation of Liability
+            </h2>
             <p>
               TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL CLOUDCODE, INC. OR ITS DIRECTORS, EMPLOYEES, OR PARTNERS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF OR INABILITY TO USE THE SERVICE.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3 border-b border-gray-800/80 pb-2">8. Contact Us</h2>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              8. Contact Us
+            </h2>
             <p>
-              If you have any questions regarding these Terms, please contact us at <span className="text-white font-medium">legal@cloudcode.app</span>.
+              If you have any questions regarding these Terms, please contact us at <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>legal@cloudcode.app</span>.
             </p>
           </section>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto w-full max-w-5xl px-6 py-10 border-t border-gray-900 flex flex-col items-center gap-4 z-10">
-        <div className="flex flex-wrap gap-6 justify-center text-xs text-gray-400">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span className="text-gray-800">•</span>
-          <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-        </div>
-        <p className="text-[11px] text-gray-600 text-center">
-          &copy; {new Date().getFullYear()} CloudCode. All rights reserved. Built for developers.
-        </p>
-      </footer>
+      <Footer theme={theme} colors={colors} toggleTheme={toggleTheme} />
     </div>
   );
 }
