@@ -60,7 +60,7 @@ export function Footer({ theme, colors, toggleTheme }: FooterProps) {
         <img 
           src="/cloudcodelogolight.png" 
           alt="CloudCode" 
-          className="w-full max-w-5xl h-auto object-contain opacity-15 hover:opacity-30 transition-all duration-500"
+          className="w-full max-w-5xl h-12 md:h-20 object-contain opacity-15 hover:opacity-30 transition-all duration-500"
           style={{
             filter: theme === "dark" 
               ? "drop-shadow(1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(-1.5px 0px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px 1.5px 0px rgba(255, 255, 255, 0.15)) drop-shadow(0px -1.5px 0px rgba(255, 255, 255, 0.15))" 
