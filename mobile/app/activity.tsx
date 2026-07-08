@@ -312,7 +312,7 @@ export default function ActivityScreen() {
                             ? (isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)')
                             : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
                           borderWidth: isSelected ? 1.5 : 1,
-                          borderRadius: 12,
+                          borderRadius: 6,
                           padding: 14,
                         }
                       ]}
@@ -462,7 +462,7 @@ export default function ActivityScreen() {
             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
             borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
             borderWidth: 1,
-            borderRadius: 16,
+            borderRadius: 8,
             padding: 18,
             marginTop: 8,
           }
@@ -472,7 +472,7 @@ export default function ActivityScreen() {
               Plan & Quota Limits
             </Text>
             {isByokActive && (
-              <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
+              <View style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
                 <Text style={{ color: '#3FB950', fontSize: 10, fontFamily: 'Inter_700Bold' }}>BYOK Active</Text>
               </View>
             )}
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 1,
   },
   cardTitle: {
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   },
   emptyBox: {
     padding: 32,
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 1,
     borderStyle: 'dashed',
     alignItems: 'center',
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
   runAvatarCircle: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 6,
     borderWidth: 1,
     marginBottom: 12,
   },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 14,
     top: 48,
-    borderRadius: 10,
+    borderRadius: 6,
     borderWidth: 1,
     paddingVertical: 4,
     width: 120,
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 8,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
