@@ -924,23 +924,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
   },
-  healthStrip: {
-    flexDirection: 'row',
+  healthCard: {
     borderRadius: 8,
     borderWidth: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    padding: 14,
   },
-  healthItem: {
+  metricBarBg: {
+    height: 4,
+    borderRadius: 2,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  metricBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  healthGridItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  healthDivider: {
-    width: 1,
-    height: 24,
+    padding: 10,
+    borderRadius: 6,
+    borderWidth: 1,
   },
   avatarWrapper: {
     width: 44,
