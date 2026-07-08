@@ -7,7 +7,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router'
 import { api } from '@/lib/api'
 import { useProjectsStore } from '@/store/projects'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Terminal, Atom, ChevronLeft, Check, Box, Github, Link2, Folder, Globe, Cpu, Flame, Code } from 'lucide-react-native'
+import { Terminal, Atom, ChevronLeft, Check, Box, Github, Link2, Folder, Globe, Cpu, Flame, Code } from '@/components/HugeIconsShim'
 
 type CreationMode = 'template' | 'clone'
 type NodeType = 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs'

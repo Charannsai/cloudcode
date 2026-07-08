@@ -23,7 +23,7 @@ import {
   MoreVertical,
   List,
   Grid,
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import { TextInput } from 'react-native'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')

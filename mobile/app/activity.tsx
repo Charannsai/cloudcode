@@ -6,7 +6,7 @@ import {
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   ArrowLeft, Cpu, Folder, History, Clock, ChevronDown, X, MoreVertical
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'

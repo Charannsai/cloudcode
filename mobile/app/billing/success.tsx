@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { CheckCircle, ArrowRight, ShieldCheck, Mail, CreditCard, Sparkles } from 'lucide-react-native'
+import { CheckCircle, ArrowRight, ShieldCheck, Mail, CreditCard, Sparkles } from '@/components/HugeIconsShim'
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated'
 import { api } from '@/lib/api'
 

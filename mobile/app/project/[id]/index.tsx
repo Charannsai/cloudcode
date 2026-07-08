@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch, Sparkles, GitPullRequest } from 'lucide-react-native'
+import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch, Sparkles, GitPullRequest } from '@/components/HugeIconsShim'
 import Animated, { useAnimatedStyle, withSpring, withTiming, Easing, useSharedValue } from 'react-native-reanimated'
 
 // Lazy-load tab screens

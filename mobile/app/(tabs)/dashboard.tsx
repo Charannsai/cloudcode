@@ -24,7 +24,7 @@ import {
   Settings,
   CreditCard,
   LogOut
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { ProjectIcon, detectProjectTech, getTechColors } from '@/components/ProjectIcon'
