@@ -648,27 +648,76 @@ export default function DashboardScreen() {
 
         {/* System Diagnostics */}
         <Animated.View entering={FadeInDown.delay(100).duration(200)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 10 }]}>System Health</Text>
-          <View style={[styles.healthStrip, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-            {[
-              { label: 'CPU Load', value: `${cpuVal}%`, icon: Cpu },
-              { label: 'Memory', value: `${ramVal}%`, icon: Database },
-              { label: 'Latency', value: `${latVal}ms`, icon: Wifi },
-            ].map((stat, idx) => {
-              const IconComp = stat.icon
-              return (
-                <React.Fragment key={idx}>
-                  <View style={styles.healthItem}>
-                    <IconComp size={13} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                    <View>
-                      <Text style={{ fontSize: 9, fontFamily: 'Inter_500Medium', color: colors.textSecondary }}>{stat.label}</Text>
-                      <Text style={{ fontSize: 13, fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 1 }}>{stat.value}</Text>
-                    </View>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>System Health</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3FB950' }} />
+              <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', color: '#3FB950' }}>Operational</Text>
+            </View>
+          </View>
+          
+          <View style={[styles.healthCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            {/* Top Info Bar: Platform & Uptime */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: cardBorder, paddingBottom: 10, marginBottom: 12 }}>
+              <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>
+                host: {diagnostics?.platform || 'cloud-instance'}
+              </Text>
+              <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>
+                up: {formatUptime(diagnostics?.uptime || 0)}
+              </Text>
+            </View>
+
+            {/* Metrics List */}
+            <View style={{ gap: 12 }}>
+              {/* CPU Load */}
+              <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Cpu size={13} color={colors.textSecondary} />
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter_500Medium', color: colors.text }}>CPU Load</Text>
                   </View>
-                  {idx < 2 && <View style={[styles.healthDivider, { backgroundColor: cardBorder }]} />}
-                </React.Fragment>
-              )
-            })}
+                  <Text style={{ fontSize: 12, fontFamily: 'monospace', color: colors.text, fontWeight: 'bold' }}>{cpuVal}%</Text>
+                </View>
+                <View style={[styles.metricBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                  <View style={[styles.metricBarFill, { width: `${cpuVal}%`, backgroundColor: cpuVal > 80 ? '#EF4444' : colors.text }]} />
+                </View>
+              </View>
+
+              {/* Memory Usage */}
+              <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Database size={13} color={colors.textSecondary} />
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter_500Medium', color: colors.text }}>Memory</Text>
+                  </View>
+                  <Text style={{ fontSize: 12, fontFamily: 'monospace', color: colors.text, fontWeight: 'bold' }}>{ramVal}%</Text>
+                </View>
+                <View style={[styles.metricBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                  <View style={[styles.metricBarFill, { width: `${ramVal}%`, backgroundColor: ramVal > 80 ? '#EF4444' : colors.text }]} />
+                </View>
+              </View>
+
+              {/* Latency & Active Containers Row */}
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                <View style={[styles.healthGridItem, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
+                  <Wifi size={13} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                  <View>
+                    <Text style={{ fontSize: 9, fontFamily: 'Inter_500Medium', color: colors.textSecondary }}>Ping Latency</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 1 }}>{latVal}ms</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.healthGridItem, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
+                  <Box size={13} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                  <View>
+                    <Text style={{ fontSize: 9, fontFamily: 'Inter_500Medium', color: colors.textSecondary }}>Containers</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 1 }}>
+                      {diagnostics?.runningContainers || 0} active
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
           </View>
         </Animated.View>
 
