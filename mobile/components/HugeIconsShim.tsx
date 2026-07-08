@@ -78,7 +78,26 @@ import {
   Settings01Icon,
   HashIcon,
   FileBracesIcon,
-  CssFileIcon
+  CssFileIcon,
+  BotIcon,
+  SquareIcon,
+  PlugIcon,
+  BubbleChatIcon,
+  HardDriveIcon,
+  Clock01Icon,
+  SaveIcon,
+  File02Icon,
+  ExternalLinkIcon,
+  FolderOpenIcon,
+  MinusSignIcon,
+  Upload01Icon,
+  Download01Icon,
+  CircleIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+  CancelCircleIcon,
+  CornerDownRightIcon,
+  SentIcon
 } from '@hugeicons/core-free-icons';
 
 interface ShimProps {
@@ -86,6 +105,9 @@ interface ShimProps {
   color?: string;
   strokeWidth?: number;
   style?: any;
+  opacity?: number;
+  fill?: string;
+  [key: string]: any;
 }
 
 const createShim = (icon: any) => {
@@ -195,3 +217,27 @@ export const Settings01 = createShim(Settings01Icon);
 export const Hash = createShim(HashIcon);
 export const FileJson = createShim(FileBracesIcon);
 export const CssFile = createShim(CssFileIcon);
+
+// New additions from typecheck results
+export const Bot = createShim(BotIcon);
+export const Square = createShim(SquareIcon);
+export const Plug = createShim(PlugIcon);
+export const MessageSquare = createShim(BubbleChatIcon);
+export const Settings = createShim(Settings01Icon);
+export const HardDrive = createShim(HardDriveIcon);
+export const Clock = createShim(Clock01Icon);
+export const Save = createShim(SaveIcon);
+export const FileText = createShim(File02Icon);
+export const Columns = createShim(GridIcon);
+export const ExternalLink = createShim(ExternalLinkIcon);
+export const FolderOpen = createShim(FolderOpenIcon);
+export const Minus = createShim(MinusSignIcon);
+export const Upload = createShim(Upload01Icon);
+export const Download = createShim(Download01Icon);
+export const Circle = createShim(CircleIcon);
+export const Home = createShim(Home01Icon);
+export const Maximize2 = createShim(MaximizeIcon);
+export const Minimize2 = createShim(MinimizeIcon);
+export const XCircle = createShim(CancelCircleIcon);
+export const CornerDownRight = createShim(CornerDownRightIcon);
+export const Send = createShim(SentIcon);
