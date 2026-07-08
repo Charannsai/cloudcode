@@ -65,7 +65,7 @@ export default function OnboardingWizardScreen() {
               styles.card,
               { 
                 borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.95)' : '#FFFFFF' 
+                backgroundColor: isDark ? 'rgba(11, 12, 16, 0.95)' : '#FFFFFF' 
               }
             ]}
           >
@@ -105,10 +105,10 @@ export default function OnboardingWizardScreen() {
               <View style={styles.actions}>
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  style={[styles.primaryBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0E1116' }]}
+                  style={[styles.primaryBtn, { backgroundColor: isDark ? '#FFFFFF' : '#030303' }]}
                   onPress={() => handleConfirm(true)}
                 >
-                  <Text style={[styles.primaryBtnText, { color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                  <Text style={[styles.primaryBtnText, { color: isDark ? '#030303' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
                     Confirm Auto-Install (Recommended)
                   </Text>
                 </TouchableOpacity>
@@ -164,10 +164,10 @@ export default function OnboardingWizardScreen() {
 
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  style={[styles.primaryBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0E1116', marginTop: 16 }]}
+                  style={[styles.primaryBtn, { backgroundColor: isDark ? '#FFFFFF' : '#030303', marginTop: 16 }]}
                   onPress={() => handleConfirm(false)}
                 >
-                  <Text style={[styles.primaryBtnText, { color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
+                  <Text style={[styles.primaryBtnText, { color: isDark ? '#030303' : '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
                     Install Selected Components
                   </Text>
                 </TouchableOpacity>

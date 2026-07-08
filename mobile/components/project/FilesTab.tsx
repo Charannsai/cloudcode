@@ -52,7 +52,7 @@ const FILE_ICON_COLORS: Record<string, string> = {
 
 function getFileColor(name: string): string {
   const ext = name.split('.').pop()?.toLowerCase() || ''
-  return FILE_ICON_COLORS[ext] || '#8B929A'
+  return FILE_ICON_COLORS[ext] || '#8E939E'
 }
 
 const FileTreeItem = memo(function FileTreeItem({
@@ -63,7 +63,7 @@ const FileTreeItem = memo(function FileTreeItem({
 }) {
   const [expanded, setExpanded] = useState(depth === 0)
   const isDir = item.type === 'directory'
-  const iconColor = isDir ? (isDark ? '#E6EDF3' : '#656D76') : getFileColor(item.name)
+  const iconColor = isDir ? (isDark ? '#E6EDF3' : '#6B7280') : getFileColor(item.name)
 
   const handlePress = () => {
     if (isDir) {
@@ -219,7 +219,7 @@ function CreateDialog({
           style={[
             styles.promptContent,
             {
-              backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
+              backgroundColor: isDark ? '#161821' : '#FFFFFF',
               borderColor: colors.border,
             },
             modalStyle,
@@ -371,7 +371,7 @@ function OptionsDialog({
           style={[
             styles.bottomSheetContent,
             {
-              backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
+              backgroundColor: isDark ? '#161821' : '#FFFFFF',
               borderColor: colors.border,
             },
             sheetStyle,
@@ -447,7 +447,7 @@ function OptionsDialog({
               styles.bottomSheetCancelBtn,
               { 
                 borderColor: colors.border,
-                backgroundColor: isDark ? '#21262D' : '#F6F8FA',
+                backgroundColor: isDark ? '#1A1C23' : '#FAFAFA',
                 marginTop: 16
               }
             ]}
@@ -551,17 +551,17 @@ export default function FilesTab({ projectId, isActive }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Toolbar */}
-      <View style={[styles.toolbar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
+      <View style={[styles.toolbar, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => setShowSearch(!showSearch)}
-          style={[styles.toolBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          style={[styles.toolBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
           activeOpacity={0.7}
         >
           <Search size={13} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={fetchFiles}
-          style={[styles.toolBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          style={[styles.toolBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
           activeOpacity={0.7}
         >
           <RefreshCw size={13} color={colors.textSecondary} strokeWidth={1.8} />
@@ -575,7 +575,7 @@ export default function FilesTab({ projectId, isActive }: Props) {
               name: '',
             })
           }}
-          style={[styles.toolBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          style={[styles.toolBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
           activeOpacity={0.7}
         >
           <FilePlus size={13} color={colors.textSecondary} strokeWidth={1.8} />
@@ -589,7 +589,7 @@ export default function FilesTab({ projectId, isActive }: Props) {
               name: '',
             })
           }}
-          style={[styles.toolBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          style={[styles.toolBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
           activeOpacity={0.7}
         >
           <FolderPlus size={13} color={colors.textSecondary} strokeWidth={1.8} />

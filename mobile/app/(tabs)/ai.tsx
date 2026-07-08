@@ -803,10 +803,10 @@ export default function AIScreen() {
   // Markdown styling
   const mdStyles = {
     body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24 },
-    heading1: { fontSize: 18, fontFamily: 'Inter_700Bold', marginTop: 14, color: isDark ? '#F3F4F6' : '#0E1116' },
-    heading2: { fontSize: 15, fontFamily: 'Inter_600SemiBold', marginTop: 10, color: isDark ? '#F3F4F6' : '#0E1116' },
-    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#1C2128' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 12, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 12, padding: 10, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 6, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
+    heading1: { fontSize: 18, fontFamily: 'Inter_700Bold', marginTop: 14, color: isDark ? '#F3F4F6' : '#030303' },
+    heading2: { fontSize: 15, fontFamily: 'Inter_600SemiBold', marginTop: 10, color: isDark ? '#F3F4F6' : '#030303' },
+    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#161821' : '#FAFAFA', color: isDark ? '#E6EDF3' : '#030303', fontSize: 12, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#FAFAFA', color: isDark ? '#E6EDF3' : '#030303', fontSize: 12, padding: 10, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 6, borderWidth: 1, borderColor: isDark ? '#1A1C23' : '#E4E7EB' },
     paragraph: { marginTop: 6, marginBottom: 6 },
   }
 
@@ -821,7 +821,7 @@ export default function AIScreen() {
   return (
     <TabGenieWrapper index={3}>
       <KeyboardAvoidingView
-        style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}
+        style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FAFAFA', paddingTop: insets.top }]}
         behavior="padding"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
@@ -839,7 +839,7 @@ export default function AIScreen() {
                 fy="0%"
               >
                 <Stop offset="0%" stopColor={isDark ? '#1C2030' : '#E0E7FF'} stopOpacity="0.28" />
-                <Stop offset="100%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0" />
+                <Stop offset="100%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0" />
               </RadialGradient>
             </Defs>
             <Rect width="100%" height="100%" fill="url(#radialGrad)" />
@@ -1200,7 +1200,7 @@ export default function AIScreen() {
 
           {/* Floating Speech/Listening Tooltip */}
           {isListening && (
-            <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+            <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: isDark ? '#1A1C23' : '#E4E7EB' }]}>
               <Animated.View style={[styles.listeningPulseDot, { transform: [{ scale: voicePulse }] }]} />
               <Text style={[styles.listeningTooltipText, { color: colors.text }]}>Listening to voice input...</Text>
             </View>
@@ -1296,7 +1296,7 @@ export default function AIScreen() {
                         onPress={handleSend}
                         activeOpacity={0.7}
                       >
-                        <ArrowUp size={14} color={isDark ? '#0E1116' : '#FFFFFF'} />
+                        <ArrowUp size={14} color={isDark ? '#030303' : '#FFFFFF'} />
                       </TouchableOpacity>
                     )
                   )}

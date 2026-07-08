@@ -73,7 +73,7 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
       height: 100%;
     }
     .cm-s-custom .CodeMirror-gutters {
-      background: ${isDark ? '#0E1116' : '#F6F8FA'} !important;
+      background: ${isDark ? '#030303' : '#FAFAFA'} !important;
       border-right: 1px solid ${border} !important;
       width: 40px;
     }
@@ -349,7 +349,7 @@ function FileRow({ node, depth, currentPath, onFilePress }: {
   const isActive = !isDir && currentPath === node.path
 
   const iconInfo = useMemo(() => {
-    if (isDir) return { icon: Folder, color: isDark ? '#E6EDF3' : '#656D76' };
+    if (isDir) return { icon: Folder, color: isDark ? '#E6EDF3' : '#6B7280' };
     const ext = node.name.split('.').pop()?.toLowerCase()
     switch(ext) {
       case 'js': case 'jsx': return { icon: FileCode, color: '#F0DB4F' };
@@ -851,7 +851,7 @@ export default function EditorScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: isDark ? '#161821' : '#FAFAFA' }]} activeOpacity={0.7}>
           <ArrowLeft size={18} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.titleContainer} onPress={() => setShowFilePicker(true)} activeOpacity={0.7}>
@@ -863,13 +863,13 @@ export default function EditorScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           onPress={toggleSplitMode}
-          style={[styles.saveBtn, { marginRight: 4, backgroundColor: splitMode ? colors.primary + '20' : (isDark ? '#1C2128' : '#F6F8FA') }]}
+          style={[styles.saveBtn, { marginRight: 4, backgroundColor: splitMode ? colors.primary + '20' : (isDark ? '#161821' : '#FAFAFA') }]}
           activeOpacity={0.7}
         >
           <Columns size={16} color={splitMode ? colors.primary : colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.saveBtn, { marginRight: 4, backgroundColor: activeHasChanges ? colors.text : (isDark ? '#1C2128' : '#F6F8FA') }]}
+          style={[styles.saveBtn, { marginRight: 4, backgroundColor: activeHasChanges ? colors.text : (isDark ? '#161821' : '#FAFAFA') }]}
           onPress={handleSave} disabled={!activeHasChanges || saving} activeOpacity={0.8}
         >
           {saving ? (
@@ -884,7 +884,7 @@ export default function EditorScreen() {
         {/* Three-Dot Menu Trigger */}
         <TouchableOpacity
           onPress={() => setShowThreeDotMenu(true)}
-          style={[styles.saveBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
+          style={[styles.saveBtn, { backgroundColor: isDark ? '#161821' : '#FAFAFA' }]}
           activeOpacity={0.7}
         >
           <MoreVertical size={18} color={colors.textSecondary} />
@@ -892,7 +892,7 @@ export default function EditorScreen() {
       </View>
 
       {/* Menubar Row with bouncy spring-loaded Genie Effect items */}
-      <View style={[styles.menuBarRow, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderBottomColor: colors.border }]}>
+      <View style={[styles.menuBarRow, { backgroundColor: isDark ? '#0D1117' : '#FAFAFA', borderBottomColor: colors.border }]}>
         {MENUS.map((menu) => (
           <AnimatedMenuItem 
             key={menu.name}
@@ -917,7 +917,7 @@ export default function EditorScreen() {
             <Reanimated.View 
               style={[
                 styles.tabIndicator, 
-                { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }, 
+                { backgroundColor: isDark ? '#030303' : '#FFFFFF' }, 
                 indicatorStyle
               ]} 
             />
@@ -976,7 +976,7 @@ export default function EditorScreen() {
                 ]}
               >
                 {splitMode && (
-                  <View style={[styles.paneHeader, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderBottomColor: colors.border }]}>
+                  <View style={[styles.paneHeader, { backgroundColor: isDark ? '#161821' : '#FAFAFA', borderBottomColor: colors.border }]}>
                     <Text style={[styles.paneTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]} numberOfLines={1}>
                       {currentPath.split('/').pop()} {content !== originalContent && '*'}
                     </Text>
@@ -1031,7 +1031,7 @@ export default function EditorScreen() {
                     { borderTopWidth: 1, borderTopColor: colors.border }
                   ]}
                 >
-                  <View style={[styles.paneHeader, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderBottomColor: colors.border }]}>
+                  <View style={[styles.paneHeader, { backgroundColor: isDark ? '#161821' : '#FAFAFA', borderBottomColor: colors.border }]}>
                     <Text style={[styles.paneTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]} numberOfLines={1}>
                       {currentPath2.split('/').pop()} {content2 !== originalContent2 && '*'}
                     </Text>

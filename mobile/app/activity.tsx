@@ -194,10 +194,10 @@ export default function ActivityScreen() {
     return (
       <View style={styles.skeletonContainer}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <View style={[styles.skeletonText, { width: 120, height: 14, backgroundColor: isDark ? '#21262D' : '#E1E4E8', borderRadius: 4 }]} />
-          <View style={[styles.skeletonText, { width: 60, height: 14, backgroundColor: isDark ? '#21262D' : '#E1E4E8', borderRadius: 4 }]} />
+          <View style={[styles.skeletonText, { width: 120, height: 14, backgroundColor: isDark ? '#1A1C23' : '#E1E4E8', borderRadius: 4 }]} />
+          <View style={[styles.skeletonText, { width: 60, height: 14, backgroundColor: isDark ? '#1A1C23' : '#E1E4E8', borderRadius: 4 }]} />
         </View>
-        <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#21262D' : '#E1E4E8', overflow: 'hidden' }]}>
+        <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1A1C23' : '#E1E4E8', overflow: 'hidden' }]}>
           <Animated.View
             style={{
               width: 150,
@@ -212,7 +212,7 @@ export default function ActivityScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FAFAFA', paddingTop: insets.top }]}>
       {/* Glowing Radial Background Gradient */}
       <View style={StyleSheet.absoluteFill}>
         <Svg width="100%" height="100%">
@@ -227,7 +227,7 @@ export default function ActivityScreen() {
               fy="0%"
             >
               <Stop offset="0%" stopColor={isDark ? '#1C2030' : '#E0E7FF'} stopOpacity="0.28" />
-              <Stop offset="100%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0" />
+              <Stop offset="100%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0" />
             </RadialGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#radialGrad)" />
@@ -235,7 +235,7 @@ export default function ActivityScreen() {
       </View>
 
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+      <View style={[styles.header, { borderBottomColor: isDark ? '#1A1C23' : '#E4E7EB' }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <ArrowLeft size={22} color={colors.text} />
         </TouchableOpacity>
@@ -260,7 +260,7 @@ export default function ActivityScreen() {
               styles.selectionBar,
               {
                 borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                backgroundColor: isDark ? 'rgba(21, 25, 34, 0.9)' : 'rgba(255, 255, 255, 0.95)'
+                backgroundColor: isDark ? 'rgba(11, 12, 16, 0.9)' : 'rgba(255, 255, 255, 0.95)'
               }
             ]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -289,7 +289,7 @@ export default function ActivityScreen() {
           )}
 
           {runsList.length === 0 ? (
-            <View style={[styles.emptyBox, { borderColor: isDark ? '#21262D' : '#D8DEE4', backgroundColor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)' }]}>
+            <View style={[styles.emptyBox, { borderColor: isDark ? '#1A1C23' : '#E4E7EB', backgroundColor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)' }]}>
               <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', fontFamily: 'Inter_400Regular' }}>
                 No past conversations found.
               </Text>
@@ -341,7 +341,7 @@ export default function ActivityScreen() {
                               backgroundColor: isSelected ? colors.text : 'transparent'
                             }
                           ]}>
-                            {isSelected && <X size={10} color={isDark ? '#0E1116' : '#FFFFFF'} />}
+                            {isSelected && <X size={10} color={isDark ? '#030303' : '#FFFFFF'} />}
                           </View>
                         ) : (
                           <View style={[styles.runAvatarCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }]}>
@@ -429,8 +429,8 @@ export default function ActivityScreen() {
               <Svg style={styles.fadeOverlay} width="100%" height="100%">
                 <Defs>
                   <LinearGradient id="fadeOverlayGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0" />
-                    <Stop offset="100%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0.98" />
+                    <Stop offset="0%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0" />
+                    <Stop offset="100%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0.98" />
                   </LinearGradient>
                 </Defs>
                 <Rect width="100%" height="100%" fill="url(#fadeOverlayGrad)" />
@@ -493,11 +493,11 @@ export default function ActivityScreen() {
                     {formatTokens(billingStats.tokensUsed)} / {formatTokens(billingStats.tokensLimit)}
                   </Text>
                 </View>
-                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#21262D' : '#E1E4E8' }]}>
+                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1A1C23' : '#E1E4E8' }]}>
                   <View style={[
                     styles.progressBarFill,
                     {
-                      backgroundColor: isDark ? '#8B929A' : '#24292E',
+                      backgroundColor: isDark ? '#8E939E' : '#24292E',
                       width: `${Math.min(100, (billingStats.tokensUsed / billingStats.tokensLimit) * 100)}%`
                     }
                   ]} />

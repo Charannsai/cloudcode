@@ -550,7 +550,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const renderErrorPage = () => {
     return (
       <View style={[styles.errorOverlay, { backgroundColor: colors.background }]}>
-        <View style={[styles.errorCard, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}>
+        <View style={[styles.errorCard, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderColor: colors.border }]}>
           <Text style={styles.errorIcon}>🔌</Text>
           <Text style={[styles.errorTitle, { color: colors.text }]}>Server Not Connected</Text>
           <Text style={[styles.errorDesc, { color: colors.textSecondary }]}>
@@ -573,7 +573,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   const renderHomePage = () => {
     return (
       <View style={[styles.homePage, { backgroundColor: colors.background }]}>
-        <View style={[styles.homeIconBg, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}>
+        <View style={[styles.homeIconBg, { backgroundColor: isDark ? '#161821' : '#FAFAFA', borderColor: colors.border }]}>
           <Globe size={40} color={colors.primary || '#58A6FF'} strokeWidth={1.5} />
         </View>
         <Text style={[styles.homeTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>CloudCode Browser</Text>
@@ -581,7 +581,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           Search or enter a port (e.g. :5173) to preview your server in real-time.
         </Text>
 
-        <View style={[styles.homeSearchBar, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
+        <View style={[styles.homeSearchBar, { backgroundColor: isDark ? '#030303' : '#FFFFFF', borderColor: colors.border }]}>
           <Globe size={14} color={colors.textSecondary} strokeWidth={1.5} />
           <TextInput
             style={[styles.homeSearchInput, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
@@ -605,20 +605,20 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Navigation Bar */}
-      <View style={[styles.navBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
+      <View style={[styles.navBar, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => {
             setUrl('')
             setCurrentUrl('')
             setHasError(false)
           }}
-          style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          style={[styles.navBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
           activeOpacity={0.7}
         >
           <Home size={12} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
 
-        <View style={[styles.urlBar, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
+        <View style={[styles.urlBar, { backgroundColor: isDark ? '#030303' : '#FFFFFF', borderColor: colors.border }]}>
           <Globe size={11} color={colors.textSecondary} strokeWidth={1.5} />
           <TextInput
             style={[styles.urlInput, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
@@ -649,7 +649,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
 
         <TouchableOpacity
           onPress={() => toggleMenu(!showMenu)}
-          style={[styles.navBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+          style={[styles.navBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
           activeOpacity={0.7}
         >
           <MoreVertical size={14} color={colors.text} strokeWidth={1.8} />
@@ -767,12 +767,12 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
       {/* Open in Browser Banner */}
       {url ? (
         <View style={[styles.browserBanner, { 
-          backgroundColor: isDark ? '#151922' : '#F6F8FA', 
+          backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', 
           borderTopColor: colors.border,
         }]}>
           <View style={styles.browserBannerRow}>
             <TouchableOpacity
-              style={[styles.openBrowserBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+              style={[styles.openBrowserBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
               onPress={handleOpenExternal}
               activeOpacity={0.7}
             >
@@ -802,7 +802,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
           </View>
 
           {showBrowserInfo && (
-            <View style={[styles.browserInfoBox, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}>
+            <View style={[styles.browserInfoBox, { backgroundColor: isDark ? '#030303' : '#FFFFFF', borderColor: colors.border }]}>
               <Text style={[styles.browserInfoTitle, { color: colors.text }]}>Why use the real browser?</Text>
               <Text style={[styles.browserInfoDesc, { color: colors.textSecondary }]}>
                 This preview uses an embedded WebView which has limitations compared to a full browser:
@@ -838,7 +838,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
         }]}>
           {showDevTools && (
             <>
-              <View style={[styles.devToolsHeader, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}>
+              <View style={[styles.devToolsHeader, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Terminal size={13} color={colors.text} />
                   <Text style={[styles.devToolsTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
@@ -881,7 +881,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               </View>
 
               {userTier === 'advanced' ? (
-                <View style={{ flex: 1, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }}>
+                <View style={{ flex: 1, backgroundColor: isDark ? '#030303' : '#FFFFFF' }}>
                   {/* Tab Bar */}
                   <View style={[styles.devTabBar, { borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
                     <View style={{ flexDirection: 'row', flex: 1 }}>
@@ -1030,7 +1030,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                         </ScrollView>
 
                         {/* JS REPL Input */}
-                        <View style={[styles.replBar, { borderColor: colors.border, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}>
+                        <View style={[styles.replBar, { borderColor: colors.border, backgroundColor: isDark ? '#030303' : '#FFFFFF' }]}>
                           <Text style={{ fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, color: colors.primary, marginRight: 6 }}>&gt;</Text>
                           <TextInput
                             style={[styles.replInput, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}
@@ -1124,7 +1124,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
 
                         {/* Request Details Drawer Overlay */}
                         {selectedRequest && (
-                          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', zIndex: 100 }]}>
+                          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: isDark ? '#030303' : '#FFFFFF', zIndex: 100 }]}>
                             <View style={{ 
                               flexDirection: 'row', 
                               justifyContent: 'space-between', 
@@ -1133,7 +1133,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                               borderBottomColor: colors.border, 
                               paddingHorizontal: 12,
                               height: 34,
-                              backgroundColor: isDark ? '#1C2128' : '#EAEEF2'
+                              backgroundColor: isDark ? '#161821' : '#EAEEF2'
                             }}>
                               <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: colors.text }}>Request Details</Text>
                               <TouchableOpacity onPress={() => setSelectedRequest(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -1196,8 +1196,8 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
                   </View>
                 </View>
               ) : (
-                <View style={[styles.lockedContainer, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}>
-                  <View style={[styles.lockCircle, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA', borderColor: colors.border }]}>
+                <View style={[styles.lockedContainer, { backgroundColor: isDark ? '#030303' : '#FFFFFF' }]}>
+                  <View style={[styles.lockCircle, { backgroundColor: isDark ? '#161821' : '#FAFAFA', borderColor: colors.border }]}>
                     <Lock size={20} color="#F59E0B" strokeWidth={2} />
                   </View>
                   <Text style={[styles.lockedTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Developer Tools Locked</Text>
@@ -1363,7 +1363,7 @@ export default function PreviewTab({ projectId, port, ports }: Props) {
               ].map((shortcut) => (
                 <TouchableOpacity
                   key={shortcut.port}
-                  style={[styles.menuPortBtn, { backgroundColor: isDark ? '#2D333B' : '#F6F8FA', borderColor: colors.border }]}
+                  style={[styles.menuPortBtn, { backgroundColor: isDark ? '#2D333B' : '#FAFAFA', borderColor: colors.border }]}
                   onPress={() => {
                     handleNavigateToPort(shortcut.port)
                     toggleMenu(false)

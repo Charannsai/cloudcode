@@ -231,7 +231,7 @@ export default function VoiceOverlay({ projectId }: Props) {
           style={[
             styles.card, 
             { 
-              backgroundColor: isDark ? 'rgba(21, 25, 34, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+              backgroundColor: isDark ? 'rgba(11, 12, 16, 0.92)' : 'rgba(255, 255, 255, 0.95)',
               borderColor: colors.border
             }
           ]}
@@ -272,7 +272,7 @@ export default function VoiceOverlay({ projectId }: Props) {
                 </View>
               </TouchableOpacity>
 
-              <View style={[styles.speechPreviewBox, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: colors.border }]}>
+              <View style={[styles.speechPreviewBox, { backgroundColor: isDark ? '#030303' : '#FAFAFA', borderColor: colors.border }]}>
                 <Text style={[styles.speechPreviewText, { color: speechText ? colors.text : colors.textSecondary }]}>
                   {speechText || '“Create a file named api.py”'}
                 </Text>
@@ -296,7 +296,7 @@ export default function VoiceOverlay({ projectId }: Props) {
           {/* executing phase */}
           {(executionPhase === 'executing' || executionPhase === 'success' || executionPhase === 'failed') && (
             <View style={styles.executingContent}>
-              <View style={[styles.speechPreviewBox, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA', borderColor: colors.border, marginBottom: 16 }]}>
+              <View style={[styles.speechPreviewBox, { backgroundColor: isDark ? '#030303' : '#FAFAFA', borderColor: colors.border, marginBottom: 16 }]}>
                 <Text style={[styles.speechTextTag, { color: colors.textSecondary }]}>USER SPEECH REQUEST</Text>
                 <Text style={[styles.speechPreviewText, { color: colors.text }]}>{speechText}</Text>
               </View>
@@ -322,7 +322,7 @@ export default function VoiceOverlay({ projectId }: Props) {
                     style={[
                       styles.queueRow, 
                       { 
-                        backgroundColor: isDark ? '#1C2128' : '#F6F8FA', 
+                        backgroundColor: isDark ? '#161821' : '#FAFAFA', 
                         borderColor: tc.status === 'error' ? '#F85149' : colors.border 
                       }
                     ]}

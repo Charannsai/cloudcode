@@ -235,7 +235,7 @@ export default function DashboardScreen() {
 
   const cardBg = isDark ? '#161B22' : '#FFFFFF'
   const cardBorder = isDark ? '#30363D' : '#E1E4E8'
-  const subtleBg = isDark ? '#21262D' : '#F6F8FA'
+  const subtleBg = isDark ? '#1A1C23' : '#FAFAFA'
 
   const cpuVal = diagnostics ? diagnostics.cpuLoad : 4
   const ramVal = diagnostics ? diagnostics.memoryUsage : 18
@@ -529,7 +529,7 @@ export default function DashboardScreen() {
               >
                 <View style={{
                   width: 32, height: 32, borderRadius: 16,
-                  backgroundColor: isDark ? '#21262D' : '#F6F8FA',
+                  backgroundColor: isDark ? '#1A1C23' : '#FAFAFA',
                   alignItems: 'center', justifyContent: 'center',
                   borderWidth: 1, borderColor: cardBorder, borderStyle: 'dashed',
                 }}>
@@ -565,7 +565,7 @@ export default function DashboardScreen() {
                   onPress={() => setActiveMetric(stat.id)}
                   activeOpacity={0.7}
                   style={[styles.statCard, { 
-                    backgroundColor: isActive ? (isDark ? '#1C2128' : '#ECEEF0') : cardBg,
+                    backgroundColor: isActive ? (isDark ? '#161821' : '#ECEEF0') : cardBg,
                     borderColor: isActive ? colors.text + '30' : cardBorder,
                   }]}
                 >
@@ -597,7 +597,7 @@ export default function DashboardScreen() {
                   }
                 </Text>
               </View>
-              <View style={{ backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderWidth: 1, borderColor: cardBorder, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+              <View style={{ backgroundColor: isDark ? '#1A1C23' : '#FAFAFA', borderWidth: 1, borderColor: cardBorder, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
                 <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13 }}>
                   {activeMetric === 'cpu' ? `${cpuVal}%` : activeMetric === 'memory' ? `${ramVal}%` : `${latVal}ms`}
                 </Text>
@@ -616,7 +616,7 @@ export default function DashboardScreen() {
                       paddingHorizontal: 10,
                       paddingVertical: 4,
                       borderRadius: 6,
-                      backgroundColor: isActive ? (isDark ? '#21262D' : '#ECEEF0') : 'transparent',
+                      backgroundColor: isActive ? (isDark ? '#1A1C23' : '#ECEEF0') : 'transparent',
                       borderWidth: 1,
                       borderColor: isActive ? cardBorder : 'transparent',
                     }}
