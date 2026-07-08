@@ -245,7 +245,7 @@ export default function SettingsScreen() {
           backgroundColor: isDarkTheme ? '#121620' : '#FFFFFF',
           borderWidth: isActive ? 2 : 1,
           borderColor: isActive ? (isDarkTheme ? '#E2E8F0' : '#334155') : (isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
-          borderRadius: 20,
+          borderRadius: 8,
           padding: 16,
           gap: 12,
           shadowColor: isActive ? (isDarkTheme ? '#FFFFFF' : '#000000') : 'transparent',
@@ -948,7 +948,7 @@ export default function SettingsScreen() {
                   )
                 }
               }}
-              style={{ backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}
+              style={{ backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 6, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}
             >
               <Text style={{ color: isDark ? '#000' : '#fff', fontFamily: 'Inter_700Bold', fontSize: 14 }}>Subscribe Now</Text>
             </TouchableOpacity>
@@ -1089,7 +1089,7 @@ export default function SettingsScreen() {
           backgroundColor: isDark ? '#111622' : '#FFFFFF', 
           borderWidth: 1, 
           borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', 
-          borderRadius: 16, 
+          borderRadius: 8, 
           padding: 14,
           height: cardHeight,
           justifyContent: 'space-between',
@@ -1155,7 +1155,7 @@ export default function SettingsScreen() {
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
           {/* Plan Card Skeleton */}
-          <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 14 }}>
+          <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 18, gap: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <SkeletonBlock width={38} height={38} borderRadius={10} />
@@ -1188,7 +1188,7 @@ export default function SettingsScreen() {
                     backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', 
                     borderWidth: 1, 
                     borderColor: colors.border, 
-                    borderRadius: 16, 
+                    borderRadius: 8, 
                     padding: 14,
                     gap: 8
                   }}
@@ -1239,7 +1239,7 @@ export default function SettingsScreen() {
           {/* Active Subscription Summary Card */}
           <View style={{ 
             backgroundColor: isDark ? '#111622' : '#FFFFFF',
-            borderRadius: 20, 
+            borderRadius: 8, 
             padding: 18, 
             borderWidth: 1.5, 
             borderColor: isDark ? '#334155' : '#475569', 
@@ -1274,28 +1274,28 @@ export default function SettingsScreen() {
 
             {/* Spec capsules row */}
             <View style={{ flexDirection: 'row', gap: 6 }}>
-              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
                 <Cpu size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '0.5 Core' : currentTier.name === 'pro' ? '4 Cores' : '8 Cores'}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>vCPU</Text>
               </View>
-              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
                 <HardDrive size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '512 MB' : currentTier.name === 'pro' ? '8 GB' : '32 GB'}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>RAM</Text>
               </View>
-              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
                 <Database size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '5 GB' : currentTier.name === 'pro' ? '50 GB' : '200 GB'}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 8.5, fontFamily: 'Inter_500Medium' }}>SSD</Text>
               </View>
-              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 4 }}>
                 <Server size={14} color="#64748B" />
                 <Text style={{ color: colors.text, fontSize: 11.5, fontFamily: 'JetBrainsMono_700Bold' }} numberOfLines={1}>
                   {currentTier.name === 'free' ? '3 Max' : currentTier.name === 'pro' ? '20 Max' : 'Unlimited'}
@@ -1305,7 +1305,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* Extra active limitations or info */}
-            <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', padding: 10, borderRadius: 10, gap: 4 }}>
+            <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', padding: 10, borderRadius: 6, gap: 4 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_500Medium' }}>Monthly AI Tokens:</Text>
                 <Text style={{ color: colors.text, fontSize: 11, fontFamily: 'JetBrainsMono_700Bold' }}>
@@ -1335,7 +1335,7 @@ export default function SettingsScreen() {
                 style={{
                   backgroundColor: isDark ? '#FFFFFF' : '#1E293B',
                   paddingVertical: 12,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1505,7 +1505,7 @@ export default function SettingsScreen() {
                 <TrendingUp size={16} color={colors.textSecondary} />
                 <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>USAGE HISTORY</Text>
               </View>
-              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
                 {billingData.usageHistory.map((item: any, idx: number, arr: any[]) => (
                   <View key={item.month} style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                     <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>{item.month}</Text>
@@ -1530,7 +1530,7 @@ export default function SettingsScreen() {
                 <History size={16} color={colors.textSecondary} />
                 <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>BILLING HISTORY</Text>
               </View>
-              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
                 {billingData.billingHistory.map((item: any, idx: number, arr: any[]) => (
                   <View key={item.invoiceId} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                     <View style={{ gap: 3 }}>
@@ -1675,7 +1675,7 @@ export default function SettingsScreen() {
       const history = getComputeHistoryData()
       if (!history.hasData) {
         return (
-          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 24, alignItems: 'center', gap: 14 }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
               <Clock size={22} color={color} />
             </View>
@@ -1697,7 +1697,7 @@ export default function SettingsScreen() {
       const maxValue = Math.max(...history.values, 1)
 
       return (
-        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>COMPUTE HOURS HISTORICAL TIMELINE</Text>
           <View style={{ height: 130, flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingTop: 10 }}>
             {history.values.map((val, idx) => {
@@ -1719,7 +1719,7 @@ export default function SettingsScreen() {
 
     const renderMemoryRadialDial = () => {
       return (
-        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 20, alignItems: 'center', gap: 14 }}>
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 20, alignItems: 'center', gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5, alignSelf: 'flex-start' }}>ACTIVE ENVIRONMENT MEMORY SEGMENTS</Text>
           <View style={{ width: 140, height: 140, borderRadius: 70, borderWidth: 12, borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', alignItems: 'center', justifyContent: 'center' }}>
             <View style={[StyleSheet.absoluteFill, { borderRadius: 70, borderWidth: 12, borderColor: displayPercent > 0 ? color : 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent', transform: [{ rotate: '45deg' }] }]} />
@@ -1747,7 +1747,7 @@ export default function SettingsScreen() {
       const totalMB = breakdown.reduce((sum: number, p: any) => sum + (p.sizeMB || 0), 0)
       
       return (
-        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>DISK SPACE SEGMENTATION BY SANDBOX</Text>
           
           {breakdown.length > 0 ? (
@@ -1797,7 +1797,7 @@ export default function SettingsScreen() {
       const used = usage.workspaces.used || 0
       
       return (
-        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>WORKSPACE NODE MATRIX GATEWAY</Text>
           <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap', justifyContent: 'center', paddingVertical: 10 }}>
             {Array.from({ length: maxWorkspaces }).map((_, i) => {
@@ -1809,7 +1809,7 @@ export default function SettingsScreen() {
                   style={{ 
                     width: 70, 
                     height: 70, 
-                    borderRadius: 12, 
+                    borderRadius: 6, 
                     borderWidth: 2, 
                     borderColor: isAllocated ? color : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'), 
                     borderStyle: isAllocated ? 'solid' : 'dashed',
@@ -1840,7 +1840,7 @@ export default function SettingsScreen() {
       const history = getTokenHistoryData()
       if (!history.hasData) {
         return (
-          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 24, alignItems: 'center', gap: 14 }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
               <Sparkles size={22} color={color} />
             </View>
@@ -1862,7 +1862,7 @@ export default function SettingsScreen() {
       const maxValue = Math.max(...history.values, 1)
 
       return (
-        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>AI REQUEST TOKENS CONSUMPTION DENSITY</Text>
           <View style={{ height: 120, justifyContent: 'flex-end', paddingTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: '100%', gap: 6 }}>
@@ -1909,9 +1909,9 @@ export default function SettingsScreen() {
           {isNetwork && (
             <View style={{ gap: 20 }}>
               {/* Premium Latency Breakdown Dashboard Card */}
-              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 16 }}>
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 18, gap: 16 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
                     <Wifi size={16} color={color} />
                   </View>
                   <View>
@@ -1977,7 +1977,7 @@ export default function SettingsScreen() {
               </View>
 
               {/* Network Details Card */}
-              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 12 }}>
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 18, gap: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Gateway Status:</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -2001,9 +2001,9 @@ export default function SettingsScreen() {
           {isApi && (
             <View style={{ gap: 20 }}>
               {/* API Requests Per Minute Chart Card */}
-              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 14 }}>
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 18, gap: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
                     <Shield size={16} color={color} />
                   </View>
                   <View>
@@ -2047,7 +2047,7 @@ export default function SettingsScreen() {
               </View>
 
               {/* API Info Card */}
-              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 12 }}>
+              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 18, gap: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Current Rate Load:</Text>
                   <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
@@ -2073,7 +2073,7 @@ export default function SettingsScreen() {
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT ACTIVE RUN TIMELINES</Text>
               
               {billingData?.sessions && billingData.sessions.length > 0 ? (
-                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
                   {billingData.sessions.map((session: any, idx: number, arr: any[]) => {
                     const startLocal = new Date(session.startedAt).toLocaleString()
                     const endLocal = session.endedAt ? new Date(session.endedAt).toLocaleString() : 'Running Now'
@@ -2122,7 +2122,7 @@ export default function SettingsScreen() {
                   })}
                 </View>
               ) : (
-                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No recent active session timeline recordings.</Text>
                 </View>
               )}
@@ -2134,7 +2134,7 @@ export default function SettingsScreen() {
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SANDBOX MEMORY FOOTPRINT</Text>
               
               {billingData?.ramBreakdown && billingData.ramBreakdown.length > 0 ? (
-                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
                   {billingData.ramBreakdown.map((p: any, idx: number, arr: any[]) => (
                     <View 
                        key={p.id} 
@@ -2161,7 +2161,7 @@ export default function SettingsScreen() {
                   ))}
                 </View>
               ) : (
-                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No active containers allocating RAM. Status is currently idle.</Text>
                 </View>
               )}
@@ -2173,7 +2173,7 @@ export default function SettingsScreen() {
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>WORKSPACE STORAGE BREAKDOWN</Text>
               
               {billingData?.diskBreakdown && billingData.diskBreakdown.length > 0 ? (
-                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+                <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
                   {billingData.diskBreakdown.map((item: any, idx: number, arr: any[]) => {
                     const mbSize = item.sizeMB
                     const sizeStr = mbSize >= 1024 ? `${(mbSize / 1024).toFixed(2)} GB` : `${mbSize} MB`
@@ -2201,7 +2201,7 @@ export default function SettingsScreen() {
                   })}
                 </View>
               ) : (
-                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No active storage mappings loaded.</Text>
                 </View>
               )}
@@ -2223,7 +2223,7 @@ export default function SettingsScreen() {
                           backgroundColor: isDark ? '#111622' : '#FFFFFF', 
                           borderWidth: 1, 
                           borderColor: colors.border, 
-                          borderRadius: 14, 
+                          borderRadius: 8, 
                           padding: 14,
                           flexDirection: 'row',
                           justifyContent: 'space-between',
@@ -2254,7 +2254,7 @@ export default function SettingsScreen() {
                   })}
                 </View>
               ) : (
-                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16 }}>
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
                   <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center' }}>No sandbox workspaces created yet.</Text>
                 </View>
               )}
@@ -2269,7 +2269,7 @@ export default function SettingsScreen() {
                   backgroundColor: isDark ? '#111622' : '#FFFFFF', 
                   borderWidth: 1, 
                   borderColor: colors.border, 
-                  borderRadius: 16, 
+                  borderRadius: 8, 
                   padding: 16,
                   gap: 16
                 }}
@@ -2354,7 +2354,7 @@ export default function SettingsScreen() {
       const history = getByokTokenHistoryData()
       if (!history.hasData) {
         return (
-          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 24, alignItems: 'center', gap: 14 }}>
+          <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 24, alignItems: 'center', gap: 14 }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
               <Sparkles size={22} color="#475569" />
             </View>
@@ -2376,7 +2376,7 @@ export default function SettingsScreen() {
       const maxValue = Math.max(...history.values, 1)
 
       return (
-        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, gap: 14 }}>
+        <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 16, gap: 14 }}>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>AI REQUEST TOKENS CONSUMPTION DENSITY</Text>
           <View style={{ height: 120, justifyContent: 'flex-end', paddingTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: '100%', gap: 6 }}>
@@ -2412,7 +2412,7 @@ export default function SettingsScreen() {
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
           {/* Speedometer Gauge Dial Card */}
-          <View style={{ backgroundColor: isDark ? '#121620' : '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 24, alignItems: 'center', gap: 16 }}>
+          <View style={{ backgroundColor: isDark ? '#121620' : '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 24, alignItems: 'center', gap: 16 }}>
             <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5 }}>CONSUMPTION VELOCITY METER</Text>
             
             {/* Speedometer Semi-Circle Dial */}
@@ -2457,12 +2457,12 @@ export default function SettingsScreen() {
 
           {/* Savings & Efficiency Cards */}
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ flex: 1, backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14, gap: 4 }}>
+            <View style={{ flex: 1, backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 14, gap: 4 }}>
               <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_600SemiBold' }}>ESTIMATED SAVINGS</Text>
               <Text style={{ color: colors.text, fontSize: 18, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 }}>$0.00</Text>
               <Text style={{ color: colors.textSecondary, fontSize: 9, marginTop: 2 }}>Bypassing hosted markup fees</Text>
             </View>
-            <View style={{ flex: 1, backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14, gap: 4 }}>
+            <View style={{ flex: 1, backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 14, gap: 4 }}>
               <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_600SemiBold' }}>ENGINE EFFICIENCY</Text>
               <Text style={{ color: colors.text, fontSize: 18, fontFamily: 'JetBrainsMono_700Bold', marginTop: 4 }}>Optimal</Text>
               <Text style={{ color: colors.textSecondary, fontSize: 9, marginTop: 2 }}>Zero limit caps active</Text>
@@ -2543,7 +2543,7 @@ export default function SettingsScreen() {
                 <ActivityIndicator color={colors.textSecondary} style={{ marginVertical: 8 }} />
               ) : hasSshKey && sshPublicKey ? (
                 <View style={{ gap: 12 }}>
-                  <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.08)' : '#e6ffec', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.2)' : '#3FB950', gap: 12 }}>
+                  <View style={{ backgroundColor: isDark ? 'rgba(63, 185, 80, 0.08)' : '#e6ffec', padding: 14, borderRadius: 6, borderWidth: 1, borderColor: isDark ? 'rgba(63, 185, 80, 0.2)' : '#3FB950', gap: 12 }}>
                     <Text style={{ color: isDark ? '#3FB950' : '#1a7f37', fontFamily: 'Inter_700Bold', fontSize: 13 }}>SSH Key Generated</Text>
                     
                     <View style={{ gap: 4 }}>
@@ -2615,7 +2615,7 @@ export default function SettingsScreen() {
           {sshHistory && sshHistory.length > 0 && (
             <View style={{ marginTop: 8 }}>
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5, marginBottom: 12 }}>SSH GENERATION HISTORY</Text>
-              <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+              <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
                 {sshHistory.map((item: any, idx: number, arr: any[]) => (
                   <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                     <View style={{ gap: 2, flex: 1, marginRight: 16 }}>
@@ -2813,7 +2813,7 @@ export default function SettingsScreen() {
               <History size={16} color={colors.textSecondary} />
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SESSIONS</Text>
             </View>
-            <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
               {appSessions.length === 0 ? (
                 <View style={{ padding: 20, alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No active sessions recorded.</Text>
@@ -2850,7 +2850,7 @@ export default function SettingsScreen() {
               <Clock size={16} color={colors.textSecondary} />
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT COMMITS FROM THIS APP</Text>
             </View>
-            <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
               {appCommits.length === 0 ? (
                 <View style={{ padding: 24, alignItems: 'center', justifyContent: 'center' }}>
                   <GitCommit size={24} color={colors.textSecondary} style={{ marginBottom: 8 }} />
@@ -2899,7 +2899,7 @@ export default function SettingsScreen() {
                 <View style={{ 
                   width: 32, 
                   height: 32, 
-                  borderRadius: 16, 
+                  borderRadius: 8, 
                   backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', 
                   alignItems: 'center', 
                   justifyContent: 'center',
@@ -2928,7 +2928,7 @@ export default function SettingsScreen() {
                 <View style={{ 
                   width: 32, 
                   height: 32, 
-                  borderRadius: 16, 
+                  borderRadius: 8, 
                   backgroundColor: 'rgba(248, 81, 73, 0.08)', 
                   alignItems: 'center', 
                   justifyContent: 'center',
@@ -3232,7 +3232,7 @@ export default function SettingsScreen() {
                       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', 
                       borderWidth: 1, 
                       borderColor: colors.border, 
-                      borderRadius: 12, 
+                      borderRadius: 6, 
                       padding: 14, 
                       flexDirection: 'row', 
                       alignItems: 'center', 
@@ -3260,7 +3260,7 @@ export default function SettingsScreen() {
                   <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.5 }}>API KEYS CONFIGURATION</Text>
                   
                   {/* Model Selector */}
-                  <View style={{ flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 12, padding: 4, borderWidth: 1, borderColor: colors.border }}>
+                  <View style={{ flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderRadius: 6, padding: 4, borderWidth: 1, borderColor: colors.border }}>
                     {(['gemini', 'openai', 'anthropic', 'groq'] as const).map((m) => {
                       const isActive = selectedByokModel === m
                       const label = m === 'gemini' ? 'Gemini 3.5 Flash' : m === 'openai' ? 'ChatGPT 5.5' : m === 'anthropic' ? 'Claude 4.6 Opus' : 'Groq'
@@ -3527,7 +3527,7 @@ export default function SettingsScreen() {
                       backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', 
                       borderColor: colors.border,
                       borderWidth: 1,
-                      borderRadius: 16,
+                      borderRadius: 8,
                       padding: 16,
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -3605,7 +3605,7 @@ export default function SettingsScreen() {
         <View style={{ 
           width: 32, 
           height: 32, 
-          borderRadius: 16, 
+          borderRadius: 8, 
           backgroundColor: neutralIconBg, 
           alignItems: 'center', 
           justifyContent: 'center',
@@ -3662,7 +3662,7 @@ export default function SettingsScreen() {
         {/* 1. Profile Hero Card */}
         <PressableScale onPress={() => setCurrentSubScreen('profile')}>
           <View style={{
-            borderRadius: 16,
+            borderRadius: 8,
             borderWidth: 1,
             borderColor: colors.border,
             backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
@@ -3697,7 +3697,7 @@ export default function SettingsScreen() {
                 </View>
               </View>
             </View>
-            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
               <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
             </View>
           </View>
@@ -3706,7 +3706,7 @@ export default function SettingsScreen() {
         {/* 2. Billing & Plan Tile (Wide Highlight) */}
         <PressableScale onPress={() => setCurrentSubScreen('billing')}>
           <View style={{
-            borderRadius: 16,
+            borderRadius: 8,
             borderWidth: 1,
             borderColor: colors.border,
             backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
@@ -3734,7 +3734,7 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
               )}
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
                 <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
               </View>
             </View>
@@ -3746,7 +3746,7 @@ export default function SettingsScreen() {
           {/* Git & Credentials */}
           <PressableScale onPress={() => setCurrentSubScreen('gitSsh')} style={{ flex: 1 }}>
             <View style={{
-              borderRadius: 16,
+              borderRadius: 8,
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
@@ -3754,7 +3754,7 @@ export default function SettingsScreen() {
               height: 116,
               justifyContent: 'space-between',
             }}>
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
                 <Key size={16} color={colors.textSecondary} strokeWidth={2} />
               </View>
               <View>
@@ -3767,7 +3767,7 @@ export default function SettingsScreen() {
           {/* AI Providers BYOK */}
           <PressableScale onPress={() => setCurrentSubScreen('aiKeys')} style={{ flex: 1 }}>
             <View style={{
-              borderRadius: 16,
+              borderRadius: 8,
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
@@ -3775,7 +3775,7 @@ export default function SettingsScreen() {
               height: 116,
               justifyContent: 'space-between',
             }}>
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
                 <Sparkles size={16} color={colors.textSecondary} strokeWidth={2} />
               </View>
               <View>
@@ -3790,7 +3790,7 @@ export default function SettingsScreen() {
           {/* System Runtimes */}
           <PressableScale onPress={() => setCurrentSubScreen('dependencies')} style={{ flex: 1 }}>
             <View style={{
-              borderRadius: 16,
+              borderRadius: 8,
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
@@ -3798,7 +3798,7 @@ export default function SettingsScreen() {
               height: 116,
               justifyContent: 'space-between',
             }}>
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
                 <Server size={16} color={colors.textSecondary} strokeWidth={2} />
               </View>
               <View>
@@ -3811,7 +3811,7 @@ export default function SettingsScreen() {
           {/* Theme appearance toggle */}
           <PressableScale onPress={toggleTheme} style={{ flex: 1 }}>
             <View style={{
-              borderRadius: 16,
+              borderRadius: 8,
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
@@ -3820,7 +3820,7 @@ export default function SettingsScreen() {
               justifyContent: 'space-between',
             }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
                   <ThemeIcon size={16} color={colors.textSecondary} strokeWidth={2} />
                 </View>
                 <Switch
@@ -3841,7 +3841,7 @@ export default function SettingsScreen() {
         {/* 4. About Banner (Wide) */}
         <PressableScale onPress={() => setCurrentSubScreen('about')}>
           <View style={{
-            borderRadius: 16,
+            borderRadius: 8,
             borderWidth: 1,
             borderColor: colors.border,
             backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
@@ -3852,7 +3852,7 @@ export default function SettingsScreen() {
             marginTop: 4
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 8 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
                 <Info size={16} color={colors.textSecondary} strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
@@ -3862,7 +3862,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             </View>
-            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
               <ChevronRight size={16} color={colors.textSecondary} strokeWidth={1.5} />
             </View>
           </View>
@@ -4172,7 +4172,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, letterSpacing: -0.8 },
   profileCard: {
     marginHorizontal: 24,
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1,
     padding: 16,
     marginBottom: 28,
@@ -4201,7 +4201,7 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     marginHorizontal: 24,
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -4215,7 +4215,7 @@ const styles = StyleSheet.create({
   rowIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -4229,7 +4229,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 16,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 6,
     borderWidth: 1,
   },
   signOutText: { fontSize: 14 },
@@ -4287,7 +4287,7 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
