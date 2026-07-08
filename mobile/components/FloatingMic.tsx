@@ -4,7 +4,7 @@ import {
   Platform, Alert, Animated as RNAnimated,
 } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Mic, MicOff, X, Loader2 } from 'lucide-react-native'
+import { Mic, MicOff, X, Loader2 } from '@/components/HugeIconsShim'
 import { useRouter, usePathname } from 'expo-router'
 import { useAIStore } from '@/store/ai'
 import { useProjectsStore } from '@/store/projects'

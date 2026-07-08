@@ -11,7 +11,7 @@ import {
   ChevronDown, ChevronRight, RefreshCw, Upload, Download,
   FileCode, FilePlus, Trash, AlertCircle, Circle as CircleIcon,
   FileText, X, ArrowLeft
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { recordAppCommit } from '@/lib/appAudit'
 import { ConfirmModal } from '@/components/ConfirmModal'

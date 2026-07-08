@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { Terminal, Shield, Check, Cpu, ChevronDown, ChevronUp, Info } from 'lucide-react-native'
+import { Terminal, Shield, Check, Cpu, ChevronDown, ChevronUp, Info } from '@/components/HugeIconsShim'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { BlurView } from 'expo-blur'
 

@@ -11,7 +11,7 @@ import {
   Globe, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, Copy,
   ExternalLink, ChevronDown, ChevronUp, Info, Home, AlertTriangle, Sparkles, X, Terminal,
   MoreVertical, Maximize2, Minimize2, Search, Trash2, Lock,
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import * as Clipboard from 'expo-clipboard'
 import { BlurView } from 'expo-blur'
 import { useAIStore } from '@/store/ai'

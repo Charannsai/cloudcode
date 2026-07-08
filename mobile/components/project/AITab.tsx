@@ -11,7 +11,7 @@ import {
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
   Shield, Lock, Square, MoreVertical, Plus, Mic, Folder,
   Plug, MessageSquare, Check, Zap
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
 import Voice from '@react-native-voice/voice'

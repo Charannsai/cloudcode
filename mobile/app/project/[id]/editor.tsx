@@ -12,7 +12,7 @@ import {
   ArrowLeft, Save, Check, ChevronDown, ChevronRight, X, File, Folder, 
   FileCode, Code, Hash, FileJson, FileText, Settings, Columns, Sparkles, 
   MoreVertical, ChevronLeft, Terminal, GitBranch, Globe, Play, Info 
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import { FileNode } from '@/types'
 import { WebView } from 'react-native-webview'
 import { getToken } from '@/lib/auth'

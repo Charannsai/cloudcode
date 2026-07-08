@@ -16,7 +16,7 @@ import {
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
   CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
   Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit, Info, Database
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
 import * as Clipboard from 'expo-clipboard'

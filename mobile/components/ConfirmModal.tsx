@@ -16,7 +16,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { AlertTriangle, Info, Trash2, LogOut, Check, AlertCircle } from 'lucide-react-native'
+import { AlertTriangle, Info, Trash2, LogOut, Check, AlertCircle } from '@/components/HugeIconsShim'
 
 export interface ConfirmModalProps {
   visible: boolean

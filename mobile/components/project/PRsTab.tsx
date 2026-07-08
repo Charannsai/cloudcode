@@ -31,7 +31,7 @@ import {
   ChevronRight,
   RefreshCw,
   User,
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import { usePRStore } from '@/store/prStore'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { ConfirmModal } from '@/components/ConfirmModal'

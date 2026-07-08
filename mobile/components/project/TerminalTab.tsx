@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router'
 import { useAIStore } from '@/store/ai'
 import { useTerminalStore } from '@/store/terminal'
 import { api } from '@/lib/api'
-import { Terminal as TerminalIcon, StopCircle, Trash2, ArrowUp, ArrowDown, Sparkles, Plus, X } from 'lucide-react-native'
+import { Terminal as TerminalIcon, StopCircle, Trash2, ArrowUp, ArrowDown, Sparkles, Plus, X } from '@/components/HugeIconsShim'
 
 interface Props {
   projectId: string

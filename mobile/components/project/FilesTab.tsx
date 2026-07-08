@@ -9,7 +9,7 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Plus,
   File, Search, MoreVertical, RefreshCw, FilePlus, FolderPlus, Trash2,
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { BlurView } from 'expo-blur'
 import Animated, {

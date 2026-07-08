@@ -10,7 +10,7 @@ import { useAIStore, ToolCallInfo } from '@/store/ai'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Mic, X, Sparkles, CheckCircle2, AlertCircle, Loader, Wrench, Terminal, FileCode, Play
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 import Animated, {
   FadeIn, FadeInDown, FadeOut, useSharedValue, useAnimatedStyle,
   withRepeat, withSequence, withTiming, Easing

@@ -27,7 +27,7 @@ import {
   CheckCircle,
   Activity,
   RefreshCw
-} from 'lucide-react-native'
+} from '@/components/HugeIconsShim'
 
 import {
   ReactLogo,
