@@ -160,7 +160,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 activeOpacity={0.8}
               >
                 <View style={[styles.fabButton, { backgroundColor: activeColor }]}>
-                  <SvgIcon name="create" size={18} color={isDark ? '#030303' : '#FFFFFF'} />
+                  <SvgIcon name="create" size={24} color={isDark ? '#030303' : '#FFFFFF'} />
                 </View>
               </TouchableOpacity>
             )
