@@ -19,17 +19,14 @@ import {
   ChevronRight,
   Key,
   ArrowUpRight,
-  Zap,
   User,
   Settings,
   CreditCard,
-  LogOut,
-  History
+  LogOut
 } from '@/components/HugeIconsShim'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { ProjectIcon, detectProjectTech, getTechColors } from '@/components/ProjectIcon'
-import { useAgentStore } from '@/store/agentStore'
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
 import Animated, { 
   FadeInDown, 
@@ -382,7 +379,6 @@ export default function DashboardScreen() {
             onRefresh={() => {
               fetchProjects(false)
               fetchDiagnostics()
-              loadRuns()
             }}
             tintColor={colors.text}
           />
@@ -437,35 +433,6 @@ export default function DashboardScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'monospace' }}>⌘K</Text>
             </View>
           </TouchableOpacity>
-        </Animated.View>
-
-        {/* Quick Actions Grid */}
-        <Animated.View entering={FadeInDown.delay(40).duration(200)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 12 }]}>Quick Actions</Text>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {[
-              { label: 'New Project', icon: Plus, onPress: () => router.push('/new-project') },
-              { label: 'Ask AI Chat', icon: Sparkles, onPress: () => router.push('/(tabs)/ai') },
-              { label: 'Activity Logs', icon: History, onPress: () => router.push('/activity') },
-            ].map((action, idx) => {
-              const ActionIcon = action.icon
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  activeOpacity={0.7}
-                  onPress={action.onPress}
-                  style={[styles.qaButton, { backgroundColor: cardBg, borderColor: cardBorder }]}
-                >
-                  <View style={[styles.qaIconBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' }]}>
-                    <ActionIcon size={16} color={colors.text} />
-                  </View>
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 11, marginTop: 8 }}>
-                    {action.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-          </View>
         </Animated.View>
 
         {/* Workspaces */}
@@ -587,61 +554,6 @@ export default function DashboardScreen() {
             </View>
           )}
         </Animated.View>
-
-        {/* Recent Agent Activity Feed */}
-        {runsList && runsList.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(75).duration(200)} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionLabel, { color: colors.text }]}>Recent Agent Activity</Text>
-              <TouchableOpacity onPress={() => router.push('/activity')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                <Text style={{ color: isDark ? '#58A6FF' : '#3B82F6', fontSize: 13, fontFamily: 'Inter_500Medium' }}>History</Text>
-                <ChevronRight size={14} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
-            <View style={{ gap: 8 }}>
-              {runsList.slice(0, 2).map((run) => {
-                const isSuccess = run.status === 'completed'
-                const isFailed = run.status === 'failed'
-                const isRunning = !isSuccess && !isFailed
-                const statusLabel = isRunning ? 'running' : run.status
-                
-                return (
-                  <View 
-                    key={run.id} 
-                    style={[styles.activityItem, { backgroundColor: cardBg, borderColor: cardBorder }]}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                      <View style={[styles.statusIconWrapper, { 
-                        backgroundColor: isRunning ? 'rgba(59,130,246,0.1)' : isSuccess ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'
-                      }]}>
-                        <Zap size={14} color={isRunning ? '#3B82F6' : isSuccess ? '#22C55E' : '#EF4444'} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }} numberOfLines={1}>
-                          {`AI Run (${run.model})`}
-                        </Text>
-                        <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 10.5, marginTop: 2 }} numberOfLines={1}>
-                          {isRunning ? 'Agent processing step...' : `Completed • ${new Date(run.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={{
-                      paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
-                      backgroundColor: isRunning ? 'rgba(59,130,246,0.08)' : isSuccess ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)'
-                    }}>
-                      <Text style={{ 
-                        fontSize: 10, fontFamily: 'Inter_700Bold', 
-                        color: isRunning ? '#3B82F6' : isSuccess ? '#22C55E' : '#EF4444' 
-                      }}>
-                        {statusLabel.toUpperCase()}
-                      </Text>
-                    </View>
-                  </View>
-                )
-              })}
-            </View>
-          </Animated.View>
-        )}
 
         {/* System Diagnostics */}
         <Animated.View entering={FadeInDown.delay(100).duration(200)} style={styles.section}>
