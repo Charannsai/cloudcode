@@ -184,7 +184,6 @@ export default function DashboardScreen() {
   const [diagnostics, setDiagnostics] = useState<DiagnosticsData | null>(null)
   const [latency, setLatency] = useState<number | null>(null)
   
-  const { runsList, loadRuns } = useAgentStore()
   const { projects: allProjects, loading, fetchProjects } = useProjectsStore()
   const projects = allProjects.slice(0, 5)
   const [showSkeleton, setShowSkeleton] = useState(false)
@@ -220,7 +219,6 @@ export default function DashboardScreen() {
     useCallback(() => {
       fetchProjects(true)
       fetchDiagnostics()
-      loadRuns()
 
       AsyncStorage.getItem('profile_name').then(val => {
         if (val) setProfileName(val)
@@ -229,13 +227,12 @@ export default function DashboardScreen() {
       const interval = setInterval(() => {
         fetchProjects(true)
         fetchDiagnostics()
-        loadRuns()
       }, 10000)
 
       return () => {
         clearInterval(interval)
       }
-    }, [fetchProjects, fetchDiagnostics, loadRuns])
+    }, [fetchProjects, fetchDiagnostics])
   )
 
   const cardBg = isDark ? '#0B0C10' : '#FFFFFF'
