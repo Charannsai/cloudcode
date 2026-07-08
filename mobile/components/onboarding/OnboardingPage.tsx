@@ -47,7 +47,7 @@ export const OnboardingPage = ({
   const isLastPage = index === 5
 
   const textColor = isLastPage ? '#0F172A' : '#FFFFFF'
-  const subTextColor = isLastPage ? '#475569' : '#8B929A'
+  const subTextColor = isLastPage ? '#475569' : '#8E939E'
 
   return (
     <View style={styles.pageContainer}>

@@ -144,7 +144,7 @@ export function ConfirmModal({
           style={[
             styles.modalContainer,
             {
-              backgroundColor: isDark ? '#1C2128' : '#FFFFFF',
+              backgroundColor: isDark ? '#161821' : '#FFFFFF',
               borderColor: colors.border,
             },
             modalStyle,

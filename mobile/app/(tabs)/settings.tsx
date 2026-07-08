@@ -864,7 +864,7 @@ export default function SettingsScreen() {
             {used} / {limit}
           </Text>
         </View>
-        <View style={{ height: 5, backgroundColor: isDark ? '#1C2128' : '#E5E7EB', borderRadius: 2.5, overflow: 'hidden' }}>
+        <View style={{ height: 5, backgroundColor: isDark ? '#161821' : '#E5E7EB', borderRadius: 2.5, overflow: 'hidden' }}>
           <View style={{ height: '100%', width: `${displayPercent}%`, backgroundColor: color, borderRadius: 2.5 }} />
         </View>
       </View>
@@ -1155,7 +1155,7 @@ export default function SettingsScreen() {
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
           {/* Plan Card Skeleton */}
-          <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 14 }}>
+          <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 18, gap: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <SkeletonBlock width={38} height={38} borderRadius={10} />
@@ -1185,7 +1185,7 @@ export default function SettingsScreen() {
                   key={i} 
                   style={{ 
                     width: '48.2%', 
-                    backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+                    backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', 
                     borderWidth: 1, 
                     borderColor: colors.border, 
                     borderRadius: 16, 
@@ -1654,7 +1654,7 @@ export default function SettingsScreen() {
                   paddingVertical: 6,
                   alignItems: 'center',
                   borderRadius: 6,
-                  backgroundColor: isActive ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                  backgroundColor: isActive ? (isDark ? '#161821' : '#FFFFFF') : 'transparent',
                 }}
               >
                 <Text style={{ 
@@ -2333,7 +2333,7 @@ export default function SettingsScreen() {
                   paddingVertical: 6,
                   alignItems: 'center',
                   borderRadius: 6,
-                  backgroundColor: isActive ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                  backgroundColor: isActive ? (isDark ? '#161821' : '#FFFFFF') : 'transparent',
                 }}
               >
                 <Text style={{ 
@@ -2493,7 +2493,7 @@ export default function SettingsScreen() {
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
           {/* Author credentials & SSH Keys Card */}
-          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 18, marginHorizontal: 0 }]}>
+          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 18, marginHorizontal: 0 }]}>
             
             {/* Author info */}
             <View style={{ gap: 8 }}>
@@ -2615,7 +2615,7 @@ export default function SettingsScreen() {
           {sshHistory && sshHistory.length > 0 && (
             <View style={{ marginTop: 8 }}>
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5, marginBottom: 12 }}>SSH GENERATION HISTORY</Text>
-              <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+              <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
                 {sshHistory.map((item: any, idx: number, arr: any[]) => (
                   <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
                     <View style={{ gap: 2, flex: 1, marginRight: 16 }}>
@@ -2746,7 +2746,7 @@ export default function SettingsScreen() {
                 onError={() => setAvatarLoadError(true)}
               />
             ) : (
-              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? '#151922' : '#E5E7EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary }}>
+              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? '#0B0C10' : '#E5E7EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary }}>
                 <Text style={{ color: colors.text, fontSize: 32, fontFamily: 'Inter_600SemiBold' }}>
                   {(profileName || user?.name || user?.login || 'C').substring(0, 1).toUpperCase()}
                 </Text>
@@ -2758,7 +2758,7 @@ export default function SettingsScreen() {
           </View>
 
           {/* Configuration Fields Card */}
-          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 16, marginHorizontal: 0 }]}>
+          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 16, marginHorizontal: 0 }]}>
             {/* Full Name */}
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>Full Name</Text>
@@ -2813,7 +2813,7 @@ export default function SettingsScreen() {
               <History size={16} color={colors.textSecondary} />
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACTIVE SESSIONS</Text>
             </View>
-            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
               {appSessions.length === 0 ? (
                 <View style={{ padding: 20, alignItems: 'center' }}>
                   <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 13 }}>No active sessions recorded.</Text>
@@ -2850,7 +2850,7 @@ export default function SettingsScreen() {
               <Clock size={16} color={colors.textSecondary} />
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>RECENT COMMITS FROM THIS APP</Text>
             </View>
-            <View style={{ backgroundColor: isDark ? '#151922' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' }}>
               {appCommits.length === 0 ? (
                 <View style={{ padding: 24, alignItems: 'center', justifyContent: 'center' }}>
                   <GitCommit size={24} color={colors.textSecondary} style={{ marginBottom: 8 }} />
@@ -2889,7 +2889,7 @@ export default function SettingsScreen() {
               <Shield size={16} color={colors.textSecondary} />
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.5 }}>ACCOUNT ACTIONS</Text>
             </View>
-            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, marginHorizontal: 0 }]}>
+            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: colors.border, marginHorizontal: 0 }]}>
               {/* Sign Out Row */}
               <TouchableOpacity 
                 activeOpacity={0.7} 
@@ -2985,7 +2985,7 @@ export default function SettingsScreen() {
                 paddingVertical: 7,
                 alignItems: 'center',
                 borderRadius: 6,
-                backgroundColor: aboutTab === 'branding' ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                backgroundColor: aboutTab === 'branding' ? (isDark ? '#161821' : '#FFFFFF') : 'transparent',
               }}
             >
               <Text style={{ 
@@ -3005,7 +3005,7 @@ export default function SettingsScreen() {
                 paddingVertical: 7,
                 alignItems: 'center',
                 borderRadius: 6,
-                backgroundColor: aboutTab === 'system' ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                backgroundColor: aboutTab === 'system' ? (isDark ? '#161821' : '#FFFFFF') : 'transparent',
               }}
             >
               <Text style={{ 
@@ -3195,7 +3195,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
-          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 16, marginHorizontal: 0 }]}>
+          <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: colors.border, padding: 18, gap: 16, marginHorizontal: 0 }]}>
             {/* Toggle BYOK */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, paddingRight: 8 }}>
@@ -3273,7 +3273,7 @@ export default function SettingsScreen() {
                             paddingVertical: 8,
                             alignItems: 'center',
                             borderRadius: 9,
-                            backgroundColor: isActive ? (isDark ? '#1C2128' : '#FFFFFF') : 'transparent',
+                            backgroundColor: isActive ? (isDark ? '#161821' : '#FFFFFF') : 'transparent',
                             shadowColor: isActive ? '#000' : 'transparent',
                             shadowOffset: { width: 0, height: 1 },
                             shadowOpacity: isActive ? 0.1 : 0,
@@ -3524,7 +3524,7 @@ export default function SettingsScreen() {
                   style={[
                     styles.dependencyCard, 
                     { 
-                      backgroundColor: isDark ? '#151922' : '#FFFFFF', 
+                      backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', 
                       borderColor: colors.border,
                       borderWidth: 1,
                       borderRadius: 16,
@@ -3665,7 +3665,7 @@ export default function SettingsScreen() {
             borderRadius: 16,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: isDark ? '#151922' : '#FFFFFF',
+            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
             padding: 18,
             flexDirection: 'row',
             alignItems: 'center',
@@ -3709,7 +3709,7 @@ export default function SettingsScreen() {
             borderRadius: 16,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: isDark ? '#151922' : '#FFFFFF',
+            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
             padding: 16,
             flexDirection: 'row',
             alignItems: 'center',
@@ -3749,7 +3749,7 @@ export default function SettingsScreen() {
               borderRadius: 16,
               borderWidth: 1,
               borderColor: colors.border,
-              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
               padding: 16,
               height: 116,
               justifyContent: 'space-between',
@@ -3770,7 +3770,7 @@ export default function SettingsScreen() {
               borderRadius: 16,
               borderWidth: 1,
               borderColor: colors.border,
-              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
               padding: 16,
               height: 116,
               justifyContent: 'space-between',
@@ -3793,7 +3793,7 @@ export default function SettingsScreen() {
               borderRadius: 16,
               borderWidth: 1,
               borderColor: colors.border,
-              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
               padding: 16,
               height: 116,
               justifyContent: 'space-between',
@@ -3814,7 +3814,7 @@ export default function SettingsScreen() {
               borderRadius: 16,
               borderWidth: 1,
               borderColor: colors.border,
-              backgroundColor: isDark ? '#151922' : '#FFFFFF',
+              backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
               padding: 16,
               height: 116,
               justifyContent: 'space-between',
@@ -3844,7 +3844,7 @@ export default function SettingsScreen() {
             borderRadius: 16,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: isDark ? '#151922' : '#FFFFFF',
+            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
             padding: 16,
             flexDirection: 'row',
             alignItems: 'center',

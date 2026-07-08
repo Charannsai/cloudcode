@@ -132,8 +132,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         style={[
           styles.tabBarContainer,
           { 
-            borderColor: isDark ? 'rgba(255, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-            backgroundColor: isDark ? 'rgba(21, 25, 34, 0.72)' : 'rgba(255, 255, 255, 0.85)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            backgroundColor: isDark ? 'rgba(11, 12, 16, 0.72)' : 'rgba(255, 255, 255, 0.85)',
           }
         ]}
       >
@@ -160,7 +160,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 activeOpacity={0.8}
               >
                 <View style={[styles.fabButton, { backgroundColor: activeColor }]}>
-                  <SvgIcon name="create" size={24} color={isDark ? '#0E1116' : '#FFFFFF'} />
+                  <SvgIcon name="create" size={24} color={isDark ? '#030303' : '#FFFFFF'} />
                 </View>
               </TouchableOpacity>
             )

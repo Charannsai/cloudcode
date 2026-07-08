@@ -98,7 +98,7 @@ export default function ProjectScreen() {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.error, fontFamily: 'Inter_600SemiBold' }]}>Project not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtnFallback, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}>
+        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtnFallback, { backgroundColor: isDark ? '#161821' : '#FAFAFA' }]}>
           <Text style={[styles.backBtnFallbackText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -111,7 +111,7 @@ export default function ProjectScreen() {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => router.back()} 
-          style={[styles.headerBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
+          style={[styles.headerBtn, { backgroundColor: isDark ? '#161821' : '#FAFAFA' }]}
           activeOpacity={0.7}
         >
           <ChevronLeft size={18} color={colors.textSecondary} strokeWidth={1.8} />
@@ -136,7 +136,7 @@ export default function ProjectScreen() {
 
         <TouchableOpacity 
           onPress={fetchProject} 
-          style={[styles.headerBtn, { backgroundColor: isDark ? '#1C2128' : '#F6F8FA' }]}
+          style={[styles.headerBtn, { backgroundColor: isDark ? '#161821' : '#FAFAFA' }]}
           activeOpacity={0.7}
         >
           <RefreshCw size={16} color={project.status === 'ready' ? '#3FB950' : colors.textSecondary} strokeWidth={1.8} />
@@ -145,8 +145,8 @@ export default function ProjectScreen() {
 
       {/* Segmented Tab Bar */}
       <View style={styles.tabBarContainer}>
-        <View style={[styles.tabBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderColor: colors.border }]}>
-          <Animated.View style={[styles.tabIndicator, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }, indicatorStyle]} />
+        <View style={[styles.tabBar, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderColor: colors.border }]}>
+          <Animated.View style={[styles.tabIndicator, { backgroundColor: isDark ? '#030303' : '#FFFFFF' }, indicatorStyle]} />
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id
             const Icon = tab.icon

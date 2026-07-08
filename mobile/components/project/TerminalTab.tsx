@@ -285,12 +285,12 @@ export default function TerminalTab({ projectId }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}
+      style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FFFFFF' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 160}
     >
       {/* Shell Tabs */}
-      <View style={[styles.shellBar, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderBottomColor: colors.border }]}>
+      <View style={[styles.shellBar, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderBottomColor: colors.border }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shellTabs}>
           {terminals.map((termId, idx) => {
             const isActive = termId === activeTerminalId
@@ -301,7 +301,7 @@ export default function TerminalTab({ projectId }: Props) {
                 style={[
                   styles.shellTab,
                   {
-                    backgroundColor: isActive ? (isDark ? '#0E1116' : '#FFFFFF') : 'transparent',
+                    backgroundColor: isActive ? (isDark ? '#030303' : '#FFFFFF') : 'transparent',
                     borderColor: isActive ? colors.border : 'transparent',
                   }
                 ]}
@@ -331,7 +331,7 @@ export default function TerminalTab({ projectId }: Props) {
           })}
           <TouchableOpacity
             onPress={addNewTerminal}
-            style={[styles.addTabBtn, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            style={[styles.addTabBtn, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
             activeOpacity={0.7}
           >
             <Plus size={12} color={colors.textSecondary} strokeWidth={2} />
@@ -342,21 +342,21 @@ export default function TerminalTab({ projectId }: Props) {
         <View style={styles.shellActions}>
           <TouchableOpacity
             onPress={triggerDiagnose}
-            style={[styles.shellAction, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            style={[styles.shellAction, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
             activeOpacity={0.7}
           >
             <Sparkles size={12} color={'#D2A8FF'} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={triggerStop}
-            style={[styles.shellAction, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            style={[styles.shellAction, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
             activeOpacity={0.7}
           >
             <StopCircle size={12} color={'#F85149'} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleClear}
-            style={[styles.shellAction, { backgroundColor: isDark ? '#1C2128' : '#EAEEF2' }]}
+            style={[styles.shellAction, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
             activeOpacity={0.7}
           >
             <Trash2 size={12} color={colors.textSecondary} strokeWidth={1.8} />
@@ -380,7 +380,7 @@ export default function TerminalTab({ projectId }: Props) {
         ))}
       </View>
 
-      <View style={[styles.inputContainer, { backgroundColor: isDark ? '#151922' : '#F6F8FA', borderTopColor: colors.border }]}>
+      <View style={[styles.inputContainer, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderTopColor: colors.border }]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -391,7 +391,7 @@ export default function TerminalTab({ projectId }: Props) {
           {QUICK_COMMANDS.map((cmd) => (
             <TouchableOpacity
               key={cmd}
-              style={[styles.quickCmd, { backgroundColor: isDark ? '#0E1116' : '#FFFFFF', borderColor: colors.border }]}
+              style={[styles.quickCmd, { backgroundColor: isDark ? '#030303' : '#FFFFFF', borderColor: colors.border }]}
               onPress={() => runQuick(cmd)}
               activeOpacity={0.7}
             >
@@ -417,10 +417,10 @@ export default function TerminalTab({ projectId }: Props) {
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {history.length > 0 && (
               <View style={{ flexDirection: 'column', gap: 2 }}>
-                <TouchableOpacity onPress={goHistoryUp} style={[styles.historyBtn, { backgroundColor: isDark ? '#0E1116' : '#EAEEF2' }]}>
+                <TouchableOpacity onPress={goHistoryUp} style={[styles.historyBtn, { backgroundColor: isDark ? '#030303' : '#EAEEF2' }]}>
                   <ArrowUp size={10} color={colors.textSecondary} strokeWidth={2} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={goHistoryDown} style={[styles.historyBtn, { backgroundColor: isDark ? '#0E1116' : '#EAEEF2' }]}>
+                <TouchableOpacity onPress={goHistoryDown} style={[styles.historyBtn, { backgroundColor: isDark ? '#030303' : '#EAEEF2' }]}>
                   <ArrowDown size={10} color={colors.textSecondary} strokeWidth={2} />
                 </TouchableOpacity>
               </View>
@@ -428,7 +428,7 @@ export default function TerminalTab({ projectId }: Props) {
             <TouchableOpacity
               style={[
                 styles.sendBtn,
-                { backgroundColor: inputText.trim() ? colors.text : (isDark ? '#1C2128' : '#EAEEF2') }
+                { backgroundColor: inputText.trim() ? colors.text : (isDark ? '#161821' : '#EAEEF2') }
               ]}
               onPress={submit}
               disabled={!inputText.trim()}

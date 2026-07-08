@@ -618,8 +618,8 @@ function ModelMessageBody({ msg, colors, isDark, mdStyles }: { msg: ChatMessage;
 
           {expanded && reasoning !== '' && (
             <View style={{
-              backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
-              borderColor: isDark ? '#21262D' : '#D8DEE4',
+              backgroundColor: isDark ? '#0D1117' : '#FAFAFA',
+              borderColor: isDark ? '#1A1C23' : '#E4E7EB',
               borderWidth: 0.8,
               borderRadius: 8,
               padding: 12,
@@ -724,8 +724,8 @@ function StreamingMessageBody({
 
           {expanded && reasoning !== '' && (
             <View style={{
-              backgroundColor: isDark ? '#0D1117' : '#F6F8FA',
-              borderColor: isDark ? '#21262D' : '#D8DEE4',
+              backgroundColor: isDark ? '#0D1117' : '#FAFAFA',
+              borderColor: isDark ? '#1A1C23' : '#E4E7EB',
               borderWidth: 0.8,
               borderRadius: 8,
               padding: 12,
@@ -982,10 +982,10 @@ export default function AITab({ projectId }: Props) {
   // Markdown styling
   const mdStyles = {
     body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22 },
-    heading1: { fontSize: 17, fontFamily: 'Inter_700Bold', marginTop: 12, color: isDark ? '#F3F4F6' : '#0E1116' },
-    heading2: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginTop: 8, color: isDark ? '#F3F4F6' : '#0E1116' },
-    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#1C2128' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#F6F8FA', color: isDark ? '#E6EDF3' : '#0E1116', fontSize: 11, padding: 8, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#21262D' : '#D8DEE4' },
+    heading1: { fontSize: 17, fontFamily: 'Inter_700Bold', marginTop: 12, color: isDark ? '#F3F4F6' : '#030303' },
+    heading2: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginTop: 8, color: isDark ? '#F3F4F6' : '#030303' },
+    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#161821' : '#FAFAFA', color: isDark ? '#E6EDF3' : '#030303', fontSize: 11, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
+    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#FAFAFA', color: isDark ? '#E6EDF3' : '#030303', fontSize: 11, padding: 8, borderRadius: 6, overflow: 'hidden' as const, marginVertical: 4, borderWidth: 1, borderColor: isDark ? '#1A1C23' : '#E4E7EB' },
     paragraph: { marginTop: 4, marginBottom: 4 },
   }
 
@@ -1006,7 +1006,7 @@ export default function AITab({ projectId }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: isDark ? '#0E1116' : '#F6F8FA' }]}
+      style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FAFAFA' }]}
       behavior="padding"
       keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}
     >
@@ -1024,7 +1024,7 @@ export default function AITab({ projectId }: Props) {
               fy="0%"
             >
               <Stop offset="0%" stopColor={isDark ? '#1C2030' : '#E0E7FF'} stopOpacity="0.28" />
-              <Stop offset="100%" stopColor={isDark ? '#0E1116' : '#F6F8FA'} stopOpacity="0" />
+              <Stop offset="100%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0" />
             </RadialGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#radialGrad)" />
@@ -1357,7 +1357,7 @@ export default function AITab({ projectId }: Props) {
 
         {/* Floating Speech/Listening Tooltip */}
         {isListening && (
-          <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: isDark ? '#21262D' : '#D8DEE4' }]}>
+          <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: isDark ? '#1A1C23' : '#E4E7EB' }]}>
             <Animated.View style={[styles.listeningPulseDot, { transform: [{ scale: voicePulse }] }]} />
             <Text style={[styles.listeningTooltipText, { color: colors.text }]}>Listening to voice input...</Text>
           </View>
@@ -1453,7 +1453,7 @@ export default function AITab({ projectId }: Props) {
                       onPress={handleSend}
                       activeOpacity={0.7}
                     >
-                      <ArrowUp size={14} color={isDark ? '#0E1116' : '#FFFFFF'} />
+                      <ArrowUp size={14} color={isDark ? '#030303' : '#FFFFFF'} />
                     </TouchableOpacity>
                   )
                 )}

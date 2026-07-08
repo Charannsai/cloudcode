@@ -230,7 +230,7 @@ export default function ProjectsScreen() {
 
   const cardBg = isDark ? '#161B22' : '#FFFFFF'
   const cardBorder = isDark ? '#30363D' : '#E1E4E8'
-  const subtleBg = isDark ? '#21262D' : '#F6F8FA'
+  const subtleBg = isDark ? '#1A1C23' : '#FAFAFA'
 
   useEffect(() => {
     let t: any
@@ -516,9 +516,9 @@ export default function ProjectsScreen() {
         </View>
         <PressableScale
           onPress={() => router.push('/new-project')}
-          style={[styles.newBtn, { backgroundColor: isDark ? '#F3F4F6' : '#0E1116' }]}
+          style={[styles.newBtn, { backgroundColor: isDark ? '#F3F4F6' : '#030303' }]}
         >
-          <Plus size={16} color={isDark ? '#0E1116' : '#FFFFFF'} strokeWidth={2.5} />
+          <Plus size={16} color={isDark ? '#030303' : '#FFFFFF'} strokeWidth={2.5} />
         </PressableScale>
       </View>
 
@@ -560,8 +560,8 @@ export default function ProjectsScreen() {
                 onPress={() => setStatusFilter(f)}
                 style={[styles.filterPill, {
                   backgroundColor: isActive 
-                    ? (isDark ? '#F3F4F6' : '#0E1116') 
-                    : (isDark ? '#21262D' : '#F6F8FA'),
+                    ? (isDark ? '#F3F4F6' : '#030303') 
+                    : (isDark ? '#1A1C23' : '#FAFAFA'),
                   borderColor: isActive 
                     ? 'transparent'
                     : cardBorder,
@@ -571,7 +571,7 @@ export default function ProjectsScreen() {
                   fontSize: 12,
                   fontFamily: isActive ? 'Inter_600SemiBold' : 'Inter_500Medium',
                   color: isActive 
-                    ? (isDark ? '#0E1116' : '#FFFFFF') 
+                    ? (isDark ? '#030303' : '#FFFFFF') 
                     : colors.textSecondary,
                   textTransform: 'capitalize',
                 }}>
@@ -583,7 +583,7 @@ export default function ProjectsScreen() {
         </ScrollView>
 
         {/* Layout Switcher */}
-        <View style={{ flexDirection: 'row', gap: 4, backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderRadius: 8, padding: 2, borderWidth: 1, borderColor: cardBorder }}>
+        <View style={{ flexDirection: 'row', gap: 4, backgroundColor: isDark ? '#1A1C23' : '#FAFAFA', borderRadius: 8, padding: 2, borderWidth: 1, borderColor: cardBorder }}>
           <TouchableOpacity
             onPress={() => setViewMode('list')}
             style={{
@@ -787,16 +787,16 @@ export default function ProjectsScreen() {
                 <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'flex-end', width: '100%' }}>
                   <TouchableOpacity 
                     onPress={() => { setIsRenameMode(false); }}
-                    style={[styles.popoverButton, { flex: 1, backgroundColor: isDark ? '#21262D' : '#F6F8FA', borderColor: cardBorder, height: 38 }]}
+                    style={[styles.popoverButton, { flex: 1, backgroundColor: isDark ? '#1A1C23' : '#FAFAFA', borderColor: cardBorder, height: 38 }]}
                   >
                     <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={handleRenameSubmit}
                     disabled={isRenaming || !newName.trim()}
-                    style={[styles.popoverButton, { flex: 1, backgroundColor: isDark ? '#F3F4F6' : '#0E1116', opacity: isRenaming || !newName.trim() ? 0.6 : 1, height: 38 }]}
+                    style={[styles.popoverButton, { flex: 1, backgroundColor: isDark ? '#F3F4F6' : '#030303', opacity: isRenaming || !newName.trim() ? 0.6 : 1, height: 38 }]}
                   >
-                    <Text style={{ color: isDark ? '#0E1116' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
+                    <Text style={{ color: isDark ? '#030303' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
                       {isRenaming ? 'Saving...' : 'Save'}
                     </Text>
                   </TouchableOpacity>

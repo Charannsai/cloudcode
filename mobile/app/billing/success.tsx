@@ -54,7 +54,7 @@ export default function BillingSuccessScreen() {
 
       <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.cardContainer}>
         {/* Plan badge */}
-        <View style={[styles.card, { backgroundColor: isDark ? '#151922' : '#FFFFFF', borderColor: colors.border, gap: 14 }]}>
+        <View style={[styles.card, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: colors.border, gap: 14 }]}>
           <View style={styles.row}>
             <View style={[styles.iconBg, { backgroundColor: colors.success + '10' }]}>
               <Sparkles size={18} color={colors.success} />

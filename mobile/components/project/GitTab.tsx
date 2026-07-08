@@ -446,7 +446,7 @@ export default function GitTab({ projectId, isActive }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Top Tab Selector */}
-      <View style={[styles.tabSelectorContainer, { borderBottomColor: colors.border, backgroundColor: isDark ? '#0E1116' : '#FFFFFF' }]}>
+      <View style={[styles.tabSelectorContainer, { borderBottomColor: colors.border, backgroundColor: isDark ? '#030303' : '#FFFFFF' }]}>
         <TouchableOpacity
           style={[styles.tabSelectorBtn, gitSubTab === 'changes' && { borderBottomColor: colors.text, borderBottomWidth: 2 }]}
           onPress={() => setGitSubTab('changes')}
@@ -467,7 +467,7 @@ export default function GitTab({ projectId, isActive }: Props) {
         <>
           {/* Branch & Sync Header Panel */}
           <View style={[styles.branchBar, { backgroundColor: isDark ? '#161B22' : '#FFFFFF', borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.branchSelector, { backgroundColor: isDark ? '#21262D' : '#F3F4F6' }]} onPress={handleLoadBranches}>
+        <TouchableOpacity style={[styles.branchSelector, { backgroundColor: isDark ? '#1A1C23' : '#F3F4F6' }]} onPress={handleLoadBranches}>
           <GitBranch size={13} color={isDark ? '#58A6FF' : '#0969da'} />
           <Text style={[styles.branchName, { color: isDark ? '#C9D1D9' : '#1F2328' }]}>
             {status?.branch || 'main'}
@@ -487,7 +487,7 @@ export default function GitTab({ projectId, isActive }: Props) {
             </View>
           )}
           <TouchableOpacity 
-            style={[styles.syncBtn, { backgroundColor: isDark ? '#21262D' : '#F3F4F6' }]} 
+            style={[styles.syncBtn, { backgroundColor: isDark ? '#1A1C23' : '#F3F4F6' }]} 
             onPress={() => handleSync('pull')} 
             disabled={syncing}
             activeOpacity={0.7}
@@ -496,7 +496,7 @@ export default function GitTab({ projectId, isActive }: Props) {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.syncBtn, { backgroundColor: isDark ? '#21262D' : '#F3F4F6' }]} 
+            style={[styles.syncBtn, { backgroundColor: isDark ? '#1A1C23' : '#F3F4F6' }]} 
             onPress={() => handleSync('push')} 
             disabled={syncing}
             activeOpacity={0.7}
@@ -505,7 +505,7 @@ export default function GitTab({ projectId, isActive }: Props) {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.syncBtn, { backgroundColor: isDark ? '#21262D' : '#F3F4F6' }]} 
+            style={[styles.syncBtn, { backgroundColor: isDark ? '#1A1C23' : '#F3F4F6' }]} 
             onPress={() => fetchStatus(true)}
             activeOpacity={0.7}
           >
@@ -553,7 +553,7 @@ export default function GitTab({ projectId, isActive }: Props) {
           <View style={{ paddingVertical: 16 }}>
             
             {/* Summary Banner */}
-            <View style={[styles.summaryBanner, { backgroundColor: isDark ? '#1C2128' : '#F3F4F6', borderColor: colors.border }]}>
+            <View style={[styles.summaryBanner, { backgroundColor: isDark ? '#161821' : '#F3F4F6', borderColor: colors.border }]}>
               <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>
                 {totalChanges} pending {totalChanges === 1 ? 'change' : 'changes'} in workspace
               </Text>
@@ -580,14 +580,14 @@ export default function GitTab({ projectId, isActive }: Props) {
                     </View>
                     <View style={{ flexDirection: 'row', gap: 6 }}>
                       <TouchableOpacity
-                        style={[styles.strategyBtn, { backgroundColor: isDark ? '#21262D' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}
+                        style={[styles.strategyBtn, { backgroundColor: isDark ? '#1A1C23' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}
                         onPress={() => handleResolve(file, 'ours')}
                         disabled={resolvingFiles[file]}
                       >
                         <Text style={[styles.strategyBtnText, { color: colors.text }]}>Keep Mine</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.strategyBtn, { backgroundColor: isDark ? '#21262D' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}
+                        style={[styles.strategyBtn, { backgroundColor: isDark ? '#1A1C23' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}
                         onPress={() => handleResolve(file, 'theirs')}
                         disabled={resolvingFiles[file]}
                       >
@@ -715,7 +715,7 @@ export default function GitTab({ projectId, isActive }: Props) {
 
         {/* Diff Viewer Card */}
         {diffFile && diffText && (
-          <View style={[styles.diffContainer, { backgroundColor: '#0E1116', borderColor: '#30363D' }]}>
+          <View style={[styles.diffContainer, { backgroundColor: '#030303', borderColor: '#30363D' }]}>
             <View style={[styles.diffHeader, { borderBottomColor: '#30363D' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <FileCode size={13} color="#58A6FF" />
@@ -766,7 +766,7 @@ export default function GitTab({ projectId, isActive }: Props) {
             />
             <TouchableOpacity
               style={[styles.commitBtn, {
-                backgroundColor: commitMessage.trim() ? '#2EA44F' : (isDark ? '#21262D' : '#E9ECEF'),
+                backgroundColor: commitMessage.trim() ? '#2EA44F' : (isDark ? '#1A1C23' : '#E9ECEF'),
               }]}
               onPress={handleCommit}
               disabled={!commitMessage.trim() || committing}
