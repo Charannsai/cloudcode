@@ -655,15 +655,14 @@ export default function DashboardScreen() {
               <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', color: '#3FB950' }}>Operational</Text>
             </View>
           </View>
-          
-          <View style={[styles.healthCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-            {/* Top Info Bar: Platform & Uptime */}
+              <View style={[styles.healthCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            {/* Top Info Bar: Platform & Latency Ping */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: cardBorder, paddingBottom: 10, marginBottom: 12 }}>
               <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>
                 host: {diagnostics?.platform || 'cloud-instance'}
               </Text>
               <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>
-                up: {formatUptime(diagnostics?.uptime || 0)}
+                ping: {latVal}ms
               </Text>
             </View>
 
@@ -697,24 +696,16 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
-              {/* Latency & Active Containers Row */}
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+              {/* Active Containers Row */}
+              <View style={{ marginTop: 4 }}>
                 <View style={[styles.healthGridItem, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
-                  <Wifi size={13} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                  <View>
-                    <Text style={{ fontSize: 9, fontFamily: 'Inter_500Medium', color: colors.textSecondary }}>Ping Latency</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 1 }}>{latVal}ms</Text>
-                  </View>
-                </View>
-
-                <View style={[styles.healthGridItem, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
-                  <Box size={13} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                  <View>
-                    <Text style={{ fontSize: 9, fontFamily: 'Inter_500Medium', color: colors.textSecondary }}>Containers</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 1 }}>
-                      {diagnostics?.runningContainers || 0} active
-                    </Text>
-                  </View>
+                  <Box size={13} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Inter_500Medium', color: colors.textSecondary, flex: 1 }}>
+                    Active Workspace Containers
+                  </Text>
+                  <Text style={{ fontSize: 12, fontFamily: 'Inter_700Bold', color: colors.text }}>
+                    {diagnostics?.runningContainers || 0} active
+                  </Text>
                 </View>
               </View>
             </View>
