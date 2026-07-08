@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: 310,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',

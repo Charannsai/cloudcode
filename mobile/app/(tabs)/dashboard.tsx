@@ -402,7 +402,6 @@ export default function DashboardScreen() {
             )}
           </PressableScale>
         </Animated.View>
-
         {/* Workspaces */}
         <Animated.View entering={FadeInDown.delay(50).duration(200)} style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -413,21 +412,18 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
           {showSkeletonState ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-              {[0,1].map(i => (
-                <View key={i} style={[styles.wsCard, { backgroundColor: subtleBg, borderColor: cardBorder, opacity: 0.6 }]}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                    <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
-                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
+            <View style={{ gap: 1 }}>
+              {[0, 1].map(i => (
+                <View key={i} style={[styles.wsRow, { borderBottomColor: cardBorder, opacity: 0.6 }]}>
+                  <View style={{ width: 32, height: 32, borderRadius: 6, backgroundColor: isDark ? '#1A1C23' : '#E5E7EB', marginRight: 12 }} />
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <View style={{ width: '40%', height: 12, borderRadius: 3, backgroundColor: isDark ? '#1A1C23' : '#E5E7EB' }} />
+                    <View style={{ width: '20%', height: 8, borderRadius: 3, backgroundColor: isDark ? '#1A1C23' : '#E5E7EB' }} />
                   </View>
-                  <View style={{ marginTop: 12, width: '100%' }}>
-                    <View style={{ width: '80%', height: 12, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB' }} />
-                    <View style={{ width: '50%', height: 8, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB', marginTop: 6 }} />
-                  </View>
-                  <View style={{ width: 40, height: 10, borderRadius: 4, backgroundColor: isDark ? '#30363D' : '#E5E7EB', marginTop: 8 }} />
+                  <View style={{ width: 50, height: 16, borderRadius: 4, backgroundColor: isDark ? '#1A1C23' : '#E5E7EB' }} />
                 </View>
               ))}
-            </ScrollView>
+            </View>
           ) : projects.length === 0 ? (
             <PressableScale 
               onPress={() => router.push('/new-project')}
@@ -442,7 +438,7 @@ export default function DashboardScreen() {
               </Text>
             </PressableScale>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 16 }}>
+            <View style={{ gap: 1 }}>
               {projects.map((project, idx) => {
                 const tech = detectProjectTech(project.type, project.name, project.github_url)
                 const techColors = getTechColors(tech, isDark)
@@ -451,260 +447,104 @@ export default function DashboardScreen() {
                 return (
                   <Animated.View key={project.id} entering={FadeInRight.delay(30 + idx * 30).duration(200)}>
                     <PressableScale 
-                      style={[styles.wsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
+                      style={[styles.wsRow, { borderBottomColor: cardBorder }]}
                       onPress={() => router.push(`/project/${project.id}`)}
                     >
-                      {/* Top Row: Icon + Pulse Indicator */}
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <View style={{
-                          width: 36, height: 36, borderRadius: 10,
-                          backgroundColor: techColors.bg,
-                          alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <ProjectIcon type={project.type} name={project.name} githubUrl={project.github_url} size={20} isDark={isDark} />
-                        </View>
-                        
-                        {isRunning ? (
-                          <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            backgroundColor: isDark ? 'rgba(63,185,80,0.15)' : 'rgba(34,197,94,0.1)',
-                            paddingHorizontal: 6,
-                            paddingVertical: 3,
-                            borderRadius: 6,
-                          }}>
-                            <PulseDot color="#3FB950" />
-                          </View>
-                        ) : (
-                          <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                            paddingHorizontal: 6,
-                            paddingVertical: 3,
-                            borderRadius: 6,
-                          }}>
-                            <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textSecondary, opacity: 0.5 }} />
-                          </View>
-                        )}
+                      {/* Tech Icon on left */}
+                      <View style={{
+                        width: 32, height: 32, borderRadius: 6,
+                        backgroundColor: techColors.bg,
+                        alignItems: 'center', justifyContent: 'center',
+                        marginRight: 12,
+                      }}>
+                        <ProjectIcon type={project.type} name={project.name} githubUrl={project.github_url} size={16} isDark={isDark} />
                       </View>
- 
-                      {/* Content: Name + Tech */}
-                      <View style={{ marginTop: 12, width: '100%', flex: 1, justifyContent: 'center' }}>
-                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: -0.2 }} numberOfLines={1}>
+                      
+                      {/* Name + Tech Type in middle */}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: -0.15 }} numberOfLines={1}>
                           {project.name}
                         </Text>
-                        <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2, textTransform: 'capitalize' }} numberOfLines={1}>
+                        <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1, textTransform: 'capitalize' }} numberOfLines={1}>
                           {tech}
                         </Text>
                       </View>
- 
-                      {/* Footer: Text-based status */}
-                      <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={{ 
-                          fontSize: 10.5, 
-                          fontFamily: 'Inter_600SemiBold', 
-                          color: isRunning ? (isDark ? '#3FB950' : '#16A34A') : colors.textSecondary 
+                      
+                      {/* Status + Chevron on right */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <View style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: isRunning
+                            ? (isDark ? 'rgba(63,185,80,0.15)' : 'rgba(34,197,94,0.1)')
+                            : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                          paddingHorizontal: 6,
+                          paddingVertical: 3,
+                          borderRadius: 4,
                         }}>
-                          {isRunning ? 'Active' : 'Idle'}
-                        </Text>
+                          <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: isRunning ? '#3FB950' : colors.textSecondary, marginRight: 4, opacity: isRunning ? 1 : 0.5 }} />
+                          <Text style={{ 
+                            fontSize: 10, 
+                            fontFamily: 'Inter_600SemiBold', 
+                            color: isRunning ? (isDark ? '#3FB950' : '#16A34A') : colors.textSecondary 
+                          }}>
+                            {isRunning ? 'Active' : 'Idle'}
+                          </Text>
+                        </View>
+                        <ChevronRight size={14} color={colors.textSecondary} strokeWidth={2.0} />
                       </View>
                     </PressableScale>
                   </Animated.View>
                 )
               })}
- 
-              {/* Add new card */}
-              <PressableScale
-                style={[styles.wsCard, { 
-                  backgroundColor: 'transparent', 
-                  borderColor: cardBorder, 
-                  borderStyle: 'dashed', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  flexDirection: 'column',
-                  gap: 8
-                }]}
+
+              {/* Add New Row */}
+              <TouchableOpacity
+                style={styles.addWorkspaceRow}
                 onPress={() => router.push('/new-project')}
+                activeOpacity={0.7}
               >
                 <View style={{
-                  width: 32, height: 32, borderRadius: 16,
-                  backgroundColor: isDark ? '#1A1C23' : '#FAFAFA',
+                  width: 32, height: 32, borderRadius: 6,
+                  backgroundColor: 'transparent',
                   alignItems: 'center', justifyContent: 'center',
                   borderWidth: 1, borderColor: cardBorder, borderStyle: 'dashed',
+                  marginRight: 12,
                 }}>
-                  <Plus size={16} color={colors.textSecondary} strokeWidth={2} />
+                  <Plus size={14} color={colors.textSecondary} strokeWidth={2} />
                 </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, textAlign: 'center' }}>
-                  Create Workspace
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 13, flex: 1 }}>
+                  Create new workspace...
                 </Text>
-              </PressableScale>
-            </ScrollView>
+                <ChevronRight size={14} color={colors.textSecondary} opacity={0.4} />
+              </TouchableOpacity>
+            </View>
           )}
         </Animated.View>
 
-
-
         {/* System Diagnostics */}
-        <Animated.View entering={FadeInDown.delay(150).duration(200)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 12 }]}>System Health</Text>
-          
-          {/* Stat cards row */}
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+        <Animated.View entering={FadeInDown.delay(100).duration(200)} style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.text, marginBottom: 10 }]}>System Health</Text>
+          <View style={[styles.healthStrip, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             {[
-              { id: 'cpu' as const, label: 'CPU', value: `${cpuVal}%`, icon: Cpu },
-              { id: 'memory' as const, label: 'Memory', value: `${ramVal}%`, icon: Database },
-              { id: 'latency' as const, label: 'Latency', value: `${latVal}ms`, icon: Wifi },
-            ].map(stat => {
-              const isActive = activeMetric === stat.id
+              { label: 'CPU Load', value: `${cpuVal}%`, icon: Cpu },
+              { label: 'Memory', value: `${ramVal}%`, icon: Database },
+              { label: 'Latency', value: `${latVal}ms`, icon: Wifi },
+            ].map((stat, idx) => {
               const IconComp = stat.icon
-              const statColor = isActive ? colors.text : colors.textSecondary
               return (
-                <TouchableOpacity
-                  key={stat.id}
-                  onPress={() => setActiveMetric(stat.id)}
-                  activeOpacity={0.7}
-                  style={[styles.statCard, { 
-                    backgroundColor: isActive ? (isDark ? '#161821' : '#ECEEF0') : cardBg,
-                    borderColor: isActive ? colors.text + '30' : cardBorder,
-                  }]}
-                >
-                  <IconComp size={14} color={statColor} strokeWidth={2} />
-                  <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 10.5, marginTop: 6 }}>
-                    {stat.label}
-                  </Text>
-                  <Text style={{ color: statColor, fontFamily: 'Inter_700Bold', fontSize: 18, marginTop: 2, letterSpacing: -0.5 }}>
-                    {stat.value}
-                  </Text>
-                </TouchableOpacity>
+                <React.Fragment key={idx}>
+                  <View style={styles.healthItem}>
+                    <IconComp size={13} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                    <View>
+                      <Text style={{ fontSize: 9, fontFamily: 'Inter_500Medium', color: colors.textSecondary }}>{stat.label}</Text>
+                      <Text style={{ fontSize: 13, fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 1 }}>{stat.value}</Text>
+                    </View>
+                  </View>
+                  {idx < 2 && <View style={[styles.healthDivider, { backgroundColor: cardBorder }]} />}
+                </React.Fragment>
               )
             })}
-          </View>
-
-          {/* Graph card */}
-          <View style={[styles.graphCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <View>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
-                  {activeMetric === 'cpu' ? 'CPU Load' : activeMetric === 'memory' ? 'RAM Usage' : 'Network Latency'}
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 }}>
-                  {activeMetric === 'cpu'
-                    ? `${diagnostics ? diagnostics.runningContainers : 0} containers active`
-                    : activeMetric === 'memory'
-                    ? 'Virtual swap: 0%'
-                    : 'Gateway: secure SSL'
-                  }
-                </Text>
-              </View>
-              <View style={{ backgroundColor: isDark ? '#1A1C23' : '#FAFAFA', borderWidth: 1, borderColor: cardBorder, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13 }}>
-                  {activeMetric === 'cpu' ? `${cpuVal}%` : activeMetric === 'memory' ? `${ramVal}%` : `${latVal}ms`}
-                </Text>
-              </View>
-            </View>
-
-            {/* Timeline selector */}
-            <View style={{ flexDirection: 'row', gap: 6, marginVertical: 10, alignSelf: 'flex-start' }}>
-              {(['1h', '24h', '7d'] as const).map(t => {
-                const isActive = selectedTimeline === t
-                return (
-                  <TouchableOpacity
-                    key={t}
-                    onPress={() => setSelectedTimeline(t)}
-                    style={{
-                      paddingHorizontal: 10,
-                      paddingVertical: 4,
-                      borderRadius: 6,
-                      backgroundColor: isActive ? (isDark ? '#1A1C23' : '#ECEEF0') : 'transparent',
-                      borderWidth: 1,
-                      borderColor: isActive ? cardBorder : 'transparent',
-                    }}
-                  >
-                    <Text style={{
-                      fontSize: 10,
-                      fontFamily: 'Inter_600SemiBold',
-                      color: isActive ? colors.text : colors.textSecondary,
-                      textTransform: 'uppercase',
-                    }}>
-                      {t === '1h' ? '1 Hr' : t === '24h' ? '24 Hr' : '7 Days'}
-                    </Text>
-                  </TouchableOpacity>
-                )
-              })}
-            </View>
-
-            <View style={{ height: 100 }}>
-              <Svg width="100%" height="100" viewBox="0 0 350 100">
-                <Defs>
-                  <LinearGradient id="graphGlow" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor={metricColor} stopOpacity="0.12" />
-                    <Stop offset="1" stopColor={metricColor} stopOpacity="0.01" />
-                  </LinearGradient>
-                </Defs>
-
-                {/* Subtle grid */}
-                {[25, 50, 75].map(y => (
-                  <Path key={y} d={`M 0 ${y} L 350 ${y}`} stroke={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'} strokeWidth="0.5" strokeDasharray="3,5" />
-                ))}
-
-                {/* Area fill */}
-                <Path
-                  d={areaPath}
-                  fill="url(#graphGlow)"
-                />
-
-                {/* Line */}
-                <Path
-                  d={linePath}
-                  stroke={metricColor}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-
-                {/* Historical data points as tiny dots */}
-                {points.slice(0, -1).map((p, i) => (
-                  <Circle 
-                    key={i} 
-                    cx={p.x.toFixed(1)} 
-                    cy={p.y.toFixed(1)} 
-                    r="2" 
-                    fill={metricColor} 
-                    opacity={0.3} 
-                  />
-                ))}
-
-                {/* Last point as active glowing dot */}
-                {points.length > 0 && (
-                  <>
-                    <Circle 
-                      cx={points[points.length - 1].x.toFixed(1)} 
-                      cy={points[points.length - 1].y.toFixed(1)} 
-                      r="7" 
-                      fill="none" 
-                      stroke={metricColor} 
-                      strokeWidth="1" 
-                      opacity={0.4} 
-                    />
-                    <Circle 
-                      cx={points[points.length - 1].x.toFixed(1)} 
-                      cy={points[points.length - 1].y.toFixed(1)} 
-                      r="3.5" 
-                      fill={metricColor} 
-                      stroke={cardBg} 
-                      strokeWidth="1.8" 
-                    />
-                  </>
-                )}
-              </Svg>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-              {getGraphTimeLabels().map((t, i) => (
-                <Text key={i} style={{ fontSize: 9, fontFamily: 'Inter_400Regular', color: colors.textSecondary, opacity: 0.6 }}>{t}</Text>
-              ))}
-            </View>
           </View>
         </Animated.View>
 
