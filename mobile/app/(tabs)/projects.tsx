@@ -824,14 +824,14 @@ const styles = StyleSheet.create({
   newBtn: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,
     height: 42,
@@ -840,14 +840,14 @@ const styles = StyleSheet.create({
   filterPill: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 8,
     borderWidth: 1,
   },
   list: { paddingHorizontal: 20, paddingBottom: 100 },
   projectRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
     padding: 14,
     marginBottom: 8,
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
   projectIcon: {
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
   emptyIcon: {
     width: 64,
     height: 64,
-    borderRadius: 20,
+    borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -883,19 +883,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
     gap: 12,
   },
   emptyActionIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   qaCard: {
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
@@ -905,7 +905,7 @@ const styles = StyleSheet.create({
   qaIconWrapper: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -916,7 +916,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   projectGridCard: {
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
     padding: 14,
     alignItems: 'flex-start',
@@ -925,7 +925,7 @@ const styles = StyleSheet.create({
   projectGridIcon: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -944,7 +944,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -954,7 +954,7 @@ const styles = StyleSheet.create({
   },
   popoverMenu: {
     position: 'absolute',
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -966,7 +966,7 @@ const styles = StyleSheet.create({
   popoverItem: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   popoverItemText: {
     fontSize: 13.5,
@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
   popoverButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: 'transparent',
     alignItems: 'center',
