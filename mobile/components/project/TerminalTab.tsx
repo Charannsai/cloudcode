@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  Platform, ActivityIndicator,
 } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTerminal } from '@/hooks/useTerminal'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -289,7 +290,7 @@ export default function TerminalTab({ projectId }: Props) {
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FFFFFF' }]}
       behavior="padding"
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}
     >
       {/* Shell Tabs */}
       <View style={[styles.shellBar, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderBottomColor: colors.border }]}>
