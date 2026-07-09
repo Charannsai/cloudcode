@@ -27,6 +27,7 @@
     },
     "scheme": "cloudcode",
     "plugins": [
+      "./plugins/withExcludeSupport",
       "expo-router",
       "expo-secure-store",
       [
