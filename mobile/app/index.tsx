@@ -697,7 +697,7 @@ export default function WelcomeScreen() {
 
       {/* Fixed Bottom Indicators and Primary CTA Button */}
       {isWelcomePhase && (
-        <Animated.View style={[styles.welcomeContentFixed, welcomeContentStyle]}>
+        <Animated.View style={[styles.welcomeContentFixed, welcomeContentStyle, { bottom: 40 + insets.bottom }]}>
           {/* Dots Indicator */}
           <View style={styles.dotsContainer}>
             {Array.from({ length: 6 }).map((_, i) => (
