@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTerminal } from '@/hooks/useTerminal'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useRouter } from 'expo-router'
@@ -161,6 +162,7 @@ function TerminalSession({
 export default function TerminalTab({ projectId }: Props) {
   const router = useRouter()
   const { setPendingPrompt, setActiveProject } = useAIStore()
+  const insets = useSafeAreaInsets()
 
   // Read terminal state from the persistent store
   const terminalStore = useTerminalStore()
@@ -380,7 +382,14 @@ export default function TerminalTab({ projectId }: Props) {
         ))}
       </View>
 
-      <View style={[styles.inputContainer, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderTopColor: colors.border }]}>
+      <View style={[
+        styles.inputContainer,
+        {
+          backgroundColor: isDark ? '#0B0C10' : '#FAFAFA',
+          borderTopColor: colors.border,
+          paddingBottom: Math.max(insets.bottom, 10),
+        }
+      ]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -523,7 +532,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingBottom: 10,
+    paddingBottom: 2,
     paddingTop: 2,
     gap: 6,
   },

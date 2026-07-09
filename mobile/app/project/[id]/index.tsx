@@ -108,7 +108,7 @@ export default function ProjectScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 10 : 20, borderBottomColor: colors.border }]}>
         <TouchableOpacity 
