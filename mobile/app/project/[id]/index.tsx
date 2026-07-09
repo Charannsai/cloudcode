@@ -17,7 +17,6 @@ import PreviewTab from '@/components/project/PreviewTab'
 import GitTab from '@/components/project/GitTab'
 import AITab from '@/components/project/AITab'
 import PRsTab from '@/components/project/PRsTab'
-import VoiceOverlay from '@/components/VoiceOverlay'
 
 const TABS = [
   { id: 'Terminal', icon: Terminal },
@@ -198,11 +197,8 @@ export default function ProjectScreen() {
           <AITab projectId={project.id} />
         </View>
       </View>
-      
-      {/* Voice-Controlled Autonomous Shake-to-Act */}
-      <VoiceOverlay projectId={project.id} />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
