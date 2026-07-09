@@ -601,12 +601,6 @@ export default function SettingsScreen() {
   const [loadingSsh, setLoadingSsh] = useState(true)
   const [copied, setCopied] = useState(false)
 
-  // Runtimes state
-  const [runtimesList, setRuntimesList] = useState<{ name: string; version: string; key: string }[]>([])
-  const [loadingRuntimes, setLoadingRuntimes] = useState(false)
-  const [runtimesSearch, setRuntimesSearch] = useState('')
-  const [updatingRuntimes, setUpdatingRuntimes] = useState<Record<string, boolean>>({})
-
   // AI keys states
   const [byokMode, setByokMode] = useState(false)
   const [customGeminiKey, setCustomGeminiKey] = useState('')
@@ -615,19 +609,40 @@ export default function SettingsScreen() {
   const [customGroqKey, setCustomGroqKey] = useState('')
   const [savingAiKeys, setSavingAiKeys] = useState(false)
   const [selectedByokModel, setSelectedByokModel] = useState<'gemini' | 'openai' | 'anthropic' | 'groq'>('gemini')
+  
+  // Runtimes state
+  const [runtimesList, setRuntimesList] = useState<{ name: string; version: string; key: string }[]>([])
+  const [loadingRuntimes, setLoadingRuntimes] = useState(false)
+  const [runtimesSearch, setRuntimesSearch] = useState('')
+  const [updatingRuntimes, setUpdatingRuntimes] = useState<Record<string, boolean>>({})
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false)
 
-  const fetchRuntimesData = useCallback(async (silent = false) => {
+  const fetchRuntimesData = useCallback(async (silent = false, projectId?: string) => {
+    const targetId = projectId || selectedProjectId
     const shouldShowLoader = !silent || runtimesList.length === 0
     if (shouldShowLoader) setLoadingRuntimes(true)
     try {
-      const data = await api.system.runtimes()
+      const data = await api.system.runtimes(targetId || undefined)
       setRuntimesList(data.runtimes || [])
     } catch (err) {
       console.warn('Failed to load system runtimes:', err)
     } finally {
       if (shouldShowLoader) setLoadingRuntimes(false)
     }
-  }, [runtimesList.length])
+  }, [runtimesList.length, selectedProjectId])
+
+  useEffect(() => {
+    if (projects && projects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(projects[0].id)
+    }
+  }, [projects, selectedProjectId])
+
+  useEffect(() => {
+    if (currentSubScreen === 'dependencies' && selectedProjectId) {
+      fetchRuntimesData(false, selectedProjectId)
+    }
+  }, [currentSubScreen, selectedProjectId])
 
   async function fetchGitSshData(silent = false) {
     const shouldShowLoader = !silent || !sshPublicKey
@@ -677,12 +692,12 @@ export default function SettingsScreen() {
       } else if (currentSubScreen === 'gitSsh') {
         fetchGitSshData(true)
       } else if (currentSubScreen === 'dependencies') {
-        fetchRuntimesData(true)
+        fetchRuntimesData(true, selectedProjectId || undefined)
       } else if (currentSubScreen === 'profile') {
         loadLocalAuditLogs()
       } else {
         fetchBillingStatus(true)
-        fetchRuntimesData(true)
+        fetchRuntimesData(true, selectedProjectId || undefined)
         loadLocalAuditLogs()
         fetchProjects(true)
       }
@@ -694,17 +709,17 @@ export default function SettingsScreen() {
         } else if (currentSubScreen === 'gitSsh') {
           fetchGitSshData(true)
         } else if (currentSubScreen === 'dependencies') {
-          fetchRuntimesData(true)
+          fetchRuntimesData(true, selectedProjectId || undefined)
         } else {
           fetchBillingStatus(true)
-          fetchRuntimesData(true)
+          fetchRuntimesData(true, selectedProjectId || undefined)
         }
       }, 10000)
 
       return () => {
         clearInterval(interval)
       }
-    }, [currentSubScreen, fetchRuntimesData, fetchProjects])
+    }, [currentSubScreen, fetchRuntimesData, fetchProjects, selectedProjectId])
   )
 
   useEffect(() => {
@@ -3469,11 +3484,18 @@ export default function SettingsScreen() {
 
 
   const handleInstallRuntime = async (runtimeKey: string, runtimeName: string) => {
+    if (!selectedProjectId) {
+      Alert.alert('Error', 'Please select a workspace container first.')
+      return
+    }
     setUpdatingRuntimes(prev => ({ ...prev, [runtimeKey]: true }))
     try {
-      const res = await api.system.installRuntime(runtimeKey)
+      const res = await api.system.installRuntime(runtimeKey, selectedProjectId)
       showModal('Installation Started', res.message, 'success')
-      fetchRuntimesData(true)
+      fetchRuntimesData(true, selectedProjectId)
+      setTimeout(() => {
+        fetchRuntimesData(true, selectedProjectId)
+      }, 3000)
     } catch (err) {
       showModal('Error', (err as Error).message, 'error')
     } finally {
@@ -3499,6 +3521,106 @@ export default function SettingsScreen() {
             <ArrowLeft size={18} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>System Runtimes</Text>
+        </View>
+
+        {/* Workspace Selector */}
+        <View style={{ marginHorizontal: 24, marginBottom: 8, zIndex: 100 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+            Target Workspace Container
+          </Text>
+          {projects.length === 0 ? (
+            <View style={{
+              padding: 16,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+              alignItems: 'center'
+            }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_400Regular' }}>
+                No active workspaces found. Create one first!
+              </Text>
+            </View>
+          ) : (
+            <View style={{ position: 'relative' }}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 14,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: isDark ? '#0B0C10' : '#FFFFFF'
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Server size={16} color={colors.primary} />
+                  <Text style={{ color: colors.text, fontSize: 14, fontFamily: 'Inter_600SemiBold' }}>
+                    {projects.find(p => p.id === selectedProjectId)?.name || 'Select a Workspace'}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                    {projects.find(p => p.id === selectedProjectId)?.type || 'N/A'}
+                  </Text>
+                </View>
+                <ChevronDown size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+
+              {showWorkspaceDropdown && (
+                <View style={{
+                  position: 'absolute',
+                  top: 54,
+                  left: 0,
+                  right: 0,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: isDark ? '#0F111A' : '#FFFFFF',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                  elevation: 5,
+                  maxHeight: 180,
+                  overflow: 'hidden'
+                }}>
+                  <ScrollView nestedScrollEnabled={true}>
+                    {projects.map((proj) => (
+                      <TouchableOpacity
+                        key={proj.id}
+                        onPress={() => {
+                          setSelectedProjectId(proj.id)
+                          setShowWorkspaceDropdown(false)
+                        }}
+                        style={{
+                          padding: 14,
+                          borderBottomWidth: 1,
+                          borderBottomColor: colors.border + '30',
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: selectedProjectId === proj.id ? (isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)') : 'transparent'
+                        }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }}>
+                            {proj.name}
+                          </Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }}>
+                            ({proj.type})
+                          </Text>
+                        </View>
+                        {selectedProjectId === proj.id && <Check size={14} color={colors.primary} />}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
         <TextInput

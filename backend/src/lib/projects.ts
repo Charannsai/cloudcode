@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import fs from 'fs/promises'
 import path from 'path'
 import { supabaseAdmin } from './supabase'
-import { createContainer, getWorkspacePath } from './docker'
+import { createContainer, getWorkspacePath, installRuntimeInContainerAsync } from './docker'
 
 export async function seedTemplate(dir: string, type: string) {
   // Helper to write file and ensure parent directory exists
@@ -1086,7 +1086,7 @@ cargo run
   }
 }
 
-export async function provisionContainer(projectId: string) {
+export async function provisionContainer(projectId: string, runtimes?: string[]) {
   try {
     const { containerId, port } = await createContainer(projectId)
     await supabaseAdmin
@@ -1097,6 +1097,15 @@ export async function provisionContainer(projectId: string) {
         port: port ? parseInt(port, 10) : null
       })
       .eq('id', projectId)
+
+    // Install pre-selected runtimes in the background asynchronously
+    if (runtimes && runtimes.length > 0) {
+      for (const runtime of runtimes) {
+        installRuntimeInContainerAsync(containerId, runtime).catch((err) => {
+          console.error(`[Background Runtime Install Failed during Provisioning] ${runtime}:`, err)
+        })
+      }
+    }
   } catch (err) {
     console.error('Container provisioning failed:', err)
     await supabaseAdmin
@@ -1109,7 +1118,8 @@ export async function provisionContainer(projectId: string) {
 export async function createProjectInternal(
   userId: string,
   name: string,
-  type: 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs'
+  type: 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs',
+  runtimes?: string[]
 ) {
   const projectId = uuidv4()
 
@@ -1142,7 +1152,7 @@ export async function createProjectInternal(
     console.error('Failed to chmod recursively:', e)
   }
 
-  provisionContainer(projectId).catch(console.error)
+  provisionContainer(projectId, runtimes).catch(console.error)
 
   return project
 }

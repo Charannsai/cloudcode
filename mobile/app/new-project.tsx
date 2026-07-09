@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { api } from '@/lib/api'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useProjectsStore } from '@/store/projects'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { Terminal, Atom, ChevronLeft, Check, Box, Github, Link2, Folder, Globe, Cpu, Flame, Code } from '@/components/HugeIconsShim'
@@ -52,12 +53,16 @@ export default function NewProjectScreen() {
 
     setLoading(true)
     try {
+      // Load pre-selected onboarding runtimes preferences
+      const runtimesStr = await AsyncStorage.getItem('onboarding_runtimes')
+      const runtimes = runtimesStr ? JSON.parse(runtimesStr) : []
+
       let project
       if (mode === 'clone') {
         if (!githubUrl.includes('github.com')) throw new Error('Invalid GitHub repository URL.')
-        project = await api.projects.import(name.trim(), githubUrl.trim())
+        project = await api.projects.import(name.trim(), githubUrl.trim(), runtimes)
       } else {
-        project = await api.projects.create(name.trim(), type)
+        project = await api.projects.create(name.trim(), type, runtimes)
       }
       
       addProject(project)
