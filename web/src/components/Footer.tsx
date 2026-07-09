@@ -15,7 +15,11 @@ interface FooterProps {
 
 export function Footer({ theme, colors, toggleTheme }: FooterProps) {
   return (
-    <footer className={`w-full pt-10 pb-6 border-t ${colors.border} z-10 overflow-hidden mt-auto`}>
+    <footer className={`w-full pt-10 pb-6 z-10 overflow-hidden mt-auto ${
+        theme === "dark"
+          ? "bg-gradient-to-t from-[#030303]/90 via-[#030303]/40 to-transparent"
+          : "bg-gradient-to-t from-[#FAFAFA]/90 via-[#FAFAFA]/40 to-transparent"
+      }`}>
       <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-left mb-8">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <Link href="/" className="flex items-center gap-3">
