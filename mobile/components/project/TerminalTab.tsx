@@ -290,7 +290,7 @@ export default function TerminalTab({ projectId }: Props) {
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FFFFFF' }]}
       behavior="padding"
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 150}
     >
       {/* Shell Tabs */}
       <View style={[styles.shellBar, { backgroundColor: isDark ? '#0B0C10' : '#FAFAFA', borderBottomColor: colors.border }]}>
