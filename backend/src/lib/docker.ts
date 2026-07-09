@@ -586,4 +586,36 @@ export async function recordSessionEnd(containerId: string) {
   }
 }
 
+export async function installRuntimeInContainerAsync(containerId: string, runtimeKey: string) {
+  console.log(`[Runtime Installer] Started installing ${runtimeKey} in container ${containerId}`)
+  try {
+    let command: string[] = []
+    if (runtimeKey === 'gcc') {
+      command = ['sh', '-c', 'apt-get update && apt-get install -y build-essential']
+    } else if (runtimeKey === 'python') {
+      command = ['sh', '-c', 'apt-get update && apt-get install -y python3 python3-pip python3-venv']
+    } else if (runtimeKey === 'go') {
+      command = ['sh', '-c', 'apt-get update && apt-get install -y golang-go']
+    } else if (runtimeKey === 'rust') {
+      command = ['sh', '-c', 'apt-get update && apt-get install -y build-essential && curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && ln -sf /home/coder/.cargo/bin/* /usr/local/bin/']
+    } else if (runtimeKey === 'ruby') {
+      command = ['sh', '-c', 'apt-get update && apt-get install -y ruby-full']
+    } else if (runtimeKey === 'java') {
+      command = ['sh', '-c', 'apt-get update && apt-get install -y default-jdk']
+    } else if (runtimeKey === 'php') {
+      command = ['sh', '-c', 'apt-get update && apt-get install -y php-cli php-common']
+    }
+
+    if (command.length > 0) {
+      const exitCode = await execInContainer(containerId, command, (data) => {
+        // Log inside server stdout
+        process.stdout.write(`[Docker Install Log ${containerId}]: ${data}`)
+      }, 'root')
+      console.log(`[Runtime Installer] Finished installing ${runtimeKey} in container ${containerId}. Exit code: ${exitCode}`)
+    }
+  } catch (err) {
+    console.error(`[Runtime Installer] Failed to install ${runtimeKey} in container ${containerId}:`, err)
+  }
+}
+
 export { docker }

@@ -19,28 +19,44 @@ export default function OnboardingWizardScreen() {
   const [runtimes, setRuntimes] = useState({
     node: true,
     git: true,
-    gcc: true,
-    python: true,
+    gcc: false,
+    python: false,
+    go: false,
+    rust: false,
+    ruby: false,
+    java: false,
+    php: false,
   })
 
   const toggleRuntime = (key: keyof typeof runtimes) => {
+    if (key === 'node' || key === 'git') return // Mandatory
     setRuntimes(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   const handleConfirm = async (auto = true) => {
     setLoading(true)
     try {
-      // If auto-install is selected, we choose all tools
-      const selection = auto ? { node: true, git: true, gcc: true, python: true } : runtimes
+      const selection = auto ? {
+        node: true,
+        git: true,
+        gcc: true,
+        python: true,
+        go: true,
+        rust: true,
+        ruby: false,
+        java: false,
+        php: false
+      } : runtimes
       
-      // Save choices to AsyncStorage for the project container setup scripts to read
       await AsyncStorage.setItem('onboarding_completed', 'true')
-      await AsyncStorage.setItem('onboarding_runtimes_node', selection.node ? 'true' : 'false')
-      await AsyncStorage.setItem('onboarding_runtimes_git', selection.git ? 'true' : 'false')
-      await AsyncStorage.setItem('onboarding_runtimes_gcc', selection.gcc ? 'true' : 'false')
-      await AsyncStorage.setItem('onboarding_runtimes_python', selection.python ? 'true' : 'false')
+      
+      // Filter out mandatory runtimes and save selected keys
+      const selectedKeys = Object.entries(selection)
+        .filter(([key, val]) => val && !['node', 'git'].includes(key))
+        .map(([key]) => key)
+        
+      await AsyncStorage.setItem('onboarding_runtimes', JSON.stringify(selectedKeys))
 
-      // Short delay for high-fidelity loading effect
       setTimeout(() => {
         setLoading(false)
         router.replace('/(tabs)/dashboard')
@@ -131,18 +147,25 @@ export default function OnboardingWizardScreen() {
               <ScrollView style={styles.listScroll} showsVerticalScrollIndicator={false}>
                 <View style={styles.checkboxList}>
                   {[
-                    { id: 'node', label: 'Node.js Runtime', desc: 'JavaScript, npm package manager, Next.js templates' },
-                    { id: 'git', label: 'Git Version Control', desc: 'Sync branches, pull remote commits, stage changes' },
-                    { id: 'gcc', label: 'GCC Compiler', desc: 'C, C++ compilation and run commands' },
-                    { id: 'python', label: 'Python 3 Runtime', desc: 'Python scripting, Flask/FastAPI backend servers' },
+                    { id: 'node', label: 'Node.js Runtime', desc: 'Mandatory (Pre-installed) — JS/TS development, npm CLI' },
+                    { id: 'git', label: 'Git Version Control', desc: 'Mandatory (Pre-installed) — Workspace version control, cloning' },
+                    { id: 'gcc', label: 'C/C++ Compiler (GCC)', desc: 'Compile standard C/C++ projects' },
+                    { id: 'python', label: 'Python 3 Runtime', desc: 'Python programming & package installer (pip)' },
+                    { id: 'go', label: 'Go Runtime', desc: 'Go development compiler environment' },
+                    { id: 'rust', label: 'Rust Compiler', desc: 'Cargo dependency manager and rustc compiler' },
+                    { id: 'ruby', label: 'Ruby Language', desc: 'Ruby scripting and gems manager' },
+                    { id: 'java', label: 'Java JDK', desc: 'Java Compiler & OpenJDK Virtual Machine' },
+                    { id: 'php', label: 'PHP CLI', desc: 'PHP scripting engine command line tools' },
                   ].map((item) => {
                     const isSelected = runtimes[item.id as keyof typeof runtimes]
+                    const isMandatory = item.id === 'node' || item.id === 'git'
                     return (
                       <TouchableOpacity
                         key={item.id}
-                        activeOpacity={0.7}
-                        style={[styles.checkRow, { borderBottomColor: colors.border }]}
+                        activeOpacity={isMandatory ? 1.0 : 0.7}
+                        style={[styles.checkRow, { borderBottomColor: colors.border, opacity: isMandatory ? 0.6 : 1 }]}
                         onPress={() => toggleRuntime(item.id as keyof typeof runtimes)}
+                        disabled={isMandatory}
                       >
                         <View style={{ flex: 1, paddingRight: 12 }}>
                           <Text style={[styles.checkLabel, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>{item.label}</Text>

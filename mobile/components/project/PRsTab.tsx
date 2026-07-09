@@ -35,7 +35,7 @@ import {
 import { usePRStore } from '@/store/prStore'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { ConfirmModal } from '@/components/ConfirmModal'
-import Animated, { FadeIn, FadeInRight, SlideInBottom } from 'react-native-reanimated'
+import Animated, { FadeIn, FadeInRight, SlideInUp } from 'react-native-reanimated'
 import { api } from '@/lib/api'
 
 const { width, height } = Dimensions.get('window')
@@ -200,10 +200,10 @@ export default function PRsTab({ projectId }: PRsTabProps) {
       const prompt = `You are an expert Senior Code Reviewer. Review the following Pull Request changes. Summarize the changes, highlight any bugs, security vulnerabilities, or performance issues, and suggest improvements. Keep your response structured, professional, and clear.\n\n${diffSummary}`
 
       // Create a temporary stateful run to stream the AI response
-      const run = await api.ai.runs.create(projectId, prompt, 'gemini')
+      const runData = await api.ai.createRun(projectId, 'gemini', prompt)
       
       let fullResponse = ''
-      await api.ai.runs.chat(projectId, run.id, prompt, (chunk) => {
+      await api.ai.runChat(runData.run.id, prompt, undefined, (chunk: any) => {
         if (chunk.type === 'text' && chunk.content) {
           fullResponse += chunk.content
           setAiReviewText(fullResponse)
@@ -299,7 +299,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
     return (
       <Modal visible={!!selectedFile} animationType="slide" transparent>
         <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.85)' }]}>
-          <Animated.View entering={SlideInBottom} style={[styles.diffModalContent, { backgroundColor: colors.background }]}>
+          <Animated.View entering={SlideInUp} style={[styles.diffModalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <View style={{ flex: 1, marginRight: 16 }}>
                 <Text style={[styles.modalTitle, { color: colors.text }]} numberOfLines={1}>
@@ -522,7 +522,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             <View style={{ flex: 1, justifyContent: 'flex-end', width: '100%' }}>
-              <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Animated.View entering={SlideInUp} style={[styles.modalContent, { backgroundColor: colors.card }]}>
               <Text style={[styles.modalTitleText, { color: colors.text }]}>Submit Review</Text>
               
               {/* Event selector */}
@@ -590,7 +590,7 @@ export default function PRsTab({ projectId }: PRsTabProps) {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             <View style={{ flex: 1, justifyContent: 'flex-end', width: '100%' }}>
-              <Animated.View entering={SlideInBottom} style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Animated.View entering={SlideInUp} style={[styles.modalContent, { backgroundColor: colors.card }]}>
               <Text style={[styles.modalTitleText, { color: colors.text }]}>Merge Pull Request</Text>
 
               {/* Merge method selector */}
