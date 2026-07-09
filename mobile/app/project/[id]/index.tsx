@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, LayoutChangeEvent,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
@@ -37,6 +38,7 @@ export default function ProjectScreen() {
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('Terminal')
+  const insets = useSafeAreaInsets()
 
   useEffect(() => {
     if (tab) {
@@ -106,9 +108,9 @@ export default function ProjectScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 10 : 20, borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => router.back()} 
           style={[styles.headerBtn, { backgroundColor: isDark ? '#161821' : '#FAFAFA' }]}
@@ -219,7 +221,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 56,
     paddingBottom: 14,
     gap: 12,
   },

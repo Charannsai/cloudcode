@@ -1352,7 +1352,7 @@ export default function AITab({ projectId }: Props) {
       </ScrollView>
 
       {/* Bottom Container for perfect flow-based keyboard avoidance */}
-      <View style={[styles.bottomContainer, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 12 }]}>
+      <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
 
 
         {/* Floating Speech/Listening Tooltip */}
