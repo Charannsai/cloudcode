@@ -13,6 +13,7 @@ export default function PrivacyPolicy() {
   }
 
   return (
+    <div className={theme === "dark" ? "dark" : ""}>
     <div className={`${colors.bg} ${colors.text} min-h-screen flex flex-col items-center relative overflow-x-hidden font-sans transition-colors duration-350`}>
       {/* Background Ambient Glow */}
       {theme === "dark" && (
@@ -240,6 +241,7 @@ export default function PrivacyPolicy() {
 
       {/* Footer */}
       <Footer theme={theme} colors={colors} toggleTheme={toggleTheme} />
+    </div>
     </div>
   );
 }
