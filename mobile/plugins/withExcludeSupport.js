@@ -5,12 +5,12 @@ const withExcludeSupport = (config) => {
     if (config.modResults.language === 'groovy') {
       let buildGradle = config.modResults.contents;
       
-      // Append the exclusion block at the end of build.gradle
+      // Append the global com.android.support exclusion block at the end of build.gradle
       if (!buildGradle.includes("exclude group: 'com.android.support'")) {
         const excludeBlock = `
-// Exclude legacy support library version of versionedparcelable to avoid class collisions with AndroidX
+// Exclude all legacy android support library groups to prevent duplicate class conflicts with AndroidX
 configurations.all {
-    exclude group: 'com.android.support', module: 'versionedparcelable'
+    exclude group: 'com.android.support'
 }
 `;
         buildGradle = buildGradle + "\n" + excludeBlock;
