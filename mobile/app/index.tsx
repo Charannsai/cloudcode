@@ -252,8 +252,8 @@ export default function WelcomeScreen() {
       )
 
       if (result.type === 'success' && result.url) {
-        const url = new URL(result.url)
-        const token = url.searchParams.get('token')
+        const parsed = Linking.parse(result.url)
+        const token = parsed.queryParams?.token as string | undefined
         if (token) {
           await handleLoginSuccess(token)
         }
