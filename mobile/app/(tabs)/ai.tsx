@@ -12,9 +12,18 @@ import {
   Shield, Lock, Square, MoreVertical, Plus, Mic, ArrowLeft, Folder,
   Plug, MessageSquare, Check, Zap
 } from '@/components/HugeIconsShim'
-import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
-import Voice from '@react-native-voice/voice'
+// Mock Voice since @react-native-voice/voice was removed due to New Architecture incompatibility
+const Voice = {
+  onSpeechStart: null as any,
+  onSpeechEnd: null as any,
+  onSpeechResults: null as any,
+  onSpeechError: null as any,
+  start: async (_locale: string) => { throw new Error('Voice not supported') },
+  stop: async () => {},
+  destroy: async () => { return { then: (cb: any) => { cb(); return { catch: () => {} } } } as any },
+  removeAllListeners: () => {},
+};
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
@@ -745,31 +754,10 @@ export default function AIScreen() {
   }, [isListening])
 
   const toggleListening = async () => {
-    if (isListening) {
-      try {
-        await Voice.stop()
-        setIsListening(false)
-      } catch (e) {
-        console.error(e)
-      }
-    } else {
-      ensureMicrophonePermission(
-        async () => {
-          try {
-            Keyboard.dismiss()
-            setInputText('')
-            await Voice.start('en-US')
-            setIsListening(true)
-          } catch (e) {
-            console.error(e)
-            Alert.alert(
-              'Microphone Access',
-              'Could not start voice recognition. Please ensure microphone permissions are granted in your device settings.'
-            )
-          }
-        }
-      )
-    }
+    Alert.alert(
+      'Voice Input',
+      'Voice input is currently disabled in this build to support the React Native New Architecture.'
+    )
   }
 
   const handleSend = async () => {
