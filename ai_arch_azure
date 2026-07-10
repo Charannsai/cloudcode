@@ -1,0 +1,145 @@
+# Detailed Feature & Architecture Plan: Azure + Supabase RAG + Tier Enforcement
+
+This document outlines the architectural split for CloudCode's AI roadmap. To optimize costs and keep your monthly running bills at **$0 (fixed)**, we are routing all generative intelligence to **Azure OpenAI / Azure AI Foundry** (which consumes your $100 credits) while building the search indexer (RAG) directly on your **Supabase DB** via `pgvector`.
+
+Additionally, we are **activating token logging and tier enforcement** to ensure that your free Azure credits are protected from abuse by free-tier users.
+
+---
+
+## 🗺️ Architectural Mapping of Features
+
+| Feature | Primary Engine / Model | Vector / Search Engine | Runtime Environment |
+| :--- | :--- | :--- | :--- |
+| **1. AI Code Chat** | Azure `gpt-4o` / Google `gemini-3.5` | None | Next.js API / Mobile UI |
+| **2. Project Context AI** | Azure `gpt-4o` | **Supabase `pgvector`** (OpenAI embeddings) | Next.js API + DB |
+| **3. AI Error Explainer** | Azure `gpt-4o-mini` | None | Node WebSocket terminal stream |
+| **4. AI Commit Generator** | Azure `gpt-4o-mini` | None | Host server executing container `git` |
+| **5. AI PR Generator** | Azure `gpt-4o-mini` | None | Host server executing container `git` |
+| **6. AI Doc Generator** | Azure `gpt-4o-mini` | None | Next.js API |
+| **7. Workspace Knowledge AI**| Azure `gpt-4o` | **Supabase `pgvector`** | Supabase database queries |
+| **8. AI File Navigator** | Azure `gpt-4o` (Tool Calling) | **Supabase `pgvector`** | Next.js API + WebSocket |
+| **9. AI Terminal Assistant** | Azure `gpt-4o` / Azure `llama` | None | LangGraph container tool runs |
+| **10. AI Dependency Analyzer**| Azure `gpt-4o-mini` | None | package.json scans in container |
+| **11. AI Code Review** | Azure `gpt-4o` | None | Git diff scan + Next.js API |
+| **12. Screenshot Debugging**| Azure `gpt-4o` (Vision) | None | Next.js Multimodal API |
+| **13. Voice Coding** | Azure Speech (Whisper) | None | Azure Speech SDK |
+| **14. AI Project Onboarding** | Azure `gpt-4o` | **Supabase `pgvector`** | Startup container scans |
+| **15. AI Workspace Health** | Azure `gpt-4o-mini` | None | Next.js API + Cron check |
+| **16. Autonomous Agent** | Azure `gpt-4o` (LangGraph) | **Supabase `pgvector`** | Custom LangGraph Loop in `gemini.ts` |
+
+---
+
+## 🛡️ 1. Tier Quota Enforcement & Azure Credit Protection
+To prevent your $100 Azure credit from being spammed, we will activate the unused `recordTokens` infrastructure in `gemini.ts` and connect it to the streaming handlers:
+
+```mermaid
+graph TD
+    Request[User Prompt Request] --> Auth[Verify JWT & Fetch Tier Status]
+    Auth --> CheckQuota{Is user token usage >= tier limit?}
+    
+    CheckQuota -->|Yes| Block[Return Quota Exceeded SSE Error]
+    CheckQuota -->|No| Stream[Begin Streaming from Azure Model]
+    
+    Stream --> Accumulate[Accumulate response text length]
+    Accumulate --> Record[At end of stream: Call recordTokens]
+    Record --> Supabase[Update users.ai_tokens_used or users.byok_tokens_used]
+```
+
+### Flow Specifications:
+* **Token Budget Limits**:
+  - **Free Tier**: 50,000 monthly tokens. Using your system keys (on Azure) is capped strictly.
+  - **Pro Tier**: 5,000,000 monthly tokens. Enforces limits to offset costs via their monthly subscription.
+* **BYOK Support**:
+  - If `customApiKey` is detected, token tracking will update the `byok_tokens_used` column instead of `ai_tokens_used`, and the limit checks will be bypassed completely since they are paying for their own tokens.
+
+---
+
+## 🗄️ 2. Supabase `pgvector` Search Architecture
+Rather than paying Microsoft $70+/month for an idle Azure AI Search instance, we store vector embeddings of workspace files inside your existing Supabase database.
+
+### Database Schema (SQL Migration)
+We will run a migration on your Supabase DB to create the search table and indices:
+```sql
+-- 1. Enable the vector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 2. Create the document chunks table
+CREATE TABLE project_file_chunks (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  file_path text NOT NULL,
+  chunk_content text NOT NULL,
+  embedding vector(1536), -- 1536 dimensions for text-embedding-3-small
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 3. Create a vector index for fast similarity matching
+CREATE INDEX ON project_file_chunks USING hnsw (embedding vector_cosine_ops);
+```
+
+### Chunking & Vector Sync Pipeline
+1. When a user updates a file in the CloudCode Editor, a debounced background worker in the Next.js API reads the file.
+2. The file is split into code blocks (semantic lines, class/function definitions).
+3. The server calls the Azure OpenAI Embedding API (`text-embedding-3-small`) to generate a 1536-dimension float array.
+4. The database updates the vector records for that specific file path.
+
+---
+
+## 🛠️ 3. Core Model Configurations
+
+### Environment Keys ([.env.local](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/backend/.env.local))
+We will add these keys to hook up your Azure resource deployments:
+```ini
+# Azure OpenAI Credentials (GPT-4o, GPT-4o-Mini, and Embeddings)
+AZURE_OPENAI_API_KEY="your_azure_openai_api_key"
+AZURE_OPENAI_ENDPOINT="https://your-resource-name.openai.azure.com/"
+AZURE_OPENAI_API_VERSION="2024-05-01-preview"
+
+# Azure AI Foundry Models (Claude and Llama)
+AZURE_CLAUDE_ENDPOINT="https://claude-deployment.models.ai.azure.com"
+AZURE_CLAUDE_API_KEY="your_azure_claude_key"
+
+# Azure Llama Credentials (to replace Groq)
+AZURE_LLAMA_ENDPOINT="https://llama-deployment.models.ai.azure.com"
+AZURE_LLAMA_API_KEY="your_azure_llama_key"
+
+# Gemini Option A (Google AI Studio key)
+GEMINI_API_KEY="your_gemini_api_key"
+```
+
+### Code Routing ([gemini.ts](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/backend/src/lib/ai/gemini.ts))
+We will modify the model retrieval logic inside the `getModelInstance` function:
+* If a custom API key is passed (BYOK), construct standard LangChain drivers for public endpoints.
+* If a custom API key is missing:
+  - **OpenAI**: Use `AzureChatOpenAI` pointing to your Azure deployment.
+  - **Claude (Anthropic)**: Use `ChatOpenAI` configured with a `baseURL` pointing to your Azure AI Foundry serverless endpoint.
+  - **Groq/Llama**: Use `ChatOpenAI` configured with a `baseURL` pointing to your Azure AI Foundry serverless Llama endpoint.
+  - **Gemini**: Use `ChatGoogleGenerativeAI` pointing to the public Google AI Studio endpoint (free-tier Option A).
+
+---
+
+## 🚀 4. Features Walkthrough & Tech Flow
+
+### Phase 1: Core Developer Utilities
+* **AI Code Chat**: Feeds history to Azure `gpt-4o`.
+* **Project Context AI**: The server generates an embedding of the user's message query, executes a cosine similarity search on the Supabase `project_file_chunks` table for the matching `project_id`, retrieves the top-5 code blocks, and appends them to the LLM system prompt as context.
+* **AI Error Explainer**: The WebSocket server in [terminal.ts](file:///c:/Users/UshaSree/OneDrive/Desktop/cloudcode/backend/src/lib/terminal.ts) intercepts non-zero program exits. If an error is caught, it sends the console log tail (last 100 lines) to Azure `gpt-4o-mini` with a prompt: *"Explain why this build failed and output a standard patch layout if possible."*
+* **AI Commit & PR Generator**: Executes a shell process `git diff` inside the user's container, pipes it to Azure `gpt-4o-mini`, and formats it to markdown.
+
+### Phase 2: Navigation & Diagnostics
+* **Workspace Knowledge AI**: Standard database text/vector lookup queries based on user requests (e.g. searching for API routes).
+* **AI File Navigator**: Maps the user request (e.g., *"Open the editor screen"*) to a vector database query, grabs the file path with the highest similarity score, and sends a WebSocket message `open_file` to the React Native client.
+* **AI Dependency Analyzer**: Scans `package.json` configurations in containers, checks versions, and suggests security mitigations.
+
+### Phase 3 & 4: Multimodal, Voice & Agent Autonomy
+* **Screenshot Debugging**: Receives base64 image strings from the Expo app and passes them directly to Azure `gpt-4o` using multimodal content schemas.
+* **Voice Coding**: Sends recorded voice WAV/M4A logs to Azure AI Speech (Whisper API) and feeds the text response into the chat flow.
+* **Autonomous Agent**: Swaps the underlying model of the LangGraph execution chain inside `gemini.ts` to Azure-hosted `gpt-4o` or `o3-mini`, enabling accurate, complex shell executions and file modifications.
+
+---
+
+## 🎯 Verification & Safety Plan
+
+1. **Verify Compilation**: Run `npm run build` inside the backend directory to check for type-safety across the updated `@langchain` imports.
+2. **Key Fallbacks**: Ensure that if an Azure service goes down or times out, the backend gracefully catches the error and alerts the user.
+3. **Database RLS Integrity**: Verify that all `pgvector` queries explicitly filter by `project_id` and validate project ownership via Supabase row-level security.
