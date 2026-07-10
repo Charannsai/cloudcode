@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import os from 'os'
 import { docker } from '@/lib/docker'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    if (searchParams.get('test_error') === 'true') {
+      throw new Error('Sentry Test Error from Diagnostics Route!')
+    }
     // 1. Calculate real CPU Load (based on 1-min loadavg relative to core count)
     const loadavg = os.loadavg()
     const cpusCount = os.cpus().length || 1
