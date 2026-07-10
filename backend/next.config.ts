@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   trailingSlash: true,
@@ -20,4 +21,16 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  org: "cloudcode-ja",
+  project: "nextjs-backend",
+
+  // Suppress logs in non-CI environments
+  silent: !process.env.CI,
+
+  // Tunnel route to bypass adblockers
+  tunnelRoute: "/monitoring",
+
+  // Upload wider set of client source files for better stack trace resolution
+  widenClientFileUpload: true,
+})
