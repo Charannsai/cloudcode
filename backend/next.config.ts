@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
 
 export default withSentryConfig(nextConfig, {
   org: "cloudcode-ja",
-  project: "nextjs-backend",
+  project: "typescript-nextjs",
 
   // Suppress logs in non-CI environments
   silent: !process.env.CI,
