@@ -9,9 +9,9 @@ import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
-  Shield, Lock, Square, MoreVertical, Plus, Mic, ArrowLeft, Folder,
   Plug, MessageSquare, Check, Zap
 } from '@/components/HugeIconsShim'
+import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
 // Mock Voice since @react-native-voice/voice was removed due to New Architecture incompatibility
 const Voice = {
