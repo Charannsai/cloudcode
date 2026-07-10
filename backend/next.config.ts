@@ -4,7 +4,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 const nextConfig: NextConfig = {
   trailingSlash: true,
   // Allow WebSocket upgrades for terminal
-  serverExternalPackages: ['ws', 'node-pty', 'dockerode'],
+  serverExternalPackages: ['ws', 'node-pty', 'dockerode', 'dd-trace'],
 
   // CORS headers for mobile app
   async headers() {
