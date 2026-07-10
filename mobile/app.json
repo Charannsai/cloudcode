@@ -29,7 +29,14 @@
     "plugins": [
       "./plugins/withExcludeSupport",
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@sentry/react-native",
+        {
+          "organization": "cloudcode-ja",
+          "project": "react-native"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

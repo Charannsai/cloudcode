@@ -23,10 +23,19 @@ import {
   JetBrainsMono_400Regular, 
   JetBrainsMono_600SemiBold 
 } from '@expo-google-fonts/jetbrains-mono'
+import * as Sentry from '@sentry/react-native'
+
+Sentry.init({
+  dsn: 'https://0263e70d8e6a8afa657fcb8015ef97a0@o4511711326175232.ingest.de.sentry.io/4511711341248592',
+  tracesSampleRate: 1.0,
+  integrations: [
+    Sentry.expoRouterIntegration(),
+  ],
+})
 
 SplashScreen.preventAutoHideAsync()
 
-export default function RootLayout() {
+function RootLayout() {
   const { colors, isDark } = useAppTheme()
   const { loadStoredToken, setToken, user, loading } = useAuthStore()
   const router = useRouter()
@@ -118,3 +127,5 @@ export default function RootLayout() {
     </KeyboardProvider>
   )
 }
+
+export default Sentry.wrap(RootLayout)
