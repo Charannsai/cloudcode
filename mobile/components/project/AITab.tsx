@@ -11,8 +11,8 @@ import {
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
   Shield, Lock, Square, MoreVertical, Plus, Mic, Folder,
   Plug, MessageSquare, Check, Zap
-} from '@/components/HugeIconsShim'
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
+import { BlurView } from 'expo-blur'
 // Mock Voice since @react-native-voice/voice was removed due to New Architecture incompatibility
 const Voice = {
   onSpeechStart: null as any,
