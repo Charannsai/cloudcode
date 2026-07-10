@@ -16,12 +16,13 @@ cloudcode/
 ├── backend/                    # Next.js 16 Custom Server API & Preview Proxy
 │   ├── src/
 │   │   ├── app/                # Next.js App Router (HTTP Endpoint Handlers)
-│   │   │   ├── api/
-│   │   │   │   ├── ai/         # AI Prompt handler placeholders
-│   │   │   │   ├── auth/       # GitHub OAuth Callback & Handlers
-│   │   │   │   ├── preview/    # Dynamic preview reverse-proxy catch-all routes
-│   │   │   │   ├── projects/   # Workspace CRUD & Git Import APIs
-│   │   │   │   └── user/       # User profiles & general SSH Key endpoints
+│   │   │   ├── cc-api/         # CloudCode core API endpoint handlers
+│   │   │   │   ├── ai/         # AI models access, streaming, & agent runs
+│   │   │   │   ├── auth/       # GitHub & Google OAuth login handlers
+│   │   │   │   ├── billing/    # Dodo Payments plan checkout & webhook status
+│   │   │   │   ├── projects/   # Workspace container and git integration APIs
+│   │   │   │   └── system/     # VPS runtime managers & system diagnostics
+│   │   │   └── global-error.tsx # Root Sentry Client-side Error Boundary
 │   │   ├── lib/                # Core helper scripts & abstractions
 │   │   │   ├── activityTracker.ts  # In-memory user idle state manager
 │   │   │   ├── auth.ts         # Supabase JWT verify & Auth middleware
@@ -30,6 +31,11 @@ cloudcode/
 │   │   │   ├── supabase.ts     # Supabase DB admin client config
 │   │   │   ├── terminal.ts     # node-pty shell process streams bridge
 │   │   │   └── types.ts
+│   │   ├── datadog.ts          # Datadog APM tracing agent bootstrapper
+│   │   ├── instrumentation.ts  # Next.js instrumentation runtime controller
+│   │   ├── instrumentation-client.ts # Next.js client-side Sentry init hook
+│   │   ├── sentry.edge.config.ts # Sentry Edge runtime error monitoring
+│   │   ├── sentry.server.config.ts # Sentry Server/Node.js runtime config
 │   │   └── server.ts           # Next.js wrapping HTTP & WebSocket Custom Server
 │   ├── package.json
 │   └── tsconfig.json
@@ -291,6 +297,19 @@ The backend exposes API endpoints under `api/projects/[id]/git/` to manage Git r
 
 ---
 
+### 7. Observability & Monitoring Layer (Sentry & Datadog)
+To keep the application highly available, monitor resource usage, and trace errors, CloudCode integrates Sentry and Datadog:
+* **Client & Server Sentry Integration**:
+  - **Mobile Client**: Runs Sentry React Native SDK (`@sentry/react-native` v8) with `expoRouterIntegration` in `app/_layout.tsx` to automatically trace mobile navigation flow and report client-side exceptions.
+  - **Backend Server**: Runs Next.js Sentry SDK (`@sentry/nextjs` v10) initialized dynamically in `src/instrumentation.ts` to capture edge, server, and unhandled request exceptions.
+* **Datadog APM Tracing**:
+  - Automatically loads `dd-trace` at the absolute top of `server.ts` before other dependencies compile.
+  - Generates detailed APM Flame Graphs mapping the lifetime of user requests across APIs, Supabase operations, and Docker actions.
+* **VPS Host & Container Logs**:
+  - Runs the Datadog Agent as a container on the host to collect CPU/RAM metrics and dynamically stream logs from all running Docker workspace containers to a centralized log search board.
+
+---
+
 ## 💾 Database Entity Model (Supabase PostgreSQL)
 
 The database schema is managed in **Supabase** and utilizes PostgreSQL. Below is the structure of the `projects` table:
@@ -432,6 +451,10 @@ The mobile application is built using **React Native** and **Expo**, utilizing `
 ### 15. Docker Swarm Host Isolation Hardening & Log Rotation
 * **Requirement/Feature:** Secure the VPS hosting environment against inter-container attacks and prevent container log disk leaks.
 * **Fix/Implementation:** Developed the host setup script (`scripts/vps-security-setup.sh`) to configure automatic VPS updates, disable inter-container communication (Docker ICC) at the docker daemon level, and enforce strict log rotation boundaries (10MB max size, keeping 3 rotated files max).
+
+### 16. Sentry & Datadog Observability Integration
+* **Requirement/Feature**: Full crash reporting and resource usage tracking for both backend endpoints and mobile clients.
+* **Fix/Implementation**: Fully integrated Sentry SDKs for React Native and Next.js, and installed Datadog's Agent container on the VPS to capture metrics, logs, and APM traces globally.
 
 ---
 
