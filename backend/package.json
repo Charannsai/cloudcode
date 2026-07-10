@@ -17,6 +17,7 @@
     "@langchain/openai": "^1.5.3",
     "@sentry/nextjs": "^10.65.0",
     "@supabase/supabase-js": "^2.99.2",
+    "dd-trace": "^6.2.0",
     "dockerode": "^4.0.9",
     "dodopayments": "^2.39.1",
     "jsonwebtoken": "^9.0.3",
