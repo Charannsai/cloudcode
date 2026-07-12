@@ -51,15 +51,15 @@ export const api = {
   projects: {
     list: () => apiFetch<Project[]>('/cc-api/projects'),
     get: (id: string) => apiFetch<Project>(`/cc-api/projects/${id}`),
-    create: (name: string, type: 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs', runtimes?: string[]) =>
+    create: (name: string, type: 'node' | 'react' | 'empty' | 'flask' | 'fastapi' | 'rust' | 'gin' | 'nextjs') =>
       apiFetch<Project>('/cc-api/projects', {
         method: 'POST',
-        body: JSON.stringify({ name, type, runtimes }),
+        body: JSON.stringify({ name, type }),
       }),
-    import: (name: string, githubUrl: string, runtimes?: string[]) =>
+    import: (name: string, githubUrl: string) =>
       apiFetch<Project>('/cc-api/projects/import', {
         method: 'POST',
-        body: JSON.stringify({ name, githubUrl, runtimes }),
+        body: JSON.stringify({ name, githubUrl }),
       }),
     delete: (id: string) =>
       apiFetch<{ deleted: boolean }>(`/cc-api/projects/${id}`, { method: 'DELETE' }),
@@ -238,15 +238,6 @@ export const api = {
   },
 
   system: {
-    runtimes: (projectId?: string) => {
-      const url = projectId ? `/cc-api/system/runtimes?projectId=${projectId}` : '/cc-api/system/runtimes'
-      return apiFetch<{ runtimes: { name: string; version: string; key: string }[] }>(url)
-    },
-    installRuntime: (runtime: string, projectId: string) =>
-      apiFetch<{ success: boolean; message: string }>('/cc-api/system/runtimes', {
-        method: 'POST',
-        body: JSON.stringify({ runtime, projectId }),
-      }),
     diagnostics: () =>
       apiFetch<{
         cpuLoad: number

@@ -53,16 +53,12 @@ export default function NewProjectScreen() {
 
     setLoading(true)
     try {
-      // Load pre-selected onboarding runtimes preferences
-      const runtimesStr = await AsyncStorage.getItem('onboarding_runtimes')
-      const runtimes = runtimesStr ? JSON.parse(runtimesStr) : []
-
       let project
       if (mode === 'clone') {
         if (!githubUrl.includes('github.com')) throw new Error('Invalid GitHub repository URL.')
-        project = await api.projects.import(name.trim(), githubUrl.trim(), runtimes)
+        project = await api.projects.import(name.trim(), githubUrl.trim())
       } else {
-        project = await api.projects.create(name.trim(), type, runtimes)
+        project = await api.projects.create(name.trim(), type)
       }
       
       addProject(project)
