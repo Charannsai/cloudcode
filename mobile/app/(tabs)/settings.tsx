@@ -610,39 +610,7 @@ export default function SettingsScreen() {
   const [savingAiKeys, setSavingAiKeys] = useState(false)
   const [selectedByokModel, setSelectedByokModel] = useState<'gemini' | 'openai' | 'anthropic' | 'groq'>('gemini')
   
-  // Runtimes state
-  const [runtimesList, setRuntimesList] = useState<{ name: string; version: string; key: string }[]>([])
-  const [loadingRuntimes, setLoadingRuntimes] = useState(false)
-  const [runtimesSearch, setRuntimesSearch] = useState('')
-  const [updatingRuntimes, setUpdatingRuntimes] = useState<Record<string, boolean>>({})
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
-  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false)
 
-  const fetchRuntimesData = useCallback(async (silent = false, projectId?: string) => {
-    const targetId = projectId || selectedProjectId
-    const shouldShowLoader = !silent || runtimesList.length === 0
-    if (shouldShowLoader) setLoadingRuntimes(true)
-    try {
-      const data = await api.system.runtimes(targetId || undefined)
-      setRuntimesList(data.runtimes || [])
-    } catch (err) {
-      console.warn('Failed to load system runtimes:', err)
-    } finally {
-      if (shouldShowLoader) setLoadingRuntimes(false)
-    }
-  }, [runtimesList.length, selectedProjectId])
-
-  useEffect(() => {
-    if (projects && projects.length > 0 && !selectedProjectId) {
-      setSelectedProjectId(projects[0].id)
-    }
-  }, [projects, selectedProjectId])
-
-  useEffect(() => {
-    if (currentSubScreen === 'dependencies' && selectedProjectId) {
-      fetchRuntimesData(false, selectedProjectId)
-    }
-  }, [currentSubScreen, selectedProjectId])
 
   async function fetchGitSshData(silent = false) {
     const shouldShowLoader = !silent || !sshPublicKey
@@ -691,13 +659,10 @@ export default function SettingsScreen() {
         fetchProjects(true)
       } else if (currentSubScreen === 'gitSsh') {
         fetchGitSshData(true)
-      } else if (currentSubScreen === 'dependencies') {
-        fetchRuntimesData(true, selectedProjectId || undefined)
       } else if (currentSubScreen === 'profile') {
         loadLocalAuditLogs()
       } else {
         fetchBillingStatus(true)
-        fetchRuntimesData(true, selectedProjectId || undefined)
         loadLocalAuditLogs()
         fetchProjects(true)
       }
@@ -708,18 +673,15 @@ export default function SettingsScreen() {
           fetchProjects(true)
         } else if (currentSubScreen === 'gitSsh') {
           fetchGitSshData(true)
-        } else if (currentSubScreen === 'dependencies') {
-          fetchRuntimesData(true, selectedProjectId || undefined)
         } else {
           fetchBillingStatus(true)
-          fetchRuntimesData(true, selectedProjectId || undefined)
         }
       }, 10000)
 
       return () => {
         clearInterval(interval)
       }
-    }, [currentSubScreen, fetchRuntimesData, fetchProjects, selectedProjectId])
+    }, [currentSubScreen, fetchProjects])
   )
 
   useEffect(() => {
@@ -3483,219 +3445,7 @@ export default function SettingsScreen() {
 
 
 
-  const handleInstallRuntime = async (runtimeKey: string, runtimeName: string) => {
-    if (!selectedProjectId) {
-      Alert.alert('Error', 'Please select a workspace container first.')
-      return
-    }
-    setUpdatingRuntimes(prev => ({ ...prev, [runtimeKey]: true }))
-    try {
-      const res = await api.system.installRuntime(runtimeKey, selectedProjectId)
-      showModal('Installation Started', res.message, 'success')
-      fetchRuntimesData(true, selectedProjectId)
-      setTimeout(() => {
-        fetchRuntimesData(true, selectedProjectId)
-      }, 3000)
-    } catch (err) {
-      showModal('Error', (err as Error).message, 'error')
-    } finally {
-      setUpdatingRuntimes(prev => {
-        const next = { ...prev }
-        delete next[runtimeKey]
-        return next
-      })
-    }
-  }
 
-  const renderDependenciesView = () => {
-    const filtered = runtimesList.filter(item => 
-      item.name.toLowerCase().includes(runtimesSearch.toLowerCase()) ||
-      item.version.toLowerCase().includes(runtimesSearch.toLowerCase())
-    )
-
-    return (
-      <View style={{ gap: 20, paddingBottom: 40 }}>
-        {/* Unified SubHeader */}
-        <View style={styles.subHeader}>
-          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
-            <ArrowLeft size={18} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>System Runtimes</Text>
-        </View>
-
-        {/* Workspace Selector */}
-        <View style={{ marginHorizontal: 24, marginBottom: 8, zIndex: 100 }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'Inter_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
-            Target Workspace Container
-          </Text>
-          {projects.length === 0 ? (
-            <View style={{
-              padding: 16,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-              alignItems: 'center'
-            }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: 'Inter_400Regular' }}>
-                No active workspaces found. Create one first!
-              </Text>
-            </View>
-          ) : (
-            <View style={{ position: 'relative' }}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: 14,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  backgroundColor: isDark ? '#0B0C10' : '#FFFFFF'
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Server size={16} color={colors.primary} />
-                  <Text style={{ color: colors.text, fontSize: 14, fontFamily: 'Inter_600SemiBold' }}>
-                    {projects.find(p => p.id === selectedProjectId)?.name || 'Select a Workspace'}
-                  </Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                    {projects.find(p => p.id === selectedProjectId)?.type || 'N/A'}
-                  </Text>
-                </View>
-                <ChevronDown size={16} color={colors.textSecondary} />
-              </TouchableOpacity>
-
-              {showWorkspaceDropdown && (
-                <View style={{
-                  position: 'absolute',
-                  top: 54,
-                  left: 0,
-                  right: 0,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  backgroundColor: isDark ? '#0F111A' : '#FFFFFF',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 8,
-                  elevation: 5,
-                  maxHeight: 180,
-                  overflow: 'hidden'
-                }}>
-                  <ScrollView nestedScrollEnabled={true}>
-                    {projects.map((proj) => (
-                      <TouchableOpacity
-                        key={proj.id}
-                        onPress={() => {
-                          setSelectedProjectId(proj.id)
-                          setShowWorkspaceDropdown(false)
-                        }}
-                        style={{
-                          padding: 14,
-                          borderBottomWidth: 1,
-                          borderBottomColor: colors.border + '30',
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          backgroundColor: selectedProjectId === proj.id ? (isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)') : 'transparent'
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_500Medium' }}>
-                            {proj.name}
-                          </Text>
-                          <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'JetBrainsMono_400Regular' }}>
-                            ({proj.type})
-                          </Text>
-                        </View>
-                        {selectedProjectId === proj.id && <Check size={14} color={colors.primary} />}
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-
-        <TextInput
-          value={runtimesSearch}
-          onChangeText={setRuntimesSearch}
-          placeholder="Search runtimes, compilers..."
-          placeholderTextColor={colors.textSecondary + '70'}
-          style={[styles.inputField, { color: colors.text, borderColor: colors.border, marginHorizontal: 24 }]}
-        />
-
-        <View style={{ gap: 12 }}>
-          {filtered.length === 0 ? (
-            <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 20, fontFamily: 'Inter_400Regular' }}>
-              No runtimes match your search.
-            </Text>
-          ) : (
-            filtered.map(item => {
-              const isInstalled = item.version !== 'Not Installed'
-              const isUpdating = updatingRuntimes[item.key]
-              return (
-                <View 
-                  key={item.key} 
-                  style={[
-                    styles.dependencyCard, 
-                    { 
-                      backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', 
-                      borderColor: colors.border,
-                      borderWidth: 1,
-                      borderRadius: 8,
-                      padding: 16,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }
-                  ]}
-                >
-                  <View style={{ flex: 1, marginRight: 16 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>{item.name}</Text>
-                    <Text style={{ color: isInstalled ? '#3FB950' : colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 11, marginTop: 4 }}>
-                      {item.version}
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={{
-                      backgroundColor: isInstalled ? 'rgba(0,0,0,0.03)' : colors.text,
-                      borderWidth: isInstalled ? 1 : 0,
-                      borderColor: colors.border,
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 8,
-                      minWidth: 80,
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    onPress={() => handleInstallRuntime(item.key, item.name)}
-                    disabled={isUpdating}
-                  >
-                    {isUpdating ? (
-                      <ActivityIndicator size="small" color={isInstalled ? colors.text : colors.background} />
-                    ) : (
-                      <Text style={{ color: isInstalled ? colors.text : colors.background, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>
-                        {isInstalled ? 'Reinstall' : 'Install'}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              )
-            })
-          )}
-        </View>
-      </View>
-    )
-  }
 
 
 
@@ -3908,57 +3658,34 @@ export default function SettingsScreen() {
           </PressableScale>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 16 }}>
-          {/* System Runtimes */}
-          <PressableScale onPress={() => setCurrentSubScreen('dependencies')} style={{ flex: 1 }}>
-            <View style={{
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
-              padding: 16,
-              height: 116,
-              justifyContent: 'space-between',
-            }}>
+        {/* Theme appearance toggle */}
+        <PressableScale onPress={toggleTheme}>
+          <View style={{
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+            padding: 16,
+            height: 116,
+            justifyContent: 'space-between',
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
-                <Server size={16} color={colors.textSecondary} strokeWidth={2} />
+                <ThemeIcon size={16} color={colors.textSecondary} strokeWidth={2} />
               </View>
-              <View>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>Runtimes</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>Verify compilers</Text>
-              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: colors.border, true: colors.text }}
+                thumbColor={colors.background}
+              />
             </View>
-          </PressableScale>
-
-          {/* Theme appearance toggle */}
-          <PressableScale onPress={toggleTheme} style={{ flex: 1 }}>
-            <View style={{
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
-              padding: 16,
-              height: 116,
-              justifyContent: 'space-between',
-            }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', alignItems: 'center', justifyContent: 'center' }}>
-                  <ThemeIcon size={16} color={colors.textSecondary} strokeWidth={2} />
-                </View>
-                <Switch
-                  value={isDark}
-                  onValueChange={toggleTheme}
-                  trackColor={{ false: colors.border, true: colors.text }}
-                  thumbColor={colors.background}
-                />
-              </View>
-              <View>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>Dark Mode</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>{isDark ? 'Active' : 'Disabled'}</Text>
-              </View>
+            <View>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 13.5 }}>Dark Mode</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>{isDark ? 'Active' : 'Disabled'}</Text>
             </View>
-          </PressableScale>
-        </View>
+          </View>
+        </PressableScale>
 
         {/* 4. About Banner (Wide) */}
         <PressableScale onPress={() => setCurrentSubScreen('about')}>
@@ -4180,40 +3907,7 @@ export default function SettingsScreen() {
       </Animated.View>
     )}
 
-    {currentSubScreen === 'dependencies' && (
-      <Animated.View 
-        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
-        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
-        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
-      >
-        <ScrollView 
-          style={[styles.container, { backgroundColor: colors.background }]} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={loadingRuntimes}
-              onRefresh={() => fetchRuntimesData(false)}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-        >
-          {renderDependenciesView()}
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
-        </ScrollView>
-      </Animated.View>
-    )}
+
 
     {currentSubScreen === 'profile' && (
       <Animated.View 
