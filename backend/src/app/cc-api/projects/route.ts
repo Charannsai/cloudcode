@@ -8,7 +8,6 @@ import { docker } from '@/lib/docker'
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(60).regex(/^[a-zA-Z0-9_\- ]+$/),
   type: z.enum(['node', 'react', 'empty', 'flask', 'fastapi', 'rust', 'gin', 'nextjs']),
-  runtimes: z.array(z.string()).optional(),
 })
 
 import { getTierConfig } from '@/lib/tiers'
@@ -82,7 +81,7 @@ export async function POST(req: NextRequest) {
   const parsed = CreateProjectSchema.safeParse(body)
   if (!parsed.success) return errorResponse(parsed.error.message)
 
-  const { name, type, runtimes } = parsed.data
+  const { name, type } = parsed.data
 
   try {
     // Fetch user's current tier
@@ -111,7 +110,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const project = await createProjectInternal(user.id, name, type, runtimes)
+    const project = await createProjectInternal(user.id, name, type)
     return successResponse(project, 201)
   } catch (dbError: any) {
     return errorResponse(dbError.message, 500)

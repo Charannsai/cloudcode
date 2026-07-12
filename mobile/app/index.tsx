@@ -130,16 +130,7 @@ export default function WelcomeScreen() {
   useEffect(() => {
     if (!loading && user) {
       const redirectTimer = setTimeout(async () => {
-        try {
-          const completed = await AsyncStorage.getItem('onboarding_completed')
-          if (completed === 'true') {
-            router.replace('/(tabs)/dashboard')
-          } else {
-            router.replace('/onboarding-wizard')
-          }
-        } catch {
-          router.replace('/(tabs)/dashboard')
-        }
+        router.replace('/(tabs)/dashboard')
       }, 4100)
       return () => clearTimeout(redirectTimer)
     }
@@ -228,12 +219,8 @@ export default function WelcomeScreen() {
   async function handleLoginSuccess(token: string) {
     setToken(token)
     try {
-      const completed = await AsyncStorage.getItem('onboarding_completed')
-      if (completed === 'true') {
-        router.replace('/(tabs)/dashboard')
-      } else {
-        router.replace('/onboarding-wizard')
-      }
+      await AsyncStorage.setItem('onboarding_completed', 'true')
+      router.replace('/(tabs)/dashboard')
     } catch {
       router.replace('/(tabs)/dashboard')
     }

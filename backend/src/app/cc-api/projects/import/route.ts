@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest, errorResponse, successResponse } from '@/lib/auth'
-import { createContainer, getWorkspacePath, execInContainer, installRuntimeInContainerAsync } from '@/lib/docker'
+import { createContainer, getWorkspacePath, execInContainer } from '@/lib/docker'
 import path from 'path'
 import { spawnSync } from 'child_process'
 import fs from 'fs'
@@ -11,7 +11,6 @@ import fs from 'fs'
 const ImportSchema = z.object({
   name: z.string().min(1).max(60),
   githubUrl: z.string().url(),
-  runtimes: z.array(z.string()).optional(),
 })
 
 import { getTierConfig } from '@/lib/tiers'
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
   const parsed = ImportSchema.safeParse(body)
   if (!parsed.success) return errorResponse(parsed.error.message)
 
-  const { name, githubUrl, runtimes } = parsed.data
+  const { name, githubUrl } = parsed.data
 
   try {
     // Fetch user's current tier
@@ -74,12 +73,12 @@ export async function POST(req: NextRequest) {
 
   if (dbError) return errorResponse(dbError.message, 500)
 
-  cloneAndProvision(projectId, githubUrl, user.id, runtimes).catch(console.error)
+  cloneAndProvision(projectId, githubUrl, user.id).catch(console.error)
 
   return successResponse(project, 201)
 }
 
-async function cloneAndProvision(projectId: string, githubUrl: string, userGithubId: string, runtimes?: string[]) {
+async function cloneAndProvision(projectId: string, githubUrl: string, userGithubId: string) {
   const workspacePath = getWorkspacePath(projectId)
   try {
     // 1. Fetch user's GitHub token (if any)
@@ -137,15 +136,6 @@ async function cloneAndProvision(projectId: string, githubUrl: string, userGithu
         port: port ? parseInt(port, 10) : null
       })
       .eq('id', projectId)
-
-    // 7. Install pre-selected runtimes in background
-    if (runtimes && runtimes.length > 0) {
-      for (const runtime of runtimes) {
-        installRuntimeInContainerAsync(containerId, runtime).catch((err) => {
-          console.error(`[Background Runtime Install Failed during Import] ${runtime}:`, err)
-        })
-      }
-    }
   } catch (err) {
     console.error('Import failed:', err)
     await supabaseAdmin
