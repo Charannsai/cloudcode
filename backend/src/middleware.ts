@@ -9,10 +9,7 @@ export function middleware(req: NextRequest) {
   if (pathname.startsWith('/cc-api') || pathname.startsWith('/api/preview') || pathname === '/') {
     return NextResponse.next()
   }
-
-  // 2. Identify requests that should be proxied to a container.
-  // With namespace isolation, ANY request (including /api/..., /static/..., etc.)
-  // that has a preview context should be forwarded to the container.
+  
   let projectId = req.cookies.get('preview_project_id')?.value
   
   if (!projectId) {
