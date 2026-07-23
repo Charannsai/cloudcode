@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Keyboard, Platform, Text, Dimensions } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
+import { BlurView } from 'expo-blur'
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -10,89 +11,186 @@ import Animated, {
   withRepeat,
   withSequence,
   Easing,
-  interpolateColor,
+  interpolate,
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
 import { SvgIcon } from '@/components/SvgIcon'
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
+import Svg, { Circle, Rect, Defs, LinearGradient, Stop, RadialGradient, Path } from 'react-native-svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 const TAB_ANIM_CONFIG = {
-  duration: 150,
+  duration: 180,
   easing: Easing.out(Easing.quad),
 }
 
-// Animated sparkle icon with rotating gradient border glow
-function AnimatedSparkleIcon({ isFocused, isDark, activeColor }: { isFocused: boolean; isDark: boolean; activeColor: string }) {
+// Iridescent Color Palette adhering to app aesthetics (Indigo, Violet, Pink, Cyan)
+const IRIDESCENT_DARK = {
+  stop1: '#6366F1', // Indigo
+  stop2: '#8B5CF6', // Violet
+  stop3: '#EC4899', // Pink
+  stop4: '#06B6D4', // Cyan
+  primary: '#A78BFA',
+}
+
+const IRIDESCENT_LIGHT = {
+  stop1: '#4F46E5', // Deep Indigo
+  stop2: '#7C3AED', // Deep Violet
+  stop3: '#DB2777', // Vibrant Pink
+  stop4: '#0284C7', // Sky Blue
+  primary: '#6366F1',
+}
+
+/**
+ * Stylish Animated Google AI / Gemini inspired Sparkle Button.
+ * Features:
+ * 1. Continuous flowing rotation of multi-color iridescent border gradient.
+ * 2. Soft pulsing ambient radial glow backdrop.
+ * 3. Glossy light sweep / shimmer reflection moving across the button.
+ * 4. Elevated floating popped-up design.
+ */
+function AnimatedSparkleButton({ isFocused, isDark, onPress }: { isFocused: boolean; isDark: boolean; onPress: () => void }) {
   const rotation = useSharedValue(0)
-  const glowPulse = useSharedValue(0.3)
+  const glowScale = useSharedValue(1)
+  const shimmerTranslate = useSharedValue(-60)
+  const pressScale = useSharedValue(1)
+
+  const palette = isDark ? IRIDESCENT_DARK : IRIDESCENT_LIGHT
 
   useEffect(() => {
-    // Continuous rotation for border glow effect
+    // 1. Continuous smooth rotation for flowing gradient border
     rotation.value = withRepeat(
-      withTiming(360, { duration: 3000, easing: Easing.linear }),
+      withTiming(360, { duration: 4000, easing: Easing.linear }),
       -1,
       false
     )
-    // Pulsing glow
-    glowPulse.value = withRepeat(
+
+    // 2. Subtle breathing / pulse effect for the ambient glow
+    glowScale.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.18, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.0, { duration: 1800, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    )
+
+    // 3. Shimmer reflection light sweep across the surface
+    shimmerTranslate.value = withRepeat(
+      withSequence(
+        withTiming(60, { duration: 2200, easing: Easing.bezier(0.4, 0, 0.2, 1) }),
+        withTiming(-60, { duration: 0 })
       ),
       -1,
       false
     )
   }, [])
 
-  const rotationStyle = useAnimatedStyle(() => ({
+  const rotateStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
   }))
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowPulse.value,
+    transform: [{ scale: glowScale.value }],
+    opacity: isFocused ? 0.85 : 0.45,
   }))
 
-  const sparkleColor1 = isDark ? '#818CF8' : '#6366F1' // indigo
-  const sparkleColor2 = isDark ? '#C084FC' : '#A855F7' // purple
-  const sparkleColor3 = isDark ? '#F472B6' : '#EC4899' // pink
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: shimmerTranslate.value },
+      { rotate: '25deg' }
+    ],
+  }))
+
+  const containerAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(pressScale.value, { damping: 15, stiffness: 200 }) }],
+  }))
 
   return (
-    <View style={styles.sparkleWrapper}>
-      {/* Rotating gradient glow ring */}
-      <Animated.View style={[styles.sparkleGlowRing, rotationStyle]}>
-        <Svg width={52} height={52} viewBox="0 0 52 52">
-          <Defs>
-            <LinearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor={sparkleColor1} stopOpacity="1" />
-              <Stop offset="50%" stopColor={sparkleColor2} stopOpacity="1" />
-              <Stop offset="100%" stopColor={sparkleColor3} stopOpacity="1" />
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPressIn={() => { pressScale.value = 0.92 }}
+      onPressOut={() => { pressScale.value = 1.0 }}
+      onPress={onPress}
+      style={styles.centerTabItem}
+    >
+      <Animated.View style={[styles.sparkleContainer, containerAnimatedStyle]}>
+        {/* Soft Ambient Radial Glow Backdrop */}
+        <Animated.View style={[styles.sparkleAmbientGlow, glowStyle]}>
+          <Svg width={64} height={64} viewBox="0 0 64 64">
+            <Defs>
+              <RadialGradient id="ambientGlowGrad" cx="50%" cy="50%" r="50%">
+                <Stop offset="0%" stopColor={palette.stop2} stopOpacity="0.6" />
+                <Stop offset="50%" stopColor={palette.stop3} stopOpacity="0.35" />
+                <Stop offset="100%" stopColor={palette.stop1} stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Circle cx="32" cy="32" r="32" fill="url(#ambientGlowGrad)" />
+          </Svg>
+        </Animated.View>
+
+        {/* Flowing Iridescent Animated Border Ring */}
+        <Animated.View style={[styles.sparkleBorderRing, rotateStyle]}>
+          <Svg width={56} height={56} viewBox="0 0 56 56">
+            <Defs>
+              <LinearGradient id="iridescentBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+                <Stop offset="0%" stopColor={palette.stop1} />
+                <Stop offset="33%" stopColor={palette.stop2} />
+                <Stop offset="66%" stopColor={palette.stop3} />
+                <Stop offset="100%" stopColor={palette.stop4} />
+              </LinearGradient>
+            </Defs>
+            <Circle
+              cx="28"
+              cy="28"
+              r="26"
+              stroke="url(#iridescentBorder)"
+              strokeWidth="2.5"
+              fill="none"
+              strokeDasharray={isFocused ? '160 0' : '40 12'}
+            />
+          </Svg>
+        </Animated.View>
+
+        {/* Glassmorphic Inner Button Surface */}
+        <View style={[styles.sparkleInnerSurface, {
+          backgroundColor: isDark ? 'rgba(15, 17, 26, 0.92)' : 'rgba(255, 255, 255, 0.96)',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.6)',
+        }]}>
+          {/* Shiny Gloss / Light Sweep reflection overlay */}
+          <Animated.View style={[styles.sparkleShimmerOverlay, shimmerStyle]}>
+            <LinearGradient id="shimmerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
+              <Stop offset="50%" stopColor="#FFFFFF" stopOpacity={isDark ? 0.35 : 0.6} />
+              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </LinearGradient>
-          </Defs>
-          <Circle cx="26" cy="26" r="24" stroke="url(#sparkleGrad)" strokeWidth="2" fill="none" strokeDasharray="8 4" />
-        </Svg>
+            <Svg width={24} height={60} viewBox="0 0 24 60">
+              <Rect width="24" height="60" fill="url(#shimmerGrad)" />
+            </Svg>
+          </Animated.View>
+
+          {/* Sparkle Icon */}
+          <SvgIcon
+            name="sparkles"
+            size={24}
+            color={isFocused ? palette.stop3 : palette.primary}
+            filled={isFocused}
+            strokeWidth={2.2}
+          />
+        </View>
       </Animated.View>
-
-      {/* Outer glow pulse */}
-      <Animated.View style={[styles.sparkleOuterGlow, glowStyle, {
-        backgroundColor: isDark ? 'rgba(139, 92, 246, 0.12)' : 'rgba(99, 102, 241, 0.08)',
-      }]} />
-
-      {/* Inner sparkle icon */}
-      <View style={[styles.sparkleIconInner, {
-        backgroundColor: isDark ? 'rgba(15, 15, 20, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-      }]}>
-        <SvgIcon
-          name="ai"
-          size={22}
-          color={isFocused ? sparkleColor2 : (isDark ? '#A78BFA' : '#7C3AED')}
-          filled={isFocused}
-          strokeWidth={isFocused ? 2.5 : 1.8}
-        />
-      </View>
-    </View>
+      <Text style={[
+        styles.tabLabel,
+        {
+          color: isFocused ? palette.stop3 : (isDark ? '#9CA3AF' : '#6B7280'),
+          fontFamily: isFocused ? 'Inter_700Bold' : 'Inter_500Medium',
+          marginTop: 2,
+        }
+      ]}>
+        AI
+      </Text>
+    </TouchableOpacity>
   )
 }
 
@@ -102,6 +200,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const { tabBarVisible, setTabIndex } = useUIStore()
   const isVisible = useSharedValue(1)
   const insets = useSafeAreaInsets()
+
+  const palette = isDark ? IRIDESCENT_DARK : IRIDESCENT_LIGHT
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
@@ -126,116 +226,117 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     return {
       opacity: isVisible.value,
       transform: [
-        { translateY: isVisible.value === 0 ? 100 : 0 }
+        { translateY: interpolate(isVisible.value, [0, 1], [100, 0]) }
       ],
     }
   })
 
-  // Tab definitions: 5 tabs, center is the special sparkle AI tab
+  // 5 Tabs: Home, Projects, AI (center sparkle), Usage, Settings
   const tabs = [
     { key: 'dashboard', routeIndex: 0, icon: 'home' as const, label: 'Home' },
     { key: 'projects', routeIndex: 1, icon: 'workspace' as const, label: 'Projects' },
-    { key: 'ai', routeIndex: 2, icon: 'ai' as const, label: 'AI', isCenter: true },
+    { key: 'ai', routeIndex: 2, icon: 'sparkles' as const, label: 'AI', isCenter: true },
     { key: 'usage', routeIndex: 3, icon: 'usage' as const, label: 'Usage' },
     { key: 'settings', routeIndex: 4, icon: 'settings' as const, label: 'Settings' },
   ]
 
-  const activeColor = isDark ? '#A78BFA' : '#6366F1'
-  const inactiveColor = isDark ? '#6B7280' : '#9CA3AF'
-  const tabBarBg = isDark ? 'rgba(11, 12, 16, 0.98)' : 'rgba(255, 255, 255, 0.98)'
-  const borderTopColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.08)'
+  const inactiveColor = isDark ? '#8E939E' : '#6B7280'
 
   return (
     <Animated.View
       style={[
-        styles.tabBarWrapper,
-        { paddingBottom: insets.bottom > 0 ? insets.bottom : 8 },
+        styles.floatingWrapper,
+        { bottom: Platform.OS === 'ios' ? Math.max(insets.bottom + 4, 20) : 16 },
         wrapperStyle,
       ]}
       pointerEvents={tabBarVisible ? 'box-none' : 'none'}
     >
-      <View
-        style={[
-          styles.tabBarContainer,
-          {
-            backgroundColor: tabBarBg,
-            borderTopColor: borderTopColor,
-          }
-        ]}
-      >
-        {tabs.map((tab, index) => {
-          const route = state.routes[tab.routeIndex]
-          const isFocused = state.index === tab.routeIndex
+      {/* Floating Rounded Elevated Tab Bar Container */}
+      <View style={[
+        styles.floatingCard,
+        {
+          backgroundColor: isDark ? 'rgba(11, 13, 20, 0.88)' : 'rgba(255, 255, 255, 0.92)',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+          shadowColor: isDark ? '#7C3AED' : '#000000',
+          shadowOpacity: isDark ? 0.35 : 0.12,
+        }
+      ]}>
+        <BlurView
+          intensity={isDark ? 50 : 80}
+          tint={isDark ? 'dark' : 'light'}
+          style={styles.blurFill}
+        >
+          <View style={styles.tabItemsRow}>
+            {tabs.map((tab) => {
+              const route = state.routes[tab.routeIndex]
+              const isFocused = state.index === tab.routeIndex
 
-          const onPress = () => {
-            setTabIndex(tab.routeIndex)
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            })
+              const onPress = () => {
+                setTabIndex(tab.routeIndex)
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                })
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name)
-            }
-          }
+                if (!isFocused && !event.defaultPrevented) {
+                  navigation.navigate(route.name)
+                }
+              }
 
-          if (tab.isCenter) {
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={styles.centerTabItem}
-                onPress={onPress}
-                activeOpacity={0.8}
-              >
-                <AnimatedSparkleIcon
-                  isFocused={isFocused}
-                  isDark={isDark}
-                  activeColor={activeColor}
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    {
-                      color: isFocused ? activeColor : inactiveColor,
-                      fontFamily: isFocused ? 'Inter_600SemiBold' : 'Inter_500Medium',
-                    }
-                  ]}
+              // Center AI Sparkle Tab with Gemini flow animation
+              if (tab.isCenter) {
+                return (
+                  <AnimatedSparkleButton
+                    key={tab.key}
+                    isFocused={isFocused}
+                    isDark={isDark}
+                    onPress={onPress}
+                  />
+                )
+              }
+
+              // Regular Tab Items
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={styles.tabItem}
+                  onPress={onPress}
+                  activeOpacity={0.7}
                 >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            )
-          }
+                  <View style={styles.iconWrapper}>
+                    {/* Active Iridescent Pill Backdrop */}
+                    {isFocused && (
+                      <Animated.View style={[
+                        styles.activePillBackdrop,
+                        { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.16)' : 'rgba(99, 102, 241, 0.1)' }
+                      ]} />
+                    )}
+                    <SvgIcon
+                      name={tab.icon}
+                      size={22}
+                      color={isFocused ? palette.primary : inactiveColor}
+                      filled={isFocused}
+                      strokeWidth={isFocused ? 2.4 : 1.8}
+                    />
+                  </View>
 
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={styles.tabItem}
-              onPress={onPress}
-              activeOpacity={0.7}
-            >
-              <SvgIcon
-                name={tab.icon}
-                size={22}
-                color={isFocused ? activeColor : inactiveColor}
-                filled={isFocused}
-                strokeWidth={isFocused ? 2.4 : 1.8}
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  {
-                    color: isFocused ? activeColor : inactiveColor,
-                    fontFamily: isFocused ? 'Inter_600SemiBold' : 'Inter_500Medium',
-                  }
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          )
-        })}
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      {
+                        color: isFocused ? palette.primary : inactiveColor,
+                        fontFamily: isFocused ? 'Inter_700Bold' : 'Inter_500Medium',
+                      }
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+        </BlurView>
       </View>
     </Animated.View>
   )
@@ -293,65 +394,104 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBarWrapper: {
+  floatingWrapper: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    left: 16,
+    right: 16,
     zIndex: 100,
+    alignItems: 'center',
   },
-  tabBarContainer: {
-    flexDirection: 'row',
+  floatingCard: {
     width: '100%',
-    borderTopWidth: 0.5,
-    paddingTop: 6,
-    alignItems: 'flex-end',
+    maxWidth: 420,
+    height: 66,
+    borderRadius: 33,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  blurFill: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  tabItemsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    height: '100%',
+    paddingHorizontal: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 6,
     gap: 3,
+  },
+  iconWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+  },
+  activePillBackdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderRadius: 14,
   },
   centerTabItem: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    marginTop: -18, // Pop up above the tab bar
-    gap: 3,
+    justifyContent: 'center',
+    marginTop: -14, // Popped up effect above floating bar
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 10.5,
     letterSpacing: 0.1,
   },
-  // Sparkle icon styles
-  sparkleWrapper: {
+  // Google AI / Gemini Sparkle button styles
+  sparkleContainer: {
     width: 52,
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  sparkleGlowRing: {
+  sparkleAmbientGlow: {
     position: 'absolute',
-    width: 52,
-    height: 52,
+    width: 64,
+    height: 64,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sparkleOuterGlow: {
+  sparkleBorderRing: {
     position: 'absolute',
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sparkleInnerSurface: {
     width: 46,
     height: 46,
     borderRadius: 23,
-  },
-  sparkleIconInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     zIndex: 2,
+  },
+  sparkleShimmerOverlay: {
+    position: 'absolute',
+    top: -10,
+    bottom: -10,
+    width: 24,
+    zIndex: 3,
   },
 })
