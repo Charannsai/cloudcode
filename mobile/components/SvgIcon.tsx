@@ -2,23 +2,19 @@ import React from 'react';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { 
   Home01Icon, 
-  ArtificialIntelligenceIcon, 
   Settings01Icon, 
   WorkIcon,
   BarChartIcon,
-  SparklesIcon,
 } from '@hugeicons/core-free-icons';
 import CreateIcon from '@/assets/icons/create.svg';
 
 export type SvgIconName = 'home' | 'workspace' | 'create' | 'ai' | 'settings' | 'usage' | 'sparkles';
 
-const ICON_COMPONENTS: Record<Exclude<SvgIconName, 'create'>, any> = {
+const ICON_COMPONENTS: Record<string, any> = {
   home: Home01Icon,
   workspace: WorkIcon,
-  ai: ArtificialIntelligenceIcon,
   settings: Settings01Icon,
   usage: BarChartIcon,
-  sparkles: SparklesIcon,
 };
 
 interface SvgIconProps {
@@ -36,7 +32,8 @@ export const SvgIcon: React.FC<SvgIconProps> = ({
   strokeWidth = 2.0,
   filled = false,
 }) => {
-  if (name === 'create') {
+  // Use the workspace creation SVG icon (create.svg) for 'sparkles', 'ai', and 'create'
+  if (name === 'create' || name === 'sparkles' || name === 'ai') {
     return (
       <CreateIcon
         width={size}
@@ -59,7 +56,7 @@ export const SvgIcon: React.FC<SvgIconProps> = ({
       icon={IconComponent}
       size={size}
       color={color}
-      strokeWidth={filled ? 2.5 : strokeWidth}
+      strokeWidth={filled ? 2.6 : strokeWidth}
     />
   );
 };
