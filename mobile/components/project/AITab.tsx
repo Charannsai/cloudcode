@@ -87,6 +87,23 @@ export function AITab({ projectId }: Props) {
     }
   }, [drawerOpen])
 
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsKeyboardVisible(true)
+    )
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setIsKeyboardVisible(false)
+    )
+    return () => {
+      showSub.remove()
+      hideSub.remove()
+    }
+  }, [])
+
   useEffect(() => {
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true })
@@ -136,8 +153,7 @@ export function AITab({ projectId }: Props) {
   return (
     <KeyboardAvoidingView 
       style={[styles.container, { backgroundColor: pageBgColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       
       {/* Clean Top Header */}
@@ -178,7 +194,7 @@ export function AITab({ projectId }: Props) {
       </ScrollView>
 
       {/* Clean Input Composer Bar */}
-      <View style={[styles.inputComposerOuter, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: pageBgColor }]}>
+      <View style={[styles.inputComposerOuter, { paddingBottom: isKeyboardVisible ? 6 : Math.max(insets.bottom, 10), backgroundColor: pageBgColor }]}>
         {attachedImage && (
           <View style={[styles.imagePreviewChip, { backgroundColor: isDark ? '#161821' : '#F1F5F9', borderColor: colors.border }]}>
             <ImageIcon size={14} color={isDark ? '#58A6FF' : '#2563EB'} />
