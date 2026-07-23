@@ -1127,7 +1127,7 @@ export default function SettingsScreen() {
           <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
             <ArrowLeft size={18} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Billing & Usage</Text>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Billing & Plan</Text>
         </View>
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
@@ -1209,7 +1209,7 @@ export default function SettingsScreen() {
           <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
             <ArrowLeft size={18} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Billing & Usage</Text>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Billing & Plan</Text>
         </View>
 
         <View style={{ paddingHorizontal: 24, gap: 20 }}>
@@ -1393,112 +1393,7 @@ export default function SettingsScreen() {
             </Animated.View>
           </View>
 
-          {/* Clean Unified Metrics Grid Dashboard */}
-          <View style={{ marginTop: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <BarChart2 size={16} color={colors.textSecondary} />
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>CURRENT MONTH USAGE</Text>
-            </View>
-            
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
-              {renderMetricCard(
-                'compute',
-                'Compute Hours',
-                `${usage.cpu.usedHours} hrs`,
-                usage.cpu.limitHours === 99999 ? 'Unlimited' : `${usage.cpu.limitHours} hrs`,
-                (usage.cpu.usedHours / (usage.cpu.limitHours || 1)) * 100,
-                Cpu,
-                '#334155',
-                usage.cpu.usedHours
-              )}
-              {renderMetricCard(
-                'ram',
-                'Memory (RAM)',
-                `${usage.ram.usedMB} MB`,
-                `${usage.ram.limitMB} MB`,
-                (usage.ram.usedMB / (usage.ram.limitMB || 1)) * 100,
-                HardDrive,
-                '#475569',
-                usage.ram.usedMB
-              )}
-              {renderMetricCard(
-                'workspaces',
-                'Workspaces',
-                `${usage.workspaces.used}`,
-                `${usage.workspaces.limit}`,
-                (usage.workspaces.used / (usage.workspaces.limit || 1)) * 100,
-                Server,
-                '#1E293B',
-                usage.workspaces.used,
-                usage.workspaces.limit
-              )}
-              {renderMetricCard(
-                'disk',
-                'SSD Storage',
-                `${usage.disk.usedGB} GB`,
-                `${usage.disk.limitGB} GB`,
-                (usage.disk.usedGB / (usage.disk.limitGB || 1)) * 100,
-                Database,
-                '#334155',
-                usage.disk.usedGB
-              )}
-              {renderMetricCard(
-                'ai',
-                'AI Tokens',
-                usage.aiTokens.used.toLocaleString(),
-                usage.aiTokens.limit.toLocaleString(),
-                (usage.aiTokens.used / (usage.aiTokens.limit || 1)) * 100,
-                Sparkles,
-                '#475569',
-                usage.aiTokens.used
-              )}
-              {renderMetricCard(
-                'network',
-                'Network Speed',
-                usage.workspaces.used > 0 ? (currentTier.name === 'free' ? '12 Mbps' : '380 Mbps') : '0 Mbps',
-                currentTier.name === 'free' ? '15 Mbps Cap' : 'Uncapped',
-                currentTier.name === 'free' ? (12 / 15) * 100 : 50,
-                Wifi,
-                '#64748B',
-                usage.workspaces.used > 0 ? 12 : 0
-              )}
-              {renderMetricCard(
-                'api',
-                'API Rate Limit',
-                usage.workspaces.used > 0 ? `${usage.workspaces.used * 4} req/min` : '0 req/min',
-                currentTier.name === 'free' ? '25 req/min' : currentTier.name === 'pro' ? '500 req/min' : 'Uncapped',
-                currentTier.name === 'free' ? ((usage.workspaces.used * 4) / 25) * 100 : currentTier.name === 'pro' ? ((usage.workspaces.used * 4) / 500) * 100 : 0,
-                Shield,
-                '#1E293B',
-                usage.workspaces.used > 0 ? usage.workspaces.used * 4 : 0
-              )}
-            </View>
-          </View>
 
-          {/* Usage History */}
-          {billingData?.usageHistory && billingData.usageHistory.length > 0 && (
-            <View style={{ marginTop: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <TrendingUp size={16} color={colors.textSecondary} />
-                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.6 }}>USAGE HISTORY</Text>
-              </View>
-              <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
-                {billingData.usageHistory.map((item: any, idx: number, arr: any[]) => (
-                  <View key={item.month} style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: idx < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>{item.month}</Text>
-                    <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                      <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_400Regular' }}>
-                        {item.cpuHours} hrs CPU · {item.tokens.toLocaleString()} tokens
-                      </Text>
-                      <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_400Regular' }}>
-                        {item.workspaces} workspace{item.workspaces > 1 ? 's' : ''}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
 
           {/* Billing History */}
           {billingData?.billingHistory && billingData.billingHistory.length > 0 && (
@@ -3595,7 +3490,7 @@ export default function SettingsScreen() {
                 {billingData ? billingData.tier.displayName : 'Free Tier'}
               </Text>
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 3 }}>
-                Manage plan billing & active container usage limit
+                Manage plan, subscription & payment history
               </Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

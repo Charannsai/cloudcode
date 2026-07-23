@@ -808,7 +808,7 @@ export default function AIScreen() {
   ]
 
   return (
-    <TabGenieWrapper index={3}>
+    <TabGenieWrapper index={2}>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FAFAFA', paddingTop: insets.top }]}
         behavior="padding"

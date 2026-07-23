@@ -45,7 +45,7 @@ export const themes: Record<ThemeType, ThemeColors> = {
     textTertiary: '#6E7681',
   },
   light: {
-    background: '#FAFAFA',
+    background: '#FFFFFF',
     card: '#FFFFFF',
     text: '#0F1115',
     textSecondary: '#6B7280',
