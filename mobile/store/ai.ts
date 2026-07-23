@@ -152,8 +152,11 @@ export const useAIStore = create<AIState>((set, get) => ({
       })
     }
 
-    // Build clean message history for API without messy text enrichments
-    const history = [...get().messages].slice(-20).map((m) => ({
+    // Ensure valid non-empty projectId fallback for universal chat mode
+    const effectiveProjectId = (projectId && projectId.trim() !== '') ? projectId : 'global'
+
+    // Build clean message history for API from updatedUserMessages
+    const history = updatedUserMessages.slice(-20).map((m) => ({
       role: m.role,
       text: m.text
     }))
@@ -168,7 +171,7 @@ export const useAIStore = create<AIState>((set, get) => ({
     }
 
     try {
-      await api.ai.chat(projectId, history, openFile, model, threadId, (chunk: AIStreamChunk) => {
+      await api.ai.chat(effectiveProjectId, history, openFile, model, threadId, (chunk: AIStreamChunk) => {
         switch (chunk.type) {
           case 'text':
             fullText += chunk.content || ''

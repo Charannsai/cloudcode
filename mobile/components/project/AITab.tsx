@@ -11,7 +11,7 @@ import {
   Sparkles, ArrowUp, ChevronDown, ChevronUp, History, X,
   Square, Plus, Check, Camera, Image as ImageIcon, Settings, Trash2
 } from '@/components/HugeIconsShim'
-import Svg, { Circle, Path, Defs, Rect, LinearGradient, Stop } from 'react-native-svg'
+import Svg, { Path } from 'react-native-svg'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -21,44 +21,6 @@ import Markdown from 'react-native-markdown-display'
 import { ensureCameraPermission, ensureMediaLibraryPermission } from '@/lib/permissions'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
-function AICoreLogo() {
-  const rotation = useRef(new Animated.Value(0)).current
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(rotation, {
-        toValue: 1,
-        duration: 25000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start()
-  }, [])
-
-  const rotateStr = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg']
-  })
-
-  return (
-    <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View style={{ transform: [{ rotate: rotateStr }] }}>
-        <Svg width="24" height="24" viewBox="0 0 100 100">
-          <Defs>
-            <LinearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor="#388BFD" stopOpacity="0.85" />
-              <Stop offset="60%" stopColor="#892CDC" stopOpacity="0.85" />
-              <Stop offset="100%" stopColor="#F43F5E" stopOpacity="0.85" />
-            </LinearGradient>
-          </Defs>
-          <Circle cx="50" cy="50" r="45" stroke="url(#coreGrad)" strokeWidth="4" fill="none" />
-          <Path d="M50 36 L53 45 L62 48 L53 51 L50 60 L47 51 L38 48 L47 45 Z" fill="url(#coreGrad)" />
-        </Svg>
-      </Animated.View>
-    </View>
-  )
-}
 
 function TwoLineHamburgerIcon({ color, size = 20 }: { color: string; size?: number }) {
   return (
@@ -70,35 +32,21 @@ function TwoLineHamburgerIcon({ color, size = 20 }: { color: string; size?: numb
 }
 
 function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean }) {
-  const rotation = useRef(new Animated.Value(0)).current
   const pulse = useRef(new Animated.Value(1)).current
 
   useEffect(() => {
     Animated.loop(
-      Animated.timing(rotation, {
-        toValue: 1,
-        duration: 4000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start()
-
-    Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.5, duration: 1000, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1.0, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.0, duration: 800, useNativeDriver: true }),
       ])
     ).start()
   }, [])
 
-  const rotateStr = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] })
-
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 }}>
-      <Animated.View style={{ transform: [{ rotate: rotateStr }] }}>
-        <Sparkles size={16} color={isDark ? '#A78BFA' : '#7C3AED'} />
-      </Animated.View>
-      <Animated.Text style={{ fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary, opacity: pulse }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 }}>
+      <Sparkles size={16} color={isDark ? '#A78BFA' : '#7C3AED'} />
+      <Animated.Text style={{ fontSize: 13, fontFamily: 'Inter_500Medium', color: colors.textSecondary, opacity: pulse }}>
         Thinking...
       </Animated.Text>
     </View>
@@ -186,12 +134,16 @@ export function AITab({ projectId }: Props) {
   })
 
   return (
-    <KeyboardAvoidingView style={[styles.container, { backgroundColor: pageBgColor }]}>
+    <KeyboardAvoidingView 
+      style={[styles.container, { backgroundColor: pageBgColor }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
       
-      {/* Top Header */}
+      {/* Clean Top Header */}
       <View style={[styles.headerBar, { borderBottomColor: isDark ? '#1A1C23' : '#E5E7EB' }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <AICoreLogo />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Sparkles size={18} color={isDark ? '#A78BFA' : '#7C3AED'} />
           <Text style={[styles.headerTitle, { color: colors.text }]}>Project Assistant</Text>
         </View>
 
@@ -283,24 +235,24 @@ export function AITab({ projectId }: Props) {
         </View>
       </View>
 
-      {/* Attachment Options Modal */}
-      <Modal transparent visible={attachModalVisible} animationType="fade" onRequestClose={() => setAttachModalVisible(false)}>
-        <TouchableOpacity style={styles.attachModalOverlay} activeOpacity={1} onPress={() => setAttachModalVisible(false)}>
-          <View style={[styles.attachModalContent, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
-            <Text style={[styles.attachModalTitle, { color: colors.text }]}>Attach Media</Text>
-            
-            <TouchableOpacity onPress={handleCameraCapture} style={[styles.attachOptionRow, { borderBottomColor: colors.border }]}>
-              <Camera size={18} color={colors.primary} strokeWidth={1.8} />
-              <Text style={[styles.attachOptionText, { color: colors.text }]}>Take Photo (Camera)</Text>
-            </TouchableOpacity>
+      {/* Compact Popover Menu for + Button */}
+      {attachModalVisible && (
+        <Modal transparent visible={attachModalVisible} animationType="fade" onRequestClose={() => setAttachModalVisible(false)}>
+          <TouchableOpacity style={styles.attachPopoverOverlay} activeOpacity={1} onPress={() => setAttachModalVisible(false)}>
+            <View style={[styles.attachPopoverCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
+              <TouchableOpacity onPress={handleCameraCapture} style={[styles.attachOptionRow, { borderBottomColor: colors.border }]}>
+                <Camera size={16} color={colors.primary} strokeWidth={1.8} />
+                <Text style={[styles.attachOptionText, { color: colors.text }]}>Take Photo</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleGalleryUpload} style={styles.attachOptionRow}>
-              <ImageIcon size={18} color={colors.primary} strokeWidth={1.8} />
-              <Text style={[styles.attachOptionText, { color: colors.text }]}>Upload Image (Gallery)</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+              <TouchableOpacity onPress={handleGalleryUpload} style={styles.attachOptionRow}>
+                <ImageIcon size={16} color={colors.primary} strokeWidth={1.8} />
+                <Text style={[styles.attachOptionText, { color: colors.text }]}>Upload Image</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
 
       {/* Drawer Overlay */}
       {drawerOpen && (
@@ -399,11 +351,10 @@ const styles = StyleSheet.create({
   cleanInputBox: { flexDirection: 'row', alignItems: 'center', borderRadius: 24, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, minHeight: 48 },
   cleanTextInput: { flex: 1, fontSize: 14, fontFamily: 'Inter_400Regular', maxHeight: 120, paddingHorizontal: 8, paddingVertical: 4 },
   sendBtnActive: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
-  attachModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  attachModalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, borderWidth: 1, padding: 20, gap: 12 },
-  attachModalTitle: { fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 8 },
-  attachOptionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1 },
-  attachOptionText: { fontSize: 14, fontFamily: 'Inter_500Medium' },
+  attachPopoverOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', justifyContent: 'flex-end', paddingBottom: 72, paddingHorizontal: 16 },
+  attachPopoverCard: { width: 190, borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 4, elevation: 6, shadowColor: '#000000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  attachOptionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: 1 },
+  attachOptionText: { fontSize: 13.5, fontFamily: 'Inter_500Medium' },
   drawerBackdrop: { ...StyleSheet.absoluteFillObject },
   drawerContent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: SCREEN_WIDTH * 0.82, borderRightWidth: 1, paddingHorizontal: 18 },
   drawerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
