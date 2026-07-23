@@ -270,7 +270,7 @@ export default function UsageScreen() {
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, opacity: 0.8 }}>
             {label}
           </Text>
-          <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_700Bold', fontSize: 13, marginTop: 1 }}>
+          <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_600SemiBold', fontSize: 13, marginTop: 1 }}>
             {usedStr}
           </Text>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 9, marginTop: 1 }}>
@@ -577,16 +577,16 @@ export default function UsageScreen() {
               <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_600SemiBold', fontSize: 11.5, alignSelf: 'flex-start' }}>MEMORY SEGMENTS</Text>
               <View style={{ width: 140, height: 140, borderRadius: 70, borderWidth: 12, borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', alignItems: 'center', justifyContent: 'center' }}>
                 <View style={[StyleSheet.absoluteFill, { borderRadius: 70, borderWidth: 12, borderColor: displayPercent > 0 ? color : 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent', transform: [{ rotate: '45deg' }] }]} />
-                <Text style={{ color: colors.text, fontSize: 24, fontFamily: 'JetBrainsMono_700Bold' }}>{Math.round(displayPercent)}%</Text>
+                <Text style={{ color: colors.text, fontSize: 24, fontFamily: 'JetBrainsMono_600SemiBold' }}>{Math.round(displayPercent)}%</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_500Medium' }}>Load Level</Text>
               </View>
               <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-around', marginTop: 6 }}>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
+                  <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'JetBrainsMono_600SemiBold' }}>{valueStr}</Text>
                   <Text style={{ color: colors.textSecondary, fontSize: 9 }}>Allocated</Text>
                 </View>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
+                  <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'JetBrainsMono_600SemiBold' }}>{limitStr}</Text>
                   <Text style={{ color: colors.textSecondary, fontSize: 9 }}>Max Limit</Text>
                 </View>
               </View>
@@ -628,12 +628,12 @@ export default function UsageScreen() {
             <View style={{ backgroundColor: isDark ? '#111622' : '#FFFFFF', borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 18, gap: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Current:</Text>
-                <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>{valueStr}</Text>
+                <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_600SemiBold' }}>{valueStr}</Text>
               </View>
               <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.5 }} />
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ color: colors.textSecondary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Limit:</Text>
-                <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_700Bold' }}>{limitStr}</Text>
+                <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'JetBrainsMono_600SemiBold' }}>{limitStr}</Text>
               </View>
             </View>
           )}
