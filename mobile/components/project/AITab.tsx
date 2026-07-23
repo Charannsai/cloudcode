@@ -66,7 +66,6 @@ const MessageActionButtons = memo(function MessageActionButtons({
   isDark: boolean
 }) {
   const [copied, setCopied] = useState(false)
-  const [isSpeaking, setIsSpeaking] = useState(false)
 
   const handleCopy = async () => {
     hapticLight()
@@ -77,36 +76,9 @@ const MessageActionButtons = memo(function MessageActionButtons({
     }, 2000)
   }
 
-  const cleanTextForSpeech = (rawText: string) => {
-    return rawText
-      .replace(/```[\s\S]*?```/g, ' Code snippet omitted. ')
-      .replace(/[`*#_~\[\]]/g, '')
-      .trim()
-  }
-
-  const handleSpeak = () => {
-    hapticLight()
-    const spokenText = cleanTextForSpeech(text)
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel()
-        setIsSpeaking(false)
-      } else {
-        window.speechSynthesis.cancel()
-        const utterance = new SpeechSynthesisUtterance(spokenText)
-        utterance.onend = () => setIsSpeaking(false)
-        utterance.onerror = () => setIsSpeaking(false)
-        setIsSpeaking(true)
-        window.speechSynthesis.speak(utterance)
-      }
-    } else {
-      setIsSpeaking(!isSpeaking)
-    }
-  }
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 4 }}>
-      {/* 1. Copy Button (reactive tick mark for 2 seconds) */}
+      {/* Copy Button (reactive tick mark for 2 seconds) */}
       <TouchableOpacity
         onPress={handleCopy}
         style={{
@@ -123,25 +95,6 @@ const MessageActionButtons = memo(function MessageActionButtons({
         ) : (
           <Copy size={14} color={colors.textSecondary} strokeWidth={1.8} />
         )}
-      </TouchableOpacity>
-
-      {/* 2. Read Loud Button */}
-      <TouchableOpacity
-        onPress={handleSpeak}
-        style={{
-          padding: 6,
-          borderRadius: 8,
-          backgroundColor: isSpeaking 
-            ? (isDark ? 'rgba(56, 139, 253, 0.18)' : '#DBEAFE') 
-            : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
-        }}
-        activeOpacity={0.7}
-      >
-        <VolumeHigh 
-          size={14} 
-          color={isSpeaking ? (isDark ? '#58A6FF' : '#2563EB') : colors.textSecondary} 
-          strokeWidth={1.8} 
-        />
       </TouchableOpacity>
     </View>
   )
