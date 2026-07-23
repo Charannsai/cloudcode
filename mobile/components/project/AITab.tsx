@@ -282,7 +282,7 @@ export function AITab({ projectId }: Props) {
               ) : (
                 <>
                   <Markdown style={markdownStyles}>{msg.text}</Markdown>
-                  <MessageActionButtons text={msg.text} colors={colors} isDark={isDark} onOpenSelectModal={(t) => setSelectedMsgForSelect(t)} />
+                  <MessageActionButtons text={msg.text} colors={colors} isDark={isDark} />
                 </>
               )}
             </View>
@@ -390,80 +390,6 @@ export function AITab({ projectId }: Props) {
                 <ImageIcon size={16} color={colors.primary} strokeWidth={1.8} />
                 <Text style={[styles.attachOptionText, { color: colors.text }]}>Upload Image</Text>
               </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
-
-      {/* Select Text Modal */}
-      {!!selectedMsgForSelect && (
-        <Modal transparent visible={!!selectedMsgForSelect} animationType="fade" onRequestClose={() => setSelectedMsgForSelect(null)}>
-          <TouchableOpacity style={styles.attachPopoverOverlay} activeOpacity={1} onPress={() => setSelectedMsgForSelect(null)}>
-            <View style={[styles.selectTextCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Select Response Text</Text>
-                <TouchableOpacity onPress={() => setSelectedMsgForSelect(null)} style={{ padding: 4 }}>
-                  <X size={16} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={{ maxHeight: 260, marginBottom: 12 }}>
-                <Text
-                  selectable={true}
-                  style={{ color: colors.text, fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 20 }}
-                >
-                  {selectedMsgForSelect || ''}
-                </Text>
-              </ScrollView>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <SpringPressable
-                  onPress={async () => {
-                    if (selectedMsgForSelect) {
-                      hapticLight()
-                      await Clipboard.setStringAsync(selectedMsgForSelect)
-                      setSelectedMsgForSelect(null)
-                    }
-                  }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    alignItems: 'center',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <Copy size={15} color={colors.text} strokeWidth={1.8} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Copy Text</Text>
-                </SpringPressable>
-
-                <SpringPressable
-                  onPress={() => {
-                    if (selectedMsgForSelect) {
-                      hapticLight()
-                      setQuotedText(selectedMsgForSelect)
-                      setSelectedMsgForSelect(null)
-                      setTimeout(() => inputRef.current?.focus(), 150)
-                    }
-                  }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: colors.text,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    alignItems: 'center',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <MessageSquare size={15} color={isDark ? '#030303' : '#FFFFFF'} strokeWidth={2} />
-                  <Text style={{ color: isDark ? '#030303' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Quote in Reply</Text>
-                </SpringPressable>
-              </View>
             </View>
           </TouchableOpacity>
         </Modal>
