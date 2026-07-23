@@ -168,7 +168,6 @@ export function AITab({ projectId }: Props) {
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [quotedText, setQuotedText] = useState<string | null>(null)
-  const [selectedMsgForSelect, setSelectedMsgForSelect] = useState<string | null>(null)
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
 
   const inputRef = useRef<TextInput>(null)
