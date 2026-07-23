@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
 } from 'react-native'
+import { SpringPressable } from '@/components/SpringPressable'
 import { BlurView } from 'expo-blur'
 import Animated, {
   useSharedValue,
@@ -169,7 +170,7 @@ export function ConfirmModal({
 
           <View style={styles.actionRow}>
             {showCancel && (
-              <TouchableOpacity
+              <SpringPressable
                 style={[
                   styles.btn,
                   styles.cancelBtn,
@@ -179,7 +180,6 @@ export function ConfirmModal({
                   }
                 ]}
                 onPress={onCancel}
-                activeOpacity={0.8}
                 disabled={isLoading}
               >
                 <Text
@@ -190,10 +190,10 @@ export function ConfirmModal({
                 >
                   {cancelText}
                 </Text>
-              </TouchableOpacity>
+              </SpringPressable>
             )}
 
-            <TouchableOpacity
+            <SpringPressable
               style={[
                 styles.btn,
                 styles.confirmBtn,
@@ -202,7 +202,6 @@ export function ConfirmModal({
                 }
               ]}
               onPress={onConfirm}
-              activeOpacity={0.8}
               disabled={isLoading}
             >
               <Text
@@ -213,7 +212,7 @@ export function ConfirmModal({
               >
                 {isLoading ? 'Processing...' : confirmText}
               </Text>
-            </TouchableOpacity>
+            </SpringPressable>
           </View>
         </Animated.View>
       </Animated.View>

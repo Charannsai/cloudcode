@@ -10,6 +10,7 @@ import {
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen, Plus,
   File, Search, MoreVertical, RefreshCw, FilePlus, FolderPlus, Trash2,
 } from '@/components/HugeIconsShim'
+import { SpringPressable } from '@/components/SpringPressable'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { BlurView } from 'expo-blur'
 import Animated, {
@@ -65,6 +66,19 @@ const FileTreeItem = memo(function FileTreeItem({
   const isDir = item.type === 'directory'
   const iconColor = isDir ? (isDark ? '#E6EDF3' : '#6B7280') : getFileColor(item.name)
 
+  const chevronRotation = useSharedValue(depth === 0 ? 1 : 0)
+
+  useEffect(() => {
+    chevronRotation.value = withTiming(expanded ? 1 : 0, {
+      duration: 140,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    })
+  }, [expanded])
+
+  const chevronAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.value * 90}deg` }],
+  }))
+
   const handlePress = () => {
     if (isDir) {
       setExpanded(!expanded)
@@ -82,16 +96,16 @@ const FileTreeItem = memo(function FileTreeItem({
 
   return (
     <View>
-      <TouchableOpacity
+      <SpringPressable
         style={[styles.treeItem, { paddingLeft: 12 + depth * 16 }]}
         onPress={handlePress}
         onLongPress={handleLongPress}
-        activeOpacity={0.6}
+        activeScale={0.985}
       >
         {isDir && (
-          expanded
-            ? <ChevronDown size={12} color={colors.textSecondary} strokeWidth={1.8} />
-            : <ChevronRight size={12} color={colors.textSecondary} strokeWidth={1.8} />
+          <Animated.View style={chevronAnimStyle}>
+            <ChevronRight size={12} color={colors.textSecondary} strokeWidth={1.8} />
+          </Animated.View>
         )}
         {isDir ? (
           expanded
@@ -114,7 +128,7 @@ const FileTreeItem = memo(function FileTreeItem({
         >
           {item.name}
         </Text>
-      </TouchableOpacity>
+      </SpringPressable>
       {isDir && expanded && item.children?.map((child) => (
         <FileTreeItem
           key={child.path}

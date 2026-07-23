@@ -1,8 +1,9 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useMemo, memo } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, Alert, ScrollView, Pressable, Modal, Dimensions,
+  RefreshControl, Alert, ScrollView, Pressable, Modal, Dimensions, Platform,
 } from 'react-native'
+import { SpringPressable } from '@/components/SpringPressable'
 import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
@@ -280,18 +281,20 @@ export default function ProjectsScreen() {
     }
   }
 
-  const filteredProjects = projects.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (p.github_url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.type.toLowerCase().includes(searchQuery.toLowerCase())
-      
-    const matchesStatus = 
-      statusFilter === 'all' ? true :
-      statusFilter === 'running' ? p.status === 'running' :
-      p.status !== 'running'
-      
-    return matchesSearch && matchesStatus
-  })
+  const filteredProjects = useMemo(() => {
+    return projects.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.github_url || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.type.toLowerCase().includes(searchQuery.toLowerCase())
+        
+      const matchesStatus = 
+        statusFilter === 'all' ? true :
+        statusFilter === 'running' ? p.status === 'running' :
+        p.status !== 'running'
+        
+      return matchesSearch && matchesStatus
+    })
+  }, [projects, searchQuery, statusFilter])
 
   const renderProject = ({ item: p, index }: { item: Project; index: number }) => {
     const tech = detectProjectTech(p.type, p.name, p.github_url)
@@ -629,6 +632,10 @@ export default function ProjectsScreen() {
           data={filteredProjects}
           renderItem={renderProject}
           keyExtractor={(item) => item.id}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === 'android'}
           contentContainerStyle={styles.list}
           columnWrapperStyle={viewMode === 'grid' ? { justifyContent: 'space-between', marginBottom: 10 } : null}
           ListEmptyComponent={loading ? null : (

@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, memo } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   Platform, ActivityIndicator, Keyboard,
   TouchableWithoutFeedback, Modal, Dimensions, Alert, Animated, Easing
 } from 'react-native'
+import { SpringPressable } from '@/components/SpringPressable'
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
@@ -544,6 +545,46 @@ function AnimatedDropdown({ visible, children, style }: { visible: boolean; chil
     </Animated.View>
   )
 }
+
+const TabChatMessageBubble = memo(function TabChatMessageBubble({
+  msg,
+  colors,
+  isDark,
+  mdStyles,
+}: {
+  msg: ChatMessage
+  colors: any
+  isDark: boolean
+  mdStyles: any
+}) {
+  const isUser = msg.role === 'user'
+  return (
+    <View style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
+      <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9ECEF', borderColor: 'transparent', borderWidth: 0 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
+        {isUser ? (
+          <Text style={[styles.userBubbleText, { color: colors.text }]}>
+            {msg.text}
+          </Text>
+        ) : (
+          <View style={{ width: '100%' }}>
+            {msg.toolCalls && msg.toolCalls.length > 0 && (
+              <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
+                {msg.toolCalls.map((tc, tcIdx) => (
+                  <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
+                ))}
+              </View>
+            )}
+            {msg.text.trim() !== '' && (
+              <Markdown style={mdStyles}>
+                {msg.text}
+              </Markdown>
+            )}
+          </View>
+        )}
+      </View>
+    </View>
+  )
+})
 
 export default function AIScreen() {
   const { colors, isDark } = useAppTheme()
@@ -1124,35 +1165,9 @@ export default function AIScreen() {
             </View>
           ) : (
             <View style={{ gap: 20 }}>
-              {messages.map((msg) => {
-                const isUser = msg.role === 'user'
-                return (
-                  <View key={msg.id} style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
-                    <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9ECEF', borderColor: 'transparent', borderWidth: 0 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
-                      {isUser ? (
-                        <Text style={[styles.userBubbleText, { color: colors.text }]}>
-                          {msg.text}
-                        </Text>
-                      ) : (
-                        <View style={{ width: '100%' }}>
-                          {msg.toolCalls && msg.toolCalls.length > 0 && (
-                            <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
-                              {msg.toolCalls.map((tc, tcIdx) => (
-                                <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
-                              ))}
-                            </View>
-                          )}
-                          {msg.text.trim() !== '' && (
-                            <Markdown style={mdStyles}>
-                              {msg.text}
-                            </Markdown>
-                          )}
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                )
-              })}
+              {messages.map((msg) => (
+                <TabChatMessageBubble key={msg.id} msg={msg} colors={colors} isDark={isDark} mdStyles={mdStyles} />
+              ))}
 
               {/* Streaming AI response bubble */}
               {isStreaming && (

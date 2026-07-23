@@ -13,6 +13,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated'
+import { SpringPressable } from '@/components/SpringPressable'
 import { useUIStore } from '@/store/ui'
 import { SvgIcon } from '@/components/SvgIcon'
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
@@ -73,11 +74,9 @@ function FloatingCenterSparkleButton({
   const iconColor = isFocused ? activeColor : (isDark ? '#E2E8F0' : '#334155')
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPressIn={() => { pressScale.value = 0.92 }}
-      onPressOut={() => { pressScale.value = 1.0 }}
+    <SpringPressable
       onPress={onPress}
+      activeScale={0.93}
       style={styles.centerSparkleTouchable}
     >
       <Animated.View style={[styles.sparkleButtonOuter, containerAnimatedStyle]}>
@@ -123,7 +122,7 @@ function FloatingCenterSparkleButton({
           </Animated.View>
         </View>
       </Animated.View>
-    </TouchableOpacity>
+    </SpringPressable>
   )
 }
 
@@ -241,11 +240,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
               // Navigation Tab Items: Solid filled when active, Line outlined when inactive
               return (
-                <TouchableOpacity
+                <SpringPressable
                   key={tab.key}
                   style={styles.tabItem}
                   onPress={onPress}
-                  activeOpacity={0.7}
+                  activeScale={0.94}
                 >
                   <SvgIcon
                     name={tab.icon}
@@ -266,7 +265,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                   >
                     {tab.label}
                   </Text>
-                </TouchableOpacity>
+                </SpringPressable>
               )
             })}
           </View>
@@ -293,6 +292,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      detachInactiveScreens={false}
       tabBar={(props) => <CustomTabBar {...props} />}
       // @ts-ignore - sceneContainerStyle is supported but may not be in the typing for the wrapper
       sceneContainerStyle={{ backgroundColor: colors.background }}

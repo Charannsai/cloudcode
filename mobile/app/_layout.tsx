@@ -110,13 +110,15 @@ function RootLayout() {
           headerShown: false, 
           contentStyle: { backgroundColor: colors.background },
           animation: 'slide_from_right',
+          animationDuration: 160,
+          gestureEnabled: true,
         }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="new-project" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="project/[id]/index" />
-          <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card' }} />
-          <Stack.Screen name="billing/success" />
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          <Stack.Screen name="new-project" options={{ presentation: 'modal', animation: 'fade_from_bottom', animationDuration: 160 }} />
+          <Stack.Screen name="project/[id]/index" options={{ animation: 'slide_from_right', animationDuration: 160 }} />
+          <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card', animation: 'slide_from_right', animationDuration: 160 }} />
+          <Stack.Screen name="billing/success" options={{ animation: 'fade_from_bottom', animationDuration: 160 }} />
         </Stack>
       {/*
         Floating Voice Assistant

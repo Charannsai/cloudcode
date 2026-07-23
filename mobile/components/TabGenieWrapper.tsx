@@ -19,32 +19,32 @@ interface TabGenieWrapperProps {
 
 export function TabGenieWrapper({ children, index, style }: TabGenieWrapperProps) {
   const isFocused = useIsFocused()
-  const progress = useSharedValue(0)
-  const slideDirection = useSharedValue(0) // -1 = slide from left, 1 = slide from right
+  const progress = useSharedValue(1)
+  const slideDirection = useSharedValue(1) // 1 = slide from right, -1 = slide from left
 
   const { previousTabIndex, currentTabIndex } = useUIStore()
 
   useEffect(() => {
     if (isFocused) {
-      // Determine slide direction: if current tab index > previous, slide from right
+      // If navigating to a higher tab index, slide in from right (+1). If going back, slide in from left (-1).
       const direction = currentTabIndex >= previousTabIndex ? 1 : -1
       slideDirection.value = direction
-      // Start off-screen in the slide direction
       progress.value = 0
-      progress.value = withTiming(1, { duration: 220, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
-    } else {
-      progress.value = 0
+      progress.value = withTiming(1, { 
+        duration: 160, 
+        easing: Easing.out(Easing.quad) 
+      })
     }
   }, [isFocused, currentTabIndex])
 
   const animatedStyle = useAnimatedStyle(() => {
     const p = progress.value
     const dir = slideDirection.value
-    // Slide in from the direction: from 40px offset to 0
-    const translateX = (1 - p) * dir * 40
+    // Smooth 50px directional slide matching SlideInRight style
+    const translateX = (1 - p) * dir * 50
 
     return {
-      opacity: 0.4 + 0.6 * p,
+      opacity: p,
       transform: [
         { translateX },
       ]
