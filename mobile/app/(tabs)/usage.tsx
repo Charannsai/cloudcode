@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   RefreshControl, Dimensions, BackHandler,
 } from 'react-native'
-import { TelegramPressable } from '@/components/TelegramPressable'
+import { SpringPressable } from '@/components/SpringPressable'
 import Animated, {
   FadeInDown, SlideInRight, SlideOutRight,
   useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing,
