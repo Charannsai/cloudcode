@@ -232,8 +232,19 @@ export function AITab({ projectId }: Props) {
           />
 
           {isStreaming ? (
-            <TouchableOpacity onPress={() => stopGeneration()} style={styles.sendBtnActive} activeOpacity={0.7}>
-              <Square size={12} fill="#FFFFFF" color="#FFFFFF" />
+            <TouchableOpacity
+              onPress={() => stopGeneration()}
+              style={[
+                styles.sendBtnActive,
+                {
+                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.25)' : '#FEE2E2',
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : '#FCA5A5',
+                }
+              ]}
+              activeOpacity={0.7}
+            >
+              <Square size={11} fill={isDark ? '#F87171' : '#DC2626'} color={isDark ? '#F87171' : '#DC2626'} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
