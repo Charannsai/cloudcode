@@ -6,10 +6,11 @@ import {
   Settings01Icon, 
   WorkIcon,
   BarChartIcon,
+  SparklesIcon,
 } from '@hugeicons/core-free-icons';
 import CreateIcon from '@/assets/icons/create.svg';
 
-export type SvgIconName = 'home' | 'workspace' | 'create' | 'ai' | 'settings' | 'usage';
+export type SvgIconName = 'home' | 'workspace' | 'create' | 'ai' | 'settings' | 'usage' | 'sparkles';
 
 const ICON_COMPONENTS: Record<Exclude<SvgIconName, 'create'>, any> = {
   home: Home01Icon,
@@ -17,6 +18,7 @@ const ICON_COMPONENTS: Record<Exclude<SvgIconName, 'create'>, any> = {
   ai: ArtificialIntelligenceIcon,
   settings: Settings01Icon,
   usage: BarChartIcon,
+  sparkles: SparklesIcon,
 };
 
 interface SvgIconProps {
