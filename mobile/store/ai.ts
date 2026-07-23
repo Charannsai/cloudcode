@@ -161,13 +161,23 @@ export const useAIStore = create<AIState>((set, get) => ({
     let fullText = ''
     const toolCalls: ToolCallInfo[] = []
     let streamError: string | null = null
+    let streamBatchTimer: any = null
+
+    const flushStreamText = () => {
+      set({ currentStreamText: fullText })
+    }
 
     try {
       await api.ai.chat(projectId, history, openFile, model, threadId, (chunk: AIStreamChunk) => {
         switch (chunk.type) {
           case 'text':
             fullText += chunk.content || ''
-            set({ currentStreamText: fullText })
+            if (!streamBatchTimer) {
+              streamBatchTimer = setTimeout(() => {
+                flushStreamText()
+                streamBatchTimer = null
+              }, 32)
+            }
             break
 
           case 'tool_call': {
@@ -255,6 +265,12 @@ export const useAIStore = create<AIState>((set, get) => ({
             break
         }
       })
+
+      if (streamBatchTimer) {
+        clearTimeout(streamBatchTimer)
+        streamBatchTimer = null
+      }
+      flushStreamText()
 
       if (streamError) {
         fullText += fullText.trim() ? '\n\n' : ''
