@@ -8,30 +8,31 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated'
 
+import { SPRINGS } from '@/constants/tokens'
+import { hapticLight } from '@/lib/haptics'
+
 export interface SpringPressableProps extends Omit<PressableProps, 'style'> {
   children: ReactNode
   style?: StyleProp<ViewStyle>
   activeScale?: number
   activeOpacity?: number
   disabled?: boolean
+  haptics?: boolean
   onPress?: () => void
   onLongPress?: () => void
 }
 
-const SPRING_CONFIG = {
-  stiffness: 350,
-  damping: 22,
-  mass: 0.5,
-}
+const SPRING_CONFIG = SPRINGS.touch
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 export const SpringPressable = React.memo(function SpringPressable({
   children,
   style,
-  activeScale = 0.982,
+  activeScale = 0.96,
   activeOpacity = 0.92,
   disabled = false,
+  haptics = true,
   onPress,
   onLongPress,
   ...props
@@ -41,6 +42,7 @@ export const SpringPressable = React.memo(function SpringPressable({
 
   const handlePressIn = () => {
     if (disabled) return
+    if (haptics) hapticLight()
     scale.value = withTiming(activeScale, { duration: 16, easing: Easing.out(Easing.quad) })
     opacity.value = withTiming(activeOpacity, { duration: 16, easing: Easing.out(Easing.quad) })
   }

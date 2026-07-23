@@ -53,21 +53,11 @@ const paperOpening = new Keyframe({
   },
 }).duration(150);
 
-function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
-  const scale = useSharedValue(1)
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withTiming(scale.value, { duration: 85, easing: Easing.out(Easing.quad) }) }]
-  }))
+function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress?: () => void; style?: any }) {
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => { scale.value = 0.97 }}
-      onPressOut={() => { scale.value = 1 }}
-    >
-      <Animated.View style={[style, animatedStyle]}>
-        {children}
-      </Animated.View>
-    </Pressable>
+    <SpringPressable onPress={onPress} style={style} activeScale={0.96}>
+      {children}
+    </SpringPressable>
   )
 }
 
@@ -96,7 +86,11 @@ export default function ProjectsScreen() {
   const router = useRouter()
   const { colors, isDark } = useAppTheme()
   const { handleScroll } = useScrollVisibility()
-  const { projects, loading, fetchProjects, removeProject, updateProject } = useProjectsStore()
+  const projects = useProjectsStore((s) => s.projects)
+  const loading = useProjectsStore((s) => s.loading)
+  const fetchProjects = useProjectsStore((s) => s.fetchProjects)
+  const removeProject = useProjectsStore((s) => s.removeProject)
+  const updateProject = useProjectsStore((s) => s.updateProject)
 
   const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
