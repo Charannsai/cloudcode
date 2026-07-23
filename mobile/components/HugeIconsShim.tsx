@@ -61,6 +61,7 @@ import {
   FilePlusIcon,
   Camera01Icon,
   Image01Icon,
+  VolumeHigh01Icon,
   FileIcon,
   FileCodeIcon,
   BookIcon,
@@ -245,3 +246,4 @@ export const CornerDownRight = createShim(CornerDownRightIcon);
 export const Send = createShim(SentIcon);
 export const Camera = createShim(Camera01Icon);
 export const Image = createShim(Image01Icon);
+export const VolumeHigh = createShim(VolumeHigh01Icon);

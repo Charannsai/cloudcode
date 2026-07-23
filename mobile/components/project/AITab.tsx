@@ -9,9 +9,12 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, ChevronDown, ChevronUp, History, X,
-  Square, Plus, Check, Camera, Image as ImageIcon, Settings, Trash2
+  Square, Plus, Check, Camera, Image as ImageIcon, Settings, Trash2,
+  Copy, FileText, VolumeHigh
 } from '@/components/HugeIconsShim'
 import Svg, { Path } from 'react-native-svg'
+import * as Clipboard from 'expo-clipboard'
+import { hapticLight } from '@/lib/haptics'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -53,6 +56,106 @@ function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean })
   )
 }
 
+const MessageActionButtons = memo(function MessageActionButtons({
+  text,
+  colors,
+  isDark,
+  onOpenSelectModal
+}: {
+  text: string
+  colors: any
+  isDark: boolean
+  onOpenSelectModal: (text: string) => void
+}) {
+  const [copied, setCopied] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+
+  const handleCopy = async () => {
+    hapticLight()
+    await Clipboard.setStringAsync(text)
+    setCopied(true)
+    setTimeout(() => {
+      setCopied(false)
+    }, 2000)
+  }
+
+  const handleSpeak = () => {
+    hapticLight()
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (isSpeaking) {
+        window.speechSynthesis.cancel()
+        setIsSpeaking(false)
+      } else {
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.onend = () => setIsSpeaking(false)
+        utterance.onerror = () => setIsSpeaking(false)
+        setIsSpeaking(true)
+        window.speechSynthesis.speak(utterance)
+      }
+    } else {
+      setIsSpeaking(!isSpeaking)
+    }
+  }
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 4 }}>
+      {/* 1. Copy Button (reactive tick mark for 2 seconds) */}
+      <TouchableOpacity
+        onPress={handleCopy}
+        style={{
+          padding: 6,
+          borderRadius: 8,
+          backgroundColor: copied 
+            ? (isDark ? 'rgba(16, 185, 129, 0.18)' : '#D1FAE5') 
+            : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+        }}
+        activeOpacity={0.7}
+      >
+        {copied ? (
+          <Check size={14} color={isDark ? '#34D399' : '#059669'} strokeWidth={2.2} />
+        ) : (
+          <Copy size={14} color={colors.textSecondary} strokeWidth={1.8} />
+        )}
+      </TouchableOpacity>
+
+      {/* 2. Read Loud Button */}
+      <TouchableOpacity
+        onPress={handleSpeak}
+        style={{
+          padding: 6,
+          borderRadius: 8,
+          backgroundColor: isSpeaking 
+            ? (isDark ? 'rgba(56, 139, 253, 0.18)' : '#DBEAFE') 
+            : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)'),
+        }}
+        activeOpacity={0.7}
+      >
+        <VolumeHigh 
+          size={14} 
+          color={isSpeaking ? (isDark ? '#58A6FF' : '#2563EB') : colors.textSecondary} 
+          strokeWidth={1.8} 
+        />
+      </TouchableOpacity>
+
+      {/* 3. Select Text Button */}
+      <TouchableOpacity
+        onPress={() => {
+          hapticLight()
+          onOpenSelectModal(text)
+        }}
+        style={{
+          padding: 6,
+          borderRadius: 8,
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+        }}
+        activeOpacity={0.7}
+      >
+        <FileText size={14} color={colors.textSecondary} strokeWidth={1.8} />
+      </TouchableOpacity>
+    </View>
+  )
+})
+
 interface Props {
   projectId: string
 }
@@ -73,6 +176,7 @@ export function AITab({ projectId }: Props) {
   const [attachModalVisible, setAttachModalVisible] = useState(false)
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
+  const [selectedMsgForSelect, setSelectedMsgForSelect] = useState<string | null>(null)
 
   const inputRef = useRef<TextInput>(null)
   const scrollRef = useRef<ScrollView>(null)
@@ -181,7 +285,10 @@ export function AITab({ projectId }: Props) {
               {msg.role === 'user' ? (
                 <Text style={{ color: colors.text, fontSize: 14 }}>{msg.text}</Text>
               ) : (
-                <Markdown style={markdownStyles}>{msg.text}</Markdown>
+                <>
+                  <Markdown style={markdownStyles}>{msg.text}</Markdown>
+                  <MessageActionButtons text={msg.text} colors={colors} isDark={isDark} onOpenSelectModal={(t) => setSelectedMsgForSelect(t)} />
+                </>
               )}
             </View>
           </View>
@@ -276,6 +383,43 @@ export function AITab({ projectId }: Props) {
                 <ImageIcon size={16} color={colors.primary} strokeWidth={1.8} />
                 <Text style={[styles.attachOptionText, { color: colors.text }]}>Upload Image</Text>
               </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* Select Text Modal */}
+      {!!selectedMsgForSelect && (
+        <Modal transparent visible={!!selectedMsgForSelect} animationType="fade" onRequestClose={() => setSelectedMsgForSelect(null)}>
+          <TouchableOpacity style={styles.attachPopoverOverlay} activeOpacity={1} onPress={() => setSelectedMsgForSelect(null)}>
+            <View style={[styles.selectTextCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }}>Select Response Text</Text>
+                <TouchableOpacity onPress={() => setSelectedMsgForSelect(null)} style={{ padding: 4 }}>
+                  <X size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={{ maxHeight: 260, marginBottom: 12 }}>
+                <TextInput
+                  multiline
+                  editable={false}
+                  value={selectedMsgForSelect || ''}
+                  selectable={true}
+                  style={{ color: colors.text, fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 20 }}
+                />
+              </ScrollView>
+              <SpringPressable
+                onPress={async () => {
+                  if (selectedMsgForSelect) {
+                    hapticLight()
+                    await Clipboard.setStringAsync(selectedMsgForSelect)
+                    setSelectedMsgForSelect(null)
+                  }
+                }}
+                style={{ backgroundColor: colors.text, paddingVertical: 10, borderRadius: 10, alignItems: 'center' }}
+              >
+                <Text style={{ color: isDark ? '#030303' : '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 13.5 }}>Copy Full Response</Text>
+              </SpringPressable>
             </View>
           </TouchableOpacity>
         </Modal>
@@ -391,6 +535,16 @@ const styles = StyleSheet.create({
   recentConvoRow: { paddingVertical: 12, borderBottomWidth: 1 },
   openAllBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, marginVertical: 14 },
   drawerSettingsBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, borderTopWidth: 1 },
+  selectTextCard: {
+    width: '90%',
+    maxWidth: 400,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+    alignSelf: 'center',
+    marginBottom: 'auto',
+    marginTop: 'auto',
+  },
 })
 
 export default AITab;
