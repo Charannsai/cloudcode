@@ -1,4 +1,5 @@
 import React from 'react';
+import Svg, { Path } from 'react-native-svg';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   Add01Icon,
