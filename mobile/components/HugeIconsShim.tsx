@@ -61,7 +61,6 @@ import {
   FilePlusIcon,
   Camera01Icon,
   Image01Icon,
-  VolumeHigh01Icon,
   FileIcon,
   FileCodeIcon,
   BookIcon,
@@ -246,4 +245,10 @@ export const CornerDownRight = createShim(CornerDownRightIcon);
 export const Send = createShim(SentIcon);
 export const Camera = createShim(Camera01Icon);
 export const Image = createShim(Image01Icon);
-export const VolumeHigh = createShim(VolumeHigh01Icon);
+export const VolumeHigh = ({ size = 18, color = '#888', strokeWidth = 1.8 }: { size?: number; color?: string; strokeWidth?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M11 5L6 9H2V15H6L11 19V5Z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M15.54 8.46C16.4774 9.39764 17.004 10.6692 17.004 11.995C17.004 13.3208 16.4774 14.5924 15.54 15.53" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M19.07 4.93C20.9447 6.80528 21.9979 9.34836 21.9979 12C21.9979 14.6516 20.9447 17.1947 19.07 19.07" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
