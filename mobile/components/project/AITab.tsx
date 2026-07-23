@@ -400,13 +400,12 @@ export function AITab({ projectId }: Props) {
                 </TouchableOpacity>
               </View>
               <ScrollView style={{ maxHeight: 260, marginBottom: 12 }}>
-                <TextInput
-                  multiline
-                  editable={false}
-                  value={selectedMsgForSelect || ''}
+                <Text
                   selectable={true}
                   style={{ color: colors.text, fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 20 }}
-                />
+                >
+                  {selectedMsgForSelect || ''}
+                </Text>
               </ScrollView>
               <SpringPressable
                 onPress={async () => {
