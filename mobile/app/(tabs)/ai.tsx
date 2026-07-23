@@ -420,7 +420,7 @@ export default function AIScreen() {
           ) : (
             <>
               {messages.map((msg) => (
-                <TabChatMessageBubble key={msg.id} msg={msg} colors={colors} isDark={isDark} mdStyles={markdownStyles} onOpenSelectModal={(t) => setSelectedMsgForSelect(t)} />
+                <TabChatMessageBubble key={msg.id} msg={msg} colors={colors} isDark={isDark} mdStyles={markdownStyles} />
               ))}
               {isStreaming && (
                 <View style={styles.streamingWrapper}>
