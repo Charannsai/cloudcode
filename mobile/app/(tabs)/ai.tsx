@@ -1,31 +1,19 @@
-import React, { useState, useRef, useEffect, memo } from 'react'
+import React, { useState, useRef, useEffect, memo, useMemo } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   Platform, ActivityIndicator, Keyboard,
-  TouchableWithoutFeedback, Modal, Dimensions, Alert, Animated, Easing
+  TouchableWithoutFeedback, Modal, Dimensions, Alert, Animated, Easing, Image
 } from 'react-native'
 import { SpringPressable } from '@/components/SpringPressable'
-import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
   Sparkles, ArrowUp, Bot, Terminal, Loader,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Cpu, History, X,
-  Shield, Lock, Square, MoreVertical, Plus, Mic, ArrowLeft, Folder,
-  Plug, MessageSquare, Check, Zap
+  Shield, Lock, Square, Plus, ArrowLeft, Folder, Check, Zap, Camera, Image as ImageIcon, Settings, Trash2
 } from '@/components/HugeIconsShim'
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
-// Mock Voice since @react-native-voice/voice was removed due to New Architecture incompatibility
-const Voice = {
-  onSpeechStart: null as any,
-  onSpeechEnd: null as any,
-  onSpeechResults: null as any,
-  onSpeechError: null as any,
-  start: async (_locale: string) => { throw new Error('Voice not supported') },
-  stop: async () => {},
-  destroy: async () => { return { then: (cb: any) => { cb(); return { catch: () => {} } } } as any },
-  removeAllListeners: () => {},
-};
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
@@ -37,9 +25,9 @@ import Markdown from 'react-native-markdown-display'
 import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 import { api } from '@/lib/api'
 import { ConfirmModal } from '@/components/ConfirmModal'
-import { ensureMicrophonePermission } from '@/lib/permissions'
+import { ensureCameraPermission, ensureMediaLibraryPermission } from '@/lib/permissions'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
 // Glowing Animated AI Core Orb Logo
 function AICoreLogo() {
@@ -82,14 +70,23 @@ function AICoreLogo() {
   )
 }
 
-// Sleek and Trendy AI Thinking Wave Loader Component
+// Two-Liner Hamburger Icon
+function TwoLineHamburgerIcon({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 8H20" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <Path d="M4 16H20" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+    </Svg>
+  )
+}
+
+// Sleek AI Thinking Wave Loader Component
 function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean }) {
   const rotation = useRef(new Animated.Value(0)).current
   const pulse = useRef(new Animated.Value(1)).current
   const shimmer = useRef(new Animated.Value(-100)).current
 
   useEffect(() => {
-    // 1. Rotation animation
     Animated.loop(
       Animated.timing(rotation, {
         toValue: 1,
@@ -99,7 +96,6 @@ function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean })
       })
     ).start()
 
-    // 2. Pulsing fade animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
@@ -117,7 +113,6 @@ function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean })
       ])
     ).start()
 
-    // 3. Shimmer wave animation
     Animated.loop(
       Animated.timing(shimmer, {
         toValue: 100,
@@ -141,7 +136,6 @@ function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean })
   return (
     <View style={{ gap: 8, paddingVertical: 12, paddingHorizontal: 4, width: '100%' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        {/* Rotating Micro AI Core Orb */}
         <Animated.View style={{ transform: [{ rotate: rotateStr }] }}>
           <Svg width="18" height="18" viewBox="0 0 100 100">
             <Defs>
@@ -156,7 +150,6 @@ function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean })
           </Svg>
         </Animated.View>
 
-        {/* Pulsing Sleek Label */}
         <Animated.Text
           style={{
             fontSize: 13,
@@ -169,7 +162,6 @@ function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean })
         </Animated.Text>
       </View>
 
-      {/* Shimmering Wave Skeleton Bar */}
       <View
         style={{
           height: 3,
@@ -204,7 +196,7 @@ function ThinkingIndicator({ colors, isDark }: { colors: any; isDark: boolean })
   )
 }
 
-// Tool call reasoning generator mapping to plain English
+// Tool Call Reasoning Generator
 const getToolReasoning = (name: string, args: any, result: any, status: string) => {
   const wsName = args.workspaceIdOrName || args.name || ''
   const path = args.path || ''
@@ -212,285 +204,80 @@ const getToolReasoning = (name: string, args: any, result: any, status: string) 
 
   if (name === 'select_workspace') {
     if (status === 'error') {
-      return `Attempted to open and activate the workspace '${wsName || 'project'}', but encountered a container startup issue. Waking up a sleeping workspace container can sometimes experience temporary timeouts.`
+      return `Attempted to open workspace '${wsName || 'project'}', but encountered a container issue.`
     }
-    return `Successfully woke up and activated the project workspace '${wsName || 'project'}'. This container is now warm and ready to compile files, run shell terminal commands, and perform development operations.`
+    return `Activated workspace container '${wsName || 'project'}'.`
   }
-
-  if (name === 'list_workspaces') {
-    return `Scanned your account projects to retrieve a fresh list of available workspaces, verifying which project environments are currently ready or sleeping.`
-  }
-
   if (name === 'list_files') {
-    const targetDir = args.path === '.' ? 'root' : `'${args.path}'`
-    return `Examined the directory contents at the ${targetDir} folder of the workspace to inspect the project skeleton, helping locate files and map the workspace layout.`
+    return `Examined directory contents at '${args.path || 'root'}'.`
   }
-
   if (name === 'read_file') {
-    return `Opened and read the contents of the file '${filename || path || 'file'}' to inspect its implementation, configuration parameters, or code structure.`
+    return `Read contents of file '${filename || path}'.`
   }
-
   if (name === 'edit_file') {
-    return `Updated specific code snippets within the file '${filename || path || 'file'}' to integrate modifications, fix bugs, or add requested logic.`
+    return `Updated code in file '${filename || path}'.`
   }
-
   if (name === 'create_file') {
-    return `Created a new file at '${filename || path || 'file'}' and populated it with the required code structure or initial configurations.`
+    return `Created new file '${filename || path}'.`
   }
-
-  if (name === 'delete_file') {
-    return `Removed the file '${filename || path || 'file'}' from the workspace directory to clean up or delete unused code assets.`
-  }
-
-  if (name === 'create_project') {
-    return `Provisioned and initialized a new project named '${wsName}' with the requested template configuration and workspace dependencies.`
-  }
-
   if (name === 'run_command') {
-    const cmdStr = args.command || ''
-    if (status === 'error') {
-      return `Attempted to run the terminal command '${cmdStr}', but the process returned a non-zero exit code or failed to execute. Expand the activity logs to see execution warnings.`
-    }
-    return `Executed the terminal command '${cmdStr}' inside the workspace shell environment to run build tasks, install package dependencies, or start active services.`
+    return `Executed terminal command '${args.command || ''}'.`
   }
-
-  return `Performed the action '${name.replace(/_/g, ' ')}' inside the workspace to fulfill the requested task.`
+  return `Performed action '${name.replace(/_/g, ' ')}'.`
 }
 
-// Minimalist Collapsible Tool Call Badge Component
 function ToolCallBadge({ tool, colors, isDark }: { tool: ToolCallInfo; colors: any; isDark: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const name = tool.name
   const args = tool.args || {}
   const status = tool.status
-  const result = tool.result as any
 
   const path = (args.path as string) || ''
   const filename = path.split(/[\/\\]/).pop() || ''
 
-  let label = ''
-  let ToolIcon = Sparkles
+  let label = name
+  if (name === 'run_command') label = args.command ? `Run: ${args.command}` : 'Shell Command'
+  else if (name === 'list_files') label = args.path ? `List: ${args.path}` : 'List Files'
+  else if (filename) label = `${name.replace('_file', '')}: ${filename}`
 
-  if (name === 'run_command') {
-    label = args.command ? `Run: ${args.command}` : 'Shell Command'
-    ToolIcon = Terminal
-  } else if (name === 'list_files') {
-    label = args.path && args.path !== '.' ? `List Files: ${args.path}` : 'List Files'
-    ToolIcon = Folder
-  } else if (name === 'create_project') {
-    label = args.name ? `Create Project: ${args.name}` : 'Create Project'
-    ToolIcon = Sparkles
-  } else if (name === 'select_workspace') {
-    const wsName = (args.workspaceIdOrName as string) || ''
-    label = wsName ? `Select Workspace: ${wsName}` : 'Select Workspace'
-    ToolIcon = Folder
-  } else if (name === 'list_workspaces') {
-    label = 'List Workspaces'
-    ToolIcon = Folder
-  } else {
-    // Elegant fallback for file tools or other future tools
-    const isFileTool = name.endsWith('_file') || name.includes('file')
-    const op = name.replace('_file', '').replace('view_file_content', 'read')
-    // Replace underscores with spaces and capitalize each word
-    const prettyOp = op.split('_')
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ')
-
-    if (filename) {
-      label = `${prettyOp}: ${filename}`
-    } else {
-      label = isFileTool ? `${prettyOp} File` : prettyOp
-    }
-    ToolIcon = Folder
-  }
-
-  // Pulsing animation for active/running state (Blink label design)
+  const isBlinking = status === 'running' || status === 'pending'
   const pulseAnim = useRef(new Animated.Value(1)).current
 
   useEffect(() => {
-    let anim: Animated.CompositeAnimation | null = null
-    if (status === 'running' || status === 'pending') {
-      anim = Animated.loop(
+    if (isBlinking) {
+      Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 0.4,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1.0,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          })
+          Animated.timing(pulseAnim, { toValue: 0.4, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.0, duration: 600, useNativeDriver: true }),
         ])
-      )
-      anim.start()
-    } else {
-      pulseAnim.setValue(1)
+      ).start()
     }
-    return () => {
-      anim?.stop()
-    }
-  }, [status])
-
-  let StatusIcon: React.ReactNode = null
-  let textStyle = { color: colors.text }
-
-  if (status === 'running' || status === 'pending') {
-    const activeColor = isDark ? '#58A6FF' : '#0969DA'
-    StatusIcon = <ActivityIndicator size="small" color={activeColor} style={{ width: 14, height: 14 }} />
-  } else if (status === 'done') {
-    const successColor = isDark ? '#3FB950' : '#1A7F37'
-    StatusIcon = <CheckCircle2 size={14} color={successColor} />
-  } else if (status === 'error') {
-    const errorColor = isDark ? '#FF7B72' : '#CF222E'
-    StatusIcon = <AlertCircle size={14} color={errorColor} />
-    textStyle = { color: errorColor }
-  }
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded)
-  }
-
-  // Deduce expanded details content
-  const renderDetails = () => {
-    if (!isExpanded) return null
-    const textReasoning = getToolReasoning(name, args, result, status)
-    return (
-      <View style={[
-        styles.detailCollapseContainer,
-        {
-          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-          borderLeftWidth: 1.5,
-          marginLeft: 7,
-          paddingLeft: 12,
-          marginTop: 4,
-          marginBottom: 6
-        }
-      ]}>
-        <Text style={{
-          color: colors.textSecondary,
-          fontSize: 12.5,
-          lineHeight: 19,
-          fontFamily: 'Inter_400Regular'
-        }}>
-          {textReasoning}
-        </Text>
-      </View>
-    )
-  }
-
-  const handleApproveAction = async (action: 'approve' | 'reject') => {
-    if (!args.approvalId) return
-    try {
-      await useAIStore.getState().submitApproval(args.approvalId as string, action)
-    } catch (e) {
-      Alert.alert('Error', 'Failed to submit approval.')
-    }
-  }
-
-  const isBlinking = status === 'running' || status === 'pending'
+  }, [isBlinking])
 
   return (
     <View style={{ width: '100%', paddingVertical: 2 }}>
       <TouchableOpacity
-        style={[
-          styles.toolCallBadgeCompact,
-          {
-            backgroundColor: 'transparent',
-            borderWidth: 0,
-            paddingVertical: 4,
-            paddingHorizontal: 0,
-          }
-        ]}
-        onPress={toggleExpand}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 }}
+        onPress={() => setIsExpanded(!isExpanded)}
         activeOpacity={0.7}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-          {StatusIcon}
-          {isBlinking ? (
-            <Animated.Text
-              style={[
-                styles.toolCallText,
-                textStyle,
-                {
-                  fontFamily: 'Inter_500Medium',
-                  fontSize: 13,
-                  opacity: pulseAnim,
-                  flex: 1
-                }
-              ]}
-              numberOfLines={1}
-            >
-              {label}
-            </Animated.Text>
-          ) : (
-            <Text
-              style={[
-                styles.toolCallText,
-                textStyle,
-                {
-                  fontFamily: 'Inter_500Medium',
-                  fontSize: 13,
-                  flex: 1
-                }
-              ]}
-              numberOfLines={1}
-            >
-              {label}
-            </Text>
-          )}
-        </View>
-
-        {isExpanded ? (
-          <ChevronUp size={14} color={colors.textSecondary} />
+        <Sparkles size={14} color={isDark ? '#A78BFA' : '#7C3AED'} />
+        {isBlinking ? (
+          <Animated.Text style={{ color: colors.textSecondary, fontSize: 13, opacity: pulseAnim, flex: 1, fontFamily: 'Inter_500Medium' }}>
+            {label}
+          </Animated.Text>
         ) : (
-          <ChevronDown size={14} color={colors.textSecondary} />
-        )}
-      </TouchableOpacity>
-
-      {renderDetails()}
-
-      {status === 'pending' && !!args.approvalId && (
-        <View style={[
-          styles.inlineApprovalCard,
-          {
-            backgroundColor: isDark ? '#1C1500' : '#FFFDF0',
-            borderColor: isDark ? '#E2B714' : '#F1E05A',
-            marginLeft: 22,
-            marginTop: 4,
-          }
-        ]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <Shield size={14} color="#E2B714" />
-            <Text style={[styles.inlineApprovalTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-              Approval Required
-            </Text>
-          </View>
-          <Text style={{ color: colors.textSecondary, fontSize: 11, marginBottom: 6 }}>
-            CloudCode wants to run a terminal command:
+          <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1, fontFamily: 'Inter_500Medium' }}>
+            {label}
           </Text>
-          <View style={[styles.inlineApprovalCommandBox, { backgroundColor: isDark ? '#0D1117' : '#E9ECEF' }]}>
-            <Text style={[styles.inlineApprovalCommandText, { color: isDark ? '#FF7B72' : '#CF222E' }]}>
-              $ {args.command as string}
-            </Text>
-          </View>
-          <View style={styles.inlineApprovalActions}>
-            <TouchableOpacity
-              style={[styles.inlineApprovalBtn, { backgroundColor: isDark ? '#30363D' : '#E1E4E8' }]}
-              onPress={() => handleApproveAction('reject')}
-            >
-              <Text style={[styles.inlineApprovalBtnText, { color: colors.text }]}>Deny</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.inlineApprovalBtn, { backgroundColor: '#3FB950' }]}
-              onPress={() => handleApproveAction('approve')}
-            >
-              <Text style={styles.inlineApprovalBtnText}>Approve</Text>
-            </TouchableOpacity>
-          </View>
+        )}
+        {isExpanded ? <ChevronUp size={14} color={colors.textSecondary} /> : <ChevronDown size={14} color={colors.textSecondary} />}
+      </TouchableOpacity>
+      {isExpanded && (
+        <View style={{ padding: 8, borderRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', marginTop: 4 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+            {getToolReasoning(name, args, tool.result, status)}
+          </Text>
         </View>
       )}
     </View>
@@ -516,31 +303,17 @@ function AnimatedDropdown({ visible, children, style }: { visible: boolean; chil
         duration: 120,
         easing: Easing.in(Easing.ease),
         useNativeDriver: true,
-      }).start(() => {
-        setShouldRender(false)
-      })
+      }).start(() => setShouldRender(false))
     }
   }, [visible])
 
   if (!shouldRender) return null
 
-  const opacity = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1]
-  })
-
-  const scale = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.95, 1]
-  })
-
-  const translateY = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-8, 0]
-  })
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] })
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] })
 
   return (
-    <Animated.View style={[style, { opacity, transform: [{ scale }, { translateY }] }]}>
+    <Animated.View style={[style, { opacity, transform: [{ scale }] }]}>
       {children}
     </Animated.View>
   )
@@ -560,7 +333,7 @@ const TabChatMessageBubble = memo(function TabChatMessageBubble({
   const isUser = msg.role === 'user'
   return (
     <View style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
-      <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9ECEF', borderColor: 'transparent', borderWidth: 0 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
+      <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9' }] : [styles.modelBubble, { backgroundColor: 'transparent' }]}>
         {isUser ? (
           <Text style={[styles.userBubbleText, { color: colors.text }]}>
             {msg.text}
@@ -568,7 +341,7 @@ const TabChatMessageBubble = memo(function TabChatMessageBubble({
         ) : (
           <View style={{ width: '100%' }}>
             {msg.toolCalls && msg.toolCalls.length > 0 && (
-              <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
+              <View style={{ marginBottom: 8 }}>
                 {msg.toolCalls.map((tc, tcIdx) => (
                   <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
                 ))}
@@ -588,16 +361,17 @@ const TabChatMessageBubble = memo(function TabChatMessageBubble({
 
 export default function AIScreen() {
   const { colors, isDark } = useAppTheme()
+  const pageBgColor = isDark ? '#030303' : '#FFFFFF'
   const { user } = useAuthStore()
   const { projects, fetchProjects } = useProjectsStore()
   const {
     messages, isStreaming, currentStreamText, currentToolCalls, activeProjectId,
-    sendMessage, clearChat, stopGeneration, initConversations, loadConversation, deleteConversation, startNewChat
+    sendMessage, clearChat, stopGeneration, initConversations, loadConversation, deleteConversation, startNewChat, savedConversations
   } = useAIStore()
 
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { setTabBarVisible } = useUIStore()
+  const { setTabBarVisible, setTabIndex, setSettingsSubScreen } = useUIStore()
 
   const [inputText, setInputText] = useState('')
   const [selectedProjectId, setSelectedProjectId] = useState<string>('global')
@@ -607,720 +381,336 @@ export default function AIScreen() {
   const scrollRef = useRef<ScrollView>(null)
 
   const [modelSelectorVisible, setModelSelectorVisible] = useState(false)
-  const [friendlyError, setFriendlyError] = useState<string | null>(null)
-  const [menuVisible, setMenuVisible] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [attachModalVisible, setAttachModalVisible] = useState(false)
+  const [attachedImage, setAttachedImage] = useState<string | null>(null)
 
-  const [isByokActive, setIsByokActive] = useState(false)
-  const [userTier, setUserTier] = useState('free')
-  const [hasGeminiKey, setHasGeminiKey] = useState(false)
-  const [hasOpenaiKey, setHasOpenaiKey] = useState(false)
-  const [hasAnthropicKey, setHasAnthropicKey] = useState(false)
-  const [hasGroqKey, setHasGroqKey] = useState(false)
-
-  const [modalConfig, setModalConfig] = useState<{
-    visible: boolean
-    title: string
-    message: string
-    confirmText?: string
-    cancelText?: string
-    type?: 'danger' | 'warning' | 'info' | 'logout' | 'success' | 'error'
-    singleButton?: boolean
-    onConfirm: () => void
-    onCancel?: () => void
-  }>({
-    visible: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  })
-
-  const showAlert = (title: string, message: string, type: 'info' | 'warning' | 'error' = 'info') => {
-    setModalConfig({
-      visible: true,
-      title,
-      message,
-      confirmText: 'OK',
-      type,
-      singleButton: true,
-      onConfirm: () => setModalConfig(prev => ({ ...prev, visible: false }))
-    })
-  }
-
-  // Voice recording state
-  const [isListening, setIsListening] = useState(false)
-  const voicePulse = useRef(new Animated.Value(1)).current
-
-  // Text input focus state for border glow
   const [isInputFocused, setIsInputFocused] = useState(false)
 
-  const fetchByokAndTier = async () => {
-    try {
-      const byok = await AsyncStorage.getItem('byok_enabled')
-      setIsByokActive(byok === 'true')
+  // Drawer animation
+  const drawerAnim = useRef(new Animated.Value(0)).current
 
-      const geminiKey = await AsyncStorage.getItem('custom_gemini_key')
-      const openaiKey = await AsyncStorage.getItem('custom_openai_key')
-      const anthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
-      const groqKey = await AsyncStorage.getItem('custom_groq_key')
-      setHasGeminiKey(!!(geminiKey && geminiKey.trim()))
-      setHasOpenaiKey(!!(openaiKey && openaiKey.trim()))
-      setHasAnthropicKey(!!(anthropicKey && anthropicKey.trim()))
-      setHasGroqKey(!!(groqKey && groqKey.trim()))
-
-      const billing = await api.billing.status()
-      if (billing?.tier?.name) {
-        setUserTier(billing.tier.name)
-      }
-    } catch (e) {
-      console.warn('Failed to load settings:', e)
-    }
-  }
-
-  // Load conversation thread when project context changes
   useEffect(() => {
-    const syncThread = async () => {
-      await initConversations()
-      const allThreads = useAIStore.getState().savedConversations
-      
-      // Check if we already have an active/resumed thread in the store
-      const currentThreadId = useAIStore.getState().currentThreadId
-      if (currentThreadId) {
-        const currentThread = allThreads.find(t => t.id === currentThreadId)
-        if (currentThread) {
-          const activeProjId = currentThread.projectId === 'global' ? '' : currentThread.projectId
-          const targetProjId = selectedProjectId === 'global' ? '' : selectedProjectId
-          
-          if (activeProjId === targetProjId) {
-            // The active thread already belongs to the selected project, keep it!
-            await fetchByokAndTier()
-            return
-          } else {
-            // The active thread project does not match the selected project dropdown.
-            // This happens when the thread was just resumed from the history screen
-            // or when the user explicitly switched the project dropdown.
-            // If the thread was just loaded, we should update the dropdown to match the thread's project!
-            const threadProjNormalized = currentThread.projectId || 'global'
-            if (threadProjNormalized !== selectedProjectId) {
-              setSelectedProjectId(threadProjNormalized)
-              await fetchByokAndTier()
-              return
-            }
-          }
-        }
-      }
-
-      const targetProjId = selectedProjectId === 'global' ? '' : selectedProjectId
-      // Find the latest thread for this project
-      const matchingThread = allThreads.find(t => t.projectId === targetProjId)
-      if (matchingThread) {
-        await loadConversation(matchingThread.id)
-      } else {
-        startNewChat()
-      }
-      await fetchByokAndTier()
+    if (drawerOpen) {
+      Animated.timing(drawerAnim, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start()
+    } else {
+      Animated.timing(drawerAnim, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start()
     }
-    syncThread()
-  }, [selectedProjectId])
+  }, [drawerOpen])
 
-  // Sync projects on focus
+  useEffect(() => {
+    initConversations()
+  }, [])
+
   useFocusEffect(
     React.useCallback(() => {
       setTabBarVisible(false)
       fetchProjects(true)
-      fetchByokAndTier()
-
+      initConversations()
       return () => {
         setTabBarVisible(true)
       }
     }, [])
   )
 
-  // Global AI screen remains in 'global' context by default to avoid activating containers.
-  // Project-specific contexts are handled inside the project detail's AI Tab.
-
-  // Auto-scroll main timeline on updates
   useEffect(() => {
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true })
     }, 200)
   }, [messages.length, currentStreamText, isStreaming, currentToolCalls.length])
 
-  // Voice speech setup
-  useEffect(() => {
-    Voice.onSpeechStart = () => {
-      setIsListening(true)
-    }
-    Voice.onSpeechEnd = () => {
-      setIsListening(false)
-    }
-    Voice.onSpeechResults = (e: any) => {
-      if (e.value && e.value[0]) {
-        setInputText(prev => prev + (prev ? " " : "") + e.value[0])
-      }
-    }
-    Voice.onSpeechError = (e: any) => {
-      console.warn('[Voice] Speech recognition error:', e)
-      setIsListening(false)
-    }
-
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners).catch(() => { })
-    }
-  }, [])
-
-  // Voice pulsing animation
-  useEffect(() => {
-    let pulseAnim: Animated.CompositeAnimation | null = null
-    if (isListening) {
-      pulseAnim = Animated.loop(
-        Animated.sequence([
-          Animated.timing(voicePulse, {
-            toValue: 1.3,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-          Animated.timing(voicePulse, {
-            toValue: 1.0,
-            duration: 900,
-            useNativeDriver: true,
-          })
-        ])
-      )
-      pulseAnim.start()
-    } else {
-      voicePulse.setValue(1)
-    }
-    return () => {
-      pulseAnim?.stop()
-    }
-  }, [isListening])
-
-  const toggleListening = async () => {
-    Alert.alert(
-      'Voice Input',
-      'Voice input is currently disabled in this build to support the React Native New Architecture.'
-    )
-  }
-
   const handleSend = async () => {
-    if (!inputText.trim() || isStreaming) return
+    const trimmed = inputText.trim()
+    if (!trimmed && !attachedImage) return
 
-    // Verify BYOK keys if BYOK is active
-    if (isByokActive) {
-      if (selectedModel === 'gemini' && !hasGeminiKey) {
-        showAlert('API Key Required', 'Please configure your Gemini 3.5 Flash API key in Settings to use this model.', 'warning')
-        return
-      }
-      if (selectedModel === 'openai' && !hasOpenaiKey) {
-        showAlert('API Key Required', 'Please configure your ChatGPT 5.5 API key in Settings to use this model.', 'warning')
-        return
-      }
-      if (selectedModel === 'anthropic' && !hasAnthropicKey) {
-        showAlert('API Key Required', 'Please configure your Claude 4.6 Opus API key in Settings to use this model.', 'warning')
-        return
-      }
-      if (selectedModel === 'groq' && !hasGroqKey) {
-        showAlert('API Key Required', 'Please configure your Groq API key in Settings to use this model.', 'warning')
-        return
-      }
+    let finalPrompt = trimmed
+    if (attachedImage) {
+      finalPrompt = `[Attached Image: ${attachedImage}]\n${trimmed}`
     }
 
-    const prompt = inputText.trim()
     setInputText('')
-    await sendMessage(prompt, selectedProjectId, undefined, selectedModel)
+    setAttachedImage(null)
+    const targetProject = selectedProjectId === 'global' ? '' : selectedProjectId
+    await sendMessage(finalPrompt, targetProject, undefined, selectedModel)
   }
 
-  // Markdown styling
-  const mdStyles = {
-    body: { color: isDark ? '#E6EDF3' : '#1F2328', fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24 },
-    heading1: { fontSize: 18, fontFamily: 'Inter_700Bold', marginTop: 14, color: isDark ? '#F3F4F6' : '#030303' },
-    heading2: { fontSize: 15, fontFamily: 'Inter_600SemiBold', marginTop: 10, color: isDark ? '#F3F4F6' : '#030303' },
-    code_inline: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#161821' : '#FAFAFA', color: isDark ? '#E6EDF3' : '#030303', fontSize: 12, paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 4 },
-    fence: { fontFamily: 'JetBrainsMono_400Regular', backgroundColor: isDark ? '#0D1117' : '#FAFAFA', color: isDark ? '#E6EDF3' : '#030303', fontSize: 12, padding: 10, borderRadius: 8, overflow: 'hidden' as const, marginVertical: 6, borderWidth: 1, borderColor: isDark ? '#1A1C23' : '#E4E7EB' },
-    paragraph: { marginTop: 6, marginBottom: 6 },
+  const handleCameraCapture = () => {
+    setAttachModalVisible(false)
+    ensureCameraPermission(() => {
+      // Simulate/Trigger Camera photo selection
+      setAttachedImage('captured_photo.jpg')
+    })
   }
 
-  // Premium Quick Action Suggestions
-  const actionSuggestions = [
-    { text: "🚀 Deploy backend service", prompt: "Deploy a backend server for my app." },
-    { text: "🔍 Find authentication bugs", prompt: "Inspect authentication files to find errors." },
-    { text: "📦 Install Zustand state", prompt: "Add Zustand package and set up state store." },
-    { text: "🛠️ Add dark mode theme", prompt: "Modify components to support dark mode theme." }
-  ]
+  const handleGalleryUpload = () => {
+    setAttachModalVisible(false)
+    ensureMediaLibraryPermission(() => {
+      // Simulate/Trigger Gallery image selection
+      setAttachedImage('uploaded_design_mockup.png')
+    })
+  }
+
+  const markdownStyles = useMemo(() => ({
+    body: { color: colors.text, fontSize: 14.5, lineHeight: 22, fontFamily: 'Inter_400Regular' },
+    code_block: { backgroundColor: isDark ? '#0B0C10' : '#F8FAFC', borderRadius: 8, padding: 12, border: `1px solid ${colors.border}`, fontFamily: 'JetBrainsMono_400Regular' },
+    code_inline: { backgroundColor: isDark ? '#161821' : '#F1F5F9', color: colors.text, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, fontFamily: 'JetBrainsMono_400Regular' },
+    link: { color: isDark ? '#58A6FF' : '#2563EB' },
+  }), [colors, isDark])
+
+  const drawerTranslateX = drawerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-SCREEN_WIDTH * 0.85, 0],
+  })
+
+  const backdropOpacity = drawerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.5],
+  })
 
   return (
     <TabGenieWrapper index={2}>
-      <KeyboardAvoidingView
-        style={[styles.container, { backgroundColor: isDark ? '#030303' : '#FFFFFF', paddingTop: insets.top }]}
-        behavior="padding"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
-      >
-        {/* Glowing Radial Background Gradient */}
-        <View style={StyleSheet.absoluteFill}>
-          <Svg width="100%" height="100%">
-            <Defs>
-              <RadialGradient
-                id="radialGrad"
-                cx="50%"
-                cy="0%"
-                rx="70%"
-                ry="60%"
-                fx="50%"
-                fy="0%"
-              >
-                <Stop offset="0%" stopColor={isDark ? '#1C2030' : '#E0E7FF'} stopOpacity="0.28" />
-                <Stop offset="100%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0" />
-              </RadialGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#radialGrad)" />
-          </Svg>
-        </View>
-
-        {/* Header */}
-        <View style={[styles.headerRow, { borderBottomColor: 'transparent', borderBottomWidth: 0, backgroundColor: 'transparent', zIndex: 100 }]}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.replace('/(tabs)/dashboard')}
-            activeOpacity={0.7}
-          >
-            <ArrowLeft size={22} color={colors.text} />
+      <KeyboardAvoidingView style={[styles.container, { backgroundColor: pageBgColor }]}>
+        
+        {/* Modern Top Bar */}
+        <View style={[styles.topHeaderBar, { paddingTop: Math.max(insets.top, 12), borderBottomColor: isDark ? '#1A1C23' : '#E5E7EB' }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
+            <ArrowLeft size={18} color={colors.text} />
           </TouchableOpacity>
 
-          <View style={{ alignItems: 'center', flex: 1, marginRight: 22 }}>
-            <Text style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 15 }]}>
-              CloudCodeAI
-            </Text>
-            <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}
-              onPress={() => setModelSelectorVisible(!modelSelectorVisible)}
-              activeOpacity={0.7}
-            >
-              <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_600SemiBold' }}>
-                {selectedModel === 'gemini' ? 'Gemini 3.5 Flash' : selectedModel === 'openai' ? 'ChatGPT 5.5' : selectedModel === 'anthropic' ? 'Claude 4.6 Opus' : 'Groq'}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <AICoreLogo />
+            <TouchableOpacity onPress={() => setModelSelectorVisible(!modelSelectorVisible)} style={[styles.modelBadge, { backgroundColor: isDark ? '#161821' : '#F1F5F9', borderColor: colors.border }]}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>
+                {selectedModel === 'gemini' ? 'Gemini 3.5' : selectedModel === 'openai' ? 'ChatGPT 5.5' : selectedModel === 'anthropic' ? 'Claude 4.6' : 'Groq'}
               </Text>
               <ChevronDown size={11} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
- 
-          <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)} style={[styles.menuBtn, { marginLeft: 'auto' }]}>
-            <MoreVertical size={20} color={colors.text} />
+
+          {/* Two-Liner Hamburger Icon Menu Trigger */}
+          <TouchableOpacity onPress={() => setDrawerOpen(true)} style={[styles.headerMenuBtn, { marginLeft: 'auto' }]}>
+            <TwoLineHamburgerIcon color={colors.text} size={22} />
           </TouchableOpacity>
         </View>
- 
-        {modelSelectorVisible && (
-          <TouchableWithoutFeedback onPress={() => setModelSelectorVisible(false)}>
-            <View style={styles.dropdownBackdrop} />
-          </TouchableWithoutFeedback>
-        )}
- 
-        <AnimatedDropdown
-          visible={modelSelectorVisible}
-          style={[
-            styles.inlineModelDropdown,
-            {
-              borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              backgroundColor: isDark ? 'rgba(28, 31, 38, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-              top: insets.top + 52,
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={[
-              styles.inlineModelItem,
-              selectedModel === 'gemini' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
-            ]}
-            onPress={() => {
-              if (isByokActive && !hasGeminiKey) {
-                showAlert(
-                  'API Key Required',
-                  'Please configure your Gemini 3.5 Flash API key in Settings to use this model.',
-                  'warning'
-                )
-              } else {
-                setSelectedModel('gemini')
-                setModelSelectorVisible(false)
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Cpu size={14} color="#3FB950" />
-                <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'gemini' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
-                  Gemini 3.5 Flash
-                </Text>
-              </View>
-              {selectedModel === 'gemini' && <Check size={14} color="#3FB950" />}
-            </View>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.inlineModelItem,
-              { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 },
-              selectedModel === 'openai' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
-            ]}
-            onPress={() => {
-              if (userTier === 'free' && !isByokActive) {
-                showAlert(
-                  'Premium Model Locked',
-                  'GPT-4o is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.',
-                  'warning'
-                )
-              } else if (isByokActive && !hasOpenaiKey) {
-                showAlert(
-                  'API Key Required',
-                  'Please configure your ChatGPT 5.5 API key in Settings to use this model.',
-                  'warning'
-                )
-              } else {
-                setSelectedModel('openai')
-                setModelSelectorVisible(false)
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Shield size={14} color="#2F80ED" />
-                <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'openai' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
-                  ChatGPT 5.5
-                </Text>
-              </View>
-              {(userTier === 'free' && !isByokActive) ? (
-                <Lock size={13} color={colors.textSecondary} />
-              ) : (
-                selectedModel === 'openai' && <Check size={14} color="#2F80ED" />
-              )}
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.inlineModelItem,
-              { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 },
-              selectedModel === 'anthropic' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
-            ]}
-            onPress={() => {
-              if (userTier === 'free' && !isByokActive) {
-                showAlert(
-                  'Premium Model Locked',
-                  'Claude 3.6 Opus is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.',
-                  'warning'
-                )
-              } else if (isByokActive && !hasAnthropicKey) {
-                showAlert(
-                  'API Key Required',
-                  'Please configure your Claude 4.6 Opus API key in Settings to use this model.',
-                  'warning'
-                )
-              } else {
-                setSelectedModel('anthropic')
-                setModelSelectorVisible(false)
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Sparkles size={14} color="#9B51E0" />
-                <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'anthropic' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
-                  Claude 4.6 Opus
-                </Text>
-              </View>
-              {(userTier === 'free' && !isByokActive) ? (
-                <Lock size={13} color={colors.textSecondary} />
-              ) : (
-                selectedModel === 'anthropic' && <Check size={14} color="#9B51E0" />
-              )}
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.inlineModelItem,
-              { opacity: (userTier === 'free' && !isByokActive) ? 0.6 : 1 },
-              selectedModel === 'groq' && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
-            ]}
-            onPress={() => {
-              if (userTier === 'free' && !isByokActive) {
-                showAlert(
-                  'Premium Model Locked',
-                  'Groq is restricted to Pro subscriptions. Please upgrade in Settings or configure Bring Your Own Key (BYOK) to unlock.',
-                  'warning'
-                )
-              } else if (isByokActive && !hasGroqKey) {
-                showAlert(
-                  'API Key Required',
-                  'Please configure your Groq API key in Settings to use this model.',
-                  'warning'
-                )
-              } else {
-                setSelectedModel('groq')
-                setModelSelectorVisible(false)
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Zap size={14} color="#F55036" />
-                <Text style={[styles.inlineModelLabel, { color: colors.text, fontFamily: selectedModel === 'groq' ? 'Inter_600SemiBold' : 'Inter_500Medium' }]}>
-                  Groq
-                </Text>
-              </View>
-              {(userTier === 'free' && !isByokActive) ? (
-                <Lock size={13} color={colors.textSecondary} />
-              ) : (
-                selectedModel === 'groq' && <Check size={14} color="#F55036" />
-              )}
-            </View>
-          </TouchableOpacity>
-        </AnimatedDropdown>
-
-        {/* Action Dropdown Menu */}
-        {menuVisible && (
-          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-            <View style={styles.menuBackdrop} />
-          </TouchableWithoutFeedback>
-        )}
-
-        <AnimatedDropdown
-          visible={menuVisible}
-          style={[
-            styles.dropdownMenuCard,
-            {
-              borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              borderWidth: 1,
-              backgroundColor: isDark ? 'rgba(28, 31, 38, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-              top: insets.top + 52,
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.dropdownMenuItemRow}
-            onPress={() => {
-              setMenuVisible(false)
-              startNewChat()
-            }}
-          >
-            <Plus size={15} color={colors.textSecondary} strokeWidth={2} />
-            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>New Chat</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.dropdownMenuItemRow}
-            onPress={() => {
-              setMenuVisible(false)
-              setModelSelectorVisible(true)
-            }}
-          >
-            <Cpu size={15} color={colors.textSecondary} strokeWidth={2} />
-            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>Switch Model</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.dropdownMenuItemRow}
-            onPress={() => {
-              setMenuVisible(false)
-              router.push('/activity')
-            }}
-          >
-            <History size={15} color={colors.textSecondary} strokeWidth={2} />
-            <Text style={[styles.dropdownMenuItemLabel, { color: colors.text }]}>History & Limits</Text>
-          </TouchableOpacity>
-        </AnimatedDropdown>
-
-        {/* Conversation flow */}
+        {/* Conversation Message Area */}
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: 16 }}
-          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
         >
-          {messages.length === 0 ? (
-            <View style={styles.welcomeContainer}>
-              <Text style={[
-                styles.welcomeGreeting,
-                {
-                  color: colors.text,
-                  fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-                  fontSize: 26,
-                  fontWeight: '300',
-                  textAlign: 'center',
-                  lineHeight: 36,
-                  opacity: 0.95,
-                  letterSpacing: -0.2,
-                }
-              ]}>
-                {(() => {
-                  const hours = new Date().getHours()
-                  let greet = 'Good evening'
-                  if (hours >= 5 && hours < 12) greet = 'Good morning'
-                  else if (hours >= 12 && hours < 17) greet = 'Good afternoon'
-                  
-                  const rawName = user?.name || user?.login || ''
-                  const firstName = rawName ? rawName.trim().split(' ')[0] : ''
-                  const nameStr = firstName ? `, ${firstName}` : ''
-                  
-                  return `${greet}${nameStr}.\nWhat can I do for you?`
-                })()}
+          {messages.length === 0 && !isStreaming ? (
+            <View style={styles.emptyWelcomeView}>
+              <AICoreLogo />
+              <Text style={[styles.welcomeTitle, { color: colors.text }]}>CloudCode Assistant</Text>
+              <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
+                Ask code questions, build features, or manage your workspace.
               </Text>
             </View>
           ) : (
-            <View style={{ gap: 20 }}>
+            <>
               {messages.map((msg) => (
-                <TabChatMessageBubble key={msg.id} msg={msg} colors={colors} isDark={isDark} mdStyles={mdStyles} />
+                <TabChatMessageBubble key={msg.id} msg={msg} colors={colors} isDark={isDark} mdStyles={markdownStyles} />
               ))}
-
-              {/* Streaming AI response bubble */}
               {isStreaming && (
-                <View style={styles.modelBubbleWrapper}>
-                  <View style={[styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
-                    <View style={{ width: '100%' }}>
-                      {currentToolCalls.length > 0 && (
-                        <View style={[styles.toolCallsContainer, { marginBottom: 8 }]}>
-                          {currentToolCalls.map((tc, tcIdx) => (
-                            <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
-                          ))}
-                        </View>
-                      )}
-                      {currentStreamText.trim() !== '' ? (
-                        <Markdown style={mdStyles}>
-                          {currentStreamText}
-                        </Markdown>
-                      ) : (
-                        currentStreamText.trim() === '' && (
-                          <ThinkingIndicator colors={colors} isDark={isDark} />
-                        )
-                      )}
+                <View style={styles.streamingWrapper}>
+                  {currentToolCalls.length > 0 && (
+                    <View style={{ marginBottom: 8, width: '100%' }}>
+                      {currentToolCalls.map((tc, tcIdx) => (
+                        <ToolCallBadge key={tcIdx} tool={tc} colors={colors} isDark={isDark} />
+                      ))}
                     </View>
-                  </View>
+                  )}
+                  {currentStreamText.trim() !== '' ? (
+                    <Markdown style={markdownStyles}>{currentStreamText}</Markdown>
+                  ) : (
+                    <ThinkingIndicator colors={colors} isDark={isDark} />
+                  )}
                 </View>
               )}
-            </View>
+            </>
           )}
         </ScrollView>
 
-        {/* Bottom Container for perfect flow-based keyboard avoidance */}
-        <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-
-
-          {/* Floating Speech/Listening Tooltip */}
-          {isListening && (
-            <View style={[styles.listeningTooltip, { backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', borderColor: isDark ? '#1A1C23' : '#E4E7EB' }]}>
-              <Animated.View style={[styles.listeningPulseDot, { transform: [{ scale: voicePulse }] }]} />
-              <Text style={[styles.listeningTooltipText, { color: colors.text }]}>Listening to voice input...</Text>
+        {/* Clean Input Composer Bar */}
+        <View style={[styles.inputComposerOuter, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: pageBgColor }]}>
+          
+          {/* Image Attachment Preview Badge */}
+          {attachedImage && (
+            <View style={[styles.imagePreviewChip, { backgroundColor: isDark ? '#161821' : '#F1F5F9', borderColor: colors.border }]}>
+              <ImageIcon size={14} color={isDark ? '#58A6FF' : '#2563EB'} />
+              <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'Inter_500Medium', flex: 1 }} numberOfLines={1}>
+                {attachedImage}
+              </Text>
+              <TouchableOpacity onPress={() => setAttachedImage(null)} style={{ padding: 2 }}>
+                <X size={14} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
           )}
 
-          {/* Modern Floating Input Composer - Stacked Manus AI Style */}
-          <View style={styles.composerWrapper}>
-            <BlurView
-              intensity={Platform.OS === 'ios' ? 85 : 100}
-              tint={isDark ? 'dark' : 'light'}
-              style={[
-                styles.composerContainer,
-                {
-                  borderColor: isInputFocused
-                    ? (isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.14)')
-                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
-                  borderWidth: 1,
-                  backgroundColor: isDark ? 'rgba(26, 29, 36, 0.88)' : 'rgba(255, 255, 255, 0.92)',
-                  shadowColor: '#000000',
-                  shadowOpacity: isInputFocused ? 0.12 : 0.05,
-                  shadowRadius: isInputFocused ? 10 : 5,
-                  overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
-                  borderRadius: 28,
-                  paddingHorizontal: 10,
-                  paddingTop: 12,
-                  paddingBottom: 10,
-                  flexDirection: 'column',
-                  alignItems: 'stretch',
-                }
-              ]}
-            >
-              {/* Row 1: borderless TextInput */}
-              <TextInput
-                ref={inputRef}
-                style={[styles.composerTextInput, { color: colors.text }]}
-                placeholder="Assign a task or ask anything..."
-                placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}
-                value={inputText}
-                onChangeText={setInputText}
-                multiline
-                maxLength={2000}
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
-                textAlignVertical="top"
-                scrollEnabled={true}
-              />
+          {/* Single Clean Input Bar */}
+          <View style={[
+            styles.cleanInputBox,
+            {
+              borderColor: isInputFocused ? (isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.2)') : colors.border,
+              backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+            }
+          ]}>
+            {/* Left: Plus Button ONLY */}
+            <TouchableOpacity onPress={() => setAttachModalVisible(true)} style={styles.inputPlusBtn} activeOpacity={0.7}>
+              <Plus size={20} color={colors.textSecondary} strokeWidth={2} />
+            </TouchableOpacity>
 
-              {/* Row 2: stacked Toolbar Actions */}
-              <View style={styles.composerToolbar}>
-                {/* Left Actions */}
-                <View style={styles.toolbarLeft}>
-                  <TouchableOpacity style={styles.toolbarBtn} activeOpacity={0.7}>
-                    <Plus size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.toolbarBtn} activeOpacity={0.7}>
-                    <Plug size={18} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
+            {/* Input Field */}
+            <TextInput
+              ref={inputRef}
+              style={[styles.cleanTextInput, { color: colors.text }]}
+              placeholder="Ask anything or assign a task..."
+              placeholderTextColor={colors.textSecondary + '70'}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={2000}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
+            />
 
-                {/* Right Actions */}
-                <View style={styles.toolbarRight}>
-                  <TouchableOpacity style={styles.toolbarBtn} activeOpacity={0.7}>
-                    <MessageSquare size={18} color={colors.textSecondary} />
-                  </TouchableOpacity>
-
-                  {inputText.trim() === '' && !isStreaming ? (
-                    <TouchableOpacity
-                      style={[
-                        styles.toolbarBtn,
-                        isListening && { backgroundColor: 'rgba(235, 87, 87, 0.1)' }
-                      ]}
-                      onPress={toggleListening}
-                      activeOpacity={0.7}
-                    >
-                      <Animated.View style={[isListening && { transform: [{ scale: voicePulse }] }]}>
-                        <Mic size={18} color={isListening ? '#EB5757' : colors.textSecondary} />
-                      </Animated.View>
-                    </TouchableOpacity>
-                  ) : null}
-
-                  {isStreaming ? (
-                    <TouchableOpacity
-                      style={styles.composerStopBtn}
-                      onPress={() => stopGeneration()}
-                      activeOpacity={0.7}
-                    >
-                      <Square size={10} fill="#FFFFFF" color="#FFFFFF" />
-                    </TouchableOpacity>
-                  ) : (
-                    inputText.trim() !== '' && (
-                      <TouchableOpacity
-                        style={[styles.composerSendBtn, { backgroundColor: colors.text }]}
-                        onPress={handleSend}
-                        activeOpacity={0.7}
-                      >
-                        <ArrowUp size={14} color={isDark ? '#030303' : '#FFFFFF'} />
-                      </TouchableOpacity>
-                    )
-                  )}
-                </View>
-              </View>
-            </BlurView>
+            {/* Right: Send / Stop Button ONLY */}
+            {isStreaming ? (
+              <TouchableOpacity onPress={() => stopGeneration()} style={styles.inputSendBtnActive} activeOpacity={0.7}>
+                <Square size={12} fill="#FFFFFF" color="#FFFFFF" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={handleSend}
+                disabled={inputText.trim() === '' && !attachedImage}
+                style={[
+                  styles.inputSendBtnActive,
+                  { backgroundColor: (inputText.trim() !== '' || attachedImage) ? colors.text : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)') }
+                ]}
+                activeOpacity={0.7}
+              >
+                <ArrowUp size={14} color={(inputText.trim() !== '' || attachedImage) ? (isDark ? '#030303' : '#FFFFFF') : colors.textSecondary} strokeWidth={2.2} />
+              </TouchableOpacity>
+            )}
           </View>
-          {/* Custom Alert/Confirm Modal */}
-          <ConfirmModal
-            visible={modalConfig.visible}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            confirmText={modalConfig.confirmText}
-            cancelText={modalConfig.cancelText}
-            type={modalConfig.type}
-            singleButton={modalConfig.singleButton}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={modalConfig.onCancel}
-          />
         </View>
+
+        {/* Attachment Options Modal (Camera vs Gallery) */}
+        <Modal transparent visible={attachModalVisible} animationType="fade" onRequestClose={() => setAttachModalVisible(false)}>
+          <TouchableOpacity style={styles.attachModalOverlay} activeOpacity={1} onPress={() => setAttachModalVisible(false)}>
+            <View style={[styles.attachModalContent, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
+              <Text style={[styles.attachModalTitle, { color: colors.text }]}>Attach Media</Text>
+              
+              <TouchableOpacity onPress={handleCameraCapture} style={[styles.attachOptionRow, { borderBottomColor: colors.border }]}>
+                <Camera size={18} color={colors.primary} strokeWidth={1.8} />
+                <Text style={[styles.attachOptionText, { color: colors.text }]}>Take Photo (Camera)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={handleGalleryUpload} style={styles.attachOptionRow}>
+                <ImageIcon size={18} color={colors.primary} strokeWidth={1.8} />
+                <Text style={[styles.attachOptionText, { color: colors.text }]}>Upload Image (Gallery)</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Slide-in Side Drawer Menu Overlay */}
+        {drawerOpen && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            <TouchableWithoutFeedback onPress={() => setDrawerOpen(false)}>
+              <Animated.View style={[styles.drawerBackdrop, { opacity: backdropOpacity }]} />
+            </TouchableWithoutFeedback>
+
+            <Animated.View style={[
+              styles.drawerContent,
+              {
+                backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+                borderColor: colors.border,
+                transform: [{ translateX: drawerTranslateX }],
+                paddingTop: Math.max(insets.top, 20),
+                paddingBottom: Math.max(insets.bottom, 20),
+              }
+            ]}>
+              {/* Drawer Header */}
+              <View style={styles.drawerHeader}>
+                <Text style={[styles.drawerTitle, { color: colors.text }]}>CloudCode AI</Text>
+                <TouchableOpacity onPress={() => setDrawerOpen(false)}>
+                  <X size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Action 1: + New Chat */}
+              <SpringPressable
+                onPress={() => {
+                  startNewChat()
+                  setDrawerOpen(false)
+                }}
+                style={[styles.newChatDrawerBtn, { backgroundColor: isDark ? '#161821' : '#F1F5F9', borderColor: colors.border }]}
+              >
+                <Plus size={16} color={colors.text} strokeWidth={2} />
+                <Text style={[styles.newChatDrawerText, { color: colors.text }]}>New Chat</Text>
+              </SpringPressable>
+
+              {/* Section: Previous Conversations (Top 5) */}
+              <Text style={[styles.drawerSectionLabel, { color: colors.textSecondary }]}>Recent Conversations</Text>
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                {savedConversations.slice(0, 5).map((thread) => (
+                  <TouchableOpacity
+                    key={thread.id}
+                    onPress={async () => {
+                      await loadConversation(thread.id)
+                      setDrawerOpen(false)
+                    }}
+                    style={[styles.recentConvoRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+                  >
+                    <Text style={[styles.recentConvoTitle, { color: colors.text }]} numberOfLines={1}>
+                      {thread.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Open All Conversations Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setDrawerOpen(false)
+                  setTabIndex(4)
+                  setSettingsSubScreen('history')
+                }}
+                style={[styles.openAllConvosBtn, { borderColor: colors.border, backgroundColor: isDark ? '#161821' : '#F8FAFC' }]}
+              >
+                <History size={16} color={colors.primary} strokeWidth={1.8} />
+                <Text style={[styles.openAllConvosText, { color: colors.text }]}>Open All Conversations</Text>
+              </TouchableOpacity>
+
+              {/* Settings Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setDrawerOpen(false)
+                  setTabIndex(4)
+                  setSettingsSubScreen('limits')
+                }}
+                style={[styles.drawerSettingsBtn, { borderTopColor: colors.border }]}
+              >
+                <Settings size={18} color={colors.textSecondary} strokeWidth={1.8} />
+                <Text style={[styles.drawerSettingsText, { color: colors.textSecondary }]}>Settings & Limits</Text>
+              </TouchableOpacity>
+
+            </Animated.View>
+          </View>
+        )}
 
       </KeyboardAvoidingView>
     </TabGenieWrapper>
@@ -1331,439 +721,223 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerRow: {
+  topHeaderBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  backBtn: {
+  headerBackBtn: {
     padding: 6,
-    marginRight: 6,
-  },
-  headerTitle: {
-    fontSize: 16,
+    marginRight: 8,
   },
   modelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
     borderWidth: 1,
   },
-  modelBadgeText: {
-    fontSize: 11,
-    fontFamily: 'Inter_500Medium',
-  },
-  menuBtn: {
-    padding: 4,
+  headerMenuBtn: {
+    padding: 6,
   },
   orbContainer: {
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  welcomeContainer: {
-    flex: 1,
-    paddingTop: Dimensions.get('window').height * 0.28,
+  emptyWelcomeView: {
     alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  welcomeGreeting: {
-    fontSize: 26,
-  },
-  suggestionsContainer: {
-    width: '100%',
-    marginTop: 36,
-    gap: 10,
-  },
-  suggestionCard: {
-    width: '100%',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingVertical: 60,
+    gap: 12,
   },
-  suggestionCardText: {
+  welcomeTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter_700Bold',
+  },
+  welcomeSubtitle: {
     fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-  },
-  modelBubbleWrapper: {
-    width: '100%',
+    textAlign: 'center',
+    paddingHorizontal: 32,
+    lineHeight: 18,
   },
   userBubbleWrapper: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    width: '100%',
+    alignItems: 'flex-end',
+    marginVertical: 4,
+  },
+  modelBubbleWrapper: {
+    alignItems: 'flex-start',
+    marginVertical: 4,
   },
   userBubble: {
-    paddingHorizontal: 16,
+    borderRadius: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 20,
-    borderBottomRightRadius: 4,
-    maxWidth: SCREEN_WIDTH * 0.8,
-    borderWidth: 0,
-  },
-  userBubbleText: {
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 20,
+    maxWidth: '85%',
   },
   modelBubble: {
-    borderRadius: 16,
-    padding: 16,
-    maxWidth: SCREEN_WIDTH * 0.8,
-    borderBottomLeftRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
-  avatarCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  toolCallsContainer: {
-    marginTop: 8,
-    gap: 4,
-    width: '100%',
-  },
-  toolCallBadgeCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    justifyContent: 'space-between',
-  },
-  toolCallText: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-  },
-  detailCollapseContainer: {
-    width: '100%',
-  },
-  detailMetaLabel: {
-    fontSize: 11,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  detailCodeBox: {
-    borderRadius: 6,
-    borderWidth: 1,
-    padding: 8,
-    marginTop: 2,
-  },
-  detailCodeText: {
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 11,
-    lineHeight: 15,
-  },
-  inlineApprovalCard: {
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 12,
-    marginTop: 4,
-    gap: 6,
-  },
-  inlineApprovalTitle: {
-    fontSize: 13,
-  },
-  inlineApprovalCommandBox: {
-    padding: 8,
-    borderRadius: 6,
-  },
-  inlineApprovalCommandText: {
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 11.5,
-  },
-  inlineApprovalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 4,
-  },
-  inlineApprovalBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 6,
-  },
-  inlineApprovalBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  composerWrapper: {
-    zIndex: 99,
-  },
-  bottomContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    gap: 8,
-  },
-  composerContainer: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  composerTextInput: {
-    fontSize: 15,
-    fontFamily: 'Inter_500Medium',
-    minHeight: 28,
-    maxHeight: 130,
-    paddingTop: Platform.OS === 'ios' ? 6 : 4,
-    paddingBottom: Platform.OS === 'ios' ? 6 : 4,
-    paddingHorizontal: 12,
-    margin: 0,
+  userBubbleText: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     lineHeight: 20,
   },
-  composerToolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginTop: 10,
-    paddingHorizontal: 6,
+  streamingWrapper: {
+    paddingVertical: 8,
   },
-  toolbarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+  inputComposerOuter: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
-  toolbarRight: {
+  imagePreviewChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
   },
-  toolbarBtn: {
+  cleanInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    minHeight: 48,
+  },
+  inputPlusBtn: {
+    padding: 8,
+  },
+  cleanTextInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    maxHeight: 120,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  inputSendBtnActive: {
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 4,
   },
-  composerMicBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  attachModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
   },
-  composerSendBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  composerStopBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#EB5757',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#EB5757',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  listeningTooltip: {
-    borderRadius: 20,
+  attachModalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    padding: 20,
+    gap: 12,
+  },
+  attachModalTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 8,
+  },
+  attachOptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    zIndex: 98,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
   },
-  listeningPulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EB5757',
-  },
-  listeningTooltipText: {
-    fontSize: 12,
+  attachOptionText: {
+    fontSize: 14,
     fontFamily: 'Inter_500Medium',
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  drawerBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000000',
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+  drawerContent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: SCREEN_WIDTH * 0.82,
+    borderRightWidth: 1,
+    paddingHorizontal: 18,
   },
-  selectorDropdownCard: {
-    width: '90%',
-    maxHeight: '40%',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-  },
-  dropdownHeader: {
+  drawerHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
   },
-  dropdownTitle: {
-    fontSize: 15,
+  drawerTitle: {
+    fontSize: 18,
     fontFamily: 'Inter_700Bold',
   },
-  dropdownItem: {
+  newChatDrawerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
-    borderBottomWidth: 0.5,
-  },
-  dropdownItemText: {
-    fontSize: 13,
-  },
-  menuBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 999,
-  },
-  dropdownMenuCard: {
-    position: 'absolute',
-    top: 52,
-    right: 16,
-    width: 190,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    padding: 6,
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 8,
+    marginTop: 12,
+    marginBottom: 16,
   },
-  dropdownMenuItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderBottomWidth: 0,
-  },
-  dropdownMenuItemLabel: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-  },
-  dropdownBackdrop: {
-    position: 'absolute',
-    top: -1000,
-    bottom: -1000,
-    left: -1000,
-    right: -1000,
-    zIndex: 98,
-  },
-  inlineModelDropdown: {
-    position: 'absolute',
-    alignSelf: 'center',
-    width: 230,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 8,
-    zIndex: 9999,
-  },
-  inlineModelItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderBottomWidth: 0,
-  },
-  inlineModelLabel: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-  },
-  errorModalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorModalContent: {
-    width: '100%',
-    maxWidth: 320,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  errorModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  errorModalTitle: {
+  newChatDrawerText: {
     fontSize: 14,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -0.1,
+    fontFamily: 'Inter_600SemiBold',
   },
-  errorModalCloseBtn: {
-    padding: 4,
-  },
-  errorModalText: {
-    fontSize: 13,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 19,
-  },
-  errorModalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    width: '100%',
-    marginTop: 4,
-  },
-  errorModalActionBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorModalActionBtnText: {
+  drawerSectionLabel: {
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  recentConvoRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  recentConvoTitle: {
+    fontSize: 13.5,
+    fontFamily: 'Inter_500Medium',
+  },
+  openAllConvosBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginVertical: 14,
+  },
+  openAllConvosText: {
+    fontSize: 13.5,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  drawerSettingsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+  },
+  drawerSettingsText: {
+    fontSize: 13.5,
+    fontFamily: 'Inter_500Medium',
   },
 })

@@ -59,6 +59,8 @@ import {
   AlertSquareIcon,
   FolderAddIcon,
   FilePlusIcon,
+  Camera01Icon,
+  Image01Icon,
   FileIcon,
   FileCodeIcon,
   BookIcon,
@@ -241,3 +243,5 @@ export const Minimize2 = createShim(MinimizeIcon);
 export const XCircle = createShim(CancelCircleIcon);
 export const CornerDownRight = createShim(CornerDownRightIcon);
 export const Send = createShim(SentIcon);
+export const Camera = createShim(Camera01Icon);
+export const Image = createShim(Image01Icon);

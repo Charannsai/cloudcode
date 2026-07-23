@@ -2,19 +2,12 @@ import { PermissionsAndroid, Platform, Alert } from 'react-native'
 
 /**
  * Ensures that the microphone permission is granted.
- * If not granted, shows a prominent disclosure explaining why the permission is needed.
- * If the user agrees, requests the permission from the system.
- * 
- * @param onGranted Callback when permission is granted
- * @param onDenied Callback when permission is denied or dismissed
  */
 export async function ensureMicrophonePermission(
   onGranted: () => void,
   onDenied?: () => void
 ): Promise<void> {
   if (Platform.OS !== 'android') {
-    // On iOS, permission is handled by the OS and configured via Info.plist (app.json).
-    // We can just proceed and let the OS show the prompt.
     onGranted()
     return
   }
@@ -29,10 +22,9 @@ export async function ensureMicrophonePermission(
       return
     }
 
-    // Show Prominent Disclosure before requesting permission
     Alert.alert(
       'Microphone Access Required',
-      "CloudCode requires access to your microphone to listen for voice commands ('Hey Cloud') and translate them into code actions. Your audio is processed securely and is never stored or shared.",
+      "CloudCode requires access to your microphone to listen for voice commands ('Hey Cloud') and translate them into code actions.",
       [
         {
           text: 'Cancel',
@@ -59,7 +51,116 @@ export async function ensureMicrophonePermission(
     )
   } catch (err) {
     console.error('[Permissions] Failed to check/request microphone permission:', err)
-    // Fallback to calling onGranted to let the Voice module try and throw its own error
+    onGranted()
+  }
+}
+
+/**
+ * Ensures that the camera permission is granted.
+ */
+export async function ensureCameraPermission(
+  onGranted: () => void,
+  onDenied?: () => void
+): Promise<void> {
+  if (Platform.OS !== 'android') {
+    onGranted()
+    return
+  }
+
+  try {
+    const isGranted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.CAMERA
+    )
+
+    if (isGranted) {
+      onGranted()
+      return
+    }
+
+    Alert.alert(
+      'Camera Access Required',
+      'CloudCode requires access to your camera to take photos and attach screenshots directly into AI prompts.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => {
+            if (onDenied) onDenied()
+          },
+        },
+        {
+          text: 'Continue',
+          onPress: async () => {
+            const result = await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.CAMERA
+            )
+            if (result === PermissionsAndroid.RESULTS.GRANTED) {
+              onGranted()
+            } else {
+              if (onDenied) onDenied()
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    )
+  } catch (err) {
+    console.error('[Permissions] Failed to check/request camera permission:', err)
+    onGranted()
+  }
+}
+
+/**
+ * Ensures that media library / photo gallery permission is granted.
+ */
+export async function ensureMediaLibraryPermission(
+  onGranted: () => void,
+  onDenied?: () => void
+): Promise<void> {
+  if (Platform.OS !== 'android') {
+    onGranted()
+    return
+  }
+
+  try {
+    const isGranted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
+    )
+
+    if (isGranted) {
+      onGranted()
+      return
+    }
+
+    Alert.alert(
+      'Photo Library Access Required',
+      'CloudCode requires access to your photo library to attach images and design mockups to AI prompts.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => {
+            if (onDenied) onDenied()
+          },
+        },
+        {
+          text: 'Continue',
+          onPress: async () => {
+            const result = await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
+            )
+            if (result === PermissionsAndroid.RESULTS.GRANTED) {
+              onGranted()
+            } else {
+              if (onDenied) onDenied()
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    )
+  } catch (err) {
+    console.error('[Permissions] Failed to check/request media library permission:', err)
     onGranted()
   }
 }

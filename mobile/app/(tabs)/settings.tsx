@@ -7,7 +7,7 @@ import { SpringPressable } from '@/components/SpringPressable'
 import Animated, { 
   FadeInRight, FadeInDown, FadeOutUp, FadeOutDown, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing, withRepeat 
 } from 'react-native-reanimated'
-import { useFocusEffect } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import * as Linking from 'expo-linking'
 import { useAuthStore } from '@/store/auth'
@@ -24,6 +24,7 @@ import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useUIStore } from '@/store/ui'
 import { useProjectsStore } from '@/store/projects'
+import { useAIStore } from '@/store/ai'
 import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 
 function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress?: () => void; style?: any }) {
@@ -35,6 +36,10 @@ function PressableScale({ children, onPress, style }: { children: React.ReactNod
 }
 
 export default function SettingsScreen() {
+  const router = useRouter()
+  const savedConversations = useAIStore((s) => s.savedConversations)
+  const loadConversation = useAIStore((s) => s.loadConversation)
+  const deleteConversation = useAIStore((s) => s.deleteConversation)
   const { user, signOut } = useAuthStore()
   const { colors, toggleTheme, isDark } = useAppTheme()
   const [showSignOutModal, setShowSignOutModal] = useState(false)
@@ -3045,6 +3050,115 @@ export default function SettingsScreen() {
     )
   }
 
+  const renderHistoryView = () => {
+    return (
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Conversation History</Text>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, gap: 12 }}>
+          {savedConversations.length === 0 ? (
+            <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <History size={36} color={colors.textSecondary} strokeWidth={1.5} />
+              <Text style={{ color: colors.textSecondary, marginTop: 12, fontSize: 14, fontFamily: 'Inter_500Medium' }}>
+                No saved conversations yet
+              </Text>
+            </View>
+          ) : (
+            savedConversations.map((thread) => (
+              <View
+                key={thread.id}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 14,
+                  borderRadius: 12,
+                  backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <TouchableOpacity
+                  style={{ flex: 1, marginRight: 12 }}
+                  onPress={async () => {
+                    await loadConversation(thread.id)
+                    setCurrentSubScreen('main')
+                    router.push('/(tabs)/ai')
+                  }}
+                >
+                  <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }} numberOfLines={1}>
+                    {thread.title}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 3 }}>
+                    {new Date(thread.timestamp).toLocaleDateString()} • {thread.messages.length} messages
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => deleteConversation(thread.id)}
+                  style={{ padding: 6 }}
+                >
+                  <Trash2 size={16} color={colors.error || '#F85149'} strokeWidth={1.8} />
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
+    )
+  }
+
+  const renderLimitsView = () => {
+    return (
+      <View style={{ gap: 20, paddingBottom: 40 }}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <ArrowLeft size={18} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Rate Limits & Quotas</Text>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, gap: 16 }}>
+          <View style={{ borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: isDark ? '#0B0C10' : '#FFFFFF', padding: 16, gap: 14 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>AI Monthly Quota</Text>
+              <Text style={{ color: isDark ? '#58A6FF' : '#2563EB', fontFamily: 'Inter_700Bold', fontSize: 14 }}>Pro Tier Active</Text>
+            </View>
+            <View style={{ height: 6, borderRadius: 3, backgroundColor: isDark ? '#1A1C23' : '#E5E7EB', overflow: 'hidden' }}>
+              <View style={{ width: '42%', height: '100%', backgroundColor: isDark ? '#58A6FF' : '#2563EB', borderRadius: 3 }} />
+            </View>
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>420 / 1,000 monthly AI requests used</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => setCurrentSubScreen('aiKeys')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: 16,
+              borderRadius: 12,
+              backgroundColor: isDark ? '#161821' : '#F3F4F6',
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Key size={18} color={colors.primary} strokeWidth={2} />
+              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Configure Custom BYOK API Keys</Text>
+            </View>
+            <ChevronRight size={16} color={colors.textSecondary} strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  }
+
   const renderAiKeysView = () => {
     return (
       <View style={{ gap: 20, paddingBottom: 40 }}>
@@ -3854,6 +3968,38 @@ export default function SettingsScreen() {
             onConfirm={modalConfig.onConfirm}
             onCancel={modalConfig.onCancel}
           />
+        </ScrollView>
+      </Animated.View>
+    )}
+
+    {currentSubScreen === 'history' && (
+      <Animated.View 
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderHistoryView()}
+        </ScrollView>
+      </Animated.View>
+    )}
+
+    {currentSubScreen === 'limits' && (
+      <Animated.View 
+        entering={SlideInRight.duration(160).easing(Easing.out(Easing.quad))}
+        exiting={SlideOutRight.duration(130).easing(Easing.in(Easing.quad))}
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 10 }]}
+      >
+        <ScrollView 
+          style={[styles.container, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderLimitsView()}
         </ScrollView>
       </Animated.View>
     )}
