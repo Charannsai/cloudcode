@@ -113,6 +113,7 @@ function FloatingCenterSparkleButton({
             size={28}
             color={iconColor}
             filled={isFocused}
+            isDark={isDark}
             strokeWidth={2.0}
           />
         </View>
@@ -246,6 +247,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                     size={22}
                     color={isFocused ? activeColor : inactiveColor}
                     filled={isFocused}
+                    isDark={isDark}
                     strokeWidth={isFocused ? 2.4 : 1.8}
                   />
                   <Text
