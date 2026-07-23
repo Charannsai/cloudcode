@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
 import { SvgIcon } from '@/components/SvgIcon'
-import Svg, { Rect, Defs, LinearGradient, Stop } from 'react-native-svg'
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const TAB_ANIM_CONFIG = {
@@ -24,12 +24,12 @@ const TAB_ANIM_CONFIG = {
 }
 
 /**
- * Clean Floating Sparkle Button (using create.svg sparkle icon).
+ * Premium Integrated Floating Sparkle Button.
  * Features:
  * - Positioned downside closer to tab bar (~30% protrusion, top: -14).
- * - Increased icon size (28px).
- * - Ultra-light translucent sheen sweep.
- * - Flat circular button surface without background glow/shadow.
+ * - 100% integrated adaptive shiny border ring with delicate downside highlight.
+ * - Fluid, organic micro-interaction breathing motion on the icon when focused.
+ * - Clean, minimal, high-end AI aesthetic without artificial sliding blocks.
  */
 function FloatingCenterSparkleButton({
   isFocused,
@@ -46,27 +46,23 @@ function FloatingCenterSparkleButton({
   isDark: boolean
   onPress: () => void
 }) {
-  const shimmerPos = useSharedValue(-60)
+  const pulseScale = useSharedValue(1)
   const pressScale = useSharedValue(1)
 
   useEffect(() => {
-    // Ultra-light & clean translucent sheen sweep
-    shimmerPos.value = withRepeat(
+    // Subtle, elegant breathing motion for the sparkle icon
+    pulseScale.value = withRepeat(
       withSequence(
-        withTiming(80, { duration: 2400, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }),
-        withTiming(-60, { duration: 0 }),
-        withTiming(-60, { duration: 1800 }) // graceful pause between sweeps
+        withTiming(1.06, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.0, { duration: 1600, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
-      false
+      true
     )
   }, [])
 
-  const shimmerAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: shimmerPos.value },
-      { rotate: '25deg' }
-    ],
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: isFocused ? pulseScale.value : 1 }],
   }))
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
@@ -85,37 +81,46 @@ function FloatingCenterSparkleButton({
       style={styles.centerSparkleTouchable}
     >
       <Animated.View style={[styles.sparkleButtonOuter, containerAnimatedStyle]}>
-        {/* Clean Circular Button Body (54px) - NO background glow/shadow */}
+        {/* Clean Circular Button Body (56px) */}
         <View
           style={[
             styles.sparkleButtonBody,
             {
               backgroundColor: surfaceBg,
-              borderColor: isFocused ? activeColor : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             }
           ]}
         >
-          {/* Ultra-Light Sheen Sweep Overlay */}
-          <Animated.View style={[styles.cleanShimmerOverlay, shimmerAnimatedStyle]}>
-            <LinearGradient id="ultraLightSweep" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
-              <Stop offset="50%" stopColor="#FFFFFF" stopOpacity={isDark ? 0.15 : 0.35} />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </LinearGradient>
-            <Svg width={24} height={64} viewBox="0 0 24 64">
-              <Rect width="24" height="64" fill="url(#ultraLightSweep)" />
-            </Svg>
-          </Animated.View>
+          {/* Integrated Adaptive Shiny Border Ring with Downside Highlight */}
+          <Svg width={56} height={56} viewBox="0 0 56 56" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <LinearGradient id="adaptiveBorderGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor={isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'} />
+                <Stop offset="60%" stopColor={activeColor} stopOpacity={isFocused ? 0.6 : 0.25} />
+                <Stop offset="100%" stopColor={activeColor} stopOpacity={isFocused ? 0.95 : 0.6} />
+              </LinearGradient>
+            </Defs>
+            <Circle
+              cx="28"
+              cy="28"
+              r="27"
+              stroke="url(#adaptiveBorderGrad)"
+              strokeWidth={1.8}
+              fill="none"
+            />
+          </Svg>
 
-          {/* Sparkle Icon (create.svg) - Increased size to 28 */}
-          <SvgIcon
-            name="sparkles"
-            size={28}
-            color={iconColor}
-            filled={isFocused}
-            isDark={isDark}
-            strokeWidth={2.0}
-          />
+          {/* Sparkle Icon (create.svg) with Organic Fluid Breathing Motion */}
+          <Animated.View style={iconAnimatedStyle}>
+            <SvgIcon
+              name="sparkles"
+              size={28}
+              color={iconColor}
+              filled={isFocused}
+              isDark={isDark}
+              strokeWidth={2.0}
+            />
+          </Animated.View>
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -395,22 +400,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    width: 56,
+    height: 56,
   },
   sparkleButtonBody: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  cleanShimmerOverlay: {
-    position: 'absolute',
-    top: -10,
-    bottom: -10,
-    width: 24,
-    zIndex: 2,
   },
   tabLabel: {
     fontSize: 10.5,
