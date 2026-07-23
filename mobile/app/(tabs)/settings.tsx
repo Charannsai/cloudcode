@@ -26,22 +26,11 @@ import { useUIStore } from '@/store/ui'
 import { useProjectsStore } from '@/store/projects'
 import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 
-function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
-  const scale = useSharedValue(1)
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withTiming(scale.value, { duration: 85, easing: Easing.out(Easing.quad) }) }]
-  }))
+function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress?: () => void; style?: any }) {
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => { scale.value = 0.96 }}
-      onPressOut={() => { scale.value = 1 }}
-      style={style}
-    >
-      <Animated.View style={animatedStyle}>
-        {children}
-      </Animated.View>
-    </Pressable>
+    <SpringPressable onPress={onPress} style={style} activeScale={0.96}>
+      {children}
+    </SpringPressable>
   )
 }
 

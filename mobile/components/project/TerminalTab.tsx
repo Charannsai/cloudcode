@@ -12,6 +12,7 @@ import { useAIStore } from '@/store/ai'
 import { useTerminalStore } from '@/store/terminal'
 import { api } from '@/lib/api'
 import { Terminal as TerminalIcon, StopCircle, Trash2, ArrowUp, ArrowDown, Sparkles, Plus, X } from '@/components/HugeIconsShim'
+import { SpringPressable } from '@/components/SpringPressable'
 
 interface Props {
   projectId: string
@@ -343,27 +344,27 @@ export default function TerminalTab({ projectId }: Props) {
 
         {/* Actions */}
         <View style={styles.shellActions}>
-          <TouchableOpacity
+          <SpringPressable
             onPress={triggerDiagnose}
             style={[styles.shellAction, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
-            activeOpacity={0.7}
+            activeScale={0.92}
           >
             <Sparkles size={12} color={'#D2A8FF'} strokeWidth={1.8} />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </SpringPressable>
+          <SpringPressable
             onPress={triggerStop}
             style={[styles.shellAction, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
-            activeOpacity={0.7}
+            activeScale={0.92}
           >
             <StopCircle size={12} color={'#F85149'} strokeWidth={1.8} />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </SpringPressable>
+          <SpringPressable
             onPress={handleClear}
             style={[styles.shellAction, { backgroundColor: isDark ? '#161821' : '#EAEEF2' }]}
-            activeOpacity={0.7}
+            activeScale={0.92}
           >
             <Trash2 size={12} color={colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
+          </SpringPressable>
         </View>
       </View>
 

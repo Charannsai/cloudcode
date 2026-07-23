@@ -42,21 +42,11 @@ import Animated, {
 } from 'react-native-reanimated'
 import { TabGenieWrapper } from '@/components/TabGenieWrapper'
 
-function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress: () => void; style?: any }) {
-  const scale = useSharedValue(1)
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withTiming(scale.value, { duration: 85, easing: Easing.out(Easing.quad) }) }]
-  }))
+function PressableScale({ children, onPress, style }: { children: React.ReactNode; onPress?: () => void; style?: any }) {
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => { scale.value = 0.97 }}
-      onPressOut={() => { scale.value = 1 }}
-    >
-      <Animated.View style={[style, animatedStyle]}>
-        {children}
-      </Animated.View>
-    </Pressable>
+    <SpringPressable onPress={onPress} style={style} activeScale={0.96}>
+      {children}
+    </SpringPressable>
   )
 }
 
@@ -95,8 +85,10 @@ export default function DashboardScreen() {
 
   const { handleScroll } = useScrollVisibility()
   const router = useRouter()
-  const { user, signOut } = useAuthStore()
-  const { setSettingsSubScreen, setTabBarVisible } = useUIStore()
+  const user = useAuthStore((s) => s.user)
+  const signOut = useAuthStore((s) => s.signOut)
+  const setTabBarVisible = useUIStore((s) => s.setTabBarVisible)
+  const setSettingsSubScreen = useUIStore((s) => s.setSettingsSubScreen)
   const [profileName, setProfileName] = useState('')
   const [profileMenuVisible, setProfileMenuVisible] = useState(false)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
