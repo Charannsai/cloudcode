@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, 
   TextInput, ActivityIndicator, Alert, Modal, RefreshControl, BackHandler, Pressable
 } from 'react-native'
+import { TelegramPressable } from '@/components/TelegramPressable'
 import Animated, { 
   FadeInRight, FadeInDown, FadeOutUp, FadeOutDown, useSharedValue, useAnimatedStyle, withSpring, SlideInRight, SlideOutRight, runOnJS, withTiming, Easing, withRepeat 
 } from 'react-native-reanimated'

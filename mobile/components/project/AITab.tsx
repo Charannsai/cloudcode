@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, memo } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   Platform, ActivityIndicator, Keyboard,
   TouchableWithoutFeedback, Modal, Dimensions, Alert, Animated, Easing
 } from 'react-native'
+import { SpringPressable } from '@/components/SpringPressable'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import {
@@ -766,6 +767,33 @@ function StreamingMessageBody({
   )
 }
 
+const ChatMessageBubble = memo(function ChatMessageBubble({
+  msg,
+  colors,
+  isDark,
+  mdStyles,
+}: {
+  msg: ChatMessage
+  colors: any
+  isDark: boolean
+  mdStyles: any
+}) {
+  const isUser = msg.role === 'user'
+  return (
+    <View style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
+      <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9ECEF', borderColor: 'transparent', borderWidth: 0 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
+        {isUser ? (
+          <Text style={[styles.userBubbleText, { color: colors.text }]}>
+            {msg.text}
+          </Text>
+        ) : (
+          <ModelMessageBody msg={msg} colors={colors} isDark={isDark} mdStyles={mdStyles} />
+        )}
+      </View>
+    </View>
+  )
+})
+
 
 export default function AITab({ projectId }: Props) {
   const { colors, isDark } = useAppTheme()
@@ -1305,22 +1333,9 @@ export default function AITab({ projectId }: Props) {
           </View>
         ) : (
           <View style={{ gap: 16 }}>
-            {projectMessages.map((msg) => {
-              const isUser = msg.role === 'user'
-              return (
-                <View key={msg.id} style={isUser ? styles.userBubbleWrapper : styles.modelBubbleWrapper}>
-                  <View style={isUser ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9ECEF', borderColor: 'transparent', borderWidth: 0 }] : [styles.modelBubble, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0, paddingVertical: 8, maxWidth: '100%' }]}>
-                    {isUser ? (
-                      <Text style={[styles.userBubbleText, { color: colors.text }]}>
-                        {msg.text}
-                      </Text>
-                    ) : (
-                      <ModelMessageBody msg={msg} colors={colors} isDark={isDark} mdStyles={mdStyles} />
-                    )}
-                  </View>
-                </View>
-              )
-            })}
+            {projectMessages.map((msg) => (
+              <ChatMessageBubble key={msg.id} msg={msg} colors={colors} isDark={isDark} mdStyles={mdStyles} />
+            ))}
 
             {/* Streaming AI response bubble */}
             {isStreaming && (

@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Image, Modal, Pressable } from 'react-native'
+import { SpringPressable } from '@/components/SpringPressable'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { api } from '@/lib/api'
@@ -182,7 +183,7 @@ export default function DashboardScreen() {
   const [latency, setLatency] = useState<number | null>(null)
   
   const { projects: allProjects, loading, fetchProjects } = useProjectsStore()
-  const projects = allProjects.slice(0, 5)
+  const projects = useMemo(() => allProjects.slice(0, 5), [allProjects])
   const [showSkeleton, setShowSkeleton] = useState(false)
 
   useEffect(() => {
