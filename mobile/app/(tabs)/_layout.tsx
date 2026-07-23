@@ -15,97 +15,81 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
 import { SvgIcon } from '@/components/SvgIcon'
-import Svg, { Circle, Rect, Defs, LinearGradient, Stop, RadialGradient, Path } from 'react-native-svg'
+import Svg, { Circle, Rect, Defs, LinearGradient, Stop } from 'react-native-svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
 const TAB_ANIM_CONFIG = {
-  duration: 180,
+  duration: 200,
   easing: Easing.out(Easing.quad),
 }
 
-// Iridescent Color Palette adhering to app aesthetics (Indigo, Violet, Pink, Cyan)
-const IRIDESCENT_DARK = {
-  stop1: '#6366F1', // Indigo
-  stop2: '#8B5CF6', // Violet
-  stop3: '#EC4899', // Pink
-  stop4: '#06B6D4', // Cyan
-  primary: '#A78BFA',
-}
-
-const IRIDESCENT_LIGHT = {
-  stop1: '#4F46E5', // Deep Indigo
-  stop2: '#7C3AED', // Deep Violet
-  stop3: '#DB2777', // Vibrant Pink
-  stop4: '#0284C7', // Sky Blue
-  primary: '#6366F1',
-}
-
 /**
- * Stylish Animated Google AI / Gemini inspired Sparkle Button.
- * Features:
- * 1. Continuous flowing rotation of multi-color iridescent border gradient.
- * 2. Soft pulsing ambient radial glow backdrop.
- * 3. Glossy light sweep / shimmer reflection moving across the button.
- * 4. Elevated floating popped-up design.
+ * Premium Google AI / Gemini style Sparkle Action Button.
+ * Key Specs:
+ * - Protrudes ~45% outside the top edge of the floating tab bar.
+ * - Inherits system theme accent colors (no hardcoded purple/blue).
+ * - Subtle, refined animated light sweep shimmer effect (no spinning revolving ring).
+ * - Soft ambient glow breathing gently in the background.
  */
-function AnimatedSparkleButton({ isFocused, isDark, onPress }: { isFocused: boolean; isDark: boolean; onPress: () => void }) {
-  const rotation = useSharedValue(0)
-  const glowScale = useSharedValue(1)
-  const shimmerTranslate = useSharedValue(-60)
+function FloatingSparkleButton({
+  isFocused,
+  activeColor,
+  inactiveColor,
+  colors,
+  isDark,
+  onPress
+}: {
+  isFocused: boolean
+  activeColor: string
+  inactiveColor: string
+  colors: any
+  isDark: boolean
+  onPress: () => void
+}) {
+  const glowOpacity = useSharedValue(0.2)
+  const shimmerPos = useSharedValue(-60)
   const pressScale = useSharedValue(1)
 
-  const palette = isDark ? IRIDESCENT_DARK : IRIDESCENT_LIGHT
-
   useEffect(() => {
-    // 1. Continuous smooth rotation for flowing gradient border
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 4000, easing: Easing.linear }),
-      -1,
-      false
-    )
-
-    // 2. Subtle breathing / pulse effect for the ambient glow
-    glowScale.value = withRepeat(
+    // 1. Subtle, slow breathing glow opacity (no flashy noise)
+    glowOpacity.value = withRepeat(
       withSequence(
-        withTiming(1.18, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1.0, { duration: 1800, easing: Easing.inOut(Easing.ease) })
+        withTiming(0.45, { duration: 2500, easing: Easing.bezier(0.4, 0, 0.2, 1) }),
+        withTiming(0.18, { duration: 2500, easing: Easing.bezier(0.4, 0, 0.2, 1) })
       ),
       -1,
       true
     )
 
-    // 3. Shimmer reflection light sweep across the surface
-    shimmerTranslate.value = withRepeat(
+    // 2. Elegant, periodic soft light sweep across the button border & surface
+    shimmerPos.value = withRepeat(
       withSequence(
-        withTiming(60, { duration: 2200, easing: Easing.bezier(0.4, 0, 0.2, 1) }),
-        withTiming(-60, { duration: 0 })
+        withTiming(70, { duration: 2400, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }),
+        withTiming(-60, { duration: 0 }),
+        withTiming(-60, { duration: 1200 }) // pause between sweeps for elegance
       ),
       -1,
       false
     )
   }, [])
 
-  const rotateStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: isFocused ? glowOpacity.value * 1.4 : glowOpacity.value,
   }))
 
-  const glowStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: glowScale.value }],
-    opacity: isFocused ? 0.85 : 0.45,
-  }))
-
-  const shimmerStyle = useAnimatedStyle(() => ({
+  const shimmerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: shimmerTranslate.value },
-      { rotate: '25deg' }
+      { translateX: shimmerPos.value },
+      { rotate: '30deg' }
     ],
   }))
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(pressScale.value, { damping: 15, stiffness: 200 }) }],
+    transform: [{ scale: withSpring(pressScale.value, { damping: 18, stiffness: 220 }) }],
   }))
+
+  const surfaceBg = isDark ? '#141722' : '#FFFFFF'
+  const shimmerHighlight = isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.7)'
 
   return (
     <TouchableOpacity
@@ -113,81 +97,63 @@ function AnimatedSparkleButton({ isFocused, isDark, onPress }: { isFocused: bool
       onPressIn={() => { pressScale.value = 0.92 }}
       onPressOut={() => { pressScale.value = 1.0 }}
       onPress={onPress}
-      style={styles.centerTabItem}
+      style={styles.centerTabContainer}
     >
-      <Animated.View style={[styles.sparkleContainer, containerAnimatedStyle]}>
-        {/* Soft Ambient Radial Glow Backdrop */}
-        <Animated.View style={[styles.sparkleAmbientGlow, glowStyle]}>
-          <Svg width={64} height={64} viewBox="0 0 64 64">
-            <Defs>
-              <RadialGradient id="ambientGlowGrad" cx="50%" cy="50%" r="50%">
-                <Stop offset="0%" stopColor={palette.stop2} stopOpacity="0.6" />
-                <Stop offset="50%" stopColor={palette.stop3} stopOpacity="0.35" />
-                <Stop offset="100%" stopColor={palette.stop1} stopOpacity="0" />
-              </RadialGradient>
-            </Defs>
-            <Circle cx="32" cy="32" r="32" fill="url(#ambientGlowGrad)" />
-          </Svg>
-        </Animated.View>
+      <Animated.View style={[styles.sparkleButtonOuter, containerAnimatedStyle]}>
+        {/* Soft Ambient Refined Glow */}
+        <Animated.View
+          style={[
+            styles.sparkleAmbientGlow,
+            { backgroundColor: isFocused ? activeColor : colors.border },
+            glowAnimatedStyle,
+          ]}
+        />
 
-        {/* Flowing Iridescent Animated Border Ring */}
-        <Animated.View style={[styles.sparkleBorderRing, rotateStyle]}>
-          <Svg width={56} height={56} viewBox="0 0 56 56">
-            <Defs>
-              <LinearGradient id="iridescentBorder" x1="0%" y1="0%" x2="100%" y2="100%">
-                <Stop offset="0%" stopColor={palette.stop1} />
-                <Stop offset="33%" stopColor={palette.stop2} />
-                <Stop offset="66%" stopColor={palette.stop3} />
-                <Stop offset="100%" stopColor={palette.stop4} />
-              </LinearGradient>
-            </Defs>
-            <Circle
-              cx="28"
-              cy="28"
-              r="26"
-              stroke="url(#iridescentBorder)"
-              strokeWidth="2.5"
-              fill="none"
-              strokeDasharray={isFocused ? '160 0' : '40 12'}
-            />
-          </Svg>
-        </Animated.View>
-
-        {/* Glassmorphic Inner Button Surface */}
-        <View style={[styles.sparkleInnerSurface, {
-          backgroundColor: isDark ? 'rgba(15, 17, 26, 0.92)' : 'rgba(255, 255, 255, 0.96)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.6)',
-        }]}>
-          {/* Shiny Gloss / Light Sweep reflection overlay */}
-          <Animated.View style={[styles.sparkleShimmerOverlay, shimmerStyle]}>
-            <LinearGradient id="shimmerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
-              <Stop offset="50%" stopColor="#FFFFFF" stopOpacity={isDark ? 0.35 : 0.6} />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+        {/* Integrated Circular Button Body with Border Shimmer */}
+        <View
+          style={[
+            styles.sparkleButtonBody,
+            {
+              backgroundColor: surfaceBg,
+              borderColor: isFocused ? activeColor : (isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.1)'),
+              shadowColor: isFocused ? activeColor : '#000000',
+              shadowOpacity: isDark ? 0.3 : 0.1,
+            }
+          ]}
+        >
+          {/* Subtle Light Sweep Reflection Overlay */}
+          <Animated.View style={[styles.shimmerOverlay, shimmerAnimatedStyle]}>
+            <LinearGradient id="sweepGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor={shimmerHighlight} stopOpacity="0" />
+              <Stop offset="50%" stopColor={shimmerHighlight} stopOpacity="0.45" />
+              <Stop offset="100%" stopColor={shimmerHighlight} stopOpacity="0" />
             </LinearGradient>
-            <Svg width={24} height={60} viewBox="0 0 24 60">
-              <Rect width="24" height="60" fill="url(#shimmerGrad)" />
+            <Svg width={28} height={64} viewBox="0 0 28 64">
+              <Rect width="28" height="64" fill="url(#sweepGrad)" />
             </Svg>
           </Animated.View>
 
-          {/* Sparkle Icon */}
+          {/* Sparkle Icon - Filled when active, outlined when inactive */}
           <SvgIcon
             name="sparkles"
             size={24}
-            color={isFocused ? palette.stop3 : palette.primary}
+            color={isFocused ? activeColor : inactiveColor}
             filled={isFocused}
-            strokeWidth={2.2}
+            strokeWidth={isFocused ? 2.4 : 1.8}
           />
         </View>
       </Animated.View>
-      <Text style={[
-        styles.tabLabel,
-        {
-          color: isFocused ? palette.stop3 : (isDark ? '#9CA3AF' : '#6B7280'),
-          fontFamily: isFocused ? 'Inter_700Bold' : 'Inter_500Medium',
-          marginTop: 2,
-        }
-      ]}>
+
+      <Text
+        style={[
+          styles.tabLabel,
+          {
+            color: isFocused ? activeColor : inactiveColor,
+            fontFamily: isFocused ? 'Inter_700Bold' : 'Inter_500Medium',
+            marginTop: 3,
+          }
+        ]}
+      >
         AI
       </Text>
     </TouchableOpacity>
@@ -200,8 +166,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const { tabBarVisible, setTabIndex } = useUIStore()
   const isVisible = useSharedValue(1)
   const insets = useSafeAreaInsets()
-
-  const palette = isDark ? IRIDESCENT_DARK : IRIDESCENT_LIGHT
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
@@ -231,6 +195,10 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     }
   })
 
+  // Inherit system device theme colors
+  const activeColor = colors.tabBarActive || colors.primary
+  const inactiveColor = colors.tabBarInactive || colors.textSecondary
+
   // 5 Tabs: Home, Projects, AI (center sparkle), Usage, Settings
   const tabs = [
     { key: 'dashboard', routeIndex: 0, icon: 'home' as const, label: 'Home' },
@@ -240,29 +208,29 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     { key: 'settings', routeIndex: 4, icon: 'settings' as const, label: 'Settings' },
   ]
 
-  const inactiveColor = isDark ? '#8E939E' : '#6B7280'
-
   return (
     <Animated.View
       style={[
         styles.floatingWrapper,
-        { bottom: Platform.OS === 'ios' ? Math.max(insets.bottom + 4, 20) : 16 },
+        { bottom: Platform.OS === 'ios' ? Math.max(insets.bottom + 6, 20) : 20 },
         wrapperStyle,
       ]}
       pointerEvents={tabBarVisible ? 'box-none' : 'none'}
     >
-      {/* Floating Rounded Elevated Tab Bar Container */}
-      <View style={[
-        styles.floatingCard,
-        {
-          backgroundColor: isDark ? 'rgba(11, 13, 20, 0.88)' : 'rgba(255, 255, 255, 0.92)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-          shadowColor: isDark ? '#7C3AED' : '#000000',
-          shadowOpacity: isDark ? 0.35 : 0.12,
-        }
-      ]}>
+      {/* Floating Card Base Container */}
+      <View
+        style={[
+          styles.floatingCard,
+          {
+            backgroundColor: isDark ? 'rgba(15, 17, 24, 0.92)' : 'rgba(255, 255, 255, 0.94)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            shadowColor: isDark ? '#000000' : 'rgba(0, 0, 0, 0.18)',
+            shadowOpacity: isDark ? 0.45 : 0.12,
+          }
+        ]}
+      >
         <BlurView
-          intensity={isDark ? 50 : 80}
+          intensity={isDark ? 40 : 80}
           tint={isDark ? 'dark' : 'light'}
           style={styles.blurFill}
         >
@@ -284,19 +252,22 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                 }
               }
 
-              // Center AI Sparkle Tab with Gemini flow animation
+              // Center AI Protruding Sparkle Button
               if (tab.isCenter) {
                 return (
-                  <AnimatedSparkleButton
+                  <FloatingSparkleButton
                     key={tab.key}
                     isFocused={isFocused}
+                    activeColor={activeColor}
+                    inactiveColor={inactiveColor}
+                    colors={colors}
                     isDark={isDark}
                     onPress={onPress}
                   />
                 )
               }
 
-              // Regular Tab Items
+              // Material Design Icon Items: Filled when active, Outlined when inactive (no background pill)
               return (
                 <TouchableOpacity
                   key={tab.key}
@@ -304,28 +275,18 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                   onPress={onPress}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.iconWrapper}>
-                    {/* Active Iridescent Pill Backdrop */}
-                    {isFocused && (
-                      <Animated.View style={[
-                        styles.activePillBackdrop,
-                        { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.16)' : 'rgba(99, 102, 241, 0.1)' }
-                      ]} />
-                    )}
-                    <SvgIcon
-                      name={tab.icon}
-                      size={22}
-                      color={isFocused ? palette.primary : inactiveColor}
-                      filled={isFocused}
-                      strokeWidth={isFocused ? 2.4 : 1.8}
-                    />
-                  </View>
-
+                  <SvgIcon
+                    name={tab.icon}
+                    size={22}
+                    color={isFocused ? activeColor : inactiveColor}
+                    filled={isFocused}
+                    strokeWidth={isFocused ? 2.4 : 1.8}
+                  />
                   <Text
                     style={[
                       styles.tabLabel,
                       {
-                        color: isFocused ? palette.primary : inactiveColor,
+                        color: isFocused ? activeColor : inactiveColor,
                         fontFamily: isFocused ? 'Inter_700Bold' : 'Inter_500Medium',
                       }
                     ]}
@@ -396,24 +357,26 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: 20,
+    right: 20,
     zIndex: 100,
     alignItems: 'center',
   },
   floatingCard: {
     width: '100%',
-    maxWidth: 420,
-    height: 66,
-    borderRadius: 33,
+    maxWidth: 400,
+    height: 64,
+    borderRadius: 32,
     borderWidth: 1,
-    overflow: 'hidden',
+    overflow: 'visible',
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 18,
-    elevation: 12,
+    elevation: 10,
   },
   blurFill: {
     flex: 1,
+    borderRadius: 32,
+    overflow: 'hidden',
     justifyContent: 'center',
   },
   tabItemsRow: {
@@ -421,77 +384,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     height: '100%',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 4,
     gap: 3,
   },
-  iconWrapper: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-  },
-  activePillBackdrop: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderRadius: 14,
-  },
-  centerTabItem: {
+  centerTabContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -14, // Popped up effect above floating bar
+    marginTop: -24, // Protrudes ~45% above the top edge of the floating tab bar
+    zIndex: 10,
+  },
+  sparkleButtonOuter: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sparkleAmbientGlow: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  sparkleButtonBody: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  shimmerOverlay: {
+    position: 'absolute',
+    top: -10,
+    bottom: -10,
+    width: 28,
+    zIndex: 2,
   },
   tabLabel: {
     fontSize: 10.5,
     letterSpacing: 0.1,
-  },
-  // Google AI / Gemini Sparkle button styles
-  sparkleContainer: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  sparkleAmbientGlow: {
-    position: 'absolute',
-    width: 64,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sparkleBorderRing: {
-    position: 'absolute',
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sparkleInnerSurface: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    zIndex: 2,
-  },
-  sparkleShimmerOverlay: {
-    position: 'absolute',
-    top: -10,
-    bottom: -10,
-    width: 24,
-    zIndex: 3,
   },
 })
