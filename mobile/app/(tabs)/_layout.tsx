@@ -1,69 +1,107 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Tabs, useRouter } from 'expo-router'
-import { View, TouchableOpacity, StyleSheet, Keyboard, Platform } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, Keyboard, Platform, Text, Dimensions } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
-import { BlurView } from 'expo-blur'
-import Animated, { 
-  useAnimatedStyle, 
+import Animated, {
+  useAnimatedStyle,
   useSharedValue,
-  interpolate,
   withTiming,
   withSpring,
+  withRepeat,
+  withSequence,
   Easing,
+  interpolateColor,
 } from 'react-native-reanimated'
 import { useUIStore } from '@/store/ui'
 import { SvgIcon } from '@/components/SvgIcon'
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 const TAB_ANIM_CONFIG = {
   duration: 150,
   easing: Easing.out(Easing.quad),
 }
 
-const TabIconWrapper = ({ isFocused, children }: { isFocused: boolean; children: React.ReactNode }) => {
-  const scale = useSharedValue(isFocused ? 1.1 : 1)
+// Animated sparkle icon with rotating gradient border glow
+function AnimatedSparkleIcon({ isFocused, isDark, activeColor }: { isFocused: boolean; isDark: boolean; activeColor: string }) {
+  const rotation = useSharedValue(0)
+  const glowPulse = useSharedValue(0.3)
 
   useEffect(() => {
-    scale.value = withSpring(isFocused ? 1.18 : 1, {
-      damping: 12,
-      stiffness: 180,
-      mass: 0.8,
-    })
-  }, [isFocused])
+    // Continuous rotation for border glow effect
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 3000, easing: Easing.linear }),
+      -1,
+      false
+    )
+    // Pulsing glow
+    glowPulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.3, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    )
+  }, [])
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    }
-  })
+  const rotationStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }))
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowPulse.value,
+  }))
+
+  const sparkleColor1 = isDark ? '#818CF8' : '#6366F1' // indigo
+  const sparkleColor2 = isDark ? '#C084FC' : '#A855F7' // purple
+  const sparkleColor3 = isDark ? '#F472B6' : '#EC4899' // pink
 
   return (
-    <Animated.View style={animatedStyle}>
-      {children}
-    </Animated.View>
+    <View style={styles.sparkleWrapper}>
+      {/* Rotating gradient glow ring */}
+      <Animated.View style={[styles.sparkleGlowRing, rotationStyle]}>
+        <Svg width={52} height={52} viewBox="0 0 52 52">
+          <Defs>
+            <LinearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <Stop offset="0%" stopColor={sparkleColor1} stopOpacity="1" />
+              <Stop offset="50%" stopColor={sparkleColor2} stopOpacity="1" />
+              <Stop offset="100%" stopColor={sparkleColor3} stopOpacity="1" />
+            </LinearGradient>
+          </Defs>
+          <Circle cx="26" cy="26" r="24" stroke="url(#sparkleGrad)" strokeWidth="2" fill="none" strokeDasharray="8 4" />
+        </Svg>
+      </Animated.View>
+
+      {/* Outer glow pulse */}
+      <Animated.View style={[styles.sparkleOuterGlow, glowStyle, {
+        backgroundColor: isDark ? 'rgba(139, 92, 246, 0.12)' : 'rgba(99, 102, 241, 0.08)',
+      }]} />
+
+      {/* Inner sparkle icon */}
+      <View style={[styles.sparkleIconInner, {
+        backgroundColor: isDark ? 'rgba(15, 15, 20, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+      }]}>
+        <SvgIcon
+          name="ai"
+          size={22}
+          color={isFocused ? sparkleColor2 : (isDark ? '#A78BFA' : '#7C3AED')}
+          filled={isFocused}
+          strokeWidth={isFocused ? 2.5 : 1.8}
+        />
+      </View>
+    </View>
   )
-}
-
-const HomeTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="home" size={size || 26} color={color} />
-}
-
-const WorkspaceTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="workspace" size={size || 26} color={color} />
-}
-
-const AiTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="ai" size={size || 26} color={color} />
-}
-
-const SettingsTabIcon = ({ color, size }: any) => {
-  return <SvgIcon name="settings" size={size || 26} color={color} />
 }
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { isDark, colors } = useAppTheme()
   const router = useRouter()
-  const { tabBarVisible } = useUIStore()
+  const { tabBarVisible, setTabIndex } = useUIStore()
   const isVisible = useSharedValue(1)
+  const insets = useSafeAreaInsets()
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
@@ -84,92 +122,53 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     isVisible.value = withTiming(tabBarVisible ? 1 : 0, TAB_ANIM_CONFIG)
   }, [tabBarVisible])
 
-  const getIndicatorPosition = (stateIndex: number) => {
-    if (stateIndex === 0) return 7
-    if (stateIndex === 1) return 69
-    if (stateIndex === 2) return 193
-    if (stateIndex === 3) return 255
-    return 7
-  }
-
-  const indicatorX = useSharedValue(getIndicatorPosition(state.index))
-
-  useEffect(() => {
-    indicatorX.value = withTiming(getIndicatorPosition(state.index), TAB_ANIM_CONFIG)
-  }, [state.index])
-
-  const indicatorStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: indicatorX.value }]
-    }
-  })
-
   const wrapperStyle = useAnimatedStyle(() => {
     return {
       opacity: isVisible.value,
       transform: [
-        { translateY: interpolate(isVisible.value, [0, 1], [80, 0]) }
+        { translateY: isVisible.value === 0 ? 100 : 0 }
       ],
     }
   })
 
-  const columns = [
-    { type: 'route', routeIndex: 0, key: 'dashboard', icon: HomeTabIcon },
-    { type: 'route', routeIndex: 1, key: 'projects', icon: WorkspaceTabIcon },
-    { type: 'fab', key: 'fab' },
-    { type: 'route', routeIndex: 2, key: 'ai', icon: AiTabIcon },
-    { type: 'route', routeIndex: 3, key: 'settings', icon: SettingsTabIcon }
+  // Tab definitions: 5 tabs, center is the special sparkle AI tab
+  const tabs = [
+    { key: 'dashboard', routeIndex: 0, icon: 'home' as const, label: 'Home' },
+    { key: 'projects', routeIndex: 1, icon: 'workspace' as const, label: 'Projects' },
+    { key: 'ai', routeIndex: 2, icon: 'ai' as const, label: 'AI', isCenter: true },
+    { key: 'usage', routeIndex: 3, icon: 'usage' as const, label: 'Usage' },
+    { key: 'settings', routeIndex: 4, icon: 'settings' as const, label: 'Settings' },
   ]
 
-  const activeColor = colors.tabBarActive
-  const inactiveColor = colors.tabBarInactive
+  const activeColor = isDark ? '#A78BFA' : '#6366F1'
+  const inactiveColor = isDark ? '#6B7280' : '#9CA3AF'
+  const tabBarBg = isDark ? 'rgba(11, 12, 16, 0.98)' : 'rgba(255, 255, 255, 0.98)'
+  const borderTopColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.08)'
 
   return (
-    <Animated.View style={[styles.tabBarWrapper, wrapperStyle]} pointerEvents={tabBarVisible ? "box-none" : "none"}>
-      <BlurView
-        intensity={isDark ? 35 : 100}
-        tint={isDark ? 'dark' : 'light'}
+    <Animated.View
+      style={[
+        styles.tabBarWrapper,
+        { paddingBottom: insets.bottom > 0 ? insets.bottom : 8 },
+        wrapperStyle,
+      ]}
+      pointerEvents={tabBarVisible ? 'box-none' : 'none'}
+    >
+      <View
         style={[
           styles.tabBarContainer,
-          { 
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-            backgroundColor: isDark ? 'rgba(11, 12, 16, 0.72)' : 'rgba(255, 255, 255, 0.85)',
+          {
+            backgroundColor: tabBarBg,
+            borderTopColor: borderTopColor,
           }
         ]}
       >
-        {/* Animated Slide Pill Behind active tab + Glowing active Dot */}
-        <Animated.View 
-          style={[
-            styles.indicatorCircle,
-            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)' },
-            indicatorStyle
-          ]}
-        >
-          <View style={[styles.indicatorDot, { backgroundColor: activeColor }]} />
-        </Animated.View>
-
-        {columns.map((col, index) => {
-          if (col.type === 'fab') {
-            return (
-              <TouchableOpacity
-                key="fab"
-                style={[styles.tabItem, styles.fabItem]}
-                onPress={() => {
-                  router.push('/new-project')
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.fabButton, { backgroundColor: activeColor }]}>
-                  <SvgIcon name="create" size={24} color={isDark ? '#030303' : '#FFFFFF'} />
-                </View>
-              </TouchableOpacity>
-            )
-          }
-
-          const route = state.routes[col.routeIndex!]
-          const isFocused = state.index === col.routeIndex!
+        {tabs.map((tab, index) => {
+          const route = state.routes[tab.routeIndex]
+          const isFocused = state.index === tab.routeIndex
 
           const onPress = () => {
+            setTabIndex(tab.routeIndex)
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,
@@ -181,39 +180,63 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             }
           }
 
-          const Icon = col.icon as any
-
-          const getLeftOffset = (colIdx: number) => {
-            if (colIdx === 0) return 0
-            if (colIdx === 1) return 62
-            if (colIdx === 3) return 186
-            if (colIdx === 4) return 248
-            return 0
+          if (tab.isCenter) {
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.centerTabItem}
+                onPress={onPress}
+                activeOpacity={0.8}
+              >
+                <AnimatedSparkleIcon
+                  isFocused={isFocused}
+                  isDark={isDark}
+                  activeColor={activeColor}
+                />
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color: isFocused ? activeColor : inactiveColor,
+                      fontFamily: isFocused ? 'Inter_600SemiBold' : 'Inter_500Medium',
+                    }
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            )
           }
 
           return (
             <TouchableOpacity
-              key={route.key}
-              style={[
-                styles.tabItem,
-                {
-                  left: getLeftOffset(index),
-                  width: 62,
-                }
-              ]}
+              key={tab.key}
+              style={styles.tabItem}
               onPress={onPress}
               activeOpacity={0.7}
             >
-              <TabIconWrapper isFocused={isFocused}>
-                <Icon 
-                  color={isFocused ? activeColor : inactiveColor} 
-                  size={20} 
-                />
-              </TabIconWrapper>
+              <SvgIcon
+                name={tab.icon}
+                size={22}
+                color={isFocused ? activeColor : inactiveColor}
+                filled={isFocused}
+                strokeWidth={isFocused ? 2.4 : 1.8}
+              />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isFocused ? activeColor : inactiveColor,
+                    fontFamily: isFocused ? 'Inter_600SemiBold' : 'Inter_500Medium',
+                  }
+                ]}
+              >
+                {tab.label}
+              </Text>
             </TouchableOpacity>
           )
         })}
-      </BlurView>
+      </View>
     </Animated.View>
   )
 }
@@ -244,7 +267,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="projects"
         options={{
-          title: 'Work',
+          title: 'Projects',
         }}
       />
       <Tabs.Screen
@@ -254,9 +277,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="usage"
+        options={{
+          title: 'Usage',
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
-          title: 'System',
+          title: 'Settings',
         }}
       />
     </Tabs>
@@ -266,69 +295,63 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tabBarWrapper: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 32 : 24,
+    bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 100,
   },
   tabBarContainer: {
     flexDirection: 'row',
-    width: 310,
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
-    position: 'relative',
-    alignItems: 'center',
+    width: '100%',
+    borderTopWidth: 0.5,
+    paddingTop: 6,
+    alignItems: 'flex-end',
   },
-  indicatorCircle: {
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    gap: 3,
+  },
+  centerTabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginTop: -18, // Pop up above the tab bar
+    gap: 3,
+  },
+  tabLabel: {
+    fontSize: 10,
+    letterSpacing: 0.1,
+  },
+  // Sparkle icon styles
+  sparkleWrapper: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  sparkleGlowRing: {
     position: 'absolute',
-    top: 9,
-    width: 48,
-    height: 38,
-    borderRadius: 19,
-    zIndex: 1,
+    width: 52,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  indicatorDot: {
+  sparkleOuterGlow: {
     position: 'absolute',
-    bottom: 2,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
-  tabItem: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
+  sparkleIconInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
-    height: 56,
-  },
-  fabItem: {
-    left: 124,
-    width: 62,
-  },
-  fabButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
   },
 })
-
