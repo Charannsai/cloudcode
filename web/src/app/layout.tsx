@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://cloudcode.app"),
+  metadataBase: new URL("https://itscloudcode.vercel.app"),
   title: {
     default: "CloudCode | The Mobile-First Cloud IDE & Engineering Workspace",
     template: "%s | CloudCode",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     "Linux Cloud Container",
     "Mobile Pull Requests",
   ],
-  authors: [{ name: "CloudCode, Inc.", url: "https://cloudcode.app" }],
+  authors: [{ name: "CloudCode, Inc.", url: "https://itscloudcode.vercel.app" }],
   creator: "CloudCode, Inc.",
   publisher: "CloudCode, Inc.",
   formatDetection: {
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   alternates: {
-    canonical: "https://cloudcode.app",
+    canonical: "https://itscloudcode.vercel.app",
   },
   robots: {
     index: true,
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CloudCode | The Mobile-First Cloud IDE & Engineering Workspace",
     description: "A professional cloud IDE, autonomous AI agents, and isolated Linux containers engineered specifically for mobile devices and web browsers.",
-    url: "https://cloudcode.app",
+    url: "https://itscloudcode.vercel.app",
     siteName: "CloudCode",
     locale: "en_US",
     type: "website",
@@ -95,9 +95,9 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebApplication",
-      "@id": "https://cloudcode.app/#webapp",
+      "@id": "https://itscloudcode.vercel.app/#webapp",
       "name": "CloudCode",
-      "url": "https://cloudcode.app",
+      "url": "https://itscloudcode.vercel.app",
       "description": "A professional cloud IDE, autonomous AI agents, and isolated Linux containers engineered specifically for mobile devices and web browsers.",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "iOS, Android, Web, Linux, macOS, Windows",
@@ -110,16 +110,16 @@ const jsonLd = {
       "author": {
         "@type": "Organization",
         "name": "CloudCode, Inc.",
-        "url": "https://cloudcode.app",
+        "url": "https://itscloudcode.vercel.app",
         "email": "cloudcodeservice@gmail.com",
       },
     },
     {
       "@type": "Organization",
-      "@id": "https://cloudcode.app/#organization",
+      "@id": "https://itscloudcode.vercel.app/#organization",
       "name": "CloudCode, Inc.",
-      "url": "https://cloudcode.app",
-      "logo": "https://cloudcode.app/cloudcodelogolight.png",
+      "url": "https://itscloudcode.vercel.app",
+      "logo": "https://itscloudcode.vercel.app/cloudcodelogolight.png",
       "email": "cloudcodeservice@gmail.com",
       "contactPoint": {
         "@type": "ContactPoint",
