@@ -29,6 +29,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
       },
     ],
-    sitemap: "https://cloudcode.app/sitemap.xml",
+    sitemap: "https://itscloudcode.vercel.app/sitemap.xml",
   };
 }
