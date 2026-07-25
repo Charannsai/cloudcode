@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useTheme } from "@/hooks/useTheme";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -130,12 +129,8 @@ export default function TermsOfService() {
               5. Account Deletion & Termination
             </h2>
             <p className="mb-4">
-              You can terminate these Terms at any time by permanently deleting your account:
+              You can terminate these Terms at any time by permanently deleting your account in-app under <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>Settings &gt; Profile &gt; Delete Account</span>.
             </p>
-            <ul className="list-disc list-inside space-y-1 pl-2 mb-4">
-              <li><strong>In-App:</strong> Under <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>Settings &gt; Profile &gt; Delete Account</span>.</li>
-              <li><strong>Web:</strong> Via our secure <Link href="/delete-account" className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 underline font-medium">Account Deletion Page</Link>.</li>
-            </ul>
             <p>
               Upon deletion, your user profile, active container instances, workspace files, and billing history will be permanently and irreversibly destroyed. We reserve the right to suspend or terminate your account at our sole discretion, without notice, if you breach these Terms.
             </p>

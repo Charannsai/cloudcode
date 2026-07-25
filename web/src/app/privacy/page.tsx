@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useTheme } from "@/hooks/useTheme";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -197,12 +196,8 @@ export default function PrivacyPolicy() {
               We retain your personal data only as long as your account remains active. If your account is inactive for more than 12 consecutive months, we reserve the right to delete your workspaces and profiles.
             </p>
             <p className="mb-4">
-              You have the right to request the permanent and immediate deletion of your account and all associated data at any time:
+              You have the right to request the permanent and immediate deletion of your account and all associated data at any time in-app by navigating to <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>Settings &gt; Profile &gt; Delete Account</span>. This triggers our backend database to wipe your profile and immediately terminates and cleans up all active Docker containers and files.
             </p>
-            <ul className="list-disc list-inside space-y-1 pl-2 mb-4">
-              <li><strong>In-App Deletion:</strong> Navigate to <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>Settings &gt; Profile &gt; Delete Account</span>. This triggers our backend database to wipe your profile and immediately terminates and cleans up all active Docker containers and files.</li>
-              <li><strong>Web Deletion:</strong> If the app is uninstalled, you can securely authenticate and request deletion via our <Link href="/delete-account" className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 underline font-medium">Account Deletion Page</Link>.</li>
-            </ul>
             <p>Once requested, your account is deleted instantly. Backup logs are fully purged within 30 days.</p>
           </section>
 
