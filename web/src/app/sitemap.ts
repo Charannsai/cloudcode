@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://cloudcode.app";
+  const baseUrl = "https://itscloudcode.vercel.app";
   const lastModified = new Date();
 
   return [
