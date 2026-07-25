@@ -1,0 +1,16 @@
+# CloudCode — Universal Cloud Development Environment (CDE)
+
+> CloudCode is a mobile-first Cloud Development Environment (CDE) platform that brings isolated Linux containers, real-time terminals, AI coding agents, and seamless Git workflows to mobile devices and web browsers.
+
+## Key Capabilities
+- **Mobile-First Cloud IDE:** A complete software engineering environment designed specifically for smartphones, tablets, and web browsers.
+- **Isolated Linux Containers:** Instant Docker container provisioning in under 5 seconds with full terminal root access, package managers (npm, pip, apt), and runtime compilers.
+- **Autonomous AI Companion:** Integrated AI agent for code generation, bug fixing, automated refactoring, and project-wide context awareness.
+- **Git Version Control & PR Management:** Full Git support with SSH key authorization, branch management, visual diffing, and mobile Pull Request reviews.
+- **Dynamic Web Previews:** Secure HTTPS & WebSocket preview proxies mapping internal container ports (e.g. 3000, 5173) for instant live testing.
+
+## Platform Pages & Canonical Resources
+- [Homepage](https://itscloudcode.vercel.app): Overview of CloudCode platform capabilities, features, and performance metrics.
+- [Privacy Policy](https://itscloudcode.vercel.app/privacy): Information regarding data handling, user privacy, GDPR compliance, and encryption standards.
+- [Terms of Service](https://itscloudcode.vercel.app/terms): Terms governing account usage, container resources, and service boundaries.
+- [Support Email](mailto:cloudcodeservice@gmail.com): Direct contact for customer support, bug reporting, and developer inquiries.

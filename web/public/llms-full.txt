@@ -1,0 +1,46 @@
+# CloudCode — Comprehensive Architectural & Feature Documentation
+
+> CloudCode is a next-generation Cloud Development Environment (CDE) platform that allows developers to edit, build, run, debug, and preview full-stack applications directly from mobile devices and web browsers.
+
+---
+
+## 1. Overview & Vision
+CloudCode replicates a native PC software engineering experience on mobile devices by running isolated Docker containers on Virtual Private Server (VPS) infrastructure and dynamically proxying HTTP, HTTPS, and WebSocket traffic to mobile clients.
+
+Key architectural pillars:
+- **Zero Local Footprint:** All code execution, compilation, containerization, and file storage occur in high-performance cloud environments.
+- **50ms Latency PTY Shell:** Custom WebSocket bridge multiplexing terminal commands to Node.js `node-pty` processes inside containerized Linux environments.
+- **Mobile-Engineered UX:** Custom touch gestures, responsive monospaced code editing, quick snippet bars, and instant mobile preview port forwards.
+
+---
+
+## 2. Technical Stack & Supported Tools
+
+### Runtimes & Languages
+CloudCode supports any runtime supported by standard Linux Docker images:
+- **JavaScript / TypeScript:** Node.js, Bun, Deno, Vite, Next.js, React, Express.
+- **Python:** Python 3.10+, Django, Flask, FastApi, Pip.
+- **Compiled Languages:** Go, Rust, C / C++ (GCC/Clang), Java (JDK / Maven / Gradle).
+- **Other Environments:** Ruby, PHP, Elixir, Haskell.
+
+### Development Tools
+- **Package Managers:** npm, yarn, pnpm, bun, pip, cargo, apt.
+- **Version Control:** Git version control over SSH and HTTPS, visual diffing, branch creation, pull request reviews.
+- **AI Engine:** Integrated AI assistant supporting code generation, bug fixing, test generation, and project-wide context awareness.
+
+---
+
+## 3. Security & Container Isolation
+- Every project operates in an isolated Docker container with strict CPU (e.g. 512m) and RAM (1GB) bounds.
+- Non-root user privileges inside workspace containers.
+- Container auto-sleep after 30 minutes of inactivity to save compute, with sub-5-second automatic wake-up on request.
+- Encrypted transport via SSL/TLS 1.3 for all web and WebSocket connections.
+
+---
+
+## 4. Official Links & Support
+- Website: https://itscloudcode.vercel.app
+- Terms of Service: https://itscloudcode.vercel.app/terms
+- Privacy Policy: https://itscloudcode.vercel.app/privacy
+- Account Deletion: https://itscloudcode.vercel.app/delete-account
+- Support Contact: cloudcodeservice@gmail.com
