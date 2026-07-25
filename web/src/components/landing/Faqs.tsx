@@ -21,6 +21,14 @@ const FAQS = [
     a: "CloudCode supports virtually any language that can run inside a Linux container, including: JavaScript / TypeScript, Python, Java, Go, Rust, PHP, C / C++, Ruby, Node.js, Bun, and Deno. You can also install additional runtimes inside your workspace."
   },
   {
+    q: "Does CloudCode support full Git workflows?",
+    a: "Yes! CloudCode provides complete Git version control out of the box. You have everything you need to pull, stage, commit, branch, and push changes over secure SSH or HTTPS for a safe, reliable version control workflow."
+  },
+  {
+    q: "What sets CloudCode apart from a standard IDE?",
+    a: "Unlike a conventional code editor, CloudCode acts as a complete cloud engineering ecosystem. Beyond standard editing, it provisions isolated Linux containers, provides AI-powered developer access, enables native mobile pull request management, and delivers live web preview proxies all in one unified platform."
+  },
+  {
     q: "Can I connect my GitHub repositories?",
     a: "Yes. You can connect your GitHub account, clone repositories, commit changes, create branches, and push updates directly from CloudCode."
   },
