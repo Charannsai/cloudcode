@@ -112,7 +112,7 @@ export function InteractiveShowcase({ theme, colors }: InteractiveShowcaseProps)
     <div 
       ref={containerRef} 
       className={`relative w-full h-[500vh] transition-colors duration-300 ${
-        isDark ? "bg-[#030303]" : "bg-[#FAFAFA]"
+        isDark ? "bg-[#141414]" : "bg-[#FAFAFA]"
       }`}
     >
       <div 
@@ -174,8 +174,8 @@ export function InteractiveShowcase({ theme, colors }: InteractiveShowcaseProps)
             {/* Scrolling Infinite Carousel */}
             <div className="relative w-full overflow-hidden py-2">
               {/* Left and Right Faded Corners */}
-              <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#FAFAFA] dark:from-[#030303] to-transparent z-20 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#FAFAFA] dark:from-[#030303] to-transparent z-20 pointer-events-none" />
+              <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#FAFAFA] dark:from-[#141414] to-transparent z-20 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#FAFAFA] dark:from-[#141414] to-transparent z-20 pointer-events-none" />
               
               {/* Scrolling Track */}
               <div className="flex gap-8 items-center w-max animate-marquee-right">
@@ -208,7 +208,7 @@ export function InteractiveShowcase({ theme, colors }: InteractiveShowcaseProps)
 
         <div 
           className={`absolute inset-0 z-5 pointer-events-none transition-opacity duration-300 ${
-            isDark ? "bg-[#030303]" : "bg-[#FAFAFA]"
+            isDark ? "bg-[#141414]" : "bg-[#FAFAFA]"
           }`}
           style={{
             opacity: Math.min(1, scrollProgress / 0.15)

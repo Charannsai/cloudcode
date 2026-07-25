@@ -18,7 +18,7 @@ export function Header({ theme, colors }: HeaderProps) {
   return (
     <nav className={`sticky top-0 w-full z-50 ${
       theme === "dark" 
-        ? "bg-gradient-to-b from-[#030303]/90 via-[#030303]/40 to-transparent" 
+        ? "bg-gradient-to-b from-[#141414]/90 via-[#141414]/40 to-transparent" 
         : "bg-gradient-to-b from-[#FAFAFA]/90 via-[#FAFAFA]/40 to-transparent"
     } transition-all duration-300`}>
       <div className="max-w-5xl mx-auto px-6 h-14 flex justify-between items-center">
@@ -57,7 +57,7 @@ export function Header({ theme, colors }: HeaderProps) {
 
             {/* Smooth Animated Dropdown Container */}
             <div 
-              className={`absolute right-0 mt-2.5 w-52 rounded-xl border ${colors.border} bg-white/90 dark:bg-[#07080b]/90 backdrop-blur-md shadow-xl py-2 z-50 transition-all duration-300 origin-top-right ${
+              className={`absolute right-0 mt-2.5 w-52 rounded-xl border ${colors.border} bg-white/90 dark:bg-[#1c1c1c]/90 backdrop-blur-md shadow-xl py-2 z-50 transition-all duration-300 origin-top-right ${
                 showAppDropdown 
                   ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" 
                   : "opacity-0 scale-95 -translate-y-2 pointer-events-none"

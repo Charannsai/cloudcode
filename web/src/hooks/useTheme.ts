@@ -84,18 +84,18 @@ export function useTheme() {
   };
 
   const colors = {
-    bg: theme === "dark" ? "bg-[#030303]" : "bg-[#FAFAFA]",
-    card: theme === "dark" ? "bg-[#0B0C10] border-[#1A1C23]" : "bg-[#FFFFFF] border-[#E4E7EB]",
+    bg: theme === "dark" ? "bg-[#141414]" : "bg-[#FAFAFA]",
+    card: theme === "dark" ? "bg-[#1c1c1c] border-[#2b2b2b]" : "bg-[#FFFFFF] border-[#E4E7EB]",
     text: theme === "dark" ? "text-[#F3F4F6]" : "text-[#0F1115]",
     textSecondary: theme === "dark" ? "text-[#8E939E]" : "text-[#6B7280]",
-    border: theme === "dark" ? "border-[#1A1C23]" : "border-[#E4E7EB]",
-    highlight: theme === "dark" ? "hover:bg-[#161821]" : "hover:bg-[#0F111508]",
-    terminalBg: theme === "dark" ? "bg-[#08090E]" : "bg-[#F3F4F6]",
-    terminalHeader: theme === "dark" ? "bg-[#0F1117]" : "bg-[#E5E7EB]",
+    border: theme === "dark" ? "border-[#2b2b2b]" : "border-[#E4E7EB]",
+    highlight: theme === "dark" ? "hover:bg-[#222222]" : "hover:bg-[#0F111508]",
+    terminalBg: theme === "dark" ? "bg-[#0d0d0d]" : "bg-[#F3F4F6]",
+    terminalHeader: theme === "dark" ? "bg-[#1d1d1d]" : "bg-[#E5E7EB]",
     
     // Theme-specific button classes
-    btnPrimary: theme === "dark" ? "bg-white text-[#030303] hover:bg-white/90" : "bg-[#0F1115] text-white hover:bg-[#0F1115]/90",
-    btnSecondary: theme === "dark" ? "bg-transparent text-white border-[#21262D] hover:bg-white/5" : "bg-transparent text-[#0F1115] border-[#D8DEE4] hover:bg-black/5",
+    btnPrimary: theme === "dark" ? "bg-white text-[#141414] hover:bg-white/90" : "bg-[#0F1115] text-white hover:bg-[#0F1115]/90",
+    btnSecondary: theme === "dark" ? "bg-transparent text-white border-[#2b2b2b] hover:bg-white/5" : "bg-transparent text-[#0F1115] border-[#D8DEE4] hover:bg-black/5",
   };
 
   return {

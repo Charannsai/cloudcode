@@ -14,12 +14,12 @@
   --color-app-text-secondary-light: #656D76;
   --color-app-highlight-light: rgba(14, 17, 22, 0.06);
 
-  --color-app-bg-dark: #0E1116;
-  --color-app-card-dark: #151922;
-  --color-app-border-dark: #21262D;
+  --color-app-bg-dark: #141414;
+  --color-app-card-dark: #1c1c1c;
+  --color-app-border-dark: #2b2b2b;
   --color-app-text-dark: #F3F4F6;
   --color-app-text-secondary-dark: #8B929A;
-  --color-app-highlight-dark: #1C2128;
+  --color-app-highlight-dark: #222222;
   
   --color-app-blue: #388bfd;
   --color-app-purple: #8957e5;
@@ -32,7 +32,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0E1116;
+    --background: #141414;
     --foreground: #F3F4F6;
   }
 }

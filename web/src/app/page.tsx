@@ -15,7 +15,7 @@ export default function Home() {
   const { theme, mounted, toggleTheme, colors } = useTheme();
 
   if (!mounted) {
-    return <div className="bg-[#030303] min-h-screen" suppressHydrationWarning />;
+    return <div className="bg-[#141414] min-h-screen" suppressHydrationWarning />;
   }
 
   return (
@@ -85,7 +85,7 @@ export default function Home() {
             <div className="lg:col-span-8">
               <ScrollReveal delay={100}>
                 <div className="space-y-6">
-                  <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-[#fafafa] dark:bg-[#0A0A0A]">
+                  <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-[#2b2b2b] bg-[#fafafa] dark:bg-[#1c1c1c]">
                     <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#05070B] via-transparent to-transparent z-10 pointer-events-none"></div>
                     <img 
                       alt="System Core Architecture" 
@@ -372,7 +372,7 @@ export default function Home() {
 
             {/* Pro Developer */}
             <ScrollReveal delay={200}>
-              <div className={`p-8 rounded-2xl border-2 ${theme === "dark" ? "border-zinc-50 bg-[#07080b] hover:border-zinc-200" : "border-zinc-950 bg-white hover:border-zinc-800"} flex flex-col justify-between h-full relative transition-all duration-300 shadow-md hover:shadow-lg`}>
+              <div className={`p-8 rounded-2xl border-2 ${theme === "dark" ? "border-[#2b2b2b] bg-[#1c1c1c] hover:border-zinc-700" : "border-zinc-950 bg-white hover:border-zinc-800"} flex flex-col justify-between h-full relative transition-all duration-300 shadow-md hover:shadow-lg`}>
                 <span className={`absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-mono font-bold ${theme === "dark" ? "text-zinc-950 bg-zinc-100 border-zinc-705" : "text-zinc-50 bg-zinc-900 border-zinc-205"} border px-2.5 py-1 rounded-full uppercase tracking-wider`}>{"Most Popular"}</span>
                 <div className="space-y-6">
                   <div>
