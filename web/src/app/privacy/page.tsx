@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
 
   return (
     <div className={theme === "dark" ? "dark" : ""}>
-    <div className={`${colors.bg} ${colors.text} min-h-screen flex flex-col items-center relative overflow-x-hidden font-sans transition-colors duration-350`}>
+    <div className={`${colors.bg} ${colors.text} min-h-screen flex flex-col items-center relative font-sans transition-colors duration-350`}>
       {/* Background Ambient Glow */}
       {theme === "dark" && (
         <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.1)_0%,rgba(0,0,0,0)_70%)] pointer-events-none z-0" />
