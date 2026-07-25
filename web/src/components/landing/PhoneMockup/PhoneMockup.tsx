@@ -70,7 +70,7 @@ export const PhoneMockup = ({
       {/* Screen container with translateZ to pop it forward in 3D */}
       <div 
         className={`w-full h-full rounded-[34px] overflow-hidden relative flex flex-col border transition-all duration-700 antialiased ${
-          isDark ? "bg-[#030303] border-black/50" : "bg-white border-gray-200"
+          isDark ? "bg-[#141414] border-black/50" : "bg-white border-gray-200"
         }`}
         style={{
           transform: `translateZ(8px) rotateX(${screenRx}deg) rotateY(${screenRy}deg)`,

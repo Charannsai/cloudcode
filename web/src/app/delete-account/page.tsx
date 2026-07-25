@@ -294,7 +294,7 @@ export default function DeleteAccount() {
   const { theme, mounted, toggleTheme, colors } = useTheme();
 
   if (!mounted) {
-    return <div className="bg-[#030303] min-h-screen" suppressHydrationWarning />;
+    return <div className="bg-[#141414] min-h-screen" suppressHydrationWarning />;
   }
 
   return (
