@@ -151,7 +151,14 @@ export function InteractiveShowcase({ theme, colors }: InteractiveShowcaseProps)
           </p>
 
           <div className="flex gap-3 justify-center mb-10">
-            <a href="#" className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}>
+            <a 
+              href="#workflow" 
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('workflow')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}
+            >
               {"Download App"}
             </a>
             <a 

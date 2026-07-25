@@ -233,16 +233,32 @@ export default function Home() {
               </ScrollReveal>
 
               <ScrollReveal delay={100}>
-                <div className="pt-4 space-y-3">
-                  <a 
-                    href="#" 
-                    className={`inline-flex items-center gap-2 ${colors.btnPrimary} px-5 py-2.5 rounded-lg font-bold text-xs transition-all`}
-                  >
-                    <span>{"Get the app from Playstore"}</span>
-                  </a>
-                  <p className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
-                    {"* iOS App Store version will be available soon."}
-                  </p>
+                <div className="pt-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-[#1c1c1c]/50 backdrop-blur-sm opacity-60 select-none">
+                      <img 
+                        src="/assets/playstorelogo.png" 
+                        alt="Playstore" 
+                        className="h-[18px] w-auto object-contain"
+                      />
+                      <span className="text-[11px] font-bold text-zinc-550 dark:text-zinc-400">{"Playstore"}</span>
+                      <span className="text-[7.5px] font-mono font-bold text-zinc-450 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-1.5 py-0.5 rounded tracking-wider ml-1">
+                        {"Soon"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-[#1c1c1c]/50 backdrop-blur-sm opacity-60 select-none">
+                      <img 
+                        src="/assets/appstorelogo.png" 
+                        alt="App Store" 
+                        className="h-[18px] w-auto object-contain"
+                      />
+                      <span className="text-[11px] font-bold text-zinc-550 dark:text-zinc-400">{"App Store"}</span>
+                      <span className="text-[7.5px] font-mono font-bold text-zinc-450 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-1.5 py-0.5 rounded tracking-wider ml-1">
+                        {"Soon"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </ScrollReveal>
             </div>
