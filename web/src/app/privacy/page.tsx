@@ -52,7 +52,7 @@ export default function PrivacyPolicy() {
               1. Data Controller
             </h2>
             <p>
-              The data controller responsible for your personal data is CloudCode, Inc. If you have any questions regarding this Policy, our data practices, or your rights, you can contact our Data Protection Officer (DPO) at <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>dpo@cloudcode.app</span> or write to us at support@cloudcode.app.
+              The data controller responsible for your personal data is CloudCode, Inc. If you have any questions regarding this Policy, our data practices, or your rights, you can contact us at <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>cloudcodeservice@gmail.com</span>.
             </p>
           </section>
 
@@ -229,6 +229,19 @@ export default function PrivacyPolicy() {
             </h2>
             <p>
               We implement industry-standard administrative, technical, and physical security measures. All data in transit is encrypted using TLS 1.3. Your database records are secured behind virtual private networks, and container environments are fully isolated from one another using kernel-level namespaces and cgroups to prevent cross-tenant data access.
+            </p>
+          </section>
+
+          <section>
+            <h2 className={`text-lg font-bold mb-3 border-b pb-2 ${
+              theme === "dark" 
+                ? "text-white border-gray-800/80" 
+                : "text-[#0F1115] border-gray-200"
+            }`}>
+              8. Contact Us
+            </h2>
+            <p>
+              If you have any questions, privacy inquiries, or support requests regarding this Privacy Policy, please contact us at <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>cloudcodeservice@gmail.com</span>.
             </p>
           </section>
         </div>

@@ -171,7 +171,7 @@ export default function TermsOfService() {
               8. Contact Us
             </h2>
             <p>
-              If you have any questions regarding these Terms, please contact us at <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>legal@cloudcode.app</span>.
+              If you have any questions regarding these Terms, please contact us at <span className={`font-medium ${theme === "dark" ? "text-white" : "text-black"}`}>cloudcodeservice@gmail.com</span>.
             </p>
           </section>
         </div>

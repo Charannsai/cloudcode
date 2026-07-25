@@ -41,6 +41,9 @@ export function Footer({ theme, colors, toggleTheme }: FooterProps) {
           <Link href="/terms" className={`text-xs ${colors.textSecondary} hover:text-indigo-550 dark:hover:text-white transition-colors`}>
             {"Terms"}
           </Link>
+          <a href="mailto:cloudcodeservice@gmail.com" className={`text-xs ${colors.textSecondary} hover:text-indigo-550 dark:hover:text-white transition-colors`}>
+            {"Support"}
+          </a>
           
           <button
             onClick={(e) => toggleTheme(e)}
