@@ -335,7 +335,7 @@ export default function AIScreen() {
     <TabGenieWrapper index={2}>
       <KeyboardAvoidingView 
         style={[styles.container, { backgroundColor: pageBgColor }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         
         {/* Clean Header Bar */}
@@ -396,7 +396,7 @@ export default function AIScreen() {
         </ScrollView>
 
         {/* Clean Input Composer Bar */}
-        <View style={[styles.inputComposerOuter, { paddingBottom: isKeyboardVisible ? 6 : Math.max(insets.bottom + 74, 84), backgroundColor: pageBgColor }]}>
+        <View style={[styles.inputComposerOuter, { paddingBottom: isKeyboardVisible ? 6 : Math.max(insets.bottom + 10, 16), backgroundColor: pageBgColor }]}>
           
           {/* Image Attachment Preview Badge */}
           {attachedImage && (

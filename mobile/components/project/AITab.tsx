@@ -204,7 +204,7 @@ export function AITab({ projectId }: Props) {
   return (
     <KeyboardAvoidingView 
       style={[styles.container, { backgroundColor: pageBgColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       
       {/* Clean Top Header */}
