@@ -14,11 +14,14 @@ export async function GET(req: NextRequest) {
     const freeMem = os.freemem()
     const memoryUsage = Math.round(((totalMem - freeMem) / totalMem) * 100)
 
-    // 3. Count active docker containers
+    // 3. Count active workspace docker containers
     let runningContainers = 0
     try {
       const list = await docker.listContainers()
-      runningContainers = list.length
+      const workspaceContainers = list.filter(c => 
+        c.Names && c.Names.some(name => name.includes('cloudcode-'))
+      )
+      runningContainers = workspaceContainers.length
     } catch (e) {
       console.warn('Docker list containers failed:', e)
     }

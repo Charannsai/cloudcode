@@ -577,7 +577,7 @@ export default function DashboardScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Cpu size={13} color={colors.textSecondary} />
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter_500Medium', color: colors.text }}>CPU Load</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter_500Medium', color: colors.text }}>Server CPU Load</Text>
                   </View>
                   <Text style={{ fontSize: 12, fontFamily: 'monospace', color: colors.text, fontWeight: 'bold' }}>{cpuVal}%</Text>
                 </View>
@@ -591,7 +591,7 @@ export default function DashboardScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Database size={13} color={colors.textSecondary} />
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter_500Medium', color: colors.text }}>Memory</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter_500Medium', color: colors.text }}>Server Memory</Text>
                   </View>
                   <Text style={{ fontSize: 12, fontFamily: 'monospace', color: colors.text, fontWeight: 'bold' }}>{ramVal}%</Text>
                 </View>
