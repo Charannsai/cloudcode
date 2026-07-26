@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import os from 'os'
 import { docker } from '@/lib/docker'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,14 +15,22 @@ export async function GET(req: NextRequest) {
     const freeMem = os.freemem()
     const memoryUsage = Math.round(((totalMem - freeMem) / totalMem) * 100)
 
-    // 3. Count active workspace docker containers
+    // 3. Count active workspace docker containers belonging to active projects
     let runningContainers = 0
     try {
-      const list = await docker.listContainers()
-      const workspaceContainers = list.filter(c => 
-        c.Names && c.Names.some(name => name.includes('cloudcode-'))
-      )
-      runningContainers = workspaceContainers.length
+      const { data: runningProjects } = await supabaseAdmin
+        .from('projects')
+        .select('id, container_id, status')
+        .in('status', ['running', 'ready'])
+
+      if (runningProjects && runningProjects.length > 0) {
+        const liveContainersList = await docker.listContainers()
+        const liveContainerIds = new Set(liveContainersList.map(c => c.Id))
+        
+        runningContainers = runningProjects.filter(p => 
+          p.container_id && liveContainerIds.has(p.container_id)
+        ).length
+      }
     } catch (e) {
       console.warn('Docker list containers failed:', e)
     }
