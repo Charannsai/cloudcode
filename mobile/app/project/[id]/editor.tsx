@@ -19,7 +19,7 @@ import { getToken } from '@/lib/auth'
 import { BlurView } from 'expo-blur'
 import Reanimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated'
 
-const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:3000'
+const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://165.22.219.62:3000'
 
 function getLanguageMode(fileName: string) {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
