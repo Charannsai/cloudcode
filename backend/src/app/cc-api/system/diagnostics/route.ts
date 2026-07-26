@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       let query = supabaseAdmin
         .from('projects')
         .select('id, container_id, status')
-        .in('status', ['running', 'ready'])
+        .eq('status', 'running')
 
       if (user) {
         query = query.eq('user_github_id', user.id)
@@ -33,12 +33,14 @@ export async function GET(req: NextRequest) {
       const { data: runningProjects } = await query
 
       if (runningProjects && runningProjects.length > 0) {
-        const liveContainersList = await docker.listContainers()
-        const liveContainerIds = new Set(liveContainersList.map(c => c.Id))
+        const liveContainersList = await docker.listContainers({ all: true })
+        const liveRunningMap = new Map(liveContainersList.map(c => [c.Id, c.State]))
         
-        runningContainers = runningProjects.filter(p => 
-          p.container_id && liveContainerIds.has(p.container_id)
-        ).length
+        runningContainers = runningProjects.filter(p => {
+          if (!p.container_id) return false
+          const state = liveRunningMap.get(p.container_id)
+          return state === 'running'
+        }).length
       }
     } catch (e) {
       console.warn('Docker list containers failed:', e)
