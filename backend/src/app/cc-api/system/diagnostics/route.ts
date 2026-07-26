@@ -73,6 +73,8 @@ export async function GET(req: NextRequest) {
       console.warn('Docker list containers failed:', e)
     }
 
+    console.log('[DIAGNOSTICS_FINAL_DEBUG]', JSON.stringify({ user: user ? user.id : null, runningContainers }))
+
     return NextResponse.json({
       success: true,
       data: {
