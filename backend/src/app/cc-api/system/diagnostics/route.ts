@@ -66,31 +66,9 @@ export async function GET(req: NextRequest) {
           }
         }
       } else {
-        // Fallback for unauthenticated diagnostics check: query active running projects in DB
-        const { data: globalRunningProjects } = await supabaseAdmin
-          .from('projects')
-          .select('id, name, container_id, status')
-          .eq('status', 'running')
-
-        console.log('[Diagnostics Debug] Unauthenticated globalRunningProjects DB query:', globalRunningProjects)
-
-        if (globalRunningProjects && globalRunningProjects.length > 0) {
-          const liveContainersList = await docker.listContainers({ all: true })
-          for (const p of globalRunningProjects) {
-            if (!p.container_id || p.container_id.length < 4) continue
-            const container = liveContainersList.find(c => {
-              const isCloudCodeWorkspace = c.Names && c.Names.some(n => n.includes('cloudcode-'))
-              if (!isCloudCodeWorkspace) return false
-              return c.Id === p.container_id || (p.container_id.length >= 8 && c.Id.startsWith(p.container_id)) || (c.Id.length >= 8 && p.container_id.startsWith(c.Id))
-            })
-            console.log(`[Diagnostics Debug Global] Project ${p.name} container_id: ${p.container_id} -> Matched:`, container ? container.Id.slice(0, 12) : 'NONE')
-            if (container && container.State === 'running') {
-              runningContainers++
-            }
-          }
-        }
+        // Unauthenticated request (e.g. curl / health checks): strictly 0 running containers
+        runningContainers = 0
       }
-      console.log('[Diagnostics Debug] Calculated runningContainers count:', runningContainers)
     } catch (e) {
       console.warn('Docker list containers failed:', e)
     }
