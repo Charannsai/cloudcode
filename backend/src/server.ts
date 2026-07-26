@@ -8,7 +8,7 @@ import { loadEnvConfig } from '@next/env'
 loadEnvConfig(process.cwd())
 
 const dev = process.env.NODE_ENV !== 'production'
-const hostname = 'localhost'
+const hostname = process.env.HOSTNAME || '0.0.0.0'
 const port = parseInt(process.env.PORT || '3000', 10)
 
 
@@ -307,7 +307,7 @@ const startServer = async () => {
     }
   })
 
-  httpServer.listen(port, () => {
+  httpServer.listen(port, '0.0.0.0', () => {
     console.log(`> Ready on http://${hostname}:${port}`)
     console.log(`> WebSocket terminal proxy active`)
     console.log(`> Container idle auto-stop cron active (10 min threshold for Free tier)`)
