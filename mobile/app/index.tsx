@@ -37,7 +37,7 @@ import Svg, { Path, Defs, RadialGradient, Rect, Stop, Line, Circle, G, Ellipse, 
 import { BlurView } from 'expo-blur'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://165.22.219.62:3000'
 const { width, height } = Dimensions.get('window')
 
 // Exact CloudCode logo path from provided SVG asset
