@@ -30,12 +30,13 @@ export async function GET(req: NextRequest) {
 
         if (userProjects && userProjects.length > 0) {
           const liveContainersList = await docker.listContainers({ all: true })
-          const liveRunningMap = new Map(liveContainersList.map(c => [c.Id, c.State]))
           
           for (const p of userProjects) {
             if (!p.container_id) continue
-            const state = liveRunningMap.get(p.container_id)
-            if (state === 'running') {
+            const container = liveContainersList.find(c => 
+              c.Id === p.container_id || c.Id.startsWith(p.container_id) || p.container_id.startsWith(c.Id)
+            )
+            if (container && container.State === 'running') {
               runningContainers++
             } else {
               // Sync stale DB status to 'stopped'
