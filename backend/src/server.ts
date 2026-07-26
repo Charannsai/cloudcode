@@ -367,7 +367,7 @@ const startServer = async () => {
             await stopContainer(project.container_id)
             await supabaseAdmin
               .from('projects')
-              .update({ status: 'sleeping' })
+              .update({ status: 'stopped' })
               .eq('id', project.id)
 
             console.log(`[Idle Auto-Stop] Stopped container for "${project.name}" (${project.id}) after ${idleMinutes} min inactivity (${userTier} tier)`)

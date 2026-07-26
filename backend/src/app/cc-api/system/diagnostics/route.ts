@@ -21,26 +21,33 @@ export async function GET(req: NextRequest) {
     // 3. Count active workspace docker containers belonging to the user's active projects
     let runningContainers = 0
     try {
-      let query = supabaseAdmin
-        .from('projects')
-        .select('id, container_id, status')
-        .eq('status', 'running')
-
       if (user) {
-        query = query.eq('user_github_id', user.id)
-      }
+        const { data: userProjects } = await supabaseAdmin
+          .from('projects')
+          .select('id, container_id, status')
+          .eq('user_github_id', user.id)
+          .eq('status', 'running')
 
-      const { data: runningProjects } = await query
-
-      if (runningProjects && runningProjects.length > 0) {
-        const liveContainersList = await docker.listContainers({ all: true })
-        const liveRunningMap = new Map(liveContainersList.map(c => [c.Id, c.State]))
-        
-        runningContainers = runningProjects.filter(p => {
-          if (!p.container_id) return false
-          const state = liveRunningMap.get(p.container_id)
-          return state === 'running'
-        }).length
+        if (userProjects && userProjects.length > 0) {
+          const liveContainersList = await docker.listContainers({ all: true })
+          const liveRunningMap = new Map(liveContainersList.map(c => [c.Id, c.State]))
+          
+          for (const p of userProjects) {
+            if (!p.container_id) continue
+            const state = liveRunningMap.get(p.container_id)
+            if (state === 'running') {
+              runningContainers++
+            } else {
+              // Sync stale DB status to 'stopped'
+              supabaseAdmin
+                .from('projects')
+                .update({ status: 'stopped' })
+                .eq('id', p.id)
+                .then(() => console.log(`[Diagnostics Sync] Synced project ${p.id} status to stopped`))
+                .catch(console.error)
+            }
+          }
+        }
       }
     } catch (e) {
       console.warn('Docker list containers failed:', e)
