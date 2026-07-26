@@ -380,7 +380,7 @@ export default function DashboardScreen() {
         }
       >
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(200)} style={styles.header}>
+        <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 14 }}>
               {getGreeting()} 👋
@@ -405,13 +405,13 @@ export default function DashboardScreen() {
               </Text>
             )}
           </PressableScale>
-        </Animated.View>
+        </View>
 
         {/* AI Quick Search bar */}
-        <Animated.View entering={FadeInDown.delay(30).duration(200)}>
+        <View>
           <TouchableOpacity 
             activeOpacity={0.8}
-            onPress={() => router.push('/(tabs)/ai')}
+            onPress={() => router.navigate('/(tabs)/ai')}
             style={[styles.aiSearchBar, { backgroundColor: cardBg, borderColor: cardBorder }]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
@@ -428,17 +428,18 @@ export default function DashboardScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'monospace' }}>⌘K</Text>
             </View>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         {/* Workspaces */}
-        <Animated.View entering={FadeInDown.delay(50).duration(200)} style={styles.section}>
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>Recent Workspaces</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/projects')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+            <TouchableOpacity onPress={() => router.navigate('/(tabs)/projects')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
               <Text style={{ color: isDark ? '#58A6FF' : '#3B82F6', fontSize: 13, fontFamily: 'Inter_500Medium' }}>See all</Text>
               <ChevronRight size={14} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
             </TouchableOpacity>
           </View>
+
           {showSkeletonState ? (
             <View style={{ gap: 1 }}>
               {[0, 1].map(i => (
@@ -473,10 +474,10 @@ export default function DashboardScreen() {
                 const isRunning = project.status === 'running'
                 
                 return (
-                  <Animated.View key={project.id} entering={FadeInRight.delay(30 + idx * 30).duration(200)}>
+                  <View key={project.id}>
                     <PressableScale 
                       style={[styles.wsRow, { borderBottomColor: cardBorder }]}
-                      onPress={() => router.push(`/project/${project.id}`)}
+                      onPress={() => router.navigate(`/project/${project.id}`)}
                     >
                       {/* Tech Icon on left */}
                       <View style={{
@@ -522,14 +523,14 @@ export default function DashboardScreen() {
                         <ChevronRight size={14} color={colors.textSecondary} strokeWidth={2.0} />
                       </View>
                     </PressableScale>
-                  </Animated.View>
+                  </View>
                 )
               })}
 
               {/* Add New Row */}
               <TouchableOpacity
                 style={styles.addWorkspaceRow}
-                onPress={() => router.push('/new-project')}
+                onPress={() => router.navigate('/new-project')}
                 activeOpacity={0.7}
               >
                 <View style={{
@@ -548,10 +549,10 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </View>
           )}
-        </Animated.View>
+        </View>
 
         {/* System Diagnostics */}
-        <Animated.View entering={FadeInDown.delay(100).duration(200)} style={styles.section}>
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>System Health</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -614,7 +615,7 @@ export default function DashboardScreen() {
               </View>
             </View>
           </View>
-        </Animated.View>
+        </View>
 
       </ScrollView>
 
@@ -667,7 +668,7 @@ export default function DashboardScreen() {
               onPress={() => {
                 closePopoverInstantly()
                 setSettingsSubScreen('profile')
-                router.push('/(tabs)/settings')
+                router.navigate('/(tabs)/settings')
               }}
               style={[
                 styles.menuItem,
@@ -683,7 +684,7 @@ export default function DashboardScreen() {
               onPress={() => {
                 closePopoverInstantly()
                 setSettingsSubScreen('main')
-                router.push('/(tabs)/settings')
+                router.navigate('/(tabs)/settings')
               }}
               style={styles.menuItem}
             >
@@ -696,7 +697,7 @@ export default function DashboardScreen() {
               onPress={() => {
                 closePopoverInstantly()
                 setSettingsSubScreen('billing')
-                router.push('/(tabs)/settings')
+                router.navigate('/(tabs)/settings')
               }}
               style={styles.menuItem}
             >

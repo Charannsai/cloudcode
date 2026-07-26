@@ -8,8 +8,6 @@ import Animated, {
   useSharedValue,
   withTiming,
   withSpring,
-  withRepeat,
-  withSequence,
   Easing,
   interpolate,
 } from 'react-native-reanimated'
@@ -47,24 +45,7 @@ function FloatingCenterSparkleButton({
   isDark: boolean
   onPress: () => void
 }) {
-  const pulseScale = useSharedValue(1)
   const pressScale = useSharedValue(1)
-
-  useEffect(() => {
-    // Subtle, elegant breathing motion for the sparkle icon
-    pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.06, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1.0, { duration: 1600, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    )
-  }, [])
-
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: isFocused ? pulseScale.value : 1 }],
-  }))
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(pressScale.value, { damping: 18, stiffness: 220 }) }],
@@ -109,8 +90,8 @@ function FloatingCenterSparkleButton({
             />
           </Svg>
 
-          {/* Sparkle Icon (create.svg) with Organic Fluid Breathing Motion */}
-          <Animated.View style={iconAnimatedStyle}>
+          {/* Sparkle Icon */}
+          <View>
             <SvgIcon
               name="sparkles"
               size={28}
@@ -119,7 +100,7 @@ function FloatingCenterSparkleButton({
               isDark={isDark}
               strokeWidth={2.0}
             />
-          </Animated.View>
+          </View>
         </View>
       </Animated.View>
     </SpringPressable>
@@ -272,7 +253,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         </BlurView>
       </View>
 
-      {/* 2. Absolute Center Sparkle Button (positioned downside closer to tab bar, top: -14) */}
+      {/* 2. Absolute Center Sparkle Button */}
       <View style={styles.absoluteCenterSparkleOverlay} pointerEvents="box-none">
         <FloatingCenterSparkleButton
           isFocused={aiIsFocused}
@@ -292,12 +273,14 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      detachInactiveScreens={false}
+      detachInactiveScreens={true}
       tabBar={(props) => <CustomTabBar {...props} />}
       // @ts-ignore - sceneContainerStyle is supported but may not be in the typing for the wrapper
       sceneContainerStyle={{ backgroundColor: colors.background }}
       screenOptions={{
         headerShown: false,
+        animation: 'none',
+        freezeOnBlur: true,
         tabBarStyle: {
           backgroundColor: 'transparent',
           position: 'absolute',

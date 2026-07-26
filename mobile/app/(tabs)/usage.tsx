@@ -819,9 +819,9 @@ export default function UsageScreen() {
             />
           }
         >
-          <Animated.View entering={FadeInDown.duration(160)} style={{ flex: 1 }}>
+          <View style={{ flex: 1 }}>
             {renderUsageMain()}
-          </Animated.View>
+          </View>
         </ScrollView>
 
         {/* Detail overlay */}

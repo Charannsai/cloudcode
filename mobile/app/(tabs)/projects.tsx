@@ -299,8 +299,7 @@ export default function ProjectsScreen() {
 
     if (viewMode === 'grid') {
       return (
-        <Animated.View 
-          entering={FadeInDown.delay(Math.min(index * 25, 100)).duration(180)}
+        <View 
           style={{ width: (SCREEN_WIDTH - 40 - 10) / 2 }}
         >
           <PressableScale
@@ -353,12 +352,12 @@ export default function ProjectsScreen() {
               )}
             </View>
           </PressableScale>
-        </Animated.View>
+        </View>
       )
     }
 
     return (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 25, 100)).duration(180)}>
+      <View>
         <PressableScale
           style={[styles.projectRow, { backgroundColor: cardBg, borderColor: cardBorder }]}
           onPress={() => router.push(`/project/${p.id}`)}
@@ -409,7 +408,7 @@ export default function ProjectsScreen() {
             </TouchableOpacity>
           </View>
         </PressableScale>
-      </Animated.View>
+      </View>
     )
   }
 
@@ -482,7 +481,7 @@ export default function ProjectsScreen() {
         <PressableScale
           onPress={() => {
             useAIStore.setState({ pendingPrompt: "Help me design and build a new workspace application..." })
-            router.push('/(tabs)/ai')
+            router.navigate('/(tabs)/ai')
           }}
           style={[styles.emptyAction, { backgroundColor: cardBg, borderColor: cardBorder }]}
         >

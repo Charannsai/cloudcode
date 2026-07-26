@@ -114,7 +114,7 @@ function RootLayout() {
           gestureEnabled: true,
         }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
           <Stack.Screen name="new-project" options={{ presentation: 'modal', animation: 'fade_from_bottom', animationDuration: 160 }} />
           <Stack.Screen name="project/[id]/index" options={{ animation: 'slide_from_right', animationDuration: 160 }} />
           <Stack.Screen name="project/[id]/editor" options={{ presentation: 'card', animation: 'slide_from_right', animationDuration: 160 }} />

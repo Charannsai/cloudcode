@@ -3088,7 +3088,7 @@ export default function SettingsScreen() {
                   onPress={async () => {
                     await loadConversation(thread.id)
                     setCurrentSubScreen('main')
-                    router.push('/(tabs)/ai')
+                    router.navigate('/(tabs)/ai')
                   }}
                 >
                   <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14 }} numberOfLines={1}>
@@ -3524,7 +3524,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Animated.View entering={currentSubScreen === 'main' ? FadeInDown.duration(160) : undefined} style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Control Center</Text>
           </View>
@@ -3750,7 +3750,7 @@ export default function SettingsScreen() {
         onConfirm={modalConfig.onConfirm}
         onCancel={modalConfig.onCancel}
       />
-      </Animated.View>
+      </View>
     </ScrollView>
 
     {/* Overlays for subscreens */}
