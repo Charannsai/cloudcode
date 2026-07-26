@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useFocusEffect } from 'expo-router'
 import { useAppTheme } from '@/hooks/useAppTheme'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { useProjectsStore } from '@/store/projects'
@@ -24,6 +25,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 export default function UsageScreen() {
   const { colors, isDark } = useAppTheme()
+  const insets = useSafeAreaInsets()
   const { user } = useAuthStore()
   const { projects, fetchProjects } = useProjectsStore()
   const { setTabBarVisible, usageSubScreen, setUsageSubScreen } = useUIStore()
@@ -717,7 +719,7 @@ export default function UsageScreen() {
     }
 
     return (
-      <View style={{ gap: 20, paddingBottom: 120 }}>
+      <View style={{ gap: 20, paddingBottom: 120 + insets.bottom }}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>Usage</Text>
           <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13, marginTop: 4 }}>

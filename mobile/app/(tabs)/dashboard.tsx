@@ -6,6 +6,7 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { cache } from '@/hooks/useCache'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { useProjectsStore } from '@/store/projects'
@@ -75,6 +76,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 export default function DashboardScreen() {
   const { colors, isDark } = useAppTheme()
+  const insets = useSafeAreaInsets()
   
   const getGreeting = () => {
     const hours = new Date().getHours()
@@ -362,7 +364,7 @@ export default function DashboardScreen() {
     <TabGenieWrapper index={0}>
       <ScrollView 
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 120 + insets.bottom }]}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}

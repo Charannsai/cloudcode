@@ -191,7 +191,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     <Animated.View
       style={[
         styles.floatingWrapper,
-        { bottom: Platform.OS === 'ios' ? Math.max(insets.bottom + 4, 18) : 18 },
+        { bottom: Math.max(insets.bottom + 6, 16) },
         wrapperStyle,
       ]}
       pointerEvents={tabBarVisible ? 'box-none' : 'none'}

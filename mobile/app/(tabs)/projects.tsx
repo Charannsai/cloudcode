@@ -9,6 +9,7 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { useProjectsStore } from '@/store/projects'
 import { useAIStore } from '@/store/ai'
 import { ConfirmModal } from '@/components/ConfirmModal'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
@@ -84,6 +85,7 @@ const PulseDot = ({ color }: { color: string }) => {
 
 export default function ProjectsScreen() {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const { colors, isDark } = useAppTheme()
   const { handleScroll } = useScrollVisibility()
   const projects = useProjectsStore((s) => s.projects)
@@ -630,7 +632,7 @@ export default function ProjectsScreen() {
           maxToRenderPerBatch={8}
           windowSize={5}
           removeClippedSubviews={Platform.OS === 'android'}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: 110 + insets.bottom }]}
           columnWrapperStyle={viewMode === 'grid' ? { justifyContent: 'space-between', marginBottom: 10 } : null}
           ListEmptyComponent={loading ? null : (
             searchQuery !== '' ? (

@@ -396,7 +396,7 @@ export default function AIScreen() {
         </ScrollView>
 
         {/* Clean Input Composer Bar */}
-        <View style={[styles.inputComposerOuter, { paddingBottom: isKeyboardVisible ? 6 : Math.max(insets.bottom, 10), backgroundColor: pageBgColor }]}>
+        <View style={[styles.inputComposerOuter, { paddingBottom: isKeyboardVisible ? 6 : Math.max(insets.bottom + 74, 84), backgroundColor: pageBgColor }]}>
           
           {/* Image Attachment Preview Badge */}
           {attachedImage && (
