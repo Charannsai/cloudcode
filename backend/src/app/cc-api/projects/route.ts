@@ -12,6 +12,9 @@ const CreateProjectSchema = z.object({
 
 import { getTierConfig } from '@/lib/tiers'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET /api/projects — list user's projects
 export async function GET(req: NextRequest) {
   const user = getUserFromRequest(req)

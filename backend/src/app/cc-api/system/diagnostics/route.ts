@@ -4,6 +4,9 @@ import { docker } from '@/lib/docker'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getUserFromRequest } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET(req: NextRequest) {
   try {
     const user = getUserFromRequest(req)

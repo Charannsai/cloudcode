@@ -6,6 +6,9 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { docker } from '@/lib/docker'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Helper to recursively calculate directory size in bytes
 async function getDirSize(dirPath: string): Promise<number> {
   let size = 0
