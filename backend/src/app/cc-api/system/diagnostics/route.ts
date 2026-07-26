@@ -60,8 +60,10 @@ export async function GET(req: NextRequest) {
                 .from('projects')
                 .update({ status: 'stopped' })
                 .eq('id', p.id)
-                .then(() => console.log(`[Diagnostics Sync] Synced project ${p.id} status to stopped`))
-                .catch(console.error)
+                .then(
+                  () => console.log(`[Diagnostics Sync] Synced project ${p.id} status to stopped`),
+                  (err) => console.error(`[Diagnostics Sync] Failed for ${p.id}:`, err)
+                )
             }
           }
         }
