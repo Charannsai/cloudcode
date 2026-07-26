@@ -35,10 +35,18 @@ export async function GET(req: NextRequest) {
           const liveContainersList = await docker.listContainers({ all: true })
           
           for (const p of userProjects) {
-            if (!p.container_id) continue
-            const container = liveContainersList.find(c => 
-              c.Id === p.container_id || c.Id.startsWith(p.container_id) || p.container_id.startsWith(c.Id)
-            )
+            if (!p.container_id || p.container_id.length < 4) continue
+            
+            const container = liveContainersList.find(c => {
+              // Strictly count only CloudCode workspace containers, ignoring system containers like datadog-agent
+              const isCloudCodeWorkspace = c.Names && c.Names.some(n => n.includes('cloudcode-'))
+              if (!isCloudCodeWorkspace) return false
+
+              return c.Id === p.container_id || 
+                     (p.container_id.length >= 8 && c.Id.startsWith(p.container_id)) || 
+                     (c.Id.length >= 8 && p.container_id.startsWith(c.Id))
+            })
+
             if (container && container.State === 'running') {
               runningContainers++
             } else {
