@@ -405,6 +405,7 @@ export function AITab({ projectId }: Props) {
                 setDrawerOpen(false)
                 setTabIndex(4)
                 setSettingsSubScreen('history')
+                router.navigate('/(tabs)/settings')
               }}
               style={[styles.openAllBtn, { borderColor: colors.border, backgroundColor: isDark ? '#161821' : '#F8FAFC' }]}
             >
@@ -417,6 +418,7 @@ export function AITab({ projectId }: Props) {
                 setDrawerOpen(false)
                 setTabIndex(4)
                 setSettingsSubScreen('limits')
+                router.navigate('/(tabs)/settings')
               }}
               style={[styles.drawerSettingsBtn, { borderTopColor: colors.border }]}
             >

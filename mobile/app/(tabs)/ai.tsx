@@ -340,7 +340,13 @@ export default function AIScreen() {
         
         {/* Clean Header Bar */}
         <View style={[styles.topHeaderBar, { paddingTop: Math.max(insets.top, 12), borderBottomColor: isDark ? '#1A1C23' : '#E5E7EB' }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
+          <TouchableOpacity onPress={() => {
+            if (router.canGoBack()) {
+              router.back()
+            } else {
+              router.navigate('/(tabs)/dashboard')
+            }
+          }} style={styles.headerBackBtn}>
             <ArrowLeft size={18} color={colors.text} />
           </TouchableOpacity>
 
@@ -564,6 +570,7 @@ export default function AIScreen() {
                   setDrawerOpen(false)
                   setTabIndex(4)
                   setSettingsSubScreen('history')
+                  router.navigate('/(tabs)/settings')
                 }}
                 style={[styles.openAllConvosBtn, { borderColor: colors.border, backgroundColor: isDark ? '#161821' : '#F8FAFC' }]}
               >
@@ -577,6 +584,7 @@ export default function AIScreen() {
                   setDrawerOpen(false)
                   setTabIndex(4)
                   setSettingsSubScreen('limits')
+                  router.navigate('/(tabs)/settings')
                 }}
                 style={[styles.drawerSettingsBtn, { borderTopColor: colors.border }]}
               >
