@@ -24,7 +24,10 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? { 
+        'Authorization': `Bearer ${token}`,
+        'x-authorization': `Bearer ${token}`
+      } : {}),
       'x-byok-enabled': byokEnabled || 'false',
       ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
       ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),

@@ -59,22 +59,26 @@ export function verifyToken(token: string): CloudCodeUser | null {
 }
 
 /**
- * Extract the authenticated user from the Authorization: Bearer <token> header.
+ * Extract the authenticated user from headers (Authorization, X-Authorization), query params, or cookies.
  * Returns null if missing or invalid.
  */
 export function getUserFromRequest(req: NextRequest): CloudCodeUser | null {
-  // Try Authorization header first
-  const authHeader = req.headers.get('authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7).trim()
+  // 1. Try Authorization or X-Authorization header
+  const authHeader = req.headers.get('authorization') || req.headers.get('x-authorization')
+  if (authHeader) {
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim()
     const user = verifyToken(token)
-    if (!user) {
-      console.log('[Auth Debug] Authorization header present but verifyToken returned null.')
-    }
-    return user
+    if (user) return user
   }
 
-  // Fallback to 'preview_token' cookie (convenient for WebView proxy)
+  // 2. Try query parameter 'token' or 'auth_token'
+  const queryToken = req.nextUrl.searchParams.get('token') || req.nextUrl.searchParams.get('auth_token')
+  if (queryToken) {
+    const user = verifyToken(queryToken.trim())
+    if (user) return user
+  }
+
+  // 3. Fallback to 'preview_token' cookie (convenient for WebView proxy)
   const cookie = req.cookies.get('preview_token')
   if (cookie?.value) {
     return verifyToken(cookie.value)
