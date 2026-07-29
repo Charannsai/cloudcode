@@ -18,6 +18,8 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
   const customGroqKey = await AsyncStorage.getItem('custom_groq_key')
 
+  console.log('[API FETCH DEBUG]', endpoint, 'token:', token ? token.slice(0, 15) + '...' : 'NULL')
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {

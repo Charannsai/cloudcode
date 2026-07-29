@@ -9,6 +9,8 @@ export const revalidate = 0
 
 export async function GET(req: NextRequest) {
   try {
+    const rawAuth = req.headers.get('authorization')
+    console.log('[Diagnostics Debug] Raw auth header:', rawAuth ? rawAuth.slice(0, 20) + '...' : 'NULL')
     const user = getUserFromRequest(req)
 
     // 1. Calculate real CPU Load (based on 1-min loadavg relative to core count)
