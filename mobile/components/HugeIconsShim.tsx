@@ -115,6 +115,7 @@ interface ShimProps {
 
 const createShim = (icon: any) => {
   return React.forwardRef<any, ShimProps>(({ size = 24, color = '#000000', strokeWidth = 2.0, style, ...props }, ref) => {
+    if (!icon) return null;
     return (
       <HugeiconsIcon
         ref={ref}

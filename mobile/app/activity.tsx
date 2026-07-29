@@ -230,7 +230,7 @@ export default function ActivityScreen() {
               <Stop offset="100%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0" />
             </RadialGradient>
           </Defs>
-          <Rect width="100%" height="100%" fill="url(#radialGrad)" />
+          <Path d="M0 0H1000V1000H0Z" fill="url(#radialGrad)" />
         </Svg>
       </View>
 
@@ -433,7 +433,7 @@ export default function ActivityScreen() {
                     <Stop offset="100%" stopColor={isDark ? '#030303' : '#FAFAFA'} stopOpacity="0.98" />
                   </LinearGradient>
                 </Defs>
-                <Rect width="100%" height="100%" fill="url(#fadeOverlayGrad)" />
+                <Path d="M0 0H1000V1000H0Z" fill="url(#fadeOverlayGrad)" />
               </Svg>
               <TouchableOpacity
                 style={[

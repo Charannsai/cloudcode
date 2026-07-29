@@ -259,7 +259,7 @@ export function ProjectIcon({ type, name, githubUrl, size = 32, isDark = true }:
       return (
         <Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
           {/* Git branching graph */}
-          <Rect x="20" y="20" width="60" height="60" rx="12" stroke={colors.primary} strokeWidth="4.5" transform="rotate(45 50 50)" fill="none" />
+          <Path d="M50 15 L85 50 L50 85 L15 50 Z" stroke={colors.primary} strokeWidth="4.5" strokeLinejoin="round" fill="none" />
           <Circle cx="35" cy="50" r="6" fill={colors.primary} />
           <Circle cx="65" cy="35" r="6" fill={colors.primary} />
           <Circle cx="65" cy="65" r="6" fill={colors.primary} />

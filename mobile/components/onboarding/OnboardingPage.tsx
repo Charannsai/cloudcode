@@ -30,7 +30,7 @@ const InnerBottomFade = ({ isDark = true }: { isDark?: boolean }) => {
             <Stop offset="100%" stopColor={bg} stopOpacity={1} />
           </LinearGradient>
         </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#innerFade)" />
+        <Path d="M0 0H1000V1000H0Z" fill="url(#innerFade)" />
       </Svg>
     </View>
   )

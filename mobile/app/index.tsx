@@ -478,7 +478,7 @@ export default function WelcomeScreen() {
               <Stop offset="100%" stopColor="#05070B" stopOpacity={0} />
             </RadialGradient>
           </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#ambientGlow)" />
+          <Path d="M0 0H1000V1000H0Z" fill="url(#ambientGlow)" />
         </Svg>
       </Animated.View>
 

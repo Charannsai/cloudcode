@@ -4,10 +4,10 @@
     "slug": "cloudcode",
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.cloudcode.app"
