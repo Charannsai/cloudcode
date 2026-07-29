@@ -4,11 +4,14 @@ import EventSource from 'react-native-sse'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { useUIStore } from '../store/ui'
+import { useAuthStore } from '../store/auth'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://165.22.219.62:3000'
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = await getToken()
+  const diskToken = await getToken()
+  const memoryToken = useAuthStore.getState().token
+  const token = diskToken || memoryToken
   const byokEnabled = await AsyncStorage.getItem('byok_enabled')
   const customGeminiKey = await AsyncStorage.getItem('custom_gemini_key')
   const customOpenaiKey = await AsyncStorage.getItem('custom_openai_key')

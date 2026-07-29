@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this'
 
 export interface CloudCodeUser {
   id: string          // GitHub user ID (as string)
@@ -26,7 +26,8 @@ export function signToken(user: CloudCodeUser): string {
 export function verifyToken(token: string): CloudCodeUser | null {
   try {
     return jwt.verify(token, JWT_SECRET) as CloudCodeUser
-  } catch {
+  } catch (err: any) {
+    console.log('[Auth Debug] verifyToken failed:', err?.message || err)
     return null
   }
 }
@@ -39,7 +40,11 @@ export function getUserFromRequest(req: NextRequest): CloudCodeUser | null {
   // Try Authorization header first
   const authHeader = req.headers.get('authorization')
   if (authHeader?.startsWith('Bearer ')) {
-    return verifyToken(authHeader.slice(7))
+    const user = verifyToken(authHeader.slice(7))
+    if (!user) {
+      console.log('[Auth Debug] Authorization header present but token verification returned null.')
+    }
+    return user
   }
 
   // Fallback to 'preview_token' cookie (convenient for WebView proxy)
