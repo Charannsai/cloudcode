@@ -11,6 +11,8 @@ export interface CloudCodeUser {
   email: string | null
   name: string | null
   avatar_url: string | null
+  exp?: number
+  iat?: number
 }
 
 /**
