@@ -9,7 +9,7 @@ import {
 } from '@/components/HugeIconsShim'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Svg, { Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-native-svg'
+import Svg, { Path, Defs, RadialGradient, Stop, LinearGradient } from 'react-native-svg'
 import { api } from '@/lib/api'
 import { useAgentStore } from '@/store/agentStore'
 import { useAIStore } from '@/store/ai'

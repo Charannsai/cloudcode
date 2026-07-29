@@ -14,7 +14,7 @@ import Animated, {
 import { SpringPressable } from '@/components/SpringPressable'
 import { useUIStore } from '@/store/ui'
 import { SvgIcon } from '@/components/SvgIcon'
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
+import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const TAB_ANIM_CONFIG = {
