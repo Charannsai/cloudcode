@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, Dimensions } from 'react-native'
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg'
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg'
 import { AmbientGlow } from './ScreenIllustrations'
 
 const { width, height } = Dimensions.get('window')
