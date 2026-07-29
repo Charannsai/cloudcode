@@ -1,7 +1,9 @@
 import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this'
+function getJwtSecret(): string {
+  return process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this'
+}
 
 export interface CloudCodeUser {
   id: string          // GitHub user ID (as string)
@@ -16,7 +18,7 @@ export interface CloudCodeUser {
  * Token is valid for 30 days.
  */
 export function signToken(user: CloudCodeUser): string {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: '30d' })
+  return jwt.sign(user, getJwtSecret(), { expiresIn: '30d' })
 }
 
 /**
@@ -25,7 +27,8 @@ export function signToken(user: CloudCodeUser): string {
  */
 export function verifyToken(token: string): CloudCodeUser | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as CloudCodeUser
+    if (!token) return null
+    return jwt.verify(token, getJwtSecret()) as CloudCodeUser
   } catch (err: any) {
     console.log('[Auth Debug] verifyToken failed:', err?.message || err)
     return null

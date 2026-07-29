@@ -51,6 +51,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     await deleteToken()
+    AsyncStorage.removeItem('profile_name').catch(() => {})
     set({ user: null, token: null })
   },
 }))

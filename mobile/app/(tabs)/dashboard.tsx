@@ -8,6 +8,7 @@ import { Project } from '@/types'
 import { cache } from '@/hooks/useCache'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '@/store/auth'
+import { promptGitHubSignIn } from '@/lib/auth'
 import { useUIStore } from '@/store/ui'
 import { useProjectsStore } from '@/store/projects'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -406,6 +407,46 @@ export default function DashboardScreen() {
             )}
           </PressableScale>
         </View>
+
+        {/* Unauthenticated Session Banner */}
+        {!user && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={async () => {
+              const token = await promptGitHubSignIn()
+              if (token) {
+                useAuthStore.getState().setToken(token)
+                fetchProjects(true)
+                fetchDiagnostics()
+              }
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.08)',
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(129, 140, 248, 0.3)' : 'rgba(99, 102, 241, 0.25)',
+              borderRadius: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              marginBottom: 14,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Key size={18} color={isDark ? '#818CF8' : '#4F46E5'} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>
+                  Sign in with GitHub
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 }}>
+                  Connect your account to sync workspaces and cloud containers
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color={isDark ? '#818CF8' : '#4F46E5'} />
+          </TouchableOpacity>
+        )}
 
         {/* AI Quick Search bar */}
         <View>
