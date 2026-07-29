@@ -80,10 +80,8 @@ function FloatingCenterSparkleButton({
                 <Stop offset="100%" stopColor={activeColor} stopOpacity={isFocused ? 0.95 : 0.6} />
               </LinearGradient>
             </Defs>
-            <Circle
-              cx="28"
-              cy="28"
-              r="27"
+            <Path
+              d="M 28, 1 a 27,27 0 1,0 0.001,0 Z"
               stroke="url(#adaptiveBorderGrad)"
               strokeWidth={1.8}
               fill="none"
