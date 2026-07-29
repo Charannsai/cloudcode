@@ -72,7 +72,20 @@ export default function ProjectScreen() {
   }
 
   useEffect(() => {
-    if (id) fetchProject()
+    if (!id) return
+    fetchProject()
+
+    const intervalId = setInterval(async () => {
+      try {
+        const p = await api.projects.get(id as string)
+        setProject(p)
+        if (p.status === 'ready' || p.status === 'stopped' || p.status === 'error') {
+          clearInterval(intervalId)
+        }
+      } catch (err) {}
+    }, 2000)
+
+    return () => clearInterval(intervalId)
   }, [id])
 
   async function fetchProject() {

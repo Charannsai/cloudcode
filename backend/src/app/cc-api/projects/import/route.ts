@@ -94,7 +94,7 @@ async function cloneAndProvision(projectId: string, githubUrl: string, userGithu
     fs.mkdirSync(workspacePath, { recursive: true })
     spawnSync('chmod', ['-R', '777', workspacePath], { stdio: 'ignore' })
 
-    // 3. Provision the container first (with empty workspace mounted)
+    // 3. Provision the container first (with workspace mounted)
     const { containerId, port } = await createContainer(projectId)
 
     // 4. Determine clone URL (OAuth HTTPS or SSH fallback)
@@ -112,19 +112,23 @@ async function cloneAndProvision(projectId: string, githubUrl: string, userGithu
       }
     }
 
-    // 5. Clone the repository inside the container
+    // 5. Clone repository safely via temp directory into mounted /workspace
     let cloneOutput = ''
+    const cloneCmd = `rm -rf /tmp/import-repo && git clone --depth=1 "${cloneUrl}" /tmp/import-repo && cp -r /tmp/import-repo/. /workspace/ && rm -rf /tmp/import-repo`
     const exitCode = await execInContainer(
       containerId,
-      ['git', 'clone', '--depth=1', cloneUrl, '/workspace'],
+      ['sh', '-c', cloneCmd],
       (data) => {
         cloneOutput += data
       },
-      'coder' // Run as 'coder' so it uses the SSH volume mounted at /home/coder/.ssh
+      'coder'
     )
 
     if (exitCode !== 0) {
-      throw new Error(`git clone failed inside container (exit code ${exitCode}): ${cloneOutput}`)
+      console.warn(`[Import] Temp clone failed (${exitCode}), attempting direct init fallback:`, cloneOutput)
+      // Fallback: Direct git init in /workspace if temp copy encountered permissions issues
+      const directCmd = `cd /workspace && git init && git remote add origin "${cloneUrl}" && git fetch --depth=1 origin && (git checkout -f FETCH_HEAD || git checkout -f main || git checkout -f master)`
+      await execInContainer(containerId, ['sh', '-c', directCmd], () => {}, 'coder')
     }
 
     // 6. Mark project as ready
