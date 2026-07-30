@@ -251,12 +251,12 @@ function WelcomeContent({
         {/* Primary Action Buttons */}
         <View style={mainStyles.primaryButtonsRow}>
           <TouchableOpacity
-            style={[mainStyles.openFolderBtn, { backgroundColor: '#0078D4' }]}
+            style={[mainStyles.openFolderBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0F1218' }]}
             onPress={onOpenFolder}
             activeOpacity={0.8}
           >
-            <Folder size={16} color="#FFFFFF" strokeWidth={1.8} />
-            <Text style={mainStyles.openFolderText}>Open Folder</Text>
+            <Folder size={16} color={isDark ? '#000000' : '#FFFFFF'} strokeWidth={1.8} />
+            <Text style={[mainStyles.openFolderText, { color: isDark ? '#000000' : '#FFFFFF' }]}>Open Folder</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -433,10 +433,11 @@ function SidebarRightIcon({ size = 15, color }: { size?: number; color: string }
 
 // ─── Desktop IDE Top Menus ────────────────────────────────
 function IDETopMenus({
-  onOpenFolder, onCloneRepo, onSettingsPress, onToggleSidebar, onToggleRightPanel, colors, isDark
+  onOpenFolder, onCloneRepo, onNewBlankFolder, onSettingsPress, onToggleSidebar, onToggleRightPanel, colors, isDark
 }: {
   onOpenFolder: () => void
   onCloneRepo: () => void
+  onNewBlankFolder: () => void
   onSettingsPress: () => void
   onToggleSidebar: () => void
   onToggleRightPanel: () => void
@@ -478,7 +479,15 @@ function IDETopMenus({
                 onPress={() => { setActiveMenu(null); onOpenFolder() }}
               >
                 <Folder size={14} color={colors.text} strokeWidth={1.8} />
-                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>Open Folder / Workspace...</Text>
+                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>Open Folder...</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tbStyles.dropdownRow}
+                onPress={() => { setActiveMenu(null); onNewBlankFolder() }}
+              >
+                <Plus size={14} color={colors.text} strokeWidth={1.8} />
+                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>New Blank Folder...</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -531,21 +540,47 @@ function IDETopMenus({
   )
 }
 
-// ─── Open Folder / Create Workspace Modal ─────────────────
+// ─── Open Folder Modal (Import Local OR Choose Templates) ───
 function OpenFolderModal({
   visible, onClose, onCreated, isDark, colors
 }: {
   visible: boolean; onClose: () => void; onCreated: (project: Project) => void; isDark: boolean; colors: any
 }) {
+  const [tab, setTab] = useState<'local' | 'templates'>('local')
   const [name, setName] = useState('')
+  const [selectedLocalPath, setSelectedLocalPath] = useState<string | null>(null)
   const [type, setType] = useState<any>('node')
   const [loading, setLoading] = useState(false)
 
+  const primaryBtnBg = isDark ? '#FFFFFF' : '#0F1218'
+  const primaryBtnText = isDark ? '#000000' : '#FFFFFF'
+
+  const handlePickLocalFolder = async () => {
+    try {
+      const DocumentPicker = require('expo-document-picker')
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      })
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0]
+        setSelectedLocalPath(asset.name)
+        if (!name) {
+          setName(asset.name.replace(/\.[^/.]+$/, ''))
+        }
+      }
+    } catch (err: any) {
+      console.log('DocumentPicker fallback', err)
+      setSelectedLocalPath('Local Documents Folder')
+      if (!name) setName('my-local-project')
+    }
+  }
+
   const handleCreate = async () => {
-    if (!name.trim()) return
+    const finalName = name.trim() || (tab === 'local' ? (selectedLocalPath || 'local-workspace') : 'my-template-app')
     setLoading(true)
     try {
-      const project = await api.projects.create(name.trim(), type)
+      const project = await api.projects.create(finalName, tab === 'local' ? 'empty' : type)
       onCreated(project)
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to create workspace')
@@ -559,44 +594,111 @@ function OpenFolderModal({
       <TouchableOpacity style={modalStyles.overlay} activeOpacity={1} onPress={onClose}>
         <View style={[modalStyles.card, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
           <Text style={[modalStyles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-            Open / Create Workspace
+            Open Folder
           </Text>
 
-          <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Workspace Name</Text>
-          <TextInput
-            style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
-            placeholder="e.g. my-awesome-app"
-            placeholderTextColor={colors.textSecondary + '70'}
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="none"
-          />
+          {/* 2 Options Switcher Bar */}
+          <View style={[modalStyles.tabSwitcher, { backgroundColor: isDark ? '#0F1218' : '#F3F4F6', borderColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={() => setTab('local')}
+              style={[
+                modalStyles.tabOption,
+                tab === 'local' && { backgroundColor: isDark ? '#262933' : '#FFFFFF' }
+              ]}
+            >
+              <Folder size={14} color={tab === 'local' ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+              <Text style={[modalStyles.tabOptionText, { color: tab === 'local' ? colors.text : colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+                Import from Local
+              </Text>
+            </TouchableOpacity>
 
-          <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Environment Preset</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-            {['node', 'react', 'nextjs', 'python', 'flask', 'fastapi', 'rust', 'gin', 'empty'].map((t) => (
+            <TouchableOpacity
+              onPress={() => setTab('templates')}
+              style={[
+                modalStyles.tabOption,
+                tab === 'templates' && { backgroundColor: isDark ? '#262933' : '#FFFFFF' }
+              ]}
+            >
+              <Cpu size={14} color={tab === 'templates' ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+              <Text style={[modalStyles.tabOptionText, { color: tab === 'templates' ? colors.text : colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+                Choose Templates
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {tab === 'local' ? (
+            <View style={{ gap: 10 }}>
+              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Local Directory / File</Text>
               <TouchableOpacity
-                key={t}
-                onPress={() => setType(t)}
-                style={[
-                  modalStyles.chip,
-                  {
-                    backgroundColor: type === t ? '#0078D4' : (isDark ? '#0F1218' : '#F6F8FA'),
-                    borderColor: colors.border,
-                  }
-                ]}
+                onPress={handlePickLocalFolder}
+                style={[modalStyles.pickerBox, { backgroundColor: isDark ? '#0F1218' : '#F6F8FA', borderColor: colors.border }]}
+                activeOpacity={0.7}
               >
-                <Text style={[modalStyles.chipText, { color: type === t ? '#FFFFFF' : colors.text }]}>{t}</Text>
+                <Folder size={18} color={colors.textSecondary} strokeWidth={1.8} />
+                <Text style={{ color: selectedLocalPath ? colors.text : colors.textSecondary, flex: 1, fontSize: 13 }} numberOfLines={1}>
+                  {selectedLocalPath || 'Tap to choose local folder or project file...'}
+                </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+
+              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Workspace Name</Text>
+              <TextInput
+                style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
+                placeholder="e.g. my-local-workspace"
+                placeholderTextColor={colors.textSecondary + '70'}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="none"
+              />
+            </View>
+          ) : (
+            <View style={{ gap: 10 }}>
+              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Workspace Name</Text>
+              <TextInput
+                style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
+                placeholder="e.g. my-template-app"
+                placeholderTextColor={colors.textSecondary + '70'}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="none"
+              />
+
+              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Select Template</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                {['node', 'react', 'nextjs', 'python', 'flask', 'fastapi', 'rust', 'gin'].map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    onPress={() => setType(t)}
+                    style={[
+                      modalStyles.chip,
+                      {
+                        backgroundColor: type === t ? primaryBtnBg : (isDark ? '#0F1218' : '#F6F8FA'),
+                        borderColor: colors.border,
+                      }
+                    ]}
+                  >
+                    <Text style={[modalStyles.chipText, { color: type === t ? primaryBtnText : colors.text }]}>{t}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           <View style={modalStyles.actions}>
             <TouchableOpacity onPress={onClose} style={[modalStyles.btn, { borderColor: colors.border, borderWidth: 1 }]} disabled={loading}>
               <Text style={{ color: colors.text }}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleCreate} style={[modalStyles.btn, { backgroundColor: '#0078D4' }]} disabled={loading || !name.trim()}>
-              {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }}>Open Workspace</Text>}
+            <TouchableOpacity
+              onPress={handleCreate}
+              style={[modalStyles.btn, { backgroundColor: primaryBtnBg }]}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={primaryBtnText} />
+              ) : (
+                <Text style={{ color: primaryBtnText, fontFamily: 'Inter_600SemiBold' }}>
+                  {tab === 'local' ? 'Import Local Folder' : 'Create from Template'}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -614,6 +716,9 @@ function CloneRepoModal({
   const [name, setName] = useState('')
   const [githubUrl, setGithubUrl] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const primaryBtnBg = isDark ? '#FFFFFF' : '#0F1218'
+  const primaryBtnText = isDark ? '#000000' : '#FFFFFF'
 
   const handleClone = async () => {
     if (!githubUrl.trim()) return
@@ -662,8 +767,8 @@ function CloneRepoModal({
             <TouchableOpacity onPress={onClose} style={[modalStyles.btn, { borderColor: colors.border, borderWidth: 1 }]} disabled={loading}>
               <Text style={{ color: colors.text }}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleClone} style={[modalStyles.btn, { backgroundColor: '#0078D4' }]} disabled={loading || !githubUrl.trim()}>
-              {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }}>Clone Repository</Text>}
+            <TouchableOpacity onPress={handleClone} style={[modalStyles.btn, { backgroundColor: primaryBtnBg }]} disabled={loading || !githubUrl.trim()}>
+              {loading ? <ActivityIndicator size="small" color={primaryBtnText} /> : <Text style={{ color: primaryBtnText, fontFamily: 'Inter_600SemiBold' }}>Clone Repository</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -677,6 +782,10 @@ const modalStyles = StyleSheet.create({
   card: { width: 440, borderRadius: 14, borderWidth: 1, padding: 20, gap: 12 },
   title: { fontSize: 16 },
   label: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  tabSwitcher: { flexDirection: 'row', borderRadius: 8, borderWidth: 1, padding: 3, gap: 2 },
+  tabOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 6 },
+  tabOptionText: { fontSize: 12 },
+  pickerBox: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 42, borderRadius: 8, borderWidth: 1, paddingHorizontal: 12 },
   input: { height: 40, borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, fontSize: 13, fontFamily: 'Inter_400Regular' },
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
   chipText: { fontSize: 12, fontFamily: 'Inter_500Medium' },
@@ -691,6 +800,7 @@ function IDETitleBar({
   colors,
   onOpenFolder,
   onCloneRepo,
+  onNewBlankFolder,
   onSettingsPress,
   onToggleSidebar,
   onToggleRightPanel,
@@ -702,6 +812,7 @@ function IDETitleBar({
   colors: any
   onOpenFolder: () => void
   onCloneRepo: () => void
+  onNewBlankFolder: () => void
   onSettingsPress: () => void
   onToggleSidebar: () => void
   onToggleRightPanel: () => void
@@ -718,6 +829,7 @@ function IDETitleBar({
       <IDETopMenus
         onOpenFolder={onOpenFolder}
         onCloneRepo={onCloneRepo}
+        onNewBlankFolder={onNewBlankFolder}
         onSettingsPress={onSettingsPress}
         onToggleSidebar={onToggleSidebar}
         onToggleRightPanel={onToggleRightPanel}
@@ -869,6 +981,7 @@ export default function TabletAppShell() {
         colors={colors}
         onOpenFolder={() => setOpenFolderVisible(true)}
         onCloneRepo={() => setCloneRepoVisible(true)}
+        onNewBlankFolder={() => setOpenFolderVisible(true)}
         onSettingsPress={handleSettings}
         onToggleSidebar={() => setActivePanel(activePanel ? null : 'explorer')}
         onToggleRightPanel={() => setAiVisible(!aiVisible)}
