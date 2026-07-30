@@ -20,6 +20,7 @@ import Animated, {
   Easing,
   runOnJS,
 } from 'react-native-reanimated'
+import { useTabletLayoutStore } from '@/store/tabletLayoutStore'
 
 interface FileItem {
   name: string
@@ -31,6 +32,7 @@ interface FileItem {
 interface Props {
   projectId: string
   isActive: boolean
+  isTabletSidebar?: boolean
 }
 
 const FILE_ICON_COLORS: Record<string, string> = {
@@ -57,10 +59,11 @@ function getFileColor(name: string): string {
 }
 
 const FileTreeItem = memo(function FileTreeItem({
-  item, depth, projectId, onRefresh, colors, isDark, router, onOptionsRequest
+  item, depth, projectId, onRefresh, colors, isDark, router, onOptionsRequest, onFileOpen
 }: {
   item: FileItem; depth: number; projectId: string;
   onRefresh: () => void; colors: any; isDark: boolean; router: any; onOptionsRequest: (item: FileItem) => void;
+  onFileOpen?: (path: string, name: string) => void;
 }) {
   const [expanded, setExpanded] = useState(depth === 0)
   const isDir = item.type === 'directory'
@@ -82,6 +85,8 @@ const FileTreeItem = memo(function FileTreeItem({
   const handlePress = () => {
     if (isDir) {
       setExpanded(!expanded)
+    } else if (onFileOpen) {
+      onFileOpen(item.path, item.name)
     } else {
       router.push({
         pathname: `/project/${projectId}/editor`,
@@ -140,6 +145,7 @@ const FileTreeItem = memo(function FileTreeItem({
           isDark={isDark}
           router={router}
           onOptionsRequest={onOptionsRequest}
+          onFileOpen={onFileOpen}
         />
       ))}
     </View>
@@ -478,9 +484,10 @@ function OptionsDialog({
   )
 }
 
-export default function FilesTab({ projectId, isActive }: Props) {
+export default function FilesTab({ projectId, isActive, isTabletSidebar }: Props) {
   const { colors, isDark } = useAppTheme()
   const router = useRouter()
+  const tabletOpenFile = useTabletLayoutStore((s) => s.openFile)
   const [files, setFiles] = useState<FileItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -652,6 +659,7 @@ export default function FilesTab({ projectId, isActive }: Props) {
                 isDark={isDark}
                 router={router}
                 onOptionsRequest={handleOptionsRequest}
+                onFileOpen={isTabletSidebar ? (path, name) => tabletOpenFile(path, name) : undefined}
               />
             ))
           )}

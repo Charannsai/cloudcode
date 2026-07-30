@@ -7,8 +7,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { useAppTheme } from '@/hooks/useAppTheme'
+import { useDeviceType } from '@/hooks/useDeviceType'
 import { ChevronLeft, RefreshCw, Folder, Terminal, Globe, GitBranch, Sparkles, GitPullRequest } from '@/components/HugeIconsShim'
 import Animated, { useAnimatedStyle, withSpring, withTiming, Easing, useSharedValue } from 'react-native-reanimated'
+
+// Tablet IDE Shell
+import TabletIDEShell from '@/components/ide/TabletIDEShell'
 
 // Lazy-load tab screens
 import FilesTab from '@/components/project/FilesTab'
@@ -34,6 +38,7 @@ export default function ProjectScreen() {
   const { id, tab } = useLocalSearchParams<{ id: string; tab?: Tab }>()
   const router = useRouter()
   const { colors, isDark } = useAppTheme()
+  const { isTablet } = useDeviceType()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('Terminal')
@@ -119,6 +124,12 @@ export default function ProjectScreen() {
     )
   }
 
+  // Tablet: Render full IDE shell
+  if (isTablet) {
+    return <TabletIDEShell project={project} onRefresh={fetchProject} />
+  }
+
+  // Phone: Original tab-switching layout
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}

@@ -77,3 +77,16 @@ export const BLUR = {
   modalLight: 15,
   modalDark: 25,
 } as const
+
+// Tablet IDE Layout Tokens (fixed proportions)
+export const IDE_LAYOUT = {
+  titleBarHeight: 38,
+  menuBarHeight: 32,
+  activityBarWidth: 48,
+  sidebarWidth: 260,
+  rightPanelWidth: 320,
+  bottomPanelHeight: 240,
+  statusBarHeight: 24,
+  editorTabBarHeight: 36,
+  tabletBreakpoint: 768,
+} as const
