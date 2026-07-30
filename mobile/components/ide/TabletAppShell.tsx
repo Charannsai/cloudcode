@@ -548,14 +548,14 @@ function OpenFolderModal({
 }) {
   const [tab, setTab] = useState<'local' | 'templates'>('local')
   const [name, setName] = useState('')
-  const [selectedLocalPath, setSelectedLocalPath] = useState<string | null>(null)
+  const [selectedLocalAsset, setSelectedLocalAsset] = useState<{ name: string; uri: string } | null>(null)
   const [type, setType] = useState<any>('node')
   const [loading, setLoading] = useState(false)
 
   const primaryBtnBg = isDark ? '#FFFFFF' : '#0F1218'
   const primaryBtnText = isDark ? '#000000' : '#FFFFFF'
 
-  const handlePickLocalFolder = async () => {
+  const handleLaunchFileExplorer = async () => {
     try {
       const DocumentPicker = require('expo-document-picker')
       const result = await DocumentPicker.getDocumentAsync({
@@ -564,26 +564,31 @@ function OpenFolderModal({
       })
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0]
-        setSelectedLocalPath(asset.name)
-        if (!name) {
-          setName(asset.name.replace(/\.[^/.]+$/, ''))
-        }
+        const cleanName = asset.name.replace(/\.[^/.]+$/, '')
+        setSelectedLocalAsset({ name: asset.name, uri: asset.uri })
+        setName(cleanName)
       }
     } catch (err: any) {
-      console.log('DocumentPicker fallback', err)
-      setSelectedLocalPath('Local Documents Folder')
-      if (!name) setName('my-local-project')
+      console.log('DocumentPicker error', err)
+      setSelectedLocalAsset({ name: 'Documents/LocalWorkspace', uri: 'file:///local/workspace' })
+      setName('local-workspace')
     }
   }
 
+  useEffect(() => {
+    if (visible && tab === 'local' && !selectedLocalAsset) {
+      handleLaunchFileExplorer()
+    }
+  }, [visible, tab])
+
   const handleCreate = async () => {
-    const finalName = name.trim() || (tab === 'local' ? (selectedLocalPath || 'local-workspace') : 'my-template-app')
+    const finalName = name.trim() || (tab === 'local' ? (selectedLocalAsset?.name || 'local-folder') : 'template-project')
     setLoading(true)
     try {
       const project = await api.projects.create(finalName, tab === 'local' ? 'empty' : type)
       onCreated(project)
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to create workspace')
+      Alert.alert('Error Opening Local Folder', err.message || 'Failed to open local directory')
     } finally {
       setLoading(false)
     }
@@ -600,7 +605,7 @@ function OpenFolderModal({
           {/* 2 Options Switcher Bar */}
           <View style={[modalStyles.tabSwitcher, { backgroundColor: isDark ? '#0F1218' : '#F3F4F6', borderColor: colors.border }]}>
             <TouchableOpacity
-              onPress={() => setTab('local')}
+              onPress={() => { setTab('local'); handleLaunchFileExplorer(); }}
               style={[
                 modalStyles.tabOption,
                 tab === 'local' && { backgroundColor: isDark ? '#262933' : '#FFFFFF' }
@@ -628,22 +633,23 @@ function OpenFolderModal({
 
           {tab === 'local' ? (
             <View style={{ gap: 10 }}>
-              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Local Directory / File</Text>
+              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Selected Device Path / File</Text>
               <TouchableOpacity
-                onPress={handlePickLocalFolder}
+                onPress={handleLaunchFileExplorer}
                 style={[modalStyles.pickerBox, { backgroundColor: isDark ? '#0F1218' : '#F6F8FA', borderColor: colors.border }]}
                 activeOpacity={0.7}
               >
-                <Folder size={18} color={colors.textSecondary} strokeWidth={1.8} />
-                <Text style={{ color: selectedLocalPath ? colors.text : colors.textSecondary, flex: 1, fontSize: 13 }} numberOfLines={1}>
-                  {selectedLocalPath || 'Tap to choose local folder or project file...'}
+                <Folder size={18} color={selectedLocalAsset ? colors.primary : colors.textSecondary} strokeWidth={1.8} />
+                <Text style={{ color: selectedLocalAsset ? colors.text : colors.textSecondary, flex: 1, fontSize: 13 }} numberOfLines={1}>
+                  {selectedLocalAsset ? selectedLocalAsset.name : 'Opening File Explorer...'}
                 </Text>
+                <Text style={{ fontSize: 11, color: isDark ? '#58A6FF' : '#0969DA', fontFamily: 'Inter_600SemiBold' }}>Browse...</Text>
               </TouchableOpacity>
 
               <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Workspace Name</Text>
               <TextInput
                 style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
-                placeholder="e.g. my-local-workspace"
+                placeholder="Workspace name"
                 placeholderTextColor={colors.textSecondary + '70'}
                 value={name}
                 onChangeText={setName}
@@ -696,7 +702,7 @@ function OpenFolderModal({
                 <ActivityIndicator size="small" color={primaryBtnText} />
               ) : (
                 <Text style={{ color: primaryBtnText, fontFamily: 'Inter_600SemiBold' }}>
-                  {tab === 'local' ? 'Import Local Folder' : 'Create from Template'}
+                  {tab === 'local' ? 'Open Local Folder' : 'Create from Template'}
                 </Text>
               )}
             </TouchableOpacity>
