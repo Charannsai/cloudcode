@@ -565,7 +565,6 @@ function OpenFolderModal({
 
   const handleLaunchFileExplorer = async () => {
     try {
-      // 1. Web/Desktop browser: Use native HTML directory picker (webkitdirectory)
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
         const input = document.createElement('input')
         input.type = 'file'
@@ -577,7 +576,7 @@ function OpenFolderModal({
             const firstFile = files[0]
             const relativePath = firstFile.webkitRelativePath || firstFile.name
             const folderName = relativePath.split('/')[0] || 'local-folder'
-            setSelectedLocalAsset({ name: `Folder: ${folderName} (${files.length} files)`, uri: 'folder://' + folderName })
+            setSelectedLocalAsset({ name: folderName, uri: 'folder://' + folderName })
             setName(folderName)
           }
         }
@@ -585,31 +584,29 @@ function OpenFolderModal({
         return
       }
 
-      // 2. Mobile/iPad: DocumentPicker selects any file inside target folder or zip archive
       const result = await DocumentPicker.getDocumentAsync({
         type: '*/*',
         copyToCacheDirectory: true,
       })
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0]
-        // Extract folder name or file name
         const cleanName = asset.name.replace(/\.[^/.]+$/, '')
-        setSelectedLocalAsset({ name: `Folder Containing: ${asset.name}`, uri: asset.uri })
+        setSelectedLocalAsset({ name: asset.name, uri: asset.uri })
         setName(cleanName)
       }
     } catch (err: any) {
-      Alert.alert('File Picker', 'Could not open native file explorer: ' + (err?.message || String(err)))
+      Alert.alert('File Picker', 'Could not open file explorer: ' + (err?.message || String(err)))
     }
   }
 
   const handleCreate = async () => {
-    const finalName = name.trim() || (selectedLocalAsset?.name.replace(/^Folder Containing: /, '').replace(/\.[^/.]+$/, '') || 'local-folder')
+    const finalName = name.trim() || selectedLocalAsset?.name.replace(/\.[^/.]+$/, '') || 'local-workspace'
     setLoading(true)
     try {
       const project = await api.projects.create(finalName, tab === 'local' ? 'empty' : type)
       onCreated(project)
     } catch (err: any) {
-      Alert.alert('Error Opening Local Folder', err.message || 'Failed to open local directory')
+      Alert.alert('Error Opening Folder', err.message || 'Failed to open local directory')
     } finally {
       setLoading(false)
     }
@@ -653,8 +650,17 @@ function OpenFolderModal({
           </View>
 
           {tab === 'local' ? (
-            <View style={{ gap: 10 }}>
-              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Local Directory Selection</Text>
+            <View style={{ gap: 12 }}>
+              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Folder / Workspace Name</Text>
+              <TextInput
+                style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
+                placeholder="Enter folder name (e.g. my-project)"
+                placeholderTextColor={colors.textSecondary + '70'}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="none"
+              />
+
               <TouchableOpacity
                 onPress={handleLaunchFileExplorer}
                 style={[modalStyles.pickerBox, { backgroundColor: isDark ? '#0F1218' : '#F6F8FA', borderColor: colors.border }]}
@@ -662,26 +668,12 @@ function OpenFolderModal({
               >
                 <Folder size={18} color={selectedLocalAsset ? (isDark ? '#FFFFFF' : '#000000') : colors.textSecondary} strokeWidth={1.8} />
                 <Text style={{ color: selectedLocalAsset ? colors.text : colors.textSecondary, flex: 1, fontSize: 12.5 }} numberOfLines={1}>
-                  {selectedLocalAsset ? selectedLocalAsset.name : 'Tap Browse to select folder/files...'}
+                  {selectedLocalAsset ? `Selected: ${selectedLocalAsset.name}` : 'Optional: Browse device storage...'}
                 </Text>
-                <View style={{ backgroundColor: primaryBtnBg, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
-                  <Text style={{ fontSize: 11, color: primaryBtnText, fontFamily: 'Inter_600SemiBold' }}>Browse Folder...</Text>
+                <View style={{ backgroundColor: isDark ? '#262933' : '#E5E7EB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 11, color: colors.text, fontFamily: 'Inter_600SemiBold' }}>Browse...</Text>
                 </View>
               </TouchableOpacity>
-
-              <Text style={{ fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_400Regular', opacity: 0.8, lineHeight: 15 }}>
-                💡 Select any file (e.g. package.json, index.js) inside your target project folder or pick a folder directly. We'll automatically load the parent directory as your workspace.
-              </Text>
-
-              <Text style={[modalStyles.label, { color: colors.textSecondary, marginTop: 4 }]}>Workspace Name</Text>
-              <TextInput
-                style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
-                placeholder="Workspace name (auto-filled from selection)"
-                placeholderTextColor={colors.textSecondary + '70'}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="none"
-              />
             </View>
           ) : (
             <View style={{ gap: 10 }}>
@@ -723,7 +715,7 @@ function OpenFolderModal({
             <TouchableOpacity
               onPress={handleCreate}
               style={[modalStyles.btn, { backgroundColor: primaryBtnBg }]}
-              disabled={loading || (tab === 'local' && !selectedLocalAsset && !name.trim())}
+              disabled={loading || (tab === 'local' && !name.trim() && !selectedLocalAsset)}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={primaryBtnText} />
