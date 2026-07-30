@@ -1,10 +1,12 @@
-import React from 'react'
-import { View, StyleSheet } from 'react-native'
+import React, { useState } from 'react'
+import { View, StyleSheet, Modal, Text, TouchableOpacity } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useTabletLayoutStore } from '@/store/tabletLayoutStore'
 import { Project } from '@/types'
+import SettingsScreen from '@/app/(tabs)/settings'
+import { X } from '@/components/HugeIconsShim'
 
 // IDE Shell Components
 import TitleBar from './TitleBar'
@@ -26,6 +28,7 @@ export default function TabletIDEShell({ project, onRefresh }: TabletIDEShellPro
   const { colors, isDark } = useAppTheme()
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const [settingsVisible, setSettingsVisible] = useState(false)
 
   const {
     sidebarVisible,
@@ -76,7 +79,7 @@ export default function TabletIDEShell({ project, onRefresh }: TabletIDEShellPro
   }
 
   const handleGoToPreview = () => {
-    setBottomTab('preview')
+    setBottomTab('terminal')
   }
 
   const handleOpenExplorer = () => {
@@ -91,6 +94,13 @@ export default function TabletIDEShell({ project, onRefresh }: TabletIDEShellPro
         projectStatus={project.container_status || project.status}
         onBack={handleExitEditor}
         onRefresh={onRefresh}
+        onSettings={() => setSettingsVisible(true)}
+        onToggleSidebar={toggleSidebar}
+        onToggleBottomPanel={toggleBottomPanel}
+        onToggleRightPanel={toggleRightPanel}
+        sidebarVisible={sidebarVisible}
+        bottomPanelVisible={bottomPanelVisible}
+        rightPanelVisible={rightPanelVisible}
       />
 
       {/* Menu Bar */}
@@ -144,6 +154,33 @@ export default function TabletIDEShell({ project, onRefresh }: TabletIDEShellPro
         branch="main"
         projectStatus={project.container_status || project.status}
       />
+
+      {/* Settings Modal */}
+      <Modal
+        visible={settingsVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={{
+            height: 44,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            backgroundColor: isDark ? '#0D1117' : '#F6F8FA'
+          }}>
+            <Text style={{ fontSize: 14, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Settings</Text>
+            <TouchableOpacity onPress={() => setSettingsVisible(false)} style={{ padding: 4 }}>
+              <X size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <SettingsScreen />
+        </View>
+      </Modal>
     </View>
   )
 }

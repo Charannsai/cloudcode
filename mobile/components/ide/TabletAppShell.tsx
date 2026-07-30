@@ -117,12 +117,26 @@ function ExplorerSidebar({
   isDark: boolean
   colors: any
 }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
   return (
     <View style={[sbStyles.container, { backgroundColor: isDark ? '#0F1218' : '#F6F8FA', borderRightColor: colors.border }]}>
+      {/* Explorer Header with Workspace Dropdown */}
       <View style={[sbStyles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[sbStyles.headerTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-          WORKSPACES
-        </Text>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          onPress={() => setDropdownOpen(!dropdownOpen)}
+          activeOpacity={0.7}
+        >
+          <Text style={[sbStyles.headerTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+            WORKSPACES
+          </Text>
+          <ChevronRight
+            size={12}
+            color={colors.textSecondary}
+            style={{ transform: [{ rotate: dropdownOpen ? '90deg' : '0deg' }] }}
+          />
+        </TouchableOpacity>
         <View style={{ flexDirection: 'row', gap: 4 }}>
           <TouchableOpacity onPress={onRefresh} style={sbStyles.headerBtn} activeOpacity={0.7}>
             <RefreshCw size={13} color={colors.textSecondary} strokeWidth={1.8} />
@@ -144,13 +158,10 @@ function ExplorerSidebar({
               onPress={() => onProjectPress(project)}
               activeOpacity={0.7}
             >
-              <ProjectIcon type={project.type} name={project.name} size={16} />
+              <Folder size={14} color={isDark ? '#58A6FF' : '#0969DA'} strokeWidth={1.5} />
               <View style={{ flex: 1, marginLeft: 8 }}>
                 <Text style={[sbStyles.projectName, { color: colors.text, fontFamily: 'Inter_500Medium' }]} numberOfLines={1}>
                   {project.name}
-                </Text>
-                <Text style={[sbStyles.projectMeta, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
-                  {project.type || 'Empty'}
                 </Text>
               </View>
               <View style={[sbStyles.statusDot, { backgroundColor: statusColor }]} />
@@ -409,9 +420,28 @@ const rpStyles = StyleSheet.create({
   closeBtn: { width: 24, height: 24, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
 })
 
+import SettingsScreen from '@/app/(tabs)/settings'
+import { Modal } from 'react-native'
+
 // ─── Title Bar ──────────────────────────────────────────────
-function IDETitleBar({ user, isDark, colors, onSettingsPress }: {
-  user: any; isDark: boolean; colors: any; onSettingsPress: () => void
+function IDETitleBar({
+  user,
+  isDark,
+  colors,
+  onSettingsPress,
+  onToggleSidebar,
+  onToggleRightPanel,
+  sidebarVisible = true,
+  rightPanelVisible = false,
+}: {
+  user: any
+  isDark: boolean
+  colors: any
+  onSettingsPress: () => void
+  onToggleSidebar: () => void
+  onToggleRightPanel: () => void
+  sidebarVisible: boolean
+  rightPanelVisible: boolean
 }) {
   return (
     <View style={[tbStyles.container, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderBottomColor: colors.border }]}>
@@ -419,12 +449,31 @@ function IDETitleBar({ user, isDark, colors, onSettingsPress }: {
         CloudCode
       </Text>
       <View style={{ flex: 1 }} />
-      {user?.avatar_url && (
-        <Image
-          source={{ uri: user.avatar_url }}
-          style={tbStyles.avatar}
-        />
-      )}
+      <View style={tbStyles.rightActions}>
+        <TouchableOpacity
+          onPress={onToggleSidebar}
+          style={[tbStyles.iconBtn, sidebarVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+          activeOpacity={0.7}
+        >
+          <Folder size={14} color={sidebarVisible ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onToggleRightPanel}
+          style={[tbStyles.iconBtn, rightPanelVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+          activeOpacity={0.7}
+        >
+          <Sparkles size={14} color={rightPanelVisible ? (isDark ? '#A78BFA' : '#7C3AED') : colors.textSecondary} strokeWidth={1.8} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onSettingsPress} style={tbStyles.iconBtn} activeOpacity={0.7}>
+          <Settings size={14} color={colors.textSecondary} strokeWidth={1.8} />
+        </TouchableOpacity>
+
+        {user?.avatar_url && (
+          <Image source={{ uri: user.avatar_url }} style={tbStyles.avatar} />
+        )}
+      </View>
     </View>
   )
 }
@@ -432,7 +481,9 @@ function IDETitleBar({ user, isDark, colors, onSettingsPress }: {
 const tbStyles = StyleSheet.create({
   container: { height: 38, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, borderBottomWidth: 1, gap: 10 },
   brand: { fontSize: 14, letterSpacing: -0.3 },
-  avatar: { width: 24, height: 24, borderRadius: 12 },
+  avatar: { width: 24, height: 24, borderRadius: 12, marginLeft: 4 },
+  rightActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  iconBtn: { width: 30, height: 30, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
 })
 
 // ─── Status Bar ─────────────────────────────────────────────
@@ -469,6 +520,7 @@ export default function TabletAppShell() {
 
   const [activePanel, setActivePanel] = useState<SidebarPanel>('explorer')
   const [aiVisible, setAiVisible] = useState(false)
+  const [settingsVisible, setSettingsVisible] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [systemHealth, setSystemHealth] = useState<any>(null)
@@ -513,13 +565,22 @@ export default function TabletAppShell() {
   }
 
   const handleSettings = () => {
-    router.push('/(tabs)/settings')
+    setSettingsVisible(true)
   }
 
   return (
     <View style={[shellStyles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Title Bar */}
-      <IDETitleBar user={user} isDark={isDark} colors={colors} onSettingsPress={handleSettings} />
+      <IDETitleBar
+        user={user}
+        isDark={isDark}
+        colors={colors}
+        onSettingsPress={handleSettings}
+        onToggleSidebar={() => setActivePanel(activePanel ? null : 'explorer')}
+        onToggleRightPanel={() => setAiVisible(!aiVisible)}
+        sidebarVisible={activePanel !== null}
+        rightPanelVisible={aiVisible}
+      />
 
       {/* Main Area */}
       <View style={shellStyles.mainRow}>
@@ -569,6 +630,33 @@ export default function TabletAppShell() {
 
       {/* Status Bar */}
       <IDEStatusBar user={user} isDark={isDark} colors={colors} />
+
+      {/* Settings Modal */}
+      <Modal
+        visible={settingsVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={{
+            height: 44,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            backgroundColor: isDark ? '#0D1117' : '#F6F8FA'
+          }}>
+            <Text style={{ fontSize: 14, fontFamily: 'Inter_600SemiBold', color: colors.text }}>Settings</Text>
+            <TouchableOpacity onPress={() => setSettingsVisible(false)} style={{ padding: 4 }}>
+              <X size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <SettingsScreen />
+        </View>
+      </Modal>
     </View>
   )
 }

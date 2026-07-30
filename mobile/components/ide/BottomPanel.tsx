@@ -16,7 +16,6 @@ interface BottomPanelProps {
 
 const PANEL_TABS: { id: BottomPanelTab; label: string; icon: typeof Terminal }[] = [
   { id: 'terminal', label: 'TERMINAL', icon: Terminal },
-  { id: 'preview', label: 'PREVIEW', icon: Globe },
   { id: 'problems', label: 'PROBLEMS', icon: AlertCircle },
 ]
 

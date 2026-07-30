@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { IDE_LAYOUT } from '@/constants/tokens'
-import { ChevronLeft, RefreshCw, Settings } from '@/components/HugeIconsShim'
+import { ChevronLeft, RefreshCw, Settings, Folder, Terminal, Sparkles } from '@/components/HugeIconsShim'
 
 interface TitleBarProps {
   projectName: string
@@ -10,9 +10,27 @@ interface TitleBarProps {
   onBack: () => void
   onRefresh: () => void
   onSettings?: () => void
+  onToggleSidebar?: () => void
+  onToggleBottomPanel?: () => void
+  onToggleRightPanel?: () => void
+  sidebarVisible?: boolean
+  bottomPanelVisible?: boolean
+  rightPanelVisible?: boolean
 }
 
-export default function TitleBar({ projectName, projectStatus, onBack, onRefresh, onSettings }: TitleBarProps) {
+export default function TitleBar({
+  projectName,
+  projectStatus,
+  onBack,
+  onRefresh,
+  onSettings,
+  onToggleSidebar,
+  onToggleBottomPanel,
+  onToggleRightPanel,
+  sidebarVisible = true,
+  bottomPanelVisible = true,
+  rightPanelVisible = false,
+}: TitleBarProps) {
   const { colors, isDark } = useAppTheme()
 
   const statusColor = projectStatus === 'ready' ? '#3FB950' : '#D2A8FF'
@@ -40,11 +58,42 @@ export default function TitleBar({ projectName, projectStatus, onBack, onRefresh
         CloudCode
       </Text>
 
-      {/* Right: Actions */}
+      {/* Right: Actions & Panel Toggles */}
       <View style={styles.rightSection}>
+        {onToggleSidebar && (
+          <TouchableOpacity
+            onPress={onToggleSidebar}
+            style={[styles.iconBtn, sidebarVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+            activeOpacity={0.7}
+          >
+            <Folder size={14} color={sidebarVisible ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+        )}
+
+        {onToggleBottomPanel && (
+          <TouchableOpacity
+            onPress={onToggleBottomPanel}
+            style={[styles.iconBtn, bottomPanelVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+            activeOpacity={0.7}
+          >
+            <Terminal size={14} color={bottomPanelVisible ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+        )}
+
+        {onToggleRightPanel && (
+          <TouchableOpacity
+            onPress={onToggleRightPanel}
+            style={[styles.iconBtn, rightPanelVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+            activeOpacity={0.7}
+          >
+            <Sparkles size={14} color={rightPanelVisible ? (isDark ? '#A78BFA' : '#7C3AED') : colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity onPress={onRefresh} style={styles.iconBtn} activeOpacity={0.7}>
           <RefreshCw size={14} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
+
         {onSettings && (
           <TouchableOpacity onPress={onSettings} style={styles.iconBtn} activeOpacity={0.7}>
             <Settings size={14} color={colors.textSecondary} strokeWidth={1.8} />

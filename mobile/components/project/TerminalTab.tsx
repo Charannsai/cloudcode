@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router'
 import { useAIStore } from '@/store/ai'
 import { useTerminalStore } from '@/store/terminal'
 import { api } from '@/lib/api'
+import { useDeviceType } from '@/hooks/useDeviceType'
 import { Terminal as TerminalIcon, StopCircle, Trash2, ArrowUp, ArrowDown, Sparkles, Plus, X } from '@/components/HugeIconsShim'
 import { SpringPressable } from '@/components/SpringPressable'
 
@@ -165,6 +166,7 @@ export default function TerminalTab({ projectId }: Props) {
   const router = useRouter()
   const { setPendingPrompt, setActiveProject } = useAIStore()
   const insets = useSafeAreaInsets()
+  const { isTablet } = useDeviceType()
 
   // Read terminal state from the persistent store
   const terminalStore = useTerminalStore()
@@ -392,24 +394,26 @@ export default function TerminalTab({ projectId }: Props) {
           paddingBottom: Math.max(insets.bottom, 10),
         }
       ]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.quickScroll}
-          contentContainerStyle={styles.quickContent}
-          keyboardShouldPersistTaps="always"
-        >
-          {QUICK_COMMANDS.map((cmd) => (
-            <TouchableOpacity
-              key={cmd}
-              style={[styles.quickCmd, { backgroundColor: isDark ? '#030303' : '#FFFFFF', borderColor: colors.border }]}
-              onPress={() => runQuick(cmd)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.quickCmdText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>{cmd}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        {!isTablet && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.quickScroll}
+            contentContainerStyle={styles.quickContent}
+            keyboardShouldPersistTaps="always"
+          >
+            {QUICK_COMMANDS.map((cmd) => (
+              <TouchableOpacity
+                key={cmd}
+                style={[styles.quickCmd, { backgroundColor: isDark ? '#030303' : '#FFFFFF', borderColor: colors.border }]}
+                onPress={() => runQuick(cmd)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.quickCmdText, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>{cmd}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         <View style={styles.inputRow}>
           <TextInput
