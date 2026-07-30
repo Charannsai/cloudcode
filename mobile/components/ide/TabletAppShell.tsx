@@ -4,11 +4,12 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useAuthStore } from '@/store/auth'
+import { useAIStore } from '@/store/ai'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { SvgIcon } from '@/components/SvgIcon'
 import { ProjectIcon } from '@/components/ProjectIcon'
-import AITab from '@/components/project/AITab'
+import { AITab } from '@/components/project/AITab'
 import {
   Folder, Search, Sparkles, Settings, Plus, ChevronRight, RefreshCw,
   Cpu, Database, Wifi, X, User, LogOut, CreditCard, GitBranch
@@ -392,6 +393,8 @@ function AIRightPanel({
 }: {
   visible: boolean; onClose: () => void; isDark: boolean; colors: any
 }) {
+  const startNewChat = useAIStore((s) => s.startNewChat)
+
   if (!visible) return null
   return (
     <View style={[rpStyles.container, { backgroundColor: isDark ? '#0F1218' : '#FFFFFF', borderLeftColor: colors.border }]}>
@@ -402,12 +405,17 @@ function AIRightPanel({
             AI Assistant
           </Text>
         </View>
-        <TouchableOpacity onPress={onClose} style={rpStyles.closeBtn} activeOpacity={0.7}>
-          <X size={14} color={colors.textSecondary} strokeWidth={1.8} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+          <TouchableOpacity onPress={startNewChat} style={rpStyles.closeBtn} activeOpacity={0.7}>
+            <Plus size={14} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onClose} style={rpStyles.closeBtn} activeOpacity={0.7}>
+            <X size={14} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={{ flex: 1 }}>
-        <AITab projectId="" />
+        <AITab projectId="" hideHeader={true} />
       </View>
     </View>
   )

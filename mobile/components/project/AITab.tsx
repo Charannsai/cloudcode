@@ -102,9 +102,10 @@ const MessageActionButtons = memo(function MessageActionButtons({
 
 interface Props {
   projectId: string
+  hideHeader?: boolean
 }
 
-export function AITab({ projectId }: Props) {
+export function AITab({ projectId, hideHeader = false }: Props) {
   const { colors, isDark } = useAppTheme()
   const pageBgColor = isDark ? '#030303' : '#FFFFFF'
   const router = useRouter()
@@ -116,6 +117,8 @@ export function AITab({ projectId }: Props) {
   } = useAIStore()
 
   const [inputText, setInputText] = useState('')
+  const [selectedModel, setSelectedModel] = useState('Gemini 3.6 Flash (High)')
+  const [modelMenuVisible, setModelMenuVisible] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [attachModalVisible, setAttachModalVisible] = useState(false)
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
@@ -208,16 +211,18 @@ export function AITab({ projectId }: Props) {
     >
       
       {/* Clean Top Header */}
-      <View style={[styles.headerBar, { borderBottomColor: isDark ? '#1A1C23' : '#E5E7EB' }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Sparkles size={18} color={isDark ? '#A78BFA' : '#7C3AED'} />
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Project Assistant</Text>
-        </View>
+      {!hideHeader && (
+        <View style={[styles.headerBar, { borderBottomColor: isDark ? '#1A1C23' : '#E5E7EB' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={18} color={isDark ? '#A78BFA' : '#7C3AED'} />
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Project Assistant</Text>
+          </View>
 
-        <TouchableOpacity onPress={() => setDrawerOpen(true)} style={{ padding: 6 }}>
-          <TwoLineHamburgerIcon color={colors.text} size={22} />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={() => setDrawerOpen(true)} style={{ padding: 6 }}>
+            <TwoLineHamburgerIcon color={colors.text} size={22} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Chat Messages */}
       <ScrollView
@@ -226,6 +231,14 @@ export function AITab({ projectId }: Props) {
         contentContainerStyle={{ padding: 16 }}
         showsVerticalScrollIndicator={false}
       >
+        {messages.length === 0 && (
+          <View style={{ paddingVertical: 20, paddingHorizontal: 4 }}>
+            <Text style={{ fontSize: 18, fontFamily: 'Inter_700Bold', color: colors.text, marginBottom: 12 }}>
+              cloudcode
+            </Text>
+          </View>
+        )}
+
         {messages.map((msg) => (
           <View key={msg.id} style={msg.role === 'user' ? styles.userRow : styles.modelRow}>
             <View style={msg.role === 'user' ? [styles.userBubble, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9' }] : styles.modelBubble}>
@@ -247,7 +260,7 @@ export function AITab({ projectId }: Props) {
         )}
       </ScrollView>
 
-      {/* Clean Input Composer Bar */}
+      {/* Card Input Composer Bar (matching Image 1) */}
       <View style={[styles.inputComposerOuter, { paddingBottom: isKeyboardVisible ? 6 : Math.max(insets.bottom, 10), backgroundColor: pageBgColor }]}>
         {attachedImage && (
           <View style={[styles.imagePreviewChip, { backgroundColor: isDark ? '#161821' : '#F1F5F9', borderColor: colors.border }]}>
@@ -273,22 +286,19 @@ export function AITab({ projectId }: Props) {
           </View>
         )}
 
+        {/* Outer Rounded Composer Card */}
         <View style={[
-          styles.cleanInputBox,
+          styles.agentComposerCard,
           {
             borderColor: isInputFocused ? (isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.2)') : colors.border,
-            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+            backgroundColor: isDark ? '#1A1C23' : '#F3F4F6',
           }
         ]}>
-          <TouchableOpacity onPress={() => setAttachModalVisible(true)} style={{ padding: 8 }} activeOpacity={0.7}>
-            <Plus size={20} color={colors.textSecondary} strokeWidth={2} />
-          </TouchableOpacity>
-
           <TextInput
             ref={inputRef}
-            style={[styles.cleanTextInput, { color: colors.text }]}
-            placeholder="Ask AI about this project..."
-            placeholderTextColor={colors.textSecondary + '70'}
+            style={[styles.agentTextInput, { color: colors.text }]}
+            placeholder="Ask anything, @ to mention, / for actions"
+            placeholderTextColor={colors.textSecondary + '80'}
             value={inputText}
             onChangeText={setInputText}
             multiline
@@ -297,51 +307,87 @@ export function AITab({ projectId }: Props) {
             onBlur={() => setIsInputFocused(false)}
           />
 
-          {isStreaming ? (
+          {/* Composer Footer Row inside Card */}
+          <View style={styles.agentComposerFooter}>
+            <TouchableOpacity onPress={() => setAttachModalVisible(true)} style={styles.agentFooterBtn} activeOpacity={0.7}>
+              <Plus size={16} color={colors.textSecondary} strokeWidth={2} />
+            </TouchableOpacity>
+
+            {/* Model Selector Dropdown Button */}
             <TouchableOpacity
-              onPress={() => stopGeneration()}
-              style={[
-                styles.sendBtnActive,
-                {
-                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.25)' : '#FEE2E2',
-                  borderWidth: 1,
-                  borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : '#FCA5A5',
-                }
-              ]}
+              onPress={() => setModelMenuVisible(true)}
+              style={[styles.modelSelectorBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}
               activeOpacity={0.7}
             >
-              <Square size={11} fill={isDark ? '#F87171' : '#DC2626'} color={isDark ? '#F87171' : '#DC2626'} />
+              <Text style={[styles.modelSelectorText, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
+                {selectedModel}
+              </Text>
+              <ChevronDown size={12} color={colors.textSecondary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handleSend}
-              disabled={inputText.trim() === '' && !attachedImage}
-              style={[
-                styles.sendBtnActive,
-                { backgroundColor: (inputText.trim() !== '' || attachedImage) ? colors.text : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)') }
-              ]}
-              activeOpacity={0.7}
-            >
-              <ArrowUp size={14} color={(inputText.trim() !== '' || attachedImage) ? (isDark ? '#030303' : '#FFFFFF') : colors.textSecondary} strokeWidth={2.2} />
+
+            <View style={{ flex: 1 }} />
+
+            {/* Mic Button */}
+            <TouchableOpacity style={styles.agentFooterBtn} activeOpacity={0.7}>
+              <VolumeHigh size={16} color={colors.textSecondary} strokeWidth={1.8} />
             </TouchableOpacity>
-          )}
+
+            {/* Send / Stop Button */}
+            {isStreaming ? (
+              <TouchableOpacity
+                onPress={() => stopGeneration()}
+                style={[styles.agentSendBtn, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.25)' : '#FEE2E2' }]}
+                activeOpacity={0.7}
+              >
+                <Square size={11} fill={isDark ? '#F87171' : '#DC2626'} color={isDark ? '#F87171' : '#DC2626'} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={handleSend}
+                disabled={inputText.trim() === '' && !attachedImage}
+                style={[
+                  styles.agentSendBtn,
+                  { backgroundColor: (inputText.trim() !== '' || attachedImage) ? colors.text : 'transparent' }
+                ]}
+                activeOpacity={0.7}
+              >
+                <ArrowUp size={14} color={(inputText.trim() !== '' || attachedImage) ? (isDark ? '#030303' : '#FFFFFF') : colors.textSecondary} strokeWidth={2.2} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
+
+        {/* Faint Footer Disclaimer */}
+        <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
+          AI may make mistakes. Double-check all generated code.
+        </Text>
       </View>
 
-      {/* Compact Popover Menu for + Button */}
-      {attachModalVisible && (
-        <Modal transparent visible={attachModalVisible} animationType="fade" onRequestClose={() => setAttachModalVisible(false)}>
-          <TouchableOpacity style={styles.attachPopoverOverlay} activeOpacity={1} onPress={() => setAttachModalVisible(false)}>
-            <View style={[styles.attachPopoverCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
-              <TouchableOpacity onPress={handleCameraCapture} style={[styles.attachOptionRow, { borderBottomColor: colors.border }]}>
-                <Camera size={16} color={colors.primary} strokeWidth={1.8} />
-                <Text style={[styles.attachOptionText, { color: colors.text }]}>Take Photo</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={handleGalleryUpload} style={styles.attachOptionRow}>
-                <ImageIcon size={16} color={colors.primary} strokeWidth={1.8} />
-                <Text style={[styles.attachOptionText, { color: colors.text }]}>Upload Image</Text>
-              </TouchableOpacity>
+      {/* Model Selector Modal Menu */}
+      {modelMenuVisible && (
+        <Modal transparent visible={modelMenuVisible} animationType="fade" onRequestClose={() => setModelMenuVisible(false)}>
+          <TouchableOpacity style={styles.attachPopoverOverlay} activeOpacity={1} onPress={() => setModelMenuVisible(false)}>
+            <View style={[styles.attachPopoverCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border, width: 220 }]}>
+              {[
+                'Gemini 3.6 Flash (High)',
+                'Gemini 3.5 Pro (Thinking)',
+                'Claude 3.5 Sonnet',
+                'GPT-4o',
+              ].map((modelName) => (
+                <TouchableOpacity
+                  key={modelName}
+                  onPress={() => {
+                    setSelectedModel(modelName)
+                    setModelMenuVisible(false)
+                  }}
+                  style={[styles.attachOptionRow, { borderBottomColor: colors.border, justifyContent: 'space-between' }]}
+                >
+                  <Text style={[styles.attachOptionText, { color: selectedModel === modelName ? colors.primary : colors.text }]}>
+                    {modelName}
+                  </Text>
+                  {selectedModel === modelName && <Check size={14} color={colors.primary} />}
+                </TouchableOpacity>
+              ))}
             </View>
           </TouchableOpacity>
         </Modal>
@@ -441,12 +487,20 @@ const styles = StyleSheet.create({
   modelRow: { alignItems: 'flex-start', marginVertical: 4 },
   userBubble: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '85%' },
   modelBubble: { paddingHorizontal: 4, paddingVertical: 4 },
-  inputComposerOuter: { paddingHorizontal: 16, paddingTop: 8 },
+  inputComposerOuter: { paddingHorizontal: 14, paddingTop: 6 },
   imagePreviewChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
+  agentComposerCard: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
+  agentTextInput: { fontSize: 13.5, fontFamily: 'Inter_400Regular', minHeight: 52, maxHeight: 120, paddingHorizontal: 4, paddingVertical: 4, textAlignVertical: 'top' },
+  agentComposerFooter: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 4 },
+  modelSelectorBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  modelSelectorText: { fontSize: 11 },
+  agentFooterBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  agentSendBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  disclaimerText: { fontSize: 10, fontFamily: 'Inter_400Regular', textAlign: 'center', marginTop: 6, opacity: 0.5 },
   cleanInputBox: { flexDirection: 'row', alignItems: 'center', borderRadius: 24, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, minHeight: 48 },
   cleanTextInput: { flex: 1, fontSize: 14, fontFamily: 'Inter_400Regular', maxHeight: 120, paddingHorizontal: 8, paddingVertical: 4 },
   sendBtnActive: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
-  attachPopoverOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', justifyContent: 'flex-end', paddingBottom: 72, paddingHorizontal: 16 },
+  attachPopoverOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   attachPopoverCard: { width: 190, borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 4, elevation: 6, shadowColor: '#000000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
   attachOptionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: 1 },
   attachOptionText: { fontSize: 13.5, fontFamily: 'Inter_500Medium' },
@@ -459,16 +513,6 @@ const styles = StyleSheet.create({
   recentConvoRow: { paddingVertical: 12, borderBottomWidth: 1 },
   openAllBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, marginVertical: 14 },
   drawerSettingsBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, borderTopWidth: 1 },
-  selectTextCard: {
-    width: '90%',
-    maxWidth: 400,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-    alignSelf: 'center',
-    marginBottom: 'auto',
-    marginTop: 'auto',
-  },
 })
 
 export default AITab;

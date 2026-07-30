@@ -1,8 +1,32 @@
-import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { useAppTheme } from '@/hooks/useAppTheme'
-import { IDE_LAYOUT } from '@/constants/tokens'
-import { ChevronLeft, RefreshCw, Settings, Folder, Terminal, Sparkles } from '@/components/HugeIconsShim'
+import Svg, { Rect, Line } from 'react-native-svg'
+import { Search, Settings, RefreshCw, ChevronLeft } from '@/components/HugeIconsShim'
+
+function SidebarLeftIcon({ size = 15, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Rect x="2.5" y="2.5" width="13" height="13" rx="2" stroke={color} strokeWidth="1.4" />
+      <Line x1="7" y1="2.5" x2="7" y2="15.5" stroke={color} strokeWidth="1.4" />
+    </Svg>
+  )
+}
+
+function BottomPanelIcon({ size = 15, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Rect x="2.5" y="2.5" width="13" height="13" rx="2" stroke={color} strokeWidth="1.4" />
+      <Line x1="2.5" y1="11" x2="15.5" y2="11" stroke={color} strokeWidth="1.4" />
+    </Svg>
+  )
+}
+
+function SidebarRightIcon({ size = 15, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Rect x="2.5" y="2.5" width="13" height="13" rx="2" stroke={color} strokeWidth="1.4" />
+      <Line x1="11" y1="2.5" x2="11" y2="15.5" stroke={color} strokeWidth="1.4" />
+    </Svg>
+  )
+}
 
 interface TitleBarProps {
   projectName: string
@@ -58,7 +82,7 @@ export default function TitleBar({
         CloudCode
       </Text>
 
-      {/* Right: Actions & Panel Toggles */}
+      {/* Right: Panel Toggles & Actions */}
       <View style={styles.rightSection}>
         {onToggleSidebar && (
           <TouchableOpacity
@@ -66,7 +90,7 @@ export default function TitleBar({
             style={[styles.iconBtn, sidebarVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
             activeOpacity={0.7}
           >
-            <Folder size={14} color={sidebarVisible ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+            <SidebarLeftIcon color={sidebarVisible ? colors.text : colors.textSecondary} />
           </TouchableOpacity>
         )}
 
@@ -76,7 +100,7 @@ export default function TitleBar({
             style={[styles.iconBtn, bottomPanelVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
             activeOpacity={0.7}
           >
-            <Terminal size={14} color={bottomPanelVisible ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+            <BottomPanelIcon color={bottomPanelVisible ? colors.text : colors.textSecondary} />
           </TouchableOpacity>
         )}
 
@@ -86,12 +110,12 @@ export default function TitleBar({
             style={[styles.iconBtn, rightPanelVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
             activeOpacity={0.7}
           >
-            <Sparkles size={14} color={rightPanelVisible ? (isDark ? '#A78BFA' : '#7C3AED') : colors.textSecondary} strokeWidth={1.8} />
+            <SidebarRightIcon color={rightPanelVisible ? colors.text : colors.textSecondary} />
           </TouchableOpacity>
         )}
 
         <TouchableOpacity onPress={onRefresh} style={styles.iconBtn} activeOpacity={0.7}>
-          <RefreshCw size={14} color={colors.textSecondary} strokeWidth={1.8} />
+          <Search size={14} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
 
         {onSettings && (
