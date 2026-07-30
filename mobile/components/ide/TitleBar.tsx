@@ -1,3 +1,7 @@
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useAppTheme } from '@/hooks/useAppTheme'
+import { IDE_LAYOUT } from '@/constants/tokens'
 import Svg, { Rect, Line } from 'react-native-svg'
 import { Search, Settings, RefreshCw, ChevronLeft } from '@/components/HugeIconsShim'
 

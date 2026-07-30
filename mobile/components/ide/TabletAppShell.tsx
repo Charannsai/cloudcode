@@ -12,9 +12,9 @@ import { ProjectIcon } from '@/components/ProjectIcon'
 import { AITab } from '@/components/project/AITab'
 import {
   Folder, Search, Sparkles, Settings, Plus, ChevronRight, RefreshCw,
-  Cpu, Database, Wifi, X, User, LogOut, CreditCard, GitBranch
+  Cpu, Database, Wifi, X, User, LogOut, CreditCard, GitBranch, History as HistoryIcon
 } from '@/components/HugeIconsShim'
-import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg'
+import Svg, { Path, Rect, Line, Defs, LinearGradient, Stop } from 'react-native-svg'
 
 type SidebarPanel = 'explorer' | 'search' | 'ai' | null
 
