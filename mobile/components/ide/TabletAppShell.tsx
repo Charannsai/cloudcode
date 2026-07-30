@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList, Image } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList, Image, TextInput, ActivityIndicator, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -217,12 +217,13 @@ const sbStyles = StyleSheet.create({
 
 // ─── Main Content: Welcome/Dashboard ────────────────────────
 function WelcomeContent({
-  projects, systemHealth, onProjectPress, onNewProject, isDark, colors, user
+  projects, systemHealth, onProjectPress, onOpenFolder, onCloneRepo, isDark, colors, user
 }: {
   projects: Project[]
   systemHealth: any
   onProjectPress: (p: Project) => void
-  onNewProject: () => void
+  onOpenFolder: () => void
+  onCloneRepo: () => void
   isDark: boolean
   colors: any
   user: any
@@ -251,7 +252,7 @@ function WelcomeContent({
         <View style={mainStyles.primaryButtonsRow}>
           <TouchableOpacity
             style={[mainStyles.openFolderBtn, { backgroundColor: '#0078D4' }]}
-            onPress={onNewProject}
+            onPress={onOpenFolder}
             activeOpacity={0.8}
           >
             <Folder size={16} color="#FFFFFF" strokeWidth={1.8} />
@@ -260,7 +261,7 @@ function WelcomeContent({
 
           <TouchableOpacity
             style={[mainStyles.cloneRepoBtn, { backgroundColor: isDark ? '#2D2D30' : '#E5E7EB', borderColor: colors.border }]}
-            onPress={onNewProject}
+            onPress={onCloneRepo}
             activeOpacity={0.8}
           >
             <GitBranch size={16} color={colors.text} strokeWidth={1.8} />
@@ -359,7 +360,7 @@ function AIRightPanel({
             <Plus size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setHistoryModalOpen(true)} style={rpStyles.closeBtn} activeOpacity={0.7}>
-            <History size={14} color={colors.textSecondary} strokeWidth={1.8} />
+            <HistoryIcon size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity onPress={onClose} style={rpStyles.closeBtn} activeOpacity={0.7}>
             <X size={14} color={colors.textSecondary} strokeWidth={1.8} />
@@ -430,11 +431,266 @@ function SidebarRightIcon({ size = 15, color }: { size?: number; color: string }
   )
 }
 
+// ─── Desktop IDE Top Menus ────────────────────────────────
+function IDETopMenus({
+  onOpenFolder, onCloneRepo, onSettingsPress, onToggleSidebar, onToggleRightPanel, colors, isDark
+}: {
+  onOpenFolder: () => void
+  onCloneRepo: () => void
+  onSettingsPress: () => void
+  onToggleSidebar: () => void
+  onToggleRightPanel: () => void
+  colors: any
+  isDark: boolean
+}) {
+  const [activeMenu, setActiveMenu] = useState<string | null>(null)
+  const MENUS = ['File', 'Edit', 'Selection', 'View', 'Go', 'Run', 'Terminal', 'Help']
+
+  const handleMenuClick = (menu: string) => {
+    setActiveMenu(activeMenu === menu ? null : menu)
+  }
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginLeft: 12 }}>
+      {MENUS.map((menu) => (
+        <TouchableOpacity
+          key={menu}
+          onPress={() => handleMenuClick(menu)}
+          style={[
+            tbStyles.menuBtn,
+            activeMenu === menu && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }
+          ]}
+          activeOpacity={0.7}
+        >
+          <Text style={[tbStyles.menuText, { color: activeMenu === menu ? colors.text : colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
+            {menu}
+          </Text>
+        </TouchableOpacity>
+      ))}
+
+      {/* File Dropdown Menu */}
+      {activeMenu === 'File' && (
+        <Modal transparent visible={true} animationType="none" onRequestClose={() => setActiveMenu(null)}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setActiveMenu(null)}>
+            <View style={[tbStyles.menuDropdownCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border, left: 130, top: 36 }]}>
+              <TouchableOpacity
+                style={tbStyles.dropdownRow}
+                onPress={() => { setActiveMenu(null); onOpenFolder() }}
+              >
+                <Folder size={14} color={colors.text} strokeWidth={1.8} />
+                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>Open Folder / Workspace...</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tbStyles.dropdownRow}
+                onPress={() => { setActiveMenu(null); onCloneRepo() }}
+              >
+                <GitBranch size={14} color={colors.text} strokeWidth={1.8} />
+                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>Clone Git Repository...</Text>
+              </TouchableOpacity>
+
+              <View style={[tbStyles.dropdownDivider, { backgroundColor: colors.border }]} />
+
+              <TouchableOpacity
+                style={tbStyles.dropdownRow}
+                onPress={() => { setActiveMenu(null); onSettingsPress() }}
+              >
+                <Settings size={14} color={colors.textSecondary} strokeWidth={1.8} />
+                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>Preferences & Settings</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* View Dropdown Menu */}
+      {activeMenu === 'View' && (
+        <Modal transparent visible={true} animationType="none" onRequestClose={() => setActiveMenu(null)}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setActiveMenu(null)}>
+            <View style={[tbStyles.menuDropdownCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border, left: 240, top: 36 }]}>
+              <TouchableOpacity
+                style={tbStyles.dropdownRow}
+                onPress={() => { setActiveMenu(null); onToggleSidebar() }}
+              >
+                <SidebarLeftIcon color={colors.text} />
+                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>Toggle Explorer Sidebar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tbStyles.dropdownRow}
+                onPress={() => { setActiveMenu(null); onToggleRightPanel() }}
+              >
+                <SidebarRightIcon color={colors.text} />
+                <Text style={[tbStyles.dropdownLabel, { color: colors.text }]}>Toggle Agent AI Panel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+    </View>
+  )
+}
+
+// ─── Open Folder / Create Workspace Modal ─────────────────
+function OpenFolderModal({
+  visible, onClose, onCreated, isDark, colors
+}: {
+  visible: boolean; onClose: () => void; onCreated: (project: Project) => void; isDark: boolean; colors: any
+}) {
+  const [name, setName] = useState('')
+  const [type, setType] = useState<any>('node')
+  const [loading, setLoading] = useState(false)
+
+  const handleCreate = async () => {
+    if (!name.trim()) return
+    setLoading(true)
+    try {
+      const project = await api.projects.create(name.trim(), type)
+      onCreated(project)
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to create workspace')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={modalStyles.overlay} activeOpacity={1} onPress={onClose}>
+        <View style={[modalStyles.card, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
+          <Text style={[modalStyles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+            Open / Create Workspace
+          </Text>
+
+          <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Workspace Name</Text>
+          <TextInput
+            style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
+            placeholder="e.g. my-awesome-app"
+            placeholderTextColor={colors.textSecondary + '70'}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="none"
+          />
+
+          <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Environment Preset</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {['node', 'react', 'nextjs', 'python', 'flask', 'fastapi', 'rust', 'gin', 'empty'].map((t) => (
+              <TouchableOpacity
+                key={t}
+                onPress={() => setType(t)}
+                style={[
+                  modalStyles.chip,
+                  {
+                    backgroundColor: type === t ? '#0078D4' : (isDark ? '#0F1218' : '#F6F8FA'),
+                    borderColor: colors.border,
+                  }
+                ]}
+              >
+                <Text style={[modalStyles.chipText, { color: type === t ? '#FFFFFF' : colors.text }]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <View style={modalStyles.actions}>
+            <TouchableOpacity onPress={onClose} style={[modalStyles.btn, { borderColor: colors.border, borderWidth: 1 }]} disabled={loading}>
+              <Text style={{ color: colors.text }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleCreate} style={[modalStyles.btn, { backgroundColor: '#0078D4' }]} disabled={loading || !name.trim()}>
+              {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }}>Open Workspace</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  )
+}
+
+// ─── Clone Repository Modal ──────────────────────────────
+function CloneRepoModal({
+  visible, onClose, onCloned, isDark, colors
+}: {
+  visible: boolean; onClose: () => void; onCloned: (project: Project) => void; isDark: boolean; colors: any
+}) {
+  const [name, setName] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleClone = async () => {
+    if (!githubUrl.trim()) return
+    const inferredName = name.trim() || githubUrl.split('/').pop()?.replace('.git', '') || 'cloned-repo'
+    setLoading(true)
+    try {
+      const project = await api.projects.import(inferredName, githubUrl.trim())
+      onCloned(project)
+    } catch (err: any) {
+      Alert.alert('Error Cloning Repo', err.message || 'Failed to clone repository')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={modalStyles.overlay} activeOpacity={1} onPress={onClose}>
+        <View style={[modalStyles.card, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
+          <Text style={[modalStyles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+            Clone Git Repository
+          </Text>
+
+          <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Repository URL</Text>
+          <TextInput
+            style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
+            placeholder="https://github.com/user/repository"
+            placeholderTextColor={colors.textSecondary + '70'}
+            value={githubUrl}
+            onChangeText={setGithubUrl}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Workspace Name (Optional)</Text>
+          <TextInput
+            style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
+            placeholder="Auto-detected from URL if empty"
+            placeholderTextColor={colors.textSecondary + '70'}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="none"
+          />
+
+          <View style={modalStyles.actions}>
+            <TouchableOpacity onPress={onClose} style={[modalStyles.btn, { borderColor: colors.border, borderWidth: 1 }]} disabled={loading}>
+              <Text style={{ color: colors.text }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleClone} style={[modalStyles.btn, { backgroundColor: '#0078D4' }]} disabled={loading || !githubUrl.trim()}>
+              {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }}>Clone Repository</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  )
+}
+
+const modalStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  card: { width: 440, borderRadius: 14, borderWidth: 1, padding: 20, gap: 12 },
+  title: { fontSize: 16 },
+  label: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  input: { height: 40, borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, fontSize: 13, fontFamily: 'Inter_400Regular' },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
+  chipText: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 8 },
+  btn: { height: 38, paddingHorizontal: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+})
+
 // ─── Title Bar ──────────────────────────────────────────────
 function IDETitleBar({
   user,
   isDark,
   colors,
+  onOpenFolder,
+  onCloneRepo,
   onSettingsPress,
   onToggleSidebar,
   onToggleRightPanel,
@@ -444,6 +700,8 @@ function IDETitleBar({
   user: any
   isDark: boolean
   colors: any
+  onOpenFolder: () => void
+  onCloneRepo: () => void
   onSettingsPress: () => void
   onToggleSidebar: () => void
   onToggleRightPanel: () => void
@@ -455,6 +713,18 @@ function IDETitleBar({
       <Text style={[tbStyles.brand, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
         CloudCode IDE
       </Text>
+
+      {/* Desktop IDE Top Menus */}
+      <IDETopMenus
+        onOpenFolder={onOpenFolder}
+        onCloneRepo={onCloneRepo}
+        onSettingsPress={onSettingsPress}
+        onToggleSidebar={onToggleSidebar}
+        onToggleRightPanel={onToggleRightPanel}
+        colors={colors}
+        isDark={isDark}
+      />
+
       <View style={{ flex: 1 }} />
       <View style={tbStyles.rightActions}>
         <TouchableOpacity
@@ -490,11 +760,17 @@ function IDETitleBar({
 }
 
 const tbStyles = StyleSheet.create({
-  container: { height: 38, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, borderBottomWidth: 1, gap: 10 },
-  brand: { fontSize: 14, letterSpacing: -0.3 },
+  container: { height: 38, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, borderBottomWidth: 1, gap: 4 },
+  brand: { fontSize: 13.5, letterSpacing: -0.3 },
   avatar: { width: 24, height: 24, borderRadius: 12, marginLeft: 4 },
   rightActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconBtn: { width: 30, height: 30, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  menuBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  menuText: { fontSize: 12 },
+  menuDropdownCard: { position: 'absolute', width: 210, borderRadius: 10, borderWidth: 1, paddingVertical: 4, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
+  dropdownRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  dropdownLabel: { fontSize: 12.5, fontFamily: 'Inter_400Regular' },
+  dropdownDivider: { height: 1, marginVertical: 4 },
 })
 
 // ─── Status Bar ─────────────────────────────────────────────
@@ -532,6 +808,8 @@ export default function TabletAppShell() {
   const [activePanel, setActivePanel] = useState<SidebarPanel>('explorer')
   const [aiVisible, setAiVisible] = useState(false)
   const [settingsVisible, setSettingsVisible] = useState(false)
+  const [openFolderVisible, setOpenFolderVisible] = useState(false)
+  const [cloneRepoVisible, setCloneRepoVisible] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [systemHealth, setSystemHealth] = useState<any>(null)
@@ -571,8 +849,11 @@ export default function TabletAppShell() {
     router.push(`/project/${project.id}`)
   }
 
-  const handleNewProject = () => {
-    router.push('/new-project')
+  const handleWorkspaceOpened = (project: Project) => {
+    setOpenFolderVisible(false)
+    setCloneRepoVisible(false)
+    fetchProjects()
+    router.push(`/project/${project.id}`)
   }
 
   const handleSettings = () => {
@@ -586,6 +867,8 @@ export default function TabletAppShell() {
         user={user}
         isDark={isDark}
         colors={colors}
+        onOpenFolder={() => setOpenFolderVisible(true)}
+        onCloneRepo={() => setCloneRepoVisible(true)}
         onSettingsPress={handleSettings}
         onToggleSidebar={() => setActivePanel(activePanel ? null : 'explorer')}
         onToggleRightPanel={() => setAiVisible(!aiVisible)}
@@ -612,7 +895,7 @@ export default function TabletAppShell() {
             projects={projects}
             loading={loading}
             onProjectPress={handleProjectPress}
-            onNewProject={handleNewProject}
+            onNewProject={() => setOpenFolderVisible(true)}
             onRefresh={fetchProjects}
             isDark={isDark}
             colors={colors}
@@ -628,7 +911,8 @@ export default function TabletAppShell() {
             projects={projects}
             systemHealth={systemHealth}
             onProjectPress={handleProjectPress}
-            onNewProject={handleNewProject}
+            onOpenFolder={() => setOpenFolderVisible(true)}
+            onCloneRepo={() => setCloneRepoVisible(true)}
             isDark={isDark}
             colors={colors}
             user={user}
@@ -641,6 +925,24 @@ export default function TabletAppShell() {
 
       {/* Status Bar */}
       <IDEStatusBar user={user} isDark={isDark} colors={colors} />
+
+      {/* Open Folder Modal */}
+      <OpenFolderModal
+        visible={openFolderVisible}
+        onClose={() => setOpenFolderVisible(false)}
+        onCreated={handleWorkspaceOpened}
+        isDark={isDark}
+        colors={colors}
+      />
+
+      {/* Clone Repo Modal */}
+      <CloneRepoModal
+        visible={cloneRepoVisible}
+        onClose={() => setCloneRepoVisible(false)}
+        onCloned={handleWorkspaceOpened}
+        isDark={isDark}
+        colors={colors}
+      />
 
       {/* Settings Modal */}
       <Modal
