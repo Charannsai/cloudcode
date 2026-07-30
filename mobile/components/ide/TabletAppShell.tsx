@@ -227,15 +227,6 @@ function WelcomeContent({
   colors: any
   user: any
 }) {
-  const getGreeting = () => {
-    const hours = new Date().getHours()
-    if (hours < 12) return 'Good morning'
-    if (hours < 18) return 'Good afternoon'
-    return 'Good evening'
-  }
-
-  const recentProjects = projects.slice(0, 5)
-
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -243,122 +234,82 @@ function WelcomeContent({
       showsVerticalScrollIndicator={false}
     >
       <View style={mainStyles.welcomeContainer}>
-        {/* Welcome Header */}
-        <View style={mainStyles.welcomeHeader}>
-          <Text style={[mainStyles.greeting, { color: colors.textSecondary, fontFamily: 'Inter_500Medium' }]}>
-            {getGreeting()} 👋
-          </Text>
-          <Text style={[mainStyles.userName, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-            {user?.name || user?.login || 'Developer'}
+        {/* Antigravity Logo & Title */}
+        <View style={mainStyles.logoSection}>
+          <Svg width={48} height={48} viewBox="0 0 100 100" fill="none">
+            <Path
+              d="M50 15C32 15 20 35 20 60C20 75 35 85 50 85C65 85 80 75 80 60C80 35 68 15 50 15ZM50 38C56 38 62 48 62 60C62 68 56 72 50 72C44 72 38 68 38 60C38 48 44 38 50 38Z"
+              fill={isDark ? '#FFFFFF' : '#000000'}
+            />
+          </Svg>
+          <Text style={[mainStyles.ideTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+            CloudCode IDE
           </Text>
         </View>
 
-        {/* Quick Actions */}
+        {/* Primary Action Buttons */}
+        <View style={mainStyles.primaryButtonsRow}>
+          <TouchableOpacity
+            style={[mainStyles.openFolderBtn, { backgroundColor: '#0078D4' }]}
+            onPress={onNewProject}
+            activeOpacity={0.8}
+          >
+            <Folder size={16} color="#FFFFFF" strokeWidth={1.8} />
+            <Text style={mainStyles.openFolderText}>Open Folder</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[mainStyles.cloneRepoBtn, { backgroundColor: isDark ? '#2D2D30' : '#E5E7EB', borderColor: colors.border }]}
+            onPress={onNewProject}
+            activeOpacity={0.8}
+          >
+            <GitBranch size={16} color={colors.text} strokeWidth={1.8} />
+            <Text style={[mainStyles.cloneRepoText, { color: colors.text }]}>Clone Repository</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Workspaces Section (matching Image 2) */}
         <View style={mainStyles.section}>
-          <Text style={[mainStyles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-            Start
+          <Text style={[mainStyles.sectionHeader, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+            Workspaces
           </Text>
-          <View style={mainStyles.actionsRow}>
-            <TouchableOpacity
-              style={[mainStyles.actionCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: colors.border }]}
-              onPress={onNewProject}
-              activeOpacity={0.7}
-            >
-              <Plus size={20} color={isDark ? '#58A6FF' : '#0969DA'} strokeWidth={1.8} />
-              <Text style={[mainStyles.actionLabel, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
-                New Workspace
+          <View style={{ gap: 8 }}>
+            {projects.slice(0, 4).map((project) => (
+              <TouchableOpacity
+                key={project.id}
+                style={[mainStyles.workspaceCard, { backgroundColor: isDark ? '#1E1E1E' : '#F3F4F6', borderColor: colors.border }]}
+                onPress={() => onProjectPress(project)}
+                activeOpacity={0.7}
+              >
+                <Text style={[mainStyles.wsName, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>
+                  {project.name}
+                </Text>
+                <Text style={[mainStyles.wsPath, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
+                  {`/workspaces/${project.name}`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Google Extensions Section (matching Image 2) */}
+        <View style={mainStyles.section}>
+          <Text style={[mainStyles.sectionHeader, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
+            Google Extensions
+          </Text>
+          <View style={[mainStyles.extensionCard, { backgroundColor: isDark ? '#1E1E1E' : '#F3F4F6', borderColor: colors.border }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[mainStyles.extTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+                Google Data Cloud
               </Text>
-              <Text style={[mainStyles.actionDesc, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                Create a new cloud workspace
+              <Text style={[mainStyles.extDesc, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                Google Data Cloud for your intelligent IDE.
               </Text>
+            </View>
+            <TouchableOpacity style={[mainStyles.downloadBtn, { backgroundColor: isDark ? '#2D2D30' : '#E5E7EB' }]} activeOpacity={0.7}>
+              <Text style={[mainStyles.downloadText, { color: colors.text }]}>Download</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Recent Workspaces */}
-        {recentProjects.length > 0 && (
-          <View style={mainStyles.section}>
-            <Text style={[mainStyles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-              Recent Workspaces
-            </Text>
-            {recentProjects.map((project) => {
-              const statusColor = project.status === 'ready' ? '#3FB950' : project.status === 'stopped' ? '#8B949E' : '#D2A8FF'
-              return (
-                <TouchableOpacity
-                  key={project.id}
-                  style={[mainStyles.recentItem, { borderColor: colors.border }]}
-                  onPress={() => onProjectPress(project)}
-                  activeOpacity={0.7}
-                >
-                  <ProjectIcon type={project.type} name={project.name} size={18} />
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={[mainStyles.recentName, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>{project.name}</Text>
-                    <Text style={[mainStyles.recentMeta, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                      {project.type || 'Empty'} • {project.container_status || project.status}
-                    </Text>
-                  </View>
-                  <View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: statusColor }]} />
-                  <ChevronRight size={14} color={colors.textSecondary} strokeWidth={1.5} />
-                </TouchableOpacity>
-              )
-            })}
-          </View>
-        )}
-
-        {/* System Health */}
-        {systemHealth && (
-          <View style={mainStyles.section}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={[mainStyles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-                System Health
-              </Text>
-              <Text style={[{ fontSize: 11, color: '#3FB950', fontFamily: 'Inter_500Medium' }]}>
-                ● Operational
-              </Text>
-            </View>
-            <View style={[mainStyles.healthCard, { backgroundColor: isDark ? '#161B22' : '#F6F8FA', borderColor: colors.border }]}>
-              <View style={mainStyles.healthRow}>
-                <Text style={[mainStyles.healthLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  <Cpu size={12} color={colors.textSecondary} strokeWidth={1.5} /> Server CPU
-                </Text>
-                <Text style={[mainStyles.healthValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {systemHealth.cpuLoad ?? '—'}%
-                </Text>
-              </View>
-              <View style={mainStyles.healthRow}>
-                <Text style={[mainStyles.healthLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  <Database size={12} color={colors.textSecondary} strokeWidth={1.5} /> Memory
-                </Text>
-                <Text style={[mainStyles.healthValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {systemHealth.memoryUsage ?? '—'}%
-                </Text>
-              </View>
-              <View style={mainStyles.healthRow}>
-                <Text style={[mainStyles.healthLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  <Wifi size={12} color={colors.textSecondary} strokeWidth={1.5} /> Containers
-                </Text>
-                <Text style={[mainStyles.healthValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {systemHealth.runningContainers ?? 0} active
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Tips */}
-        <View style={mainStyles.section}>
-          <Text style={[mainStyles.sectionTitle, { color: colors.textSecondary, fontFamily: 'Inter_600SemiBold' }]}>
-            Tips
-          </Text>
-          <Text style={[mainStyles.tip, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-            • Use the Explorer sidebar to browse and open workspaces
-          </Text>
-          <Text style={[mainStyles.tip, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-            • Toggle the AI panel from the activity bar for coding help
-          </Text>
-          <Text style={[mainStyles.tip, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-            • Each workspace has its own terminal, editor, and preview
-          </Text>
         </View>
       </View>
     </ScrollView>
@@ -367,24 +318,24 @@ function WelcomeContent({
 
 const mainStyles = StyleSheet.create({
   scrollContent: { paddingVertical: 40 },
-  welcomeContainer: { maxWidth: 640, alignSelf: 'center', width: '100%', paddingHorizontal: 40, gap: 32 },
-  welcomeHeader: { gap: 4 },
-  greeting: { fontSize: 14 },
-  userName: { fontSize: 26, letterSpacing: -0.5 },
+  welcomeContainer: { maxWidth: 520, alignSelf: 'center', width: '100%', paddingHorizontal: 24, gap: 28 },
+  logoSection: { alignItems: 'center', gap: 12, marginBottom: 8 },
+  ideTitle: { fontSize: 22, letterSpacing: -0.5 },
+  primaryButtonsRow: { gap: 10 },
+  openFolderBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, borderRadius: 6 },
+  openFolderText: { color: '#FFFFFF', fontSize: 13.5, fontFamily: 'Inter_600SemiBold' },
+  cloneRepoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, borderRadius: 6, borderWidth: 1 },
+  cloneRepoText: { fontSize: 13.5, fontFamily: 'Inter_600SemiBold' },
   section: { gap: 10 },
-  sectionTitle: { fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' },
-  actionsRow: { flexDirection: 'row', gap: 12 },
-  actionCard: { padding: 16, borderRadius: 10, borderWidth: 1, gap: 6, minWidth: 200 },
-  actionLabel: { fontSize: 14, marginTop: 4 },
-  actionDesc: { fontSize: 12 },
-  recentItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 6, borderBottomWidth: 1 },
-  recentName: { fontSize: 14 },
-  recentMeta: { fontSize: 11, marginTop: 2 },
-  healthCard: { borderRadius: 10, borderWidth: 1, padding: 14, gap: 10 },
-  healthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  healthLabel: { fontSize: 13, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  healthValue: { fontSize: 13 },
-  tip: { fontSize: 13, lineHeight: 20 },
+  sectionHeader: { fontSize: 13 },
+  workspaceCard: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 6, borderWidth: 1, gap: 2 },
+  wsName: { fontSize: 13.5 },
+  wsPath: { fontSize: 11, opacity: 0.7 },
+  extensionCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 6, borderWidth: 1, gap: 12 },
+  extTitle: { fontSize: 13.5 },
+  extDesc: { fontSize: 12 },
+  downloadBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6 },
+  downloadText: { fontSize: 12, fontFamily: 'Inter_500Medium' },
 })
 
 // ─── AI Right Panel ─────────────────────────────────────────
@@ -393,21 +344,22 @@ function AIRightPanel({
 }: {
   visible: boolean; onClose: () => void; isDark: boolean; colors: any
 }) {
-  const startNewChat = useAIStore((s) => s.startNewChat)
+  const { startNewChat, savedConversations, loadConversation } = useAIStore()
+  const [historyModalOpen, setHistoryModalOpen] = useState(false)
 
   if (!visible) return null
   return (
     <View style={[rpStyles.container, { backgroundColor: isDark ? '#0F1218' : '#FFFFFF', borderLeftColor: colors.border }]}>
       <View style={[rpStyles.header, { borderBottomColor: colors.border }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Sparkles size={14} color={isDark ? '#A78BFA' : '#7C3AED'} strokeWidth={2} />
-          <Text style={[rpStyles.headerTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
-            AI Assistant
-          </Text>
-        </View>
+        <Text style={[rpStyles.headerTitle, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
+          Agent
+        </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
           <TouchableOpacity onPress={startNewChat} style={rpStyles.closeBtn} activeOpacity={0.7}>
             <Plus size={14} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setHistoryModalOpen(true)} style={rpStyles.closeBtn} activeOpacity={0.7}>
+            <History size={14} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity onPress={onClose} style={rpStyles.closeBtn} activeOpacity={0.7}>
             <X size={14} color={colors.textSecondary} strokeWidth={1.8} />
@@ -417,6 +369,33 @@ function AIRightPanel({
       <View style={{ flex: 1 }}>
         <AITab projectId="" hideHeader={true} />
       </View>
+
+      {/* History Conversations Modal */}
+      {historyModalOpen && (
+        <Modal transparent visible={historyModalOpen} animationType="fade" onRequestClose={() => setHistoryModalOpen(false)}>
+          <TouchableOpacity style={rpStyles.modalOverlay} activeOpacity={1} onPress={() => setHistoryModalOpen(false)}>
+            <View style={[rpStyles.historyCard, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
+              <Text style={{ fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.text, marginBottom: 8 }}>
+                Past Conversations
+              </Text>
+              {savedConversations.slice(0, 8).map((thread) => (
+                <TouchableOpacity
+                  key={thread.id}
+                  onPress={async () => {
+                    await loadConversation(thread.id)
+                    setHistoryModalOpen(false)
+                  }}
+                  style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}
+                >
+                  <Text style={{ color: colors.text, fontSize: 12, fontFamily: 'Inter_500Medium' }} numberOfLines={1}>
+                    {thread.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </View>
   )
 }
@@ -426,10 +405,30 @@ const rpStyles = StyleSheet.create({
   header: { height: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, borderBottomWidth: 1 },
   headerTitle: { fontSize: 12 },
   closeBtn: { width: 24, height: 24, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
+  historyCard: { width: 260, maxHeight: 320, borderRadius: 12, borderWidth: 1, padding: 14, elevation: 8 },
 })
 
 import SettingsScreen from '@/app/(tabs)/settings'
 import { Modal } from 'react-native'
+
+function SidebarLeftIcon({ size = 15, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Rect x="2.5" y="2.5" width="13" height="13" rx="2" stroke={color} strokeWidth="1.4" />
+      <Line x1="7" y1="2.5" x2="7" y2="15.5" stroke={color} strokeWidth="1.4" />
+    </Svg>
+  )
+}
+
+function SidebarRightIcon({ size = 15, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+      <Rect x="2.5" y="2.5" width="13" height="13" rx="2" stroke={color} strokeWidth="1.4" />
+      <Line x1="11" y1="2.5" x2="11" y2="15.5" stroke={color} strokeWidth="1.4" />
+    </Svg>
+  )
+}
 
 // ─── Title Bar ──────────────────────────────────────────────
 function IDETitleBar({
@@ -454,7 +453,7 @@ function IDETitleBar({
   return (
     <View style={[tbStyles.container, { backgroundColor: isDark ? '#0D1117' : '#F6F8FA', borderBottomColor: colors.border }]}>
       <Text style={[tbStyles.brand, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-        CloudCode
+        CloudCode IDE
       </Text>
       <View style={{ flex: 1 }} />
       <View style={tbStyles.rightActions}>
@@ -463,7 +462,7 @@ function IDETitleBar({
           style={[tbStyles.iconBtn, sidebarVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
           activeOpacity={0.7}
         >
-          <Folder size={14} color={sidebarVisible ? colors.text : colors.textSecondary} strokeWidth={1.8} />
+          <SidebarLeftIcon color={sidebarVisible ? colors.text : colors.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -471,7 +470,11 @@ function IDETitleBar({
           style={[tbStyles.iconBtn, rightPanelVisible && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
           activeOpacity={0.7}
         >
-          <Sparkles size={14} color={rightPanelVisible ? (isDark ? '#A78BFA' : '#7C3AED') : colors.textSecondary} strokeWidth={1.8} />
+          <SidebarRightIcon color={rightPanelVisible ? colors.text : colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={tbStyles.iconBtn} activeOpacity={0.7}>
+          <Search size={14} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onSettingsPress} style={tbStyles.iconBtn} activeOpacity={0.7}>
