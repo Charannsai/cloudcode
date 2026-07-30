@@ -550,7 +550,7 @@ function OpenFolderModal({
 }) {
   const [tab, setTab] = useState<'local' | 'templates'>('local')
   const [name, setName] = useState('')
-  const [selectedLocalAsset, setSelectedLocalAsset] = useState<{ name: string; uri: string } | null>(null)
+  const [selectedLocalFolder, setSelectedLocalFolder] = useState<string | null>(null)
   const [type, setType] = useState<any>('node')
   const [loading, setLoading] = useState(false)
 
@@ -560,13 +560,13 @@ function OpenFolderModal({
   useEffect(() => {
     if (visible) {
       setName('')
-      setSelectedLocalAsset(null)
+      setSelectedLocalFolder(null)
     }
   }, [visible])
 
   const handleLaunchFileExplorer = async () => {
     try {
-      // 1. Web/Desktop browser: Use native HTML directory picker (webkitdirectory)
+      // 1. Web/Desktop browser: Native HTML directory picker
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
         const input = document.createElement('input')
         input.type = 'file'
@@ -578,7 +578,7 @@ function OpenFolderModal({
             const firstFile = files[0]
             const relativePath = firstFile.webkitRelativePath || firstFile.name
             const folderName = relativePath.split('/')[0] || 'local-folder'
-            setSelectedLocalAsset({ name: folderName, uri: 'folder://' + folderName })
+            setSelectedLocalFolder(folderName)
             setName(folderName)
           }
         }
@@ -586,7 +586,7 @@ function OpenFolderModal({
         return
       }
 
-      // 2. StorageAccessFramework for Android/Native directory selection ("Use this folder")
+      // 2. StorageAccessFramework for Android/Native directory selection
       const saf = (FileSystem as any).StorageAccessFramework
       if (saf?.requestDirectoryPermissionsAsync) {
         const permissions = await saf.requestDirectoryPermissionsAsync()
@@ -595,21 +595,21 @@ function OpenFolderModal({
           const decoded = decodeURIComponent(rawUri)
           const segments = decoded.split(/[:/]/).filter(Boolean)
           const folderName = segments[segments.length - 1] || 'local-folder'
-          setSelectedLocalAsset({ name: folderName, uri: rawUri })
+          setSelectedLocalFolder(folderName)
           setName(folderName)
           return
         }
       }
 
-      // 3. Fallback to DocumentPicker
+      // 3. DocumentPicker with folder UTI types for iOS/iPadOS folder selection
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-        copyToCacheDirectory: true,
+        type: ['public.folder', 'com.apple.finder.directory', '*/*'],
+        copyToCacheDirectory: false,
       })
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0]
         const cleanName = asset.name.replace(/\.[^/.]+$/, '')
-        setSelectedLocalAsset({ name: cleanName, uri: asset.uri })
+        setSelectedLocalFolder(cleanName)
         setName(cleanName)
       }
     } catch (err: any) {
@@ -618,7 +618,7 @@ function OpenFolderModal({
   }
 
   const handleCreate = async () => {
-    const finalName = name.trim() || selectedLocalAsset?.name.replace(/\.[^/.]+$/, '') || 'local-workspace'
+    const finalName = name.trim() || selectedLocalFolder || 'local-workspace'
     setLoading(true)
     try {
       const project = await api.projects.create(finalName, tab === 'local' ? 'empty' : type)
@@ -633,7 +633,7 @@ function OpenFolderModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={modalStyles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={[modalStyles.card, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border }]}>
+        <View style={[modalStyles.card, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border, width: 440 }]}>
           <Text style={[modalStyles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
             Open Folder
           </Text>
@@ -669,29 +669,41 @@ function OpenFolderModal({
 
           {tab === 'local' ? (
             <View style={{ gap: 12 }}>
-              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Folder / Workspace Name</Text>
+              <Text style={[modalStyles.label, { color: colors.textSecondary }]}>Select Local Folder</Text>
+              
+              <TouchableOpacity
+                onPress={handleLaunchFileExplorer}
+                style={[
+                  modalStyles.pickerBox,
+                  {
+                    backgroundColor: isDark ? '#0F1218' : '#F6F8FA',
+                    borderColor: selectedLocalFolder ? (isDark ? '#FFFFFF' : '#000000') : colors.border,
+                    borderWidth: selectedLocalFolder ? 1.5 : 1,
+                    paddingVertical: 14
+                  }
+                ]}
+                activeOpacity={0.7}
+              >
+                <Folder size={20} color={selectedLocalFolder ? (isDark ? '#FFFFFF' : '#000000') : colors.textSecondary} strokeWidth={1.8} />
+                <Text style={{ color: selectedLocalFolder ? colors.text : colors.textSecondary, flex: 1, fontSize: 13, fontFamily: selectedLocalFolder ? 'Inter_600SemiBold' : 'Inter_400Regular' }} numberOfLines={1}>
+                  {selectedLocalFolder ? `Folder: ${selectedLocalFolder}` : 'Tap to select folder from device...'}
+                </Text>
+                <View style={{ backgroundColor: primaryBtnBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 11, color: primaryBtnText, fontFamily: 'Inter_600SemiBold' }}>
+                    {selectedLocalFolder ? 'Change Folder' : 'Select Folder'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <Text style={[modalStyles.label, { color: colors.textSecondary, marginTop: 4 }]}>Workspace Name</Text>
               <TextInput
                 style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
-                placeholder="Enter folder name (e.g. my-project)"
+                placeholder="Workspace name"
                 placeholderTextColor={colors.textSecondary + '70'}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="none"
               />
-
-              <TouchableOpacity
-                onPress={handleLaunchFileExplorer}
-                style={[modalStyles.pickerBox, { backgroundColor: isDark ? '#0F1218' : '#F6F8FA', borderColor: colors.border }]}
-                activeOpacity={0.7}
-              >
-                <Folder size={18} color={selectedLocalAsset ? (isDark ? '#FFFFFF' : '#000000') : colors.textSecondary} strokeWidth={1.8} />
-                <Text style={{ color: selectedLocalAsset ? colors.text : colors.textSecondary, flex: 1, fontSize: 12.5 }} numberOfLines={1}>
-                  {selectedLocalAsset ? `Selected: ${selectedLocalAsset.name}` : 'Optional: Browse device storage...'}
-                </Text>
-                <View style={{ backgroundColor: isDark ? '#262933' : '#E5E7EB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
-                  <Text style={{ fontSize: 11, color: colors.text, fontFamily: 'Inter_600SemiBold' }}>Browse...</Text>
-                </View>
-              </TouchableOpacity>
             </View>
           ) : (
             <View style={{ gap: 10 }}>
@@ -733,13 +745,13 @@ function OpenFolderModal({
             <TouchableOpacity
               onPress={handleCreate}
               style={[modalStyles.btn, { backgroundColor: primaryBtnBg }]}
-              disabled={loading || (tab === 'local' && !name.trim() && !selectedLocalAsset)}
+              disabled={loading || (tab === 'local' && !name.trim() && !selectedLocalFolder)}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={primaryBtnText} />
               ) : (
                 <Text style={{ color: primaryBtnText, fontFamily: 'Inter_600SemiBold' }}>
-                  {tab === 'local' ? 'Open Local Folder' : 'Create from Template'}
+                  {tab === 'local' ? 'Open Folder' : 'Create from Template'}
                 </Text>
               )}
             </TouchableOpacity>
