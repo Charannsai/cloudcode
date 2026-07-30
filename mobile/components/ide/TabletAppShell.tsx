@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList, Image, TextInput, ActivityIndicator, Alert, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import * as DocumentPicker from 'expo-document-picker'
+import * as FileSystem from 'expo-file-system'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import { useAuthStore } from '@/store/auth'
@@ -565,6 +566,7 @@ function OpenFolderModal({
 
   const handleLaunchFileExplorer = async () => {
     try {
+      // 1. Web/Desktop browser: Use native HTML directory picker (webkitdirectory)
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
         const input = document.createElement('input')
         input.type = 'file'
@@ -584,6 +586,22 @@ function OpenFolderModal({
         return
       }
 
+      // 2. StorageAccessFramework for Android/Native directory selection ("Use this folder")
+      const saf = (FileSystem as any).StorageAccessFramework
+      if (saf?.requestDirectoryPermissionsAsync) {
+        const permissions = await saf.requestDirectoryPermissionsAsync()
+        if (permissions.granted && permissions.directoryUri) {
+          const rawUri = permissions.directoryUri
+          const decoded = decodeURIComponent(rawUri)
+          const segments = decoded.split(/[:/]/).filter(Boolean)
+          const folderName = segments[segments.length - 1] || 'local-folder'
+          setSelectedLocalAsset({ name: folderName, uri: rawUri })
+          setName(folderName)
+          return
+        }
+      }
+
+      // 3. Fallback to DocumentPicker
       const result = await DocumentPicker.getDocumentAsync({
         type: '*/*',
         copyToCacheDirectory: true,
@@ -591,11 +609,11 @@ function OpenFolderModal({
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0]
         const cleanName = asset.name.replace(/\.[^/.]+$/, '')
-        setSelectedLocalAsset({ name: asset.name, uri: asset.uri })
+        setSelectedLocalAsset({ name: cleanName, uri: asset.uri })
         setName(cleanName)
       }
     } catch (err: any) {
-      Alert.alert('File Picker', 'Could not open file explorer: ' + (err?.message || String(err)))
+      Alert.alert('Folder Picker', 'Could not open folder picker: ' + (err?.message || String(err)))
     }
   }
 
