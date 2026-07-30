@@ -89,13 +89,9 @@ export function useTerminal({ projectId, terminalId, onOutput, onReady }: UseTer
         }
       }
 
+
       ws.onerror = () => setError('WebSocket connection error')
-      ws.onclose = (e) => {
-        setConnected(false)
-        if (e.code !== 1000) {
-          setError(`Connection closed (${e.code}: ${e.reason || 'unknown'})`)
-        }
-      }
+      ws.onclose = () => setConnected(false)
     }
 
     connect()

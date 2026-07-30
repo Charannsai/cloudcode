@@ -18,9 +18,14 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   const customAnthropicKey = await AsyncStorage.getItem('custom_anthropic_key')
   const customGroqKey = await AsyncStorage.getItem('custom_groq_key')
 
-  console.log('[API FETCH DEBUG]', endpoint, 'token:', token ? token.slice(0, 15) + '...' : 'NULL')
+  // Ensure endpoint has trailing slash to avoid 308 redirects from Next.js (trailingSlash: true).
+  // iOS/iPadOS NSURLSession drops the request body on 308 redirects for POST/PUT/PATCH/DELETE,
+  // causing those requests to silently hang.
+  const [pathPart, queryPart] = endpoint.split('?')
+  const normalizedPath = pathPart.endsWith('/') ? pathPart : pathPart + '/'
+  const normalizedEndpoint = queryPart ? `${normalizedPath}?${queryPart}` : normalizedPath
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(`${API_URL}${normalizedEndpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -314,7 +319,7 @@ export const api = {
 
       return new Promise<void>((resolve, reject) => {
         let aborted = false
-        const es = new EventSource(`${API_URL}/cc-api/ai/runs/${runId}/chat`, {
+        const es = new EventSource(`${API_URL}/cc-api/ai/runs/${runId}/chat/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -402,7 +407,7 @@ export const api = {
 
       return new Promise<void>((resolve, reject) => {
         let aborted = false
-        const es = new EventSource(`${API_URL}/cc-api/ai/chat`, {
+        const es = new EventSource(`${API_URL}/cc-api/ai/chat/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
