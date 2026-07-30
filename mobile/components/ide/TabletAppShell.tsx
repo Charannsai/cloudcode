@@ -553,6 +553,9 @@ function OpenFolderModal({
   const [selectedLocalFolder, setSelectedLocalFolder] = useState<string | null>(null)
   const [type, setType] = useState<any>('node')
   const [loading, setLoading] = useState(false)
+  const [showInAppBrowser, setShowInAppBrowser] = useState(false)
+  const [localDirFiles, setLocalDirFiles] = useState<string[]>([])
+  const [currentPath, setCurrentPath] = useState<string>((FileSystem as any).documentDirectory || '')
 
   const primaryBtnBg = isDark ? '#FFFFFF' : '#0F1218'
   const primaryBtnText = isDark ? '#000000' : '#FFFFFF'
@@ -561,12 +564,25 @@ function OpenFolderModal({
     if (visible) {
       setName('')
       setSelectedLocalFolder(null)
+      setShowInAppBrowser(false)
+      loadLocalDirectory((FileSystem as any).documentDirectory || '')
     }
   }, [visible])
 
+  const loadLocalDirectory = async (path: string) => {
+    try {
+      if (path && FileSystem.readDirectoryAsync) {
+        const files = await FileSystem.readDirectoryAsync(path)
+        setLocalDirFiles(files)
+        setCurrentPath(path)
+      }
+    } catch (e) {
+      console.log('Error reading directory:', e)
+    }
+  }
+
   const handleLaunchFileExplorer = async () => {
     try {
-      // 1. Web/Desktop browser: Native HTML directory picker
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
         const input = document.createElement('input')
         input.type = 'file'
@@ -586,7 +602,6 @@ function OpenFolderModal({
         return
       }
 
-      // 2. StorageAccessFramework for Android/Native directory selection
       const saf = (FileSystem as any).StorageAccessFramework
       if (saf?.requestDirectoryPermissionsAsync) {
         const permissions = await saf.requestDirectoryPermissionsAsync()
@@ -601,12 +616,21 @@ function OpenFolderModal({
         }
       }
 
-      // 3. DocumentPicker with folder UTI types for iOS/iPadOS folder selection
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['public.folder', 'com.apple.finder.directory', '*/*'],
-        copyToCacheDirectory: false,
-      })
-      if (!result.canceled && result.assets && result.assets.length > 0) {
+      // 3. DocumentPicker for iOS/iPadOS - MUST use 'public.folder' to activate iOS Directory Selection Mode
+      let result;
+      try {
+        result = await DocumentPicker.getDocumentAsync({
+          type: 'public.folder',
+          copyToCacheDirectory: false,
+        })
+      } catch (e) {
+        result = await DocumentPicker.getDocumentAsync({
+          type: '*/*',
+          copyToCacheDirectory: false,
+        })
+      }
+
+      if (result && !result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0]
         const cleanName = asset.name.replace(/\.[^/.]+$/, '')
         setSelectedLocalFolder(cleanName)
@@ -633,7 +657,7 @@ function OpenFolderModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={modalStyles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={[modalStyles.card, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border, width: 440 }]}>
+        <View style={[modalStyles.card, { backgroundColor: isDark ? '#161821' : '#FFFFFF', borderColor: colors.border, width: 460 }]}>
           <Text style={[modalStyles.title, { color: colors.text, fontFamily: 'Inter_600SemiBold' }]}>
             Open Folder
           </Text>
@@ -686,11 +710,11 @@ function OpenFolderModal({
               >
                 <Folder size={20} color={selectedLocalFolder ? (isDark ? '#FFFFFF' : '#000000') : colors.textSecondary} strokeWidth={1.8} />
                 <Text style={{ color: selectedLocalFolder ? colors.text : colors.textSecondary, flex: 1, fontSize: 13, fontFamily: selectedLocalFolder ? 'Inter_600SemiBold' : 'Inter_400Regular' }} numberOfLines={1}>
-                  {selectedLocalFolder ? `Folder: ${selectedLocalFolder}` : 'Tap to select folder from device...'}
+                  {selectedLocalFolder ? `Selected Folder: ${selectedLocalFolder}` : 'No folder selected yet'}
                 </Text>
                 <View style={{ backgroundColor: primaryBtnBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
                   <Text style={{ fontSize: 11, color: primaryBtnText, fontFamily: 'Inter_600SemiBold' }}>
-                    {selectedLocalFolder ? 'Change Folder' : 'Select Folder'}
+                    Local Browse...
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -698,7 +722,7 @@ function OpenFolderModal({
               <Text style={[modalStyles.label, { color: colors.textSecondary, marginTop: 4 }]}>Workspace Name</Text>
               <TextInput
                 style={[modalStyles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? '#0F1218' : '#F6F8FA' }]}
-                placeholder="Workspace name"
+                placeholder="Workspace name (e.g. Test)"
                 placeholderTextColor={colors.textSecondary + '70'}
                 value={name}
                 onChangeText={setName}
