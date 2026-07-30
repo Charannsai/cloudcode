@@ -2,6 +2,7 @@ import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['192.168.29.148', 'localhost', '127.0.0.1'],
   trailingSlash: true,
   // Allow WebSocket upgrades for terminal
   serverExternalPackages: ['ws', 'node-pty', 'dockerode', 'dd-trace'],
@@ -14,7 +15,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, x-authorization, x-byok-enabled, x-gemini-key, x-openai-key, x-anthropic-key, x-groq-key' },
         ],
       },
     ]

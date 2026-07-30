@@ -9,8 +9,13 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.cloudcode.app"
+  "supportsTablet": true,
+  "bundleIdentifier": "com.cloudcode.app",
+  "infoPlist": {
+    "NSAppTransportSecurity": {
+      "NSAllowsArbitraryLoads": true
+    }
+  }
     },
     "splash": {
       "image": "./assets/splash-icon.png",
