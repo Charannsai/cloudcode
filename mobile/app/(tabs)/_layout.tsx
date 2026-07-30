@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Tabs, useRouter } from 'expo-router'
 import { View, TouchableOpacity, StyleSheet, Keyboard, Platform, Text } from 'react-native'
 import { useAppTheme } from '@/hooks/useAppTheme'
@@ -17,9 +17,6 @@ import { useUIStore } from '@/store/ui'
 import { SvgIcon } from '@/components/SvgIcon'
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import TabletSidebarNav from '@/components/ide/TabletSidebarNav'
-import AppTitleBar from '@/components/ide/AppTitleBar'
-import AppStatusBar from '@/components/ide/AppStatusBar'
 
 const TAB_ANIM_CONFIG = {
   duration: 200,
@@ -270,78 +267,15 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   )
 }
 
-/**
- * Tablet IDE Shell Tab Bar Bridge.
- * Renders nothing visible — extracts navigation state from the Tabs navigator
- * and passes it to the parent so the sidebar can be rendered outside.
- */
-function TabletTabBarBridge({ state, navigation, onStateChange }: any) {
-  // Sync on mount and every index change
-  useEffect(() => {
-    onStateChange?.({ state, navigation })
-  }, [state, state.index, navigation])
-  
-  return null
-}
+import TabletAppShell from '@/components/ide/TabletAppShell'
 
 export default function TabsLayout() {
   const { colors, isDark } = useAppTheme()
   const { isTablet } = useDeviceType()
-  const insets = useSafeAreaInsets()
 
-  // Hoist tab navigation state for the sidebar
-  const [tabNav, setTabNav] = useState<{ state: any; navigation: any } | null>(null)
-
+  // Tablet: Full IDE shell — no tabs, no mobile navigation
   if (isTablet) {
-    return (
-      <View style={[tabletStyles.outerShell, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        {/* Top Title Bar */}
-        <AppTitleBar />
-
-        {/* Main area: sidebar + content */}
-        <View style={tabletStyles.mainRow}>
-          {/* Sidebar — rendered OUTSIDE the Tabs navigator */}
-          {tabNav && (
-            <TabletSidebarNav
-              state={tabNav.state}
-              descriptors={{}}
-              navigation={tabNav.navigation}
-            />
-          )}
-
-          {/* Tab screens */}
-          <View style={{ flex: 1 }}>
-            <Tabs
-              detachInactiveScreens={true}
-              tabBar={(props) => (
-                <TabletTabBarBridge
-                  state={props.state}
-                  navigation={props.navigation}
-                  onStateChange={setTabNav}
-                />
-              )}
-              // @ts-ignore
-              sceneContainerStyle={{ backgroundColor: colors.background }}
-              screenOptions={{
-                headerShown: false,
-                animation: 'none',
-                freezeOnBlur: true,
-                tabBarStyle: { display: 'none' },
-              }}
-            >
-              <Tabs.Screen name="dashboard" options={{ title: 'Home' }} />
-              <Tabs.Screen name="projects" options={{ title: 'Projects' }} />
-              <Tabs.Screen name="ai" options={{ title: 'AI' }} />
-              <Tabs.Screen name="usage" options={{ title: 'Usage' }} />
-              <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
-            </Tabs>
-          </View>
-        </View>
-
-        {/* Bottom Status Bar */}
-        <AppStatusBar />
-      </View>
-    )
+    return <TabletAppShell />
   }
 
   // Phone: original floating pill tab bar
@@ -472,19 +406,5 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 10.5,
     letterSpacing: 0.1,
-  },
-})
-
-// Tablet-specific styles
-const tabletStyles = StyleSheet.create({
-  outerShell: {
-    flex: 1,
-  },
-  mainRow: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  sidebarContainer: {
-    // The sidebar is positioned to the left of the content
   },
 })
