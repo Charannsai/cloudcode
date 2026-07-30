@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/auth'
 import { api } from '@/lib/api'
 import { Project } from '@/types'
 import { SvgIcon } from '@/components/SvgIcon'
-import { ProjectIcon, detectProjectTech, getTechColors } from '@/components/ProjectIcon'
+import { ProjectIcon } from '@/components/ProjectIcon'
 import AITab from '@/components/project/AITab'
 import {
   Folder, Search, Sparkles, Settings, Plus, ChevronRight, RefreshCw,
@@ -135,8 +135,6 @@ function ExplorerSidebar({
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {projects.map((project) => {
-          const tech = detectProjectTech(project)
-          const techColors = getTechColors(tech)
           const statusColor = project.status === 'ready' ? '#3FB950' : project.status === 'stopped' ? '#8B949E' : '#D2A8FF'
 
           return (
@@ -146,13 +144,13 @@ function ExplorerSidebar({
               onPress={() => onProjectPress(project)}
               activeOpacity={0.7}
             >
-              <ProjectIcon tech={tech} size={16} />
+              <ProjectIcon type={project.type} name={project.name} size={16} />
               <View style={{ flex: 1, marginLeft: 8 }}>
                 <Text style={[sbStyles.projectName, { color: colors.text, fontFamily: 'Inter_500Medium' }]} numberOfLines={1}>
                   {project.name}
                 </Text>
                 <Text style={[sbStyles.projectMeta, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]} numberOfLines={1}>
-                  {project.language || 'Empty'}
+                  {project.type || 'Empty'}
                 </Text>
               </View>
               <View style={[sbStyles.statusDot, { backgroundColor: statusColor }]} />
@@ -272,7 +270,6 @@ function WelcomeContent({
               Recent Workspaces
             </Text>
             {recentProjects.map((project) => {
-              const tech = detectProjectTech(project)
               const statusColor = project.status === 'ready' ? '#3FB950' : project.status === 'stopped' ? '#8B949E' : '#D2A8FF'
               return (
                 <TouchableOpacity
@@ -281,11 +278,11 @@ function WelcomeContent({
                   onPress={() => onProjectPress(project)}
                   activeOpacity={0.7}
                 >
-                  <ProjectIcon tech={tech} size={18} />
+                  <ProjectIcon type={project.type} name={project.name} size={18} />
                   <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={[mainStyles.recentName, { color: colors.text, fontFamily: 'Inter_500Medium' }]}>{project.name}</Text>
                     <Text style={[mainStyles.recentMeta, { color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                      {project.language || 'Empty'} • {project.container_status || project.status}
+                      {project.type || 'Empty'} • {project.container_status || project.status}
                     </Text>
                   </View>
                   <View style={[{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: statusColor }]} />
@@ -313,7 +310,7 @@ function WelcomeContent({
                   <Cpu size={12} color={colors.textSecondary} strokeWidth={1.5} /> Server CPU
                 </Text>
                 <Text style={[mainStyles.healthValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {systemHealth.cpu_usage || '—'}%
+                  {systemHealth.cpuLoad ?? '—'}%
                 </Text>
               </View>
               <View style={mainStyles.healthRow}>
@@ -321,15 +318,15 @@ function WelcomeContent({
                   <Database size={12} color={colors.textSecondary} strokeWidth={1.5} /> Memory
                 </Text>
                 <Text style={[mainStyles.healthValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {systemHealth.memory_usage || '—'}%
+                  {systemHealth.memoryUsage ?? '—'}%
                 </Text>
               </View>
               <View style={mainStyles.healthRow}>
                 <Text style={[mainStyles.healthLabel, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  <Wifi size={12} color={colors.textSecondary} strokeWidth={1.5} /> Ping
+                  <Wifi size={12} color={colors.textSecondary} strokeWidth={1.5} /> Containers
                 </Text>
                 <Text style={[mainStyles.healthValue, { color: colors.text, fontFamily: 'JetBrainsMono_400Regular' }]}>
-                  {systemHealth.latency || '—'}ms
+                  {systemHealth.runningContainers ?? 0} active
                 </Text>
               </View>
             </View>
@@ -490,7 +487,7 @@ export default function TabletAppShell() {
 
   const fetchHealth = useCallback(async () => {
     try {
-      const data = await api.system.health()
+      const data = await api.system.diagnostics()
       setSystemHealth(data)
     } catch (err) {
       console.error(err)
