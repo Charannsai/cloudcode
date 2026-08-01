@@ -18,6 +18,8 @@ import { WebView } from 'react-native-webview'
 import { getToken } from '@/lib/auth'
 import { BlurView } from 'expo-blur'
 import Reanimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated'
+import { GlobalHotkeyBridge } from '@/components/ide/GlobalHotkeyBridge'
+import { DesktopMousePointer } from '@/components/ide/DesktopMousePointer'
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://165.22.219.62:3000'
 
@@ -59,9 +61,11 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
     body, html {
       margin: 0; padding: 0; height: 100%; width: 100%;
       overflow: hidden; background: ${bg};
+      cursor: text !important;
     }
     * {
       -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
       box-sizing: border-box;
     }
     .cm-s-custom.CodeMirror {
@@ -71,19 +75,23 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
       font-size: 13px;
       line-height: 1.6;
       height: 100%;
+      cursor: text !important;
     }
     .cm-s-custom .CodeMirror-gutters {
       background: ${isDark ? '#030303' : '#FAFAFA'} !important;
       border-right: 1px solid ${border} !important;
       width: 40px;
+      cursor: default !important;
     }
     .cm-s-custom .CodeMirror-linenumber {
       color: ${textSecondary} !important;
       opacity: 0.6;
       padding-right: 8px;
+      cursor: default !important;
     }
     .cm-s-custom .CodeMirror-cursor {
-      border-left: 2px solid ${primary} !important;
+      border-left: 2.5px solid ${primary} !important;
+      box-shadow: 0 0 8px ${primary}88;
     }
     .cm-s-custom div.CodeMirror-selected {
       background: ${primary}25 !important;
@@ -176,6 +184,37 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
         type: 'FOCUS_PANE'
       }));
     });
+
+    // Hardware Keyboard Listener (Ctrl+~, Ctrl+B, Ctrl+S, Ctrl+W, Ctrl+Shift+F)
+    function handleKeyShortcut(e) {
+      var isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      var key = e.key ? e.key.toLowerCase() : '';
+      var code = e.code || '';
+
+      if (isCtrlOrCmd && (key === '\`' || key === '~' || code === 'Backquote' || e.keyCode === 192)) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_TOGGLE_TERMINAL' }));
+      } else if (isCtrlOrCmd && !e.shiftKey && key === 'b') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_TOGGLE_SIDEBAR' }));
+      } else if (isCtrlOrCmd && !e.shiftKey && key === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_SAVE' }));
+      } else if (isCtrlOrCmd && !e.shiftKey && key === 'w') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_CLOSE_TAB' }));
+      } else if (isCtrlOrCmd && e.shiftKey && key === 'f') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_SEARCH' }));
+      }
+    }
+    window.addEventListener('keydown', handleKeyShortcut, true);
+    document.addEventListener('keydown', handleKeyShortcut, true);
 
     window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'EDITOR_READY' }));
   </script>
@@ -1079,6 +1118,10 @@ export default function EditorScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Global Hotkey Bridge & Desktop Mouse Pointer Overlay */}
+      <GlobalHotkeyBridge onSave={handleSave} />
+      <DesktopMousePointer />
 
       {/* File Picker Modal */}
       <Modal visible={showFilePicker} animationType="none" transparent onRequestClose={() => setShowFilePicker(false)}>

@@ -6,6 +6,8 @@ import { useTabletLayoutStore } from '@/store/tabletLayoutStore'
 import { api } from '@/lib/api'
 import { Sparkles, Folder, Terminal, Code } from '@/components/HugeIconsShim'
 import { TouchableOpacity } from 'react-native'
+import { GlobalHotkeyBridge } from './GlobalHotkeyBridge'
+import { DesktopMousePointer } from './DesktopMousePointer'
 
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://165.22.219.62:3000'
 
@@ -47,8 +49,13 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
     body, html {
       margin: 0; padding: 0; height: 100%; width: 100%;
       overflow: hidden; background: ${bg};
+      cursor: text !important;
     }
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
     .cm-s-custom.CodeMirror {
       background: ${bg} !important;
       color: ${text} !important;
@@ -56,19 +63,23 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
       font-size: 13px;
       line-height: 1.6;
       height: 100%;
+      cursor: text !important;
     }
     .cm-s-custom .CodeMirror-gutters {
       background: ${isDark ? '#0D1117' : '#FAFAFA'} !important;
       border-right: 1px solid ${border} !important;
       width: 48px;
+      cursor: default !important;
     }
     .cm-s-custom .CodeMirror-linenumber {
       color: ${textSecondary} !important;
       opacity: 0.5;
       padding-right: 10px;
+      cursor: default !important;
     }
     .cm-s-custom .CodeMirror-cursor {
-      border-left: 2px solid ${primary} !important;
+      border-left: 2.5px solid ${primary} !important;
+      box-shadow: 0 0 8px ${primary}88;
     }
     .cm-s-custom div.CodeMirror-selected {
       background: ${primary}25 !important;
@@ -146,6 +157,38 @@ function getCodeMirrorHtml(isDark: boolean, colors: any) {
         selection: selection
       }));
     });
+
+    // Hardware Keyboard Listener (Ctrl+~, Ctrl+B, Ctrl+S, Ctrl+W, Ctrl+Shift+F)
+    function handleKeyShortcut(e) {
+      var isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      var key = e.key ? e.key.toLowerCase() : '';
+      var code = e.code || '';
+
+      if (isCtrlOrCmd && (key === '\`' || key === '~' || code === 'Backquote' || e.keyCode === 192)) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_TOGGLE_TERMINAL' }));
+      } else if (isCtrlOrCmd && !e.shiftKey && key === 'b') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_TOGGLE_SIDEBAR' }));
+      } else if (isCtrlOrCmd && !e.shiftKey && key === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_SAVE' }));
+      } else if (isCtrlOrCmd && !e.shiftKey && key === 'w') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_CLOSE_TAB' }));
+      } else if (isCtrlOrCmd && e.shiftKey && key === 'f') {
+        e.preventDefault();
+        e.stopPropagation();
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SHORTCUT_SEARCH' }));
+      }
+    }
+    window.addEventListener('keydown', handleKeyShortcut, true);
+    document.addEventListener('keydown', handleKeyShortcut, true);
+
     window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'EDITOR_READY' }));
   </script>
 </body>
@@ -225,7 +268,8 @@ interface InlineEditorProps {
 export default function InlineEditor({ projectId, onOpenExplorer }: InlineEditorProps) {
   const { colors, isDark } = useAppTheme()
   const {
-    activeEditorTab, openEditorTabs, markDirty, markClean, setCursorPosition
+    activeEditorTab, openEditorTabs, markDirty, markClean, setCursorPosition,
+    toggleSidebar, toggleBottomPanel, setBottomTab, setSidebarPanel, closeFile
   } = useTabletLayoutStore()
 
   const webViewRef = useRef<WebView>(null)
@@ -339,12 +383,27 @@ export default function InlineEditor({ projectId, onOpenExplorer }: InlineEditor
               })
             } else if (msg.type === 'CURSOR_CHANGE') {
               setCursorPosition(msg.line, msg.col)
+            } else if (msg.type === 'SHORTCUT_TOGGLE_TERMINAL') {
+              setBottomTab('terminal')
+              toggleBottomPanel()
+            } else if (msg.type === 'SHORTCUT_TOGGLE_SIDEBAR') {
+              toggleSidebar()
+            } else if (msg.type === 'SHORTCUT_SAVE') {
+              handleSave()
+            } else if (msg.type === 'SHORTCUT_CLOSE_TAB') {
+              if (activeEditorTab) closeFile(activeEditorTab)
+            } else if (msg.type === 'SHORTCUT_SEARCH') {
+              setSidebarPanel('search')
             }
           } catch (e) {
             // Ignore invalid JSON
           }
         }}
       />
+
+      {/* Global Hotkey Bridge & Desktop Mouse Pointer Overlay */}
+      <GlobalHotkeyBridge onSave={handleSave} />
+      <DesktopMousePointer />
 
       {/* Loading overlay */}
       {(loading || !editorReady) && (

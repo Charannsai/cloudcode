@@ -5,6 +5,7 @@ import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAppTheme } from '@/hooks/useAppTheme'
+import { useGlobalKeyboardShortcuts } from '@/hooks/useGlobalKeyboardShortcuts'
 import { useAuthStore } from '@/store/auth'
 import { useAIStore } from '@/store/ai'
 import { api } from '@/lib/api'
@@ -995,6 +996,9 @@ export default function TabletAppShell() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
+
+  // Attach Global Hardware Keyboard Shortcuts (Ctrl+~ for Terminal, Ctrl+B for Sidebar, Ctrl+S, etc.)
+  useGlobalKeyboardShortcuts()
 
   const [activePanel, setActivePanel] = useState<SidebarPanel>('explorer')
   const [aiVisible, setAiVisible] = useState(false)
