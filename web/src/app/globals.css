@@ -49,7 +49,6 @@ body {
   initial-value: 0px;
 }
 
-/* Custom ink ripple / view transition circular reveal for dark mode toggle */
 ::view-transition-image-pair(root) {
   isolation: auto;
 }
