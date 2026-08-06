@@ -1,6 +1,9 @@
 # App user-created projects
 projects/
 
+# Internal documentation (hidden)
+.docs/
+
 # Dependencies
 node_modules/
 /.pnp
