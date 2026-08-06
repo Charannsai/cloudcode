@@ -572,45 +572,14 @@ The mobile application is built using **React Native** and **Expo**, utilizing `
 
 ---
 
-## 💻 Local Development Setup
+## Contributing
 
-### Backend Setup
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up a `.env.local` file with your credentials:
-   ```env
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-   JWT_SECRET=your_jwt_secret
-   ```
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, guidelines, and how to submit pull requests.
 
-### Mobile App Setup (Expo)
-1. Navigate to the mobile directory:
-   ```bash
-   cd mobile
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Configure the local connection setup in the `.env` file.
-4. Run the development server:
-   ```bash
-   npx expo start -c
-   ```
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
 ---
 
 ## License
 
-Private repository. All rights reserved.
+MIT License. See [LICENSE](LICENSE) for details.
