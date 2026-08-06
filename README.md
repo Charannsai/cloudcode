@@ -10,51 +10,240 @@ CloudCode is a cloud development environment (CDE) platform that allows develope
 cloudcode/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml          # GitHub Actions deploy runner (targets VPS backend)
-├── backend/                    # Next.js 16 Custom Server API & Preview Proxy
+│       └── deploy.yml                          # GitHub Actions CI/CD deploy runner
+├── backend/                                     # Next.js 16 Custom Server — API, WebSocket & Preview Proxy
+│   ├── database/
+│   │   ├── schema.sql                           # Full Supabase PostgreSQL schema
+│   │   └── migrations/
+│   │       ├── 01_agent_governance.sql          # AI agent governance tables
+│   │       ├── 02_github_token.sql              # GitHub token column migration
+│   │       └── 03_update_project_types.sql      # Project type constraints update
 │   ├── src/
-│   │   ├── app/                # Next.js App Router (HTTP Endpoint Handlers)
-│   │   │   ├── cc-api/         # CloudCode core API endpoint handlers
-│   │   │   │   ├── ai/         # AI models access, streaming, & agent runs
-│   │   │   │   ├── auth/       # GitHub & Google OAuth login handlers
-│   │   │   │   ├── billing/    # Dodo Payments plan checkout & webhook status
-│   │   │   │   ├── projects/   # Workspace container and git integration APIs
-│   │   │   │   └── system/     # VPS runtime managers & system diagnostics
-│   │   │   └── global-error.tsx # Root Sentry Client-side Error Boundary
-│   │   ├── lib/                # Core helper scripts & abstractions
-│   │   │   ├── activityTracker.ts  # In-memory user idle state manager
-│   │   │   ├── auth.ts         # Supabase JWT verify & Auth middleware
-│   │   │   ├── docker.ts       # Dockerode socket connector & state controls
-│   │   │   ├── git.ts          # Git commands wrapper executed in containers
-│   │   │   ├── supabase.ts     # Supabase DB admin client config
-│   │   │   ├── terminal.ts     # Terminal shell process streams bridge
-│   │   │   └── types.ts
-│   │   ├── datadog.ts          # Datadog APM tracing agent bootstrapper
-│   │   ├── instrumentation.ts  # Next.js instrumentation runtime controller
-│   │   ├── instrumentation-client.ts # Next.js client-side Sentry init hook
-│   │   ├── sentry.edge.config.ts # Sentry Edge runtime error monitoring
-│   │   ├── sentry.server.config.ts # Sentry Server/Node.js runtime config
-│   │   └── server.ts           # Next.js wrapping HTTP & WebSocket Custom Server
+│   │   ├── app/
+│   │   │   ├── api/
+│   │   │   │   └── preview/[id]/[[...path]]/
+│   │   │   │       └── route.ts                 # Dynamic preview reverse proxy handler
+│   │   │   ├── cc-api/                          # CloudCode core API endpoints
+│   │   │   │   ├── ai/
+│   │   │   │   │   ├── approve/route.ts         # AI action approval endpoint
+│   │   │   │   │   ├── chat/route.ts            # AI chat streaming endpoint
+│   │   │   │   │   └── runs/
+│   │   │   │   │       ├── route.ts             # AI agent runs list
+│   │   │   │   │       └── [id]/
+│   │   │   │   │           ├── route.ts         # Individual run details
+│   │   │   │   │           ├── approve/route.ts # Run-level approval
+│   │   │   │   │           └── chat/route.ts    # Run-level chat
+│   │   │   │   ├── auth/
+│   │   │   │   │   ├── callback/route.ts        # OAuth callback handler
+│   │   │   │   │   ├── github/
+│   │   │   │   │   │   ├── route.ts             # GitHub OAuth initiation
+│   │   │   │   │   │   └── callback/route.ts    # GitHub OAuth callback
+│   │   │   │   │   └── google/
+│   │   │   │   │       ├── route.ts             # Google OAuth initiation
+│   │   │   │   │       └── callback/route.ts    # Google OAuth callback
+│   │   │   │   ├── billing/
+│   │   │   │   │   ├── checkout/route.ts        # Dodo Payments checkout session
+│   │   │   │   │   ├── status/route.ts          # Subscription status query
+│   │   │   │   │   └── webhook/route.ts         # Payment webhook handler
+│   │   │   │   ├── git/
+│   │   │   │   │   └── prs/
+│   │   │   │   │       ├── route.ts             # Pull requests list
+│   │   │   │   │       └── [number]/route.ts    # Individual PR details
+│   │   │   │   ├── projects/
+│   │   │   │   │   ├── route.ts                 # List/create projects
+│   │   │   │   │   ├── import/route.ts          # GitHub repo import
+│   │   │   │   │   └── [id]/
+│   │   │   │   │       ├── route.ts             # Project CRUD operations
+│   │   │   │   │       ├── files/
+│   │   │   │   │       │   ├── route.ts         # File tree listing
+│   │   │   │   │       │   └── content/route.ts # File content read/write
+│   │   │   │   │       ├── git/
+│   │   │   │   │       │   ├── branches/route.ts  # Branch list/switch
+│   │   │   │   │       │   ├── commit/route.ts    # Commit changes
+│   │   │   │   │       │   ├── config/route.ts    # Git config management
+│   │   │   │   │       │   ├── conflicts/route.ts # Merge conflict detection
+│   │   │   │   │       │   ├── diff/route.ts      # Staged diff viewer
+│   │   │   │   │       │   ├── log/route.ts       # Commit history log
+│   │   │   │   │       │   ├── resolve/route.ts   # Conflict resolution
+│   │   │   │   │       │   ├── ssh/route.ts       # SSH key management
+│   │   │   │   │       │   ├── stage/route.ts     # Stage/unstage files
+│   │   │   │   │       │   ├── status/route.ts    # Working tree status
+│   │   │   │   │       │   └── sync/route.ts      # Push/pull sync
+│   │   │   │   │       └── terminal/
+│   │   │   │   │           └── kill/route.ts    # Terminal process kill
+│   │   │   │   ├── system/
+│   │   │   │   │   └── diagnostics/route.ts     # VPS runtime diagnostics
+│   │   │   │   └── user/
+│   │   │   │       ├── route.ts                 # User profile operations
+│   │   │   │       └── git/ssh/route.ts         # User SSH key management
+│   │   │   ├── global-error.tsx                 # Sentry client-side error boundary
+│   │   │   ├── layout.tsx                       # Root layout component
+│   │   │   └── page.tsx                         # Root page component
+│   │   ├── lib/                                 # Core helper modules & abstractions
+│   │   │   ├── activityTracker.ts               # In-memory project idle state manager
+│   │   │   ├── ai/
+│   │   │   │   ├── gemini.ts                    # Gemini AI model integration & streaming
+│   │   │   │   ├── governance.ts                # AI agent governance & policy enforcement
+│   │   │   │   └── planningGuard.ts             # AI planning safety guardrails
+│   │   │   ├── auth.ts                          # Supabase JWT verification & auth middleware
+│   │   │   ├── docker.ts                        # Dockerode socket connector & container controls
+│   │   │   ├── git.ts                           # Git command wrapper executed in containers
+│   │   │   ├── payments.ts                      # Dodo Payments integration helpers
+│   │   │   ├── projects.ts                      # Project CRUD & workspace management logic
+│   │   │   ├── supabase.ts                      # Supabase DB admin client config
+│   │   │   ├── terminal.ts                      # Terminal shell process WebSocket bridge
+│   │   │   ├── tiers.ts                         # Subscription tier definitions & limits
+│   │   │   └── types.ts                         # Shared TypeScript type definitions
+│   │   ├── middleware.ts                        # Next.js request middleware
+│   │   ├── datadog.ts                           # Datadog APM tracing agent bootstrapper
+│   │   ├── instrumentation.ts                   # Next.js instrumentation runtime controller
+│   │   ├── instrumentation-client.ts            # Next.js client-side Sentry init hook
+│   │   ├── sentry.edge.config.ts                # Sentry Edge runtime error monitoring
+│   │   ├── sentry.server.config.ts              # Sentry Server/Node.js runtime config
+│   │   └── server.ts                            # Custom HTTP & WebSocket server entry point
 │   ├── package.json
-│   └── tsconfig.json
-├── mobile/                     # React Native / Expo Mobile Client Application
+│   ├── tsconfig.json
+│   ├── next.config.ts
+│   └── eslint.config.mjs
+├── mobile/                                      # React Native / Expo Mobile Client Application
 │   ├── app/
-│   │   ├── (tabs)/             # Bottom-tab navigator screens
-│   │   │   ├── ai.tsx          # AI Assistant interactive prompt view
-│   │   │   ├── dashboard.tsx   # Statistics, shortcuts, activity feed
-│   │   │   ├── projects.tsx    # List grid of user projects with controls
-│   │   │   └── settings.tsx    # Custom preferences & settings
-│   │   ├── project/[id]/       # Workspace-specific editor routes
-│   │   │   ├── editor.tsx      # Multi-file code editor screen
-│   │   │   └── index.tsx       # Live terminal and file explorer portal
-│   │   ├── auth.tsx            # Login overlay
-│   │   ├── index.tsx           # Session router gate
-│   │   └── new-project.tsx     # Wizard to create from templates or GitHub
-│   ├── components/             # Reusable UI components
-│   ├── store/                  # Zustand global application state
-│   └── package.json
-├── web/                        # Marketing website (Next.js)
-├── scripts/                    # Host setup and utility scripts
+│   │   ├── _layout.tsx                          # Root layout with Sentry & navigation providers
+│   │   ├── index.tsx                            # Session router gate (auth check)
+│   │   ├── auth.tsx                             # Login overlay (GitHub & Google OAuth)
+│   │   ├── new-project.tsx                      # Workspace creation wizard (templates / GitHub import)
+│   │   ├── activity.tsx                         # Activity audit log feed
+│   │   ├── billing/
+│   │   │   └── success.tsx                      # Payment success confirmation screen
+│   │   ├── (tabs)/                              # Bottom-tab navigator screens
+│   │   │   ├── _layout.tsx                      # Tab bar layout with animated floating FAB
+│   │   │   ├── dashboard.tsx                    # Statistics, shortcuts, activity feed
+│   │   │   ├── projects.tsx                     # Workspace grid/list with container controls
+│   │   │   ├── ai.tsx                           # AI assistant interactive prompt view
+│   │   │   ├── usage.tsx                        # Usage metrics & resource monitoring
+│   │   │   └── settings.tsx                     # Profile preferences, billing & settings
+│   │   └── project/[id]/                        # Workspace-specific editor routes
+│   │       ├── index.tsx                        # Live terminal, file explorer & preview portal
+│   │       └── editor.tsx                       # Multi-file code editor with auto-save
+│   ├── components/
+│   │   ├── ConfirmModal.tsx                     # Reusable confirmation dialog
+│   │   ├── FloatingMic.tsx                      # Floating microphone button
+│   │   ├── HugeIconsShim.tsx                    # HugeIcons compatibility layer
+│   │   ├── LimitExceededModal.tsx               # Usage limit exceeded dialog
+│   │   ├── ProjectIcon.tsx                      # Dynamic project type icon renderer
+│   │   ├── SpringPressable.tsx                  # Spring-animated pressable button
+│   │   ├── SvgIcon.tsx                          # SVG icon rendering component
+│   │   ├── TabGenieWrapper.tsx                  # Tab genie animation wrapper
+│   │   ├── ide/                                 # IDE / Tablet layout components
+│   │   │   ├── ActivityBar.tsx                  # VS Code-style activity sidebar
+│   │   │   ├── AppStatusBar.tsx                 # Bottom status bar
+│   │   │   ├── AppTitleBar.tsx                  # Window title bar
+│   │   │   ├── BottomPanel.tsx                  # Resizable bottom panel (terminal)
+│   │   │   ├── DesktopMousePointer.tsx          # Desktop cursor simulation
+│   │   │   ├── EditorTabBar.tsx                 # Multi-tab editor header
+│   │   │   ├── GlobalHotkeyBridge.tsx           # Keyboard shortcut handler
+│   │   │   ├── InlineEditor.tsx                 # Inline code editor component
+│   │   │   ├── MenuBar.tsx                      # Top menu bar (File, Edit, View...)
+│   │   │   ├── RightPanel.tsx                   # Right sidebar panel
+│   │   │   ├── Sidebar.tsx                      # File explorer sidebar
+│   │   │   ├── StatusBar.tsx                    # Editor status bar
+│   │   │   ├── TabletAppShell.tsx               # Tablet IDE full shell layout
+│   │   │   ├── TabletIDEShell.tsx               # Tablet IDE inner shell
+│   │   │   ├── TabletSidebarNav.tsx             # Tablet sidebar navigation
+│   │   │   └── TitleBar.tsx                     # Editor title bar
+│   │   ├── onboarding/                          # Onboarding flow components
+│   │   │   ├── AnimatedDot.tsx                  # Animated pagination dot
+│   │   │   ├── GridBackground.tsx               # Animated grid background
+│   │   │   ├── LogoIcons.tsx                    # Logo icon set
+│   │   │   ├── OnboardingPage.tsx               # Onboarding page template
+│   │   │   └── ScreenIllustrations.tsx          # Onboarding screen illustrations
+│   │   └── project/                             # Workspace tab components
+│   │       ├── AITab.tsx                        # Workspace-scoped AI assistant tab
+│   │       ├── FilesTab.tsx                     # File tree explorer tab
+│   │       ├── GitTab.tsx                       # Git staging, commit & sync tab
+│   │       ├── PRsTab.tsx                       # Pull requests management tab
+│   │       ├── PreviewTab.tsx                   # Live app preview WebView tab
+│   │       └── TerminalTab.tsx                  # Interactive terminal emulator tab
+│   ├── store/                                   # Zustand global state management
+│   │   ├── agentStore.ts                        # AI agent run state
+│   │   ├── ai.ts                                # AI chat state & message history
+│   │   ├── auth.ts                              # Authentication session state
+│   │   ├── prStore.ts                           # Pull request state
+│   │   ├── projects.ts                          # Project list & workspace state
+│   │   ├── tabletLayoutStore.ts                 # Tablet layout panels state
+│   │   ├── terminal.ts                          # Terminal session state
+│   │   ├── theme.ts                             # Theme & appearance state
+│   │   └── ui.ts                                # UI interaction state
+│   ├── lib/                                     # Client-side helper modules
+│   │   ├── api.ts                               # Backend API client functions
+│   │   ├── appAudit.ts                          # Activity audit logging service
+│   │   ├── auth.ts                              # OAuth & session management
+│   │   ├── haptics.ts                           # Haptic feedback utilities
+│   │   ├── permissions.ts                       # Device permission handlers
+│   │   └── supabase.ts                          # Supabase client config
+│   ├── hooks/                                   # Custom React hooks
+│   │   ├── useAppTheme.ts                       # Theme hook
+│   │   ├── useCache.ts                          # Async storage cache hook
+│   │   ├── useDeviceType.ts                     # Phone/tablet detection hook
+│   │   ├── useGlobalKeyboardShortcuts.ts        # Keyboard shortcut hook
+│   │   ├── useScrollVisibility.ts               # Scroll-based visibility hook
+│   │   ├── useTabletLayout.ts                   # Tablet layout management hook
+│   │   └── useTerminal.ts                       # WebSocket terminal connection hook
+│   ├── constants/
+│   │   └── tokens.ts                            # Design tokens (colors, spacing)
+│   ├── types/
+│   │   ├── index.ts                             # Shared TypeScript interfaces
+│   │   └── svg.d.ts                             # SVG module declarations
+│   ├── plugins/
+│   │   └── withExcludeSupport.js                # Expo config plugin
+│   ├── assets/                                  # App icons, logos & splash assets
+│   ├── package.json
+│   ├── app.json                                 # Expo app configuration
+│   ├── eas.json                                 # EAS Build configuration
+│   ├── tsconfig.json
+│   ├── babel.config.js
+│   └── metro.config.js
+├── web/                                         # Marketing Website (Next.js)
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx                       # Root layout with fonts & metadata
+│   │   │   ├── page.tsx                         # Landing page
+│   │   │   ├── globals.css                      # Global styles & theme tokens
+│   │   │   ├── robots.ts                        # SEO robots.txt generator
+│   │   │   ├── sitemap.ts                       # SEO sitemap generator
+│   │   │   ├── privacy/page.tsx                 # Privacy policy page
+│   │   │   ├── terms/page.tsx                   # Terms of service page
+│   │   │   └── delete-account/page.tsx          # Account deletion page
+│   │   ├── components/
+│   │   │   ├── Header.tsx                       # Navigation header
+│   │   │   ├── Footer.tsx                       # Site footer
+│   │   │   ├── landing/
+│   │   │   │   ├── Faqs.tsx                     # FAQ accordion section
+│   │   │   │   ├── InteractiveShowcase.tsx      # Interactive feature showcase
+│   │   │   │   └── PhoneMockup/
+│   │   │   │       ├── PhoneMockup.tsx          # Animated phone frame
+│   │   │   │       ├── MockupScreens.tsx        # Mockup screen content
+│   │   │   │       └── constants.tsx            # Mockup configuration
+│   │   │   └── ui/
+│   │   │       ├── AnimatedNumber.tsx           # Counter animation component
+│   │   │       ├── DecryptText.tsx              # Text decrypt reveal effect
+│   │   │       └── ScrollReveal.tsx             # Scroll-triggered reveal animation
+│   │   └── hooks/
+│   │       └── useTheme.ts                      # Theme toggle hook
+│   ├── public/
+│   │   ├── assets/                              # Store badges (App Store, Play Store)
+│   │   ├── cloudcodeicon.svg                    # App icon (SVG)
+│   │   ├── cloudcodelogo.png                    # Logo (dark)
+│   │   ├── cloudcodelogolight.png               # Logo (light)
+│   │   └── icon.png                             # Favicon source
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── next.config.ts
+│   └── postcss.config.mjs
+├── scripts/
+│   ├── sidecar.js                               # Sidecar utility script
+│   └── vps-security-setup.sh                    # VPS hardening & Docker security setup
+├── Dockerfile                                   # Container image build definition
+├── docker-daemon.json                           # Docker daemon configuration (ICC, log rotation)
 └── README.md
 ```
 
