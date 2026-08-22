@@ -86,7 +86,7 @@ export const metadata: Metadata = {
     images: ["/assets/playstorelogo.png"],
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/assets/cloudcodeicon.svg",
   },
 };
 
