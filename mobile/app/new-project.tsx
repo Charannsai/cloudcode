@@ -152,10 +152,10 @@ export default function NewProjectScreen() {
                 {TEMPLATES.filter(t => t.group === 'PROJECT').map(renderOption)}
               </View>
 
-              <View style={styles.section}>
+              {/* <View style={styles.section}>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>PRE-INSTALLED TEMPLATES</Text>
                 {TEMPLATES.filter(t => t.group === 'TEMPLATE').map(renderOption)}
-              </View>
+              </View> */}
             </View>
           ) : (
             <View>
