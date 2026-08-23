@@ -735,14 +735,14 @@ export default function WelcomeScreen() {
                 By continuing, you agree to our{' '}
                 <Text 
                   style={{ color: isDark ? '#94A3B8' : '#475569', textDecorationLine: 'underline', fontFamily: 'Inter_500Medium' }}
-                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/terms')}
+                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/terms')}
                 >
                   Terms of Service
                 </Text>{' '}
                 and{' '}
                 <Text 
                   style={{ color: isDark ? '#94A3B8' : '#475569', textDecorationLine: 'underline', fontFamily: 'Inter_500Medium' }}
-                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/privacy')}
+                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/privacy')}
                 >
                   Privacy Policy
                 </Text>

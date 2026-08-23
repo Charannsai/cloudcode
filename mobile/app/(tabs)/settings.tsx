@@ -16,7 +16,8 @@ import {
   Moon, Sun, Shield, LogOut, Github, Server, Lock, Cpu, ChevronRight, ChevronDown,
   Key, Copy, RefreshCw, AlertCircle, Check, Zap, HardDrive, Wifi, Clock,
   CreditCard, ArrowUpRight, TrendingUp, History, BarChart2, ArrowLeft,
-  Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit, Info, Database
+  Eye, EyeOff, Sparkles, Trash2, Laptop, GitCommit, Info, Database,
+  Terminal, GitBranch, Globe, Mail, Code
 } from '@/components/HugeIconsShim'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { api } from '@/lib/api'
@@ -112,7 +113,6 @@ export default function SettingsScreen() {
   const [profileName, setProfileName] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
-  const [aboutTab, setAboutTab] = useState<'branding' | 'system'>('branding')
 
   // Client-side audit logs
   const [appCommits, setAppCommits] = useState<any[]>([])
@@ -2824,227 +2824,170 @@ export default function SettingsScreen() {
 
   const renderAboutView = () => {
     return (
-      <View style={{ gap: 24, paddingBottom: 40 }}>
+      <View style={{ gap: 20, paddingBottom: 48 }}>
         {/* Unified SubHeader */}
         <View style={styles.subHeader}>
-          <TouchableOpacity onPress={() => setCurrentSubScreen('main')} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+          <TouchableOpacity 
+            onPress={() => setCurrentSubScreen('main')} 
+            style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+          >
             <ArrowLeft size={18} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>About CloudCode</Text>
         </View>
 
-        {/* Segmented Tab Selector */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: 24, marginBottom: 8 }}>
+        <View style={{ paddingHorizontal: 20, gap: 20 }}>
+          
+          {/* Clean Hero Brand Header */}
+          <View style={{
+            alignItems: 'center',
+            paddingVertical: 24,
+            paddingHorizontal: 20,
+            borderRadius: 14,
+            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+            borderWidth: 1,
+            borderColor: colors.border,
+            gap: 12,
+          }}>
+            <Image 
+              source={require('../../assets/cloudcodelogo.png')} 
+              style={{ height: 42, width: 180, tintColor: colors.text }} 
+              resizeMode="contain" 
+            />
+            <Text style={{
+              color: colors.text,
+              fontSize: 14.5,
+              fontFamily: 'Inter_600SemiBold',
+              textAlign: 'center',
+            }}>
+              Desktop-Class IDE for Mobile & Tablet
+            </Text>
+            <Text style={{
+              color: colors.textSecondary,
+              fontSize: 12.5,
+              fontFamily: 'Inter_400Regular',
+              textAlign: 'center',
+              lineHeight: 18,
+              maxWidth: 340,
+            }}>
+              A complete cloud development platform with isolated Linux workspaces, root terminal, Git, AI coding agents, and live previews.
+            </Text>
+          </View>
+
+          {/* Simple Highlights Card */}
+          <View style={{
+            borderRadius: 14,
+            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 16,
+            gap: 14,
+          }}>
+            {[
+              {
+                icon: Server,
+                color: '#38BDF8',
+                title: 'Cloud Workspaces & Linux Terminal',
+                desc: 'Isolated Linux sandbox runtimes with root shell access and full toolchain support.',
+              },
+              {
+                icon: Code,
+                color: '#A78BFA',
+                title: 'Code Editor & Git Integration',
+                desc: 'Syntax highlighting, multi-file editing, and seamless GitHub repository workflows.',
+              },
+              {
+                icon: Sparkles,
+                color: '#F472B6',
+                title: 'AI Coding Agents & BYOK',
+                desc: 'Context-aware AI assistance with support for your own API keys (Bring Your Own Key).',
+              },
+              {
+                icon: Globe,
+                color: '#34D399',
+                title: 'Live Previews & DevTools',
+                desc: 'Run web apps, inspect server output, and view logs directly on touch devices.',
+              },
+            ].map((item, idx, arr) => (
+              <View key={idx} style={{
+                flexDirection: 'row',
+                gap: 12,
+                alignItems: 'flex-start',
+                paddingBottom: idx !== arr.length - 1 ? 12 : 0,
+                borderBottomWidth: idx !== arr.length - 1 ? 1 : 0,
+                borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+              }}>
+                <View style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: 1,
+                }}>
+                  <item.icon size={16} color={item.color} strokeWidth={2} />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: colors.text, fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>
+                    {item.title}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11.5, fontFamily: 'Inter_400Regular', lineHeight: 16 }}>
+                    {item.desc}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Simple App Info & Support Card */}
+          <View style={{
+            borderRadius: 14,
+            backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 16,
+            gap: 12,
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Version</Text>
+              <Text style={{ color: colors.text, fontSize: 12.5, fontFamily: 'JetBrainsMono_400Regular' }}>v1.0.0 (Production)</Text>
+            </View>
+            <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: 'Inter_400Regular' }}>Support</Text>
+              <TouchableOpacity 
+                onPress={() => Linking.openURL('mailto:cloudcodeservice@gmail.com')}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: colors.primary, fontSize: 12.5, fontFamily: 'Inter_500Medium' }}>
+                  cloudcodeservice@gmail.com
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Clean Legal / Doc Links */}
           <View style={{ 
             flexDirection: 'row', 
-            flex: 1, 
-            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', 
-            borderRadius: 8, 
-            padding: 3,
-            borderWidth: 1,
-            borderColor: colors.border
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            gap: 12, 
+            paddingTop: 4,
           }}>
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => setAboutTab('branding')}
-              style={{
-                flex: 1,
-                paddingVertical: 7,
-                alignItems: 'center',
-                borderRadius: 6,
-                backgroundColor: aboutTab === 'branding' ? (isDark ? '#161821' : '#FFFFFF') : 'transparent',
-              }}
-            >
-              <Text style={{ 
-                color: aboutTab === 'branding' ? colors.text : colors.textSecondary, 
-                fontFamily: 'Inter_600SemiBold', 
-                fontSize: 13.5
-              }}>
-                CloudCode
-              </Text>
+            <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/privacy')}>
+              <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Privacy Policy</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => setAboutTab('system')}
-              style={{
-                flex: 1,
-                paddingVertical: 7,
-                alignItems: 'center',
-                borderRadius: 6,
-                backgroundColor: aboutTab === 'system' ? (isDark ? '#161821' : '#FFFFFF') : 'transparent',
-              }}
-            >
-              <Text style={{ 
-                color: aboutTab === 'system' ? colors.text : colors.textSecondary, 
-                fontFamily: 'Inter_600SemiBold', 
-                fontSize: 13.5
-              }}>
-                System Info
-              </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 10 }}>•</Text>
+            <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/terms')}>
+              <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Terms of Service</Text>
+            </TouchableOpacity>
+            <Text style={{ color: colors.textSecondary, fontSize: 10 }}>•</Text>
+            <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in')}>
+              <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_500Medium' }}>Documentation</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {aboutTab === 'branding' ? (
-          <View style={{ gap: 28 }}>
-            {/* Impressive Logo display */}
-            <View style={{ alignItems: 'center', paddingVertical: 24, gap: 14 }}>
-              <Image 
-                source={require('../../assets/cloudcodelogo.png')} 
-                style={{ height: 60, width: 250, tintColor: colors.text }} 
-                resizeMode="contain" 
-              />
-              <View style={{ gap: 6, alignItems: 'center' }}>
-                <Text style={{ 
-                  color: colors.primary, 
-                  fontFamily: 'JetBrainsMono_400Regular', 
-                  fontSize: 11, 
-                  letterSpacing: 3, 
-                  textTransform: 'uppercase' 
-                }}>
-                  Developer Platform
-                </Text>
-                <Text style={{ 
-                  color: colors.textSecondary, 
-                  fontSize: 13, 
-                  fontFamily: 'Inter_500Medium', 
-                  textAlign: 'center', 
-                  paddingHorizontal: 48, 
-                  lineHeight: 20,
-                  marginTop: 4
-                }}>
-                  The next-generation cloud IDE. Provision Linux sandboxes, run compilers, and write code instantly from anywhere.
-                </Text>
-              </View>
-              <View style={{ 
-                height: 1, 
-                backgroundColor: colors.border, 
-                width: 80, 
-                opacity: 0.5, 
-                marginTop: 12 
-              }} />
-            </View>
-
-            {/* Core Capabilities - flat cardless layout */}
-            <View style={{ paddingHorizontal: 28, gap: 20 }}>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_700Bold', fontSize: 11.5, letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                Core System Specs
-              </Text>
-              
-              <View style={{ gap: 24 }}>
-                <View style={{ flexDirection: 'row', gap: 16 }}>
-                  <Cpu size={20} color={colors.text} style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5 }}>Linux Containers</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 12.5, marginTop: 4, lineHeight: 18 }}>
-                      Isolated sandbox runtimes equipped with full root terminal access, high-speed RAM allocation, and local compiler toolchains.
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={{ flexDirection: 'row', gap: 16 }}>
-                  <Sparkles size={20} color={colors.text} style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5 }}>LLM Intelligence</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 12.5, marginTop: 4, lineHeight: 18 }}>
-                      Bring Your Own Key integration for Gemini, GPT, and Claude models. High-efficiency code explanations and auto-completion.
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={{ flexDirection: 'row', gap: 16 }}>
-                  <Shield size={20} color={colors.text} style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5 }}>Secure Gateway</Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 12.5, marginTop: 4, lineHeight: 18 }}>
-                      All data transactions flow through an end-to-end encrypted SSL tunnel using industrial-strength AES-256 cipher standards.
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        ) : (
-          <View style={{ paddingHorizontal: 28, gap: 24 }}>
-            {/* Impressive small header in diagnostics tab */}
-            <View style={{ alignItems: 'center', paddingVertical: 12, gap: 8 }}>
-              <Image 
-                source={require('../../assets/cloudcodelogo.png')} 
-                style={{ height: 28, width: 120, tintColor: colors.text, opacity: 0.8 }} 
-                resizeMode="contain" 
-              />
-              <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 10, letterSpacing: 2 }}>
-                SYSTEM DIAGNOSTICS
-              </Text>
-            </View>
-
-            <View style={{ gap: 4 }}>
-              {/* App Version Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Info size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>App Version</Text>
-                </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12.5 }}>v1.0.0 (Prod)</Text>
-              </View>
-              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
-
-              {/* Runtime Engine Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Server size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>Runtime Engine</Text>
-                </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12.5 }}>v1.0.0-rc2</Text>
-              </View>
-              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
-
-              {/* Cloud Gateway Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Wifi size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>Cloud Gateway</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#3FB950' }} />
-                  <Text style={{ color: '#3FB950', fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Connected</Text>
-                </View>
-              </View>
-              <View style={{ height: 1, backgroundColor: colors.border, opacity: 0.3 }} />
-
-              {/* Encryption Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Lock size={16} color={colors.textSecondary} />
-                  <Text style={{ color: colors.text, fontFamily: 'Inter_500Medium', fontSize: 13.5 }}>Encryption Level</Text>
-                </View>
-                <Text style={{ color: colors.textSecondary, fontFamily: 'JetBrainsMono_400Regular', fontSize: 12.5 }}>AES-256-GCM</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Legal Links Footer */}
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          gap: 16, 
-          marginTop: 20, 
-          paddingTop: 20,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          marginHorizontal: 24,
-          opacity: 0.8
-        }}>
-          <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/privacy')}>
-            <Text style={{ color: colors.primary, fontSize: 13, fontFamily: 'Inter_500Medium' }}>Privacy Policy</Text>
-          </TouchableOpacity>
-          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>•</Text>
-          <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.app/terms')}>
-            <Text style={{ color: colors.primary, fontSize: 13, fontFamily: 'Inter_500Medium' }}>Terms of Service</Text>
-          </TouchableOpacity>
         </View>
       </View>
     )
@@ -3706,7 +3649,7 @@ export default function SettingsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.text, fontFamily: 'Inter_700Bold', fontSize: 14 }}>About CloudCode</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 11.5, marginTop: 2 }} numberOfLines={1}>
-                  Diagnostics, encryption, platform details & app specs
+                  Development environment, capabilities & platform info
                 </Text>
               </View>
             </View>
