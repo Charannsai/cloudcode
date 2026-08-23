@@ -210,7 +210,7 @@ function WelcomeTab({ projectId, colors, isDark, onOpenExplorer }: {
             Welcome
           </Text>
           <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-            CloudCode Workspace IDE
+            CloudCode Workspace
           </Text>
         </View>
 
