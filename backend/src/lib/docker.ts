@@ -38,9 +38,10 @@ export async function createContainer(projectId: string, userTier?: TierName): P
   const hostPath = getWorkspacePath(projectId)
   ensureProjectDir(hostPath)
 
-  const { data: project } = await supabaseAdmin.from('projects').select('user_github_id').eq('id', projectId).single()
+  const { data: project } = await supabaseAdmin.from('projects').select('user_github_id, name').eq('id', projectId).single()
   const userId = project?.user_github_id || 'default'
   const sshVolumeName = `cloudcode-ssh-${userId}`
+  const projectHostname = (project?.name || 'workspace').replace(/[^a-zA-Z0-9_\-]/g, '-').slice(0, 60).toLowerCase()
 
   // Resolve tier-based resource limits
   const tier = getTierConfig(userTier)
@@ -51,10 +52,11 @@ export async function createContainer(projectId: string, userTier?: TierName): P
     container = await docker.createContainer({
       Image: IMAGE,
       name: `cloudcode-${projectId}`,
+      Hostname: projectHostname,
       Entrypoint: ['tail', '-f', '/dev/null'], // Override image entrypoint to prevent auto-starts!
       Cmd: [],
       WorkingDir: WORKSPACE_ROOT,
-      Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0'], // Force Next.js & Vite to listen on all interfaces
+      Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0', `PROJECT_NAME=${project?.name || 'workspace'}`], // Force Next.js & Vite to listen on all interfaces
       Tty: true,
       AttachStdin: true,
       AttachStdout: true,
@@ -87,10 +89,11 @@ export async function createContainer(projectId: string, userTier?: TierName): P
       container = await docker.createContainer({
         Image: IMAGE,
         name: `cloudcode-${projectId}`,
+        Hostname: projectHostname,
         Entrypoint: ['tail', '-f', '/dev/null'],
         Cmd: [],
         WorkingDir: WORKSPACE_ROOT,
-        Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0'],
+        Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0', `PROJECT_NAME=${project?.name || 'workspace'}`],
         Tty: true,
         AttachStdin: true,
         AttachStdout: true,

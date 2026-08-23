@@ -61,8 +61,13 @@ async function handleTerminalConnection(ws: WebSocket, req: IncomingMessage) {
   const container = docker.getContainer(project.container_id)
 
   try {
+    const projectName = (project as any).name || 'workspace'
     const exec = await container.exec({
-      Cmd: [process.env.SHELL || '/bin/bash'],
+      Cmd: [
+        '/bin/bash',
+        '-c',
+        `export PS1="\\033[1;36m${projectName}\\033[0m> "; exec /bin/bash 2>/dev/null || exec /bin/sh`
+      ],
       AttachStdin: true,
       AttachStdout: true,
       AttachStderr: true,

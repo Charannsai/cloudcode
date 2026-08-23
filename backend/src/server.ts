@@ -258,13 +258,15 @@ const startServer = async () => {
       }
 
       const projectName = project.name || 'workspace'
+      const safeProjectName = projectName.replace(/[^a-zA-Z0-9_\-]/g, '-').toLowerCase()
+      const sessionName = `${safeProjectName}-${cleanTerminalId}`
       const container = docker.getContainer(project.container_id)
       const exec = await container.exec({
-        // Try to attach to/create a tmux session. If tmux isn't installed, fall back to sh.
+        // Launch tmux session named after the project with clean 'projectName> ' prompt.
         Cmd: [
           '/bin/sh',
           '-c',
-          `if command -v tmux >/dev/null 2>&1; then exec tmux new-session -A -s "cloudcode-${cleanTerminalId}"; else export PS1="${projectName} # "; exec /bin/sh; fi`
+          `if command -v tmux >/dev/null 2>&1; then tmux set-option -g status off 2>/dev/null; exec tmux new-session -A -s "${sessionName}" -n "${safeProjectName}" "export PS1='\\033[1;36m${projectName}\\033[0m> '; exec /bin/bash"; else export PS1="${projectName}> "; exec /bin/bash 2>/dev/null || exec /bin/sh; fi`
         ],
         AttachStdin: true,
         AttachStdout: true,
