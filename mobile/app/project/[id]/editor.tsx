@@ -21,7 +21,7 @@ import Reanimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, E
 import { GlobalHotkeyBridge } from '@/components/ide/GlobalHotkeyBridge'
 import { DesktopMousePointer } from '@/components/ide/DesktopMousePointer'
 
-const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://165.22.219.62:3000'
+const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'wss://api.cerprise.in'
 
 function getLanguageMode(fileName: string) {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';

@@ -9,7 +9,7 @@ import { TouchableOpacity } from 'react-native'
 import { GlobalHotkeyBridge } from './GlobalHotkeyBridge'
 import { DesktopMousePointer } from './DesktopMousePointer'
 
-const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://165.22.219.62:3000'
+const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'wss://api.cerprise.in'
 
 function getLanguageMode(fileName: string) {
   const ext = fileName.split('.').pop()?.toLowerCase() || ''

@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
 const TOKEN_KEY = 'cloudcode_token';
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://165.22.219.62:3000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.cerprise.in';
 
 export interface CloudCodeUser {
   id: string;        // GitHub user ID

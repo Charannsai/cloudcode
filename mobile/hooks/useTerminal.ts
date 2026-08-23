@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { getToken } from '@/lib/auth'
 import { TerminalMessage } from '@/types'
 
-const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://165.22.219.62:3000'
+const WS_URL = process.env.EXPO_PUBLIC_WS_URL || 'wss://api.cerprise.in'
 
 interface UseTerminalOptions {
   projectId: string

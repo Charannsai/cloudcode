@@ -19,7 +19,7 @@ import { useRouter } from 'expo-router'
 import { api } from '@/lib/api'
 import * as ExpoLinking from 'expo-linking'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://165.22.219.62:3000'
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.cerprise.in'
 
 const INJECTION_SCRIPT = `
   (function() {

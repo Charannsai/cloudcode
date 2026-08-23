@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useUIStore } from '../store/ui'
 import { useAuthStore } from '../store/auth'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://165.22.219.62:3000'
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.cerprise.in'
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const diskToken = await getToken()
