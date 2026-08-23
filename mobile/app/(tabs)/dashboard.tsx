@@ -73,6 +73,170 @@ const PulseDot = ({ color }: { color: string }) => {
   )
 }
 
+const CreateWorkspaceCard = ({ onPress, isDark, colors }: { onPress: () => void; isDark: boolean; colors: any }) => {
+  const cardBg = isDark ? '#0B0C10' : '#FFFFFF'
+  const dashedBorderColor = isDark ? '#222634' : '#E2E8F0'
+
+  return (
+    <PressableScale 
+      onPress={onPress}
+      style={[
+        styles.emptyCard, 
+        { 
+          backgroundColor: cardBg, 
+          borderColor: dashedBorderColor,
+          borderStyle: 'dashed',
+          borderWidth: 1.5,
+          borderRadius: 16,
+          minHeight: 160,
+          overflow: 'hidden',
+          position: 'relative',
+          paddingVertical: 26,
+          paddingHorizontal: 20,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }
+      ]}
+    >
+      {/* Realistic Volumetric Cumulus Cloud Landscape */}
+      <View 
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 110,
+        }}
+        pointerEvents="none"
+      >
+        <Svg width="100%" height="100%" viewBox="0 0 400 110" preserveAspectRatio="none">
+          <Defs>
+            {/* Neutral cumulus gradients - Light & Dark */}
+            <LinearGradient id="cloudAtmosphere" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={isDark ? '#1E2330' : '#E2E8F0'} stopOpacity={isDark ? 0.35 : 0.6} />
+              <Stop offset="100%" stopColor={isDark ? '#0B0C10' : '#F8FAFC'} stopOpacity={isDark ? 0.9 : 0.4} />
+            </LinearGradient>
+
+            <LinearGradient id="cloudLobeL1" x1="20%" y1="0%" x2="80%" y2="100%">
+              <Stop offset="0%" stopColor={isDark ? '#333A4D' : '#FFFFFF'} stopOpacity={1} />
+              <Stop offset="45%" stopColor={isDark ? '#232836' : '#F8FAFC'} stopOpacity={0.98} />
+              <Stop offset="85%" stopColor={isDark ? '#161922' : '#E2E8F0'} stopOpacity={0.92} />
+              <Stop offset="100%" stopColor={isDark ? '#0F1117' : '#CBD5E1'} stopOpacity={0.85} />
+            </LinearGradient>
+
+            <LinearGradient id="cloudLobeL2" x1="30%" y1="0%" x2="70%" y2="100%">
+              <Stop offset="0%" stopColor={isDark ? '#3A4257' : '#FFFFFF'} stopOpacity={1} />
+              <Stop offset="50%" stopColor={isDark ? '#262C3C' : '#F1F5F9'} stopOpacity={0.98} />
+              <Stop offset="100%" stopColor={isDark ? '#13161F' : '#D8E0EB'} stopOpacity={0.88} />
+            </LinearGradient>
+
+            <LinearGradient id="cloudLobeFront" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={isDark ? '#2A3041' : '#FFFFFF'} stopOpacity={1} />
+              <Stop offset="30%" stopColor={isDark ? '#1C202C' : '#FAFCFF'} stopOpacity={0.98} />
+              <Stop offset="75%" stopColor={isDark ? '#12151D' : '#F1F5F9'} stopOpacity={0.95} />
+              <Stop offset="100%" stopColor={isDark ? '#0B0C10' : '#E2E8F0'} stopOpacity={0.98} />
+            </LinearGradient>
+          </Defs>
+
+          {/* Layer 1: Distant Background Cloud Banks */}
+          <Path
+            d="M-20,110 L-20,62 C5,38 35,32 60,48 C85,22 130,18 160,38 C185,12 230,10 258,32 C285,14 330,16 355,42 C378,28 415,38 430,68 L430,110 Z"
+            fill="url(#cloudAtmosphere)"
+          />
+
+          {/* Layer 2: Left Volumetric Cumulus Cluster */}
+          {/* Lobe 1 (far left) */}
+          <Circle cx="35" cy="74" r="34" fill="url(#cloudLobeL1)" />
+          {/* Lobe 2 (left high puff) */}
+          <Circle cx="72" cy="54" r="36" fill="url(#cloudLobeL2)" />
+          {/* Lobe 3 (left peak billow) */}
+          <Circle cx="112" cy="42" r="32" fill="url(#cloudLobeL1)" />
+          {/* Lobe 4 (left center shelf) */}
+          <Circle cx="148" cy="62" r="30" fill="url(#cloudLobeL2)" />
+
+          {/* Layer 3: Right Volumetric Cumulus Cluster */}
+          {/* Lobe 5 (right center shelf) */}
+          <Circle cx="252" cy="62" r="28" fill="url(#cloudLobeL2)" />
+          {/* Lobe 6 (right peak billow) */}
+          <Circle cx="288" cy="42" r="32" fill="url(#cloudLobeL1)" />
+          {/* Lobe 7 (right high puff) */}
+          <Circle cx="328" cy="52" r="36" fill="url(#cloudLobeL2)" />
+          {/* Lobe 8 (far right) */}
+          <Circle cx="366" cy="72" r="34" fill="url(#cloudLobeL1)" />
+
+          {/* Layer 4: Foreground Puffy Billow Base (Seamless blending across bottom) */}
+          <Path
+            d="M-20,110 L-20,82 C10,60 42,74 65,66 C95,50 128,68 152,58 C180,48 218,48 248,58 C272,68 305,50 335,66 C358,74 390,60 425,82 L425,110 Z"
+            fill="url(#cloudLobeFront)"
+          />
+
+          {/* Layer 5: Specular Highlight Rims on Major Cloud Puffs */}
+          {/* Left Peak Highlight */}
+          <Path
+            d="M86,38 C98,34 116,34 126,42"
+            stroke={isDark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.95)'}
+            strokeWidth="2"
+            strokeLinecap="round"
+            fill="none"
+          />
+          {/* Right Peak Highlight */}
+          <Path
+            d="M272,40 C284,34 302,34 314,42"
+            stroke={isDark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.95)'}
+            strokeWidth="2"
+            strokeLinecap="round"
+            fill="none"
+          />
+          {/* Left Outer Puff Highlight */}
+          <Path
+            d="M50,48 C62,42 78,44 88,52"
+            stroke={isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.9)'}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            fill="none"
+          />
+          {/* Right Outer Puff Highlight */}
+          <Path
+            d="M312,48 C324,42 342,44 352,54"
+            stroke={isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.9)'}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            fill="none"
+          />
+        </Svg>
+      </View>
+
+      {/* Center Action & Text */}
+      <View style={{ alignItems: 'center', zIndex: 2 }}>
+        <View style={{
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: isDark ? '#161821' : '#F1F5F9',
+          borderWidth: 1,
+          borderColor: isDark ? '#272A36' : '#E2E8F0',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.3 : 0.06,
+          shadowRadius: 6,
+          elevation: 2,
+        }}>
+          <Plus size={20} color={isDark ? '#F3F4F6' : '#0F1115'} strokeWidth={2} />
+        </View>
+
+        <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14.5, marginTop: 10 }}>
+          Create Workspace
+        </Text>
+        <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 3 }}>
+          Get started with a new project
+        </Text>
+      </View>
+    </PressableScale>
+  )
+}
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 export default function DashboardScreen() {
@@ -495,18 +659,11 @@ export default function DashboardScreen() {
               ))}
             </View>
           ) : projects.length === 0 ? (
-            <PressableScale 
+            <CreateWorkspaceCard 
               onPress={() => router.push('/new-project')}
-              style={[styles.emptyCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
-            >
-              <Plus size={24} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 14, marginTop: 10 }}>
-                Create Workspace
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 3 }}>
-                Get started with a new project
-              </Text>
-            </PressableScale>
+              isDark={isDark}
+              colors={colors}
+            />
           ) : (
             <View style={{ gap: 1 }}>
               {projects.map((project, idx) => {
