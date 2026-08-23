@@ -56,7 +56,13 @@ export async function createContainer(projectId: string, userTier?: TierName): P
       Entrypoint: ['tail', '-f', '/dev/null'], // Override image entrypoint to prevent auto-starts!
       Cmd: [],
       WorkingDir: WORKSPACE_ROOT,
-      Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0', `PROJECT_NAME=${project?.name || 'workspace'}`], // Force Next.js & Vite to listen on all interfaces
+      Env: [
+        'HOST=0.0.0.0',
+        'HOSTNAME=0.0.0.0',
+        `PROJECT_NAME=${project?.name || 'workspace'}`,
+        `PROMPT_COMMAND=PS1="\\033[1;36m${project?.name || 'workspace'}\\033[0m> "`,
+        `PS1=\\033[1;36m${project?.name || 'workspace'}\\033[0m> `,
+      ], // Force Next.js & Vite to listen on all interfaces
       Tty: true,
       AttachStdin: true,
       AttachStdout: true,
@@ -93,7 +99,13 @@ export async function createContainer(projectId: string, userTier?: TierName): P
         Entrypoint: ['tail', '-f', '/dev/null'],
         Cmd: [],
         WorkingDir: WORKSPACE_ROOT,
-        Env: ['HOST=0.0.0.0', 'HOSTNAME=0.0.0.0', `PROJECT_NAME=${project?.name || 'workspace'}`],
+        Env: [
+          'HOST=0.0.0.0',
+          'HOSTNAME=0.0.0.0',
+          `PROJECT_NAME=${project?.name || 'workspace'}`,
+          `PROMPT_COMMAND=PS1="\\033[1;36m${project?.name || 'workspace'}\\033[0m> "`,
+          `PS1=\\033[1;36m${project?.name || 'workspace'}\\033[0m> `,
+        ],
         Tty: true,
         AttachStdin: true,
         AttachStdout: true,

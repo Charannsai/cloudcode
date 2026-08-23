@@ -264,9 +264,9 @@ const startServer = async () => {
       const exec = await container.exec({
         // Launch tmux session named after the project with clean 'projectName> ' prompt.
         Cmd: [
-          '/bin/sh',
+          '/bin/bash',
           '-c',
-          `if command -v tmux >/dev/null 2>&1; then tmux set-option -g status off 2>/dev/null; exec tmux new-session -A -s "${sessionName}" -n "${safeProjectName}" "export PS1='\\033[1;36m${projectName}\\033[0m> '; exec /bin/bash"; else export PS1="${projectName}> "; exec /bin/bash 2>/dev/null || exec /bin/sh; fi`
+          `if command -v tmux >/dev/null 2>&1; then tmux set-option -g status off 2>/dev/null; exec tmux new-session -A -s "${sessionName}" -n "${safeProjectName}" "export PROMPT_COMMAND='PS1=\"\\\\033[1;36m${projectName}\\\\033[0m> \"'; export PS1='\\033[1;36m${projectName}\\033[0m> '; exec /bin/bash"; else export PROMPT_COMMAND='PS1="\\033[1;36m${projectName}\\033[0m> "'; export PS1="${projectName}> "; exec /bin/bash 2>/dev/null || exec /bin/sh; fi`
         ],
         AttachStdin: true,
         AttachStdout: true,
@@ -275,6 +275,13 @@ const startServer = async () => {
       })
 
       const stream = await exec.start({ hijack: true, stdin: true, Tty: true })
+
+      // Force prompt override on connection & clear old screen buffer
+      setTimeout(() => {
+        try {
+          stream.write(`export PROMPT_COMMAND='PS1="\\033[1;36m${projectName}\\033[0m> "'; clear\n`)
+        } catch {}
+      }, 100)
 
       // Bridge WebSocket <-> Docker Stream
       stream.on('data', (chunk: Buffer) => {
