@@ -7,8 +7,61 @@ import { useUIStore } from '../store/ui'
 import { useAuthStore } from '../store/auth'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.cerprise.in'
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://txasyrvuobacybisscmq.supabase.co'
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
 
-async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+let wakePromise: Promise<void> | null = null
+
+/**
+ * Silently wakes up the backend in the background via Supabase Edge Function.
+ * Debounced so multiple concurrent requests share a single wake cycle.
+ */
+async function wakeCodespace(): Promise<void> {
+  if (wakePromise) return wakePromise
+
+  wakePromise = (async () => {
+    try {
+      // Call Supabase Edge Function to wake backend securely (PAT is stored in Supabase secrets)
+      if (SUPABASE_URL) {
+        await fetch(`${SUPABASE_URL}/functions/v1/wake-backend`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(SUPABASE_ANON_KEY ? {
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'apikey': SUPABASE_ANON_KEY,
+            } : {}),
+          },
+        }).catch(() => {})
+      }
+
+      // Poll until the server responds or max timeout (~35s)
+      const maxRetries = 10
+      for (let i = 0; i < maxRetries; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 3500))
+        try {
+          const checkRes = await fetch(`${API_URL}/cc-api/system/diagnostics/`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          })
+          if (checkRes.ok || checkRes.status < 500) {
+            break // Server is up and ready!
+          }
+        } catch {
+          // Still starting up...
+        }
+      }
+    } catch {
+      // Ignore background wake errors
+    } finally {
+      wakePromise = null
+    }
+  })()
+
+  return wakePromise
+}
+
+async function apiFetch<T>(endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<T> {
   const diskToken = await getToken()
   const memoryToken = useAuthStore.getState().token
   const token = diskToken || memoryToken
@@ -25,34 +78,49 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   const normalizedPath = pathPart.endsWith('/') ? pathPart : pathPart + '/'
   const normalizedEndpoint = queryPart ? `${normalizedPath}?${queryPart}` : normalizedPath
 
-  const response = await fetch(`${API_URL}${normalizedEndpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 
-        'Authorization': `Bearer ${token}`,
-        'x-authorization': `Bearer ${token}`
-      } : {}),
-      'x-byok-enabled': byokEnabled || 'false',
-      ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
-      ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
-      ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
-      ...(byokEnabled === 'true' && customGroqKey ? { 'x-groq-key': customGroqKey } : {}),
-      ...(options.headers as Record<string, string> || {}),
-    },
-  })
+  try {
+    const response = await fetch(`${API_URL}${normalizedEndpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 
+          'Authorization': `Bearer ${token}`,
+          'x-authorization': `Bearer ${token}`
+        } : {}),
+        'x-byok-enabled': byokEnabled || 'false',
+        ...(byokEnabled === 'true' && customGeminiKey ? { 'x-gemini-key': customGeminiKey } : {}),
+        ...(byokEnabled === 'true' && customOpenaiKey ? { 'x-openai-key': customOpenaiKey } : {}),
+        ...(byokEnabled === 'true' && customAnthropicKey ? { 'x-anthropic-key': customAnthropicKey } : {}),
+        ...(byokEnabled === 'true' && customGroqKey ? { 'x-groq-key': customGroqKey } : {}),
+        ...(options.headers as Record<string, string> || {}),
+      },
+    })
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }))
-    const errorMsg = err.error || `Request failed: ${response.status}`
-    if (response.status === 403 && errorMsg.includes('LIMIT_EXCEEDED')) {
-      useUIStore.getState().showLimitModal('workspace')
+    // Auto-wake if server is down (502 Bad Gateway / 503 / 504 Gateway Timeout)
+    if ((response.status === 502 || response.status === 503 || response.status === 504) && retryCount < 2) {
+      await wakeCodespace()
+      return apiFetch<T>(endpoint, options, retryCount + 1)
     }
-    throw new Error(errorMsg)
-  }
 
-  const result = await response.json()
-  return result.data as T
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: response.statusText }))
+      const errorMsg = err.error || `Request failed: ${response.status}`
+      if (response.status === 403 && errorMsg.includes('LIMIT_EXCEEDED')) {
+        useUIStore.getState().showLimitModal('workspace')
+      }
+      throw new Error(errorMsg)
+    }
+
+    const result = await response.json()
+    return result.data as T
+  } catch (err: any) {
+    // Network failure (tunnel disconnected / codespace offline) -> Silently wake & retry
+    if (retryCount < 2 && (err?.message?.includes('Network request failed') || err?.message?.includes('Failed to fetch'))) {
+      await wakeCodespace()
+      return apiFetch<T>(endpoint, options, retryCount + 1)
+    }
+    throw err
+  }
 }
 
 let activeAbort: (() => void) | null = null

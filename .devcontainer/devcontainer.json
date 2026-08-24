@@ -15,7 +15,8 @@
       "requireLocalPort": false
     }
   },
-  "postCreateCommand": "docker build -t cloudcode-base . && cd backend && npm install",
+  "postCreateCommand": "docker build -t cloudcode-base . && cd backend && npm install && npm install -g pm2",
+  "postStartCommand": "which pm2 >/dev/null 2>&1 || npm install -g pm2; cd /workspaces/cloudcode/backend && (pm2 delete cloudcode-backend 2>/dev/null || true) && pm2 start npm --name cloudcode-backend -- run dev",
   "customizations": {
     "vscode": {
       "extensions": [
