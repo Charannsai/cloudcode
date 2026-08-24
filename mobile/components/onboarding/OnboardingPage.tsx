@@ -1,80 +1,113 @@
 import React from 'react'
-import { View, Text, StyleSheet, Dimensions } from 'react-native'
-import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg'
-import { AmbientGlow } from './ScreenIllustrations'
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  Image,
+  ImageSourcePropType,
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 
 const { width, height } = Dimensions.get('window')
 
-const GLOW_COLORS = ['#8B5CF6', '#0D9488', '#6366F1', '#2563EB', '#059669', '#64748B']
-
-interface OnboardingPageProps {
+export interface OnboardingPageProps {
   index: number
   currentScreen: number
-  illustration: React.ComponentType<{ active: boolean }>
+  backgroundImage: ImageSourcePropType
   title: string
-  description: string
+  subtitle: string
+  textPosition?: 'center' | 'top' | 'bottom'
 }
 
-// Inner fade overlay — rendered INSIDE the illustration container
-// so it shares the same stacking context as the phone frame
-const InnerBottomFade = ({ isDark = true }: { isDark?: boolean }) => {
-  const bg = isDark ? '#05070B' : '#FAFAFA'
-  return (
-    <View style={styles.innerFadeOverlay} pointerEvents="none">
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id="innerFade" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={bg} stopOpacity={0} />
-            <Stop offset="35%" stopColor={bg} stopOpacity={0.5} />
-            <Stop offset="65%" stopColor={bg} stopOpacity={0.92} />
-            <Stop offset="100%" stopColor={bg} stopOpacity={1} />
-          </LinearGradient>
-        </Defs>
-        <Path d="M0 0H1000V1000H0Z" fill="url(#innerFade)" />
-      </Svg>
-    </View>
-  )
+function getGradientStops(index: number) {
+  if (index === 0) {
+    // Screen 1: Welcome to CloudCode
+    return [
+      <Stop key="0" offset="0%" stopColor="#000000" stopOpacity={0.4} />,
+      <Stop key="1" offset="40%" stopColor="#000000" stopOpacity={0.3} />,
+      <Stop key="2" offset="75%" stopColor="#000000" stopOpacity={0.8} />,
+      <Stop key="3" offset="100%" stopColor="#000000" stopOpacity={0.95} />,
+    ]
+  }
+  if (index === 3) {
+    // Screen 4: Everything runs on cloud
+    return [
+      <Stop key="0" offset="0%" stopColor="#000000" stopOpacity={0.85} />,
+      <Stop key="1" offset="35%" stopColor="#000000" stopOpacity={0.65} />,
+      <Stop key="2" offset="55%" stopColor="#000000" stopOpacity={0.3} />,
+      <Stop key="3" offset="75%" stopColor="#000000" stopOpacity={0.2} />,
+      <Stop key="4" offset="100%" stopColor="#000000" stopOpacity={0.85} />,
+    ]
+  }
+  if (index === 5) {
+    // Screen 6: Be One of the First (dark bottom for text + button + terms)
+    return [
+      <Stop key="0" offset="0%" stopColor="#1A1A1A" stopOpacity={0.3} />,
+      <Stop key="1" offset="45%" stopColor="#000000" stopOpacity={0.2} />,
+      <Stop key="2" offset="65%" stopColor="#000000" stopOpacity={0.7} />,
+      <Stop key="3" offset="85%" stopColor="#000000" stopOpacity={0.9} />,
+      <Stop key="4" offset="100%" stopColor="#000000" stopOpacity={0.98} />,
+    ]
+  }
+  // Standard screens (2, 3, 5) - rich bottom gradient covering text right above button
+  return [
+    <Stop key="0" offset="0%" stopColor="#000000" stopOpacity={0.3} />,
+    <Stop key="1" offset="45%" stopColor="#000000" stopOpacity={0.15} />,
+    <Stop key="2" offset="65%" stopColor="#000000" stopOpacity={0.65} />,
+    <Stop key="3" offset="85%" stopColor="#000000" stopOpacity={0.88} />,
+    <Stop key="4" offset="100%" stopColor="#000000" stopOpacity={0.96} />,
+  ]
 }
 
-export const OnboardingPage = ({
+export const OnboardingPage: React.FC<OnboardingPageProps> = ({
   index,
-  currentScreen,
-  illustration: Illustration,
+  backgroundImage,
   title,
-  description,
-}: OnboardingPageProps) => {
-  const isWelcomePage = index === 0
-  const isLastPage = index === 5
-
-  const textColor = isLastPage ? '#0F172A' : '#FFFFFF'
-  const subTextColor = isLastPage ? '#475569' : '#8E939E'
+  subtitle,
+  textPosition,
+}) => {
+  const insets = useSafeAreaInsets()
 
   return (
     <View style={styles.pageContainer}>
-      <AmbientGlow color={GLOW_COLORS[index]} isDark={!isLastPage} />
-      <View style={styles.pageIllustrationContainer}>
-        <Illustration active={currentScreen === index} />
-        {/* Inner fade — same stacking context as the phone, higher zIndex */}
-        <InnerBottomFade isDark={!isLastPage} />
+      {/* Background Artwork */}
+      <View style={StyleSheet.absoluteFill}>
+        <Image
+          source={backgroundImage}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        />
       </View>
-      <View style={styles.textWrapper}>
-        <Text
-          style={[
-            isWelcomePage ? styles.title : styles.showcaseTitle,
-            { color: textColor, fontFamily: 'Inter_700Bold' },
-          ]}
-        >
-          {title}
-        </Text>
-        <Text
-          style={[
-            isWelcomePage ? styles.description : styles.showcaseDescription,
-            { color: subTextColor, fontFamily: 'Inter_400Regular' },
-          ]}
-        >
-          {description}
-        </Text>
+
+      {/* Scrim Overlay Gradient */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <LinearGradient id={`scrim-${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              {getGradientStops(index)}
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill={`url(#scrim-${index})`} />
+        </Svg>
       </View>
+
+      {/* Center text block for Screen 1 */}
+      {textPosition === 'center' && (
+        <View style={[styles.centerTextBlock, { bottom: height * 0.44 }]}>
+          <Text style={[styles.title, styles.textCenter]}>{title}</Text>
+          <Text style={[styles.subtitle14, styles.textCenter]}>{subtitle}</Text>
+        </View>
+      )}
+
+      {/* Top text block for Screen 4 */}
+      {textPosition === 'top' && (
+        <View style={[styles.topTextBlock, { top: insets.top + 180 }]}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle12}>{subtitle}</Text>
+        </View>
+      )}
     </View>
   )
 }
@@ -83,62 +116,48 @@ const styles = StyleSheet.create({
   pageContainer: {
     width: width,
     height: height,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  pageIllustrationContainer: {
-    position: 'absolute',
-    top: height * 0.08,
-    left: 0,
-    right: 0,
-    bottom: height * 0.22,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
     overflow: 'hidden',
+    backgroundColor: '#05070B',
   },
-  // Inside the illustration container, covering the bottom 55%
-  // zIndex 20 ensures it paints OVER the phone (zIndex 5)
-  innerFadeOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '55%',
-    zIndex: 20,
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
   },
-  textWrapper: {
+  centerTextBlock: {
     position: 'absolute',
-    bottom: 165,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
+    left: 20,
+    right: 20,
+    gap: 6,
+    alignItems: 'center',
     zIndex: 10,
-    elevation: 10,
+  },
+  topTextBlock: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    gap: 6,
+    zIndex: 10,
   },
   title: {
-    fontSize: 42,
-    lineHeight: 48,
-    letterSpacing: -1,
-    marginBottom: 16,
+    fontSize: 24,
+    lineHeight: 30,
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.3,
   },
-  description: {
-    fontSize: 15,
-    lineHeight: 23,
-    marginBottom: 24,
-    maxWidth: '90%',
-  },
-  showcaseTitle: {
-    fontSize: 32,
-    lineHeight: 38,
-    letterSpacing: -0.8,
-    marginBottom: 12,
-    textAlign: 'left',
-  },
-  showcaseDescription: {
+  subtitle14: {
     fontSize: 14,
-    lineHeight: 22,
-    maxWidth: '95%',
-    textAlign: 'left',
+    lineHeight: 20,
+    color: '#FFFFFF',
+    fontFamily: 'Inter_400Regular',
+  },
+  subtitle12: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#FFFFFF',
+    fontFamily: 'Inter_400Regular',
+  },
+  textCenter: {
+    textAlign: 'center',
   },
 })

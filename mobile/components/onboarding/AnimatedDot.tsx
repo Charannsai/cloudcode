@@ -2,46 +2,45 @@ import React from 'react'
 import { StyleSheet } from 'react-native'
 import Animated, {
   useAnimatedStyle,
-  interpolateColor,
   withTiming,
-  SharedValue,
+  Easing,
 } from 'react-native-reanimated'
 
 interface AnimatedDotProps {
   index: number
   currentScreen: number
-  bgThemeTransition: SharedValue<number>
 }
 
 export const AnimatedDot = ({
   index,
   currentScreen,
-  bgThemeTransition,
 }: AnimatedDotProps) => {
   const isActive = currentScreen === index
 
-  const style = useAnimatedStyle(() => {
-    const activeWidth = isActive ? 16 : 6
-    const activeColor = interpolateColor(
-      bgThemeTransition.value,
-      [0, 1],
-      [
-        isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.25)',
-        isActive ? '#05070B' : 'rgba(15, 23, 42, 0.2)',
-      ]
-    )
-    return {
-      width: withTiming(activeWidth, { duration: 250 }),
-      backgroundColor: activeColor,
-    }
-  })
+  const animatedStyle = useAnimatedStyle(() => {
+    const targetWidth = isActive ? 20 : 6
+    const targetOpacity = isActive ? 0.9 : 0.35
 
-  return <Animated.View style={[styles.dot, style]} />
+    return {
+      width: withTiming(targetWidth, {
+        duration: 300,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      }),
+      opacity: withTiming(targetOpacity, {
+        duration: 300,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      }),
+    }
+  }, [isActive])
+
+  return <Animated.View style={[styles.dot, animatedStyle]} />
 }
 
 const styles = StyleSheet.create({
   dot: {
     height: 6,
     borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 3,
   },
 })

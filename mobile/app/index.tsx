@@ -15,7 +15,6 @@ import { useRouter } from 'expo-router'
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import { useAuthStore } from '@/store/auth'
-import { useAppTheme } from '@/hooks/useAppTheme'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
@@ -25,17 +24,12 @@ import Animated, {
   withTiming,
   withSequence,
   withDelay,
-  withRepeat,
   interpolate,
-  interpolateColor,
   Easing,
-  SharedValue,
-  FadeIn,
-  FadeOut,
 } from 'react-native-reanimated'
-import Svg, { Path, Defs, RadialGradient, Rect, Stop, Line, Circle, G, Ellipse, LinearGradient } from 'react-native-svg'
-import { BlurView } from 'expo-blur'
+import Svg, { Path } from 'react-native-svg'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { OnboardingPage } from '@/components/onboarding/OnboardingPage'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.cerprise.in'
 const { width, height } = Dimensions.get('window')
@@ -45,54 +39,71 @@ const CLOUD_PATH = "M744.133 448.718L745.663 450.478C749.573 448.638 756.023 442
 
 const AnimatedPath = Animated.createAnimatedComponent(Path)
 
-import { GridBackground } from '@/components/onboarding/GridBackground'
-import { AnimatedDot } from '@/components/onboarding/AnimatedDot'
-import { OnboardingPage } from '@/components/onboarding/OnboardingPage'
-import {
-  Screen0Illustration,
-  Screen1Illustration,
-  Screen2Illustration,
-  Screen3Illustration,
-  Screen4Illustration,
-  Screen5Illustration,
-} from '@/components/onboarding/ScreenIllustrations'
-
-const ONBOARDING_DATA = [
+// The 6 Onboarding Screens matching the Figma build
+const ONBOARDING_SCREENS = [
   {
-    title: "Welcome to\nCloudCode",
-    description: "Your secure hub for code, collaboration, and cloud automation. Build. Deploy. Scale — all in one place.",
-    illustration: Screen0Illustration,
+    id: 1,
+    image: require('@/assets/onboarding/onboarding_1.png'),
+    title: 'Welcome to CloudCode',
+    subtitle: 'Your intelligent development environment, anywhere.',
+    textPosition: 'center' as const,
+    showSkip: true,
+    ctaLabel: 'Continue',
   },
   {
-    title: "Create Development\nEnvironments Instantly",
-    description: "Instantly spin up isolated cloud containers from your repositories. Run full desktop workspaces right from your phone.",
-    illustration: Screen1Illustration,
+    id: 2,
+    image: require('@/assets/onboarding/onboarding_2.png'),
+    title: 'Get Your True Workspace',
+    subtitle: 'CloudCode gives you your actual development workspace.',
+    textPosition: 'bottom' as const,
+    showSkip: true,
+    ctaLabel: 'Continue',
   },
   {
-    title: "Describe It.\nLet AI Build It.",
-    description: "Collaborative AI developer agents work in sync to turn your descriptions into functional components, APIs, and databases.",
-    illustration: Screen2Illustration,
+    id: 3,
+    image: require('@/assets/onboarding/onboarding_3.png'),
+    title: 'Connect Your Agents',
+    subtitle:
+      'Integrate MCPs, AI agents, and developer tools directly into your workspace. CloudCode brings your agents, tools, and development environments together in one place.',
+    textPosition: 'bottom' as const,
+    showSkip: true,
+    ctaLabel: 'Continue',
   },
   {
-    title: "Professional Development\nWorkflows Anywhere",
-    description: "Access a multi-shell remote terminal alongside a visual branching manager. Commit, merge, and pull requests effortlessly.",
-    illustration: Screen3Illustration,
+    id: 4,
+    image: require('@/assets/onboarding/onboarding_4.png'),
+    title: 'Everything runs on cloud',
+    subtitle:
+      'Run your projects in isolated cloud environments without setting up your machine. Access your terminal, runtimes, databases, and tools whenever you need them.',
+    textPosition: 'top' as const,
+    showSkip: true,
+    ctaLabel: 'Continue',
   },
   {
-    title: "Run, Preview,\nand Deploy Securely",
-    description: "Interact with live browser previews connected via encrypted TLS tunnels to compliant, isolated cloud infrastructure.",
-    illustration: Screen4Illustration,
+    id: 5,
+    image: require('@/assets/onboarding/onboarding_5.png'),
+    title: 'Build. Preview. Ship.',
+    subtitle:
+      'Build and test your projects in a fully connected cloud workspace. Run your code, preview changes instantly, and keep everything you need in one place.',
+    textPosition: 'bottom' as const,
+    showSkip: true,
+    ctaLabel: 'Continue',
   },
   {
-    title: "Everything You Need.\nAnywhere.",
-    description: "Log in with your GitHub account to access your repositories and spin up remote dev boxes on the go.",
-    illustration: Screen5Illustration,
+    id: 6,
+    image: require('@/assets/onboarding/onboarding_6.png'),
+    title: 'Be One of the First.',
+    subtitle:
+      'Be among the first developers to experience a new way of building with CloudCode.',
+    textPosition: 'bottom' as const,
+    showSkip: false,
+    ctaLabel: 'Continue with Github',
+    showTerms: true,
   },
 ]
 
 export default function WelcomeScreen() {
   const { user, loading, setToken } = useAuthStore()
-  const { isDark } = useAppTheme()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [signingIn, setSigningIn] = useState(false)
@@ -110,7 +121,7 @@ export default function WelcomeScreen() {
     }
   }, [currentScreen, isWelcomePhase])
 
-  // Animation values
+  // Animation values for the initial splash effect
   const drawingProgress = useSharedValue(0)
   const fillOpacity = useSharedValue(0)
   const logoScale = useSharedValue(1)
@@ -119,19 +130,16 @@ export default function WelcomeScreen() {
   const brandTranslateY = useSharedValue(20)
   const welcomeTransition = useSharedValue(0)
   const outlineGlow = useSharedValue(0)
-  
-  // Theme and page transitions
-  const bgThemeTransition = useSharedValue(0)
 
   // Measure path length dynamically
   const [pathLength, setPathLength] = useState(0)
 
-  // Handle auto redirect if logged in after the splash screen completes (4.1s)
+  // Handle auto redirect if logged in after the splash screen completes (3.6s)
   useEffect(() => {
     if (!loading && user) {
       const redirectTimer = setTimeout(async () => {
         router.replace('/(tabs)/dashboard')
-      }, 4100)
+      }, 3600)
       return () => clearTimeout(redirectTimer)
     }
   }, [user, loading, router])
@@ -140,7 +148,10 @@ export default function WelcomeScreen() {
   useEffect(() => {
     if (!loading) {
       // 0.0s → 1.6s: Outline drawing
-      drawingProgress.value = withTiming(1, { duration: 1600, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
+      drawingProgress.value = withTiming(1, {
+        duration: 1600,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      })
 
       // 1.2s → 1.6s: Final fill fade in
       fillOpacity.value = withDelay(
@@ -180,41 +191,21 @@ export default function WelcomeScreen() {
         withTiming(0, { duration: 700, easing: Easing.bezier(0.16, 1, 0.3, 1) })
       )
 
-      // If user is a guest, transition to the Welcome Screen after the branding text has been visible
+      // If user is not authenticated, smoothly transition to the Onboarding carousel
       if (!user) {
         welcomeTransition.value = withDelay(
-          4100,
-          withTiming(1, { duration: 500, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+          3600,
+          withTiming(1, { duration: 600, easing: Easing.bezier(0.16, 1, 0.3, 1) })
         )
 
-        // Sync status bar style change with start of Welcome Transition at 4.1s
         const timer = setTimeout(() => {
           setIsWelcomePhase(true)
-        }, 4100)
+        }, 3600)
 
         return () => clearTimeout(timer)
       }
     }
   }, [loading, user])
-
-  // Handles theme transition when changing screens
-  useEffect(() => {
-    if (currentScreen === 5) {
-      bgThemeTransition.value = withTiming(1, { duration: 800, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-    } else {
-      bgThemeTransition.value = withTiming(0, { duration: 800, easing: Easing.bezier(0.16, 1, 0.3, 1) })
-    }
-  }, [currentScreen])
-
-  // Auto-advance onboarding timer
-  useEffect(() => {
-    if (isWelcomePhase && currentScreen < 5 && !signingIn) {
-      const timer = setInterval(() => {
-        setCurrentScreen((prev) => (prev < 5 ? prev + 1 : prev))
-      }, 6000)
-      return () => clearInterval(timer)
-    }
-  }, [isWelcomePhase, currentScreen, signingIn])
 
   async function handleLoginSuccess(token: string) {
     setToken(token)
@@ -232,11 +223,8 @@ export default function WelcomeScreen() {
     try {
       const redirectUri = Linking.createURL('/auth')
       const authUrl = `${API_URL}/cc-api/auth/github?redirect_uri=${encodeURIComponent(redirectUri)}`
-      
-      const result = await WebBrowser.openAuthSessionAsync(
-        authUrl,
-        redirectUri
-      )
+
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri)
 
       if (result.type === 'success' && result.url) {
         const parsed = Linking.parse(result.url)
@@ -260,71 +248,36 @@ export default function WelcomeScreen() {
         if (length && length > 0) {
           setPathLength(length)
         }
-      } catch (e) {
+      } catch {
         setPathLength(140)
       }
     }
   }
 
-  // Handle Manual Continue
+  // Advance to next screen
   const handleContinue = () => {
-    if (currentScreen < 5) {
-      setCurrentScreen(currentScreen + 1)
+    if (currentScreen < ONBOARDING_SCREENS.length - 1) {
+      setCurrentScreen((prev) => prev + 1)
+    } else {
+      signInWithGitHub()
     }
   }
 
-  // Interpolated Styles for Theme Shifts
-  const containerStyle = useAnimatedStyle(() => {
-    const bgColor = interpolateColor(
-      bgThemeTransition.value,
-      [0, 1],
-      ['#05070B', '#FAFAFA']
-    )
-    return {
-      backgroundColor: bgColor,
-    }
-  })
-
-  const skipButtonStyle = useAnimatedStyle(() => {
-    const color = interpolateColor(
-      bgThemeTransition.value,
-      [0, 1],
-      ['rgba(255, 255, 255, 0.45)', 'rgba(15, 23, 42, 0.45)']
-    )
-    return {
-      color,
-    }
-  })
-
-
-
-  const lightLogoStyle = useAnimatedStyle(() => ({
-    opacity: 1 - bgThemeTransition.value,
-  }))
-
-  const darkLogoStyle = useAnimatedStyle(() => ({
-    opacity: bgThemeTransition.value,
-  }))
+  // Skip to final screen
+  const handleSkip = () => {
+    setCurrentScreen(ONBOARDING_SCREENS.length - 1)
+  }
 
   // Centered Splash Logo animated styles
   const splashLogoStyle = useAnimatedStyle(() => {
     const t = welcomeTransition.value
-    const targetCenterX = 24 + 16
-    const targetCenterY = insets.top + 16 + 16
-
-    const initialCenterX = width / 2
-    const initialCenterY = height / 2
-
-    const transX = interpolate(t, [0, 1], [0, targetCenterX - initialCenterX])
-    const transY = interpolate(t, [0, 1], [logoTranslateY.value, targetCenterY - initialCenterY])
-    const scale = interpolate(t, [0, 1], [logoScale.value, 0.32])
+    const scale = interpolate(t, [0, 1], [logoScale.value, 0.4])
     const opacity = interpolate(t, [0, 1], [1, 0])
 
     return {
       opacity: opacity,
       transform: [
-        { translateX: transX },
-        { translateY: transY },
+        { translateY: logoTranslateY.value },
         { scale: scale },
       ],
     }
@@ -351,7 +304,6 @@ export default function WelcomeScreen() {
     }
   })
 
-  // Glow points traveling along the path
   const animatedForwardsGlowProps = useAnimatedProps(() => {
     const len = pathLength || 140
     return {
@@ -369,11 +321,10 @@ export default function WelcomeScreen() {
   const animatedPathFillProps = useAnimatedProps(() => {
     return {
       fillOpacity: fillOpacity.value,
-      fill: '#0F172A',
+      fill: '#FFFFFF',
     }
   })
 
-  // Full outline flash glow animation props
   const animatedOutlineGlowProps = useAnimatedProps(() => {
     return {
       opacity: outlineGlow.value,
@@ -383,285 +334,176 @@ export default function WelcomeScreen() {
   // Brand Reveal Text styles
   const brandTextStyle = useAnimatedStyle(() => {
     const opacity = brandOpacity.value * (1 - welcomeTransition.value)
-    const translateY = brandTranslateY.value - (welcomeTransition.value * 20)
+    const translateY = brandTranslateY.value - welcomeTransition.value * 20
     return {
       opacity: opacity,
       transform: [{ translateY: translateY }],
     }
   })
 
-  // Iris-closing white background overlay style
-  const whiteOverlayStyle = useAnimatedStyle(() => {
-    const t = welcomeTransition.value
-    const maxDim = Math.max(width, height)
-    const startSize = maxDim * 2.5
-    const endSize = 32
-    const size = interpolate(t, [0, 1], [startSize, endSize])
-
-    const initialCenterX = width / 2
-    const initialCenterY = height / 2
-    const targetCenterX = 24 + 16
-    const targetCenterY = insets.top + 16 + 16
-
-    const centerX = interpolate(t, [0, 1], [initialCenterX, targetCenterX])
-    const centerY = interpolate(t, [0, 1], [initialCenterY, targetCenterY])
-    const opacity = interpolate(t, [0, 0.85, 1], [1, 1, 0])
-
-    return {
-      width: size,
-      height: size,
-      left: centerX - size / 2,
-      top: centerY - size / 2,
-      borderRadius: size / 2,
-      opacity: opacity,
-    }
-  })
-
-
-  const watermarkStyle = useAnimatedStyle(() => {
-    const targetOpacity = 0.08
-    const finalOpacity = targetOpacity * (1 - bgThemeTransition.value)
-    return { opacity: interpolate(welcomeTransition.value, [0, 1], [0, finalOpacity]) }
-  })
-
-  const welcomeContentStyle = useAnimatedStyle(() => ({
+  const onboardingContainerStyle = useAnimatedStyle(() => ({
     opacity: welcomeTransition.value,
-    transform: [{ translateY: interpolate(welcomeTransition.value, [0, 1], [40, 0]) }],
   }))
-
-  const ambientGlowStyle = useAnimatedStyle(() => ({
-    opacity: welcomeTransition.value * (1 - bgThemeTransition.value),
-  }))
-
-  const ctaButtonStyle = useAnimatedStyle(() => {
-    const bgColor = interpolateColor(bgThemeTransition.value, [0, 1], ['#FFFFFF', '#0F172A'])
-    return { backgroundColor: bgColor }
-  })
-
-  const ctaButtonTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(bgThemeTransition.value, [0, 1], ['#05070B', '#FFFFFF']),
-  }))
-
-  const headerTextStyle = useAnimatedStyle(() => ({ opacity: welcomeTransition.value }))
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: '#05070B', justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color="#00E5FF" />
       </View>
     )
   }
 
   const staticPathLength = pathLength || 140
-
-
+  const activeScreenData = ONBOARDING_SCREENS[currentScreen]
 
   return (
-    <Animated.View style={[styles.container, containerStyle]}>
-      {/* Dynamic StatusBar style based on current screen's theme */}
-      <StatusBar style={currentScreen === 5 ? "dark" : "light"} />
+    <View style={styles.container}>
+      <StatusBar style="light" translucent />
 
-      {/* Welcome Screen Ambient Glow (Hidden in light theme Screen 5) */}
-      <Animated.View style={[StyleSheet.absoluteFill, ambientGlowStyle]}>
-        <Svg style={StyleSheet.absoluteFill}>
-          <Defs>
-            <RadialGradient
-              id="ambientGlow"
-              cx="50%"
-              cy="0%"
-              rx="60%"
-              ry="60%"
-              fx="50%"
-              fy="0%"
-            >
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.2} />
-              <Stop offset="100%" stopColor="#05070B" stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Path d="M0 0H1000V1000H0Z" fill="url(#ambientGlow)" />
-        </Svg>
-      </Animated.View>
+      {/* Initial Splash Tracing Animation Overlay (fades out as onboarding loads) */}
+      {!isWelcomePhase && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Animated.View style={[styles.logoCenterContainer, splashLogoStyle]}>
+            <Svg width={100} height={100} viewBox="0 0 874 552">
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="rgba(0, 229, 255, 0.15)"
+                strokeWidth={1.2}
+                animatedProps={animatedBaseOutlineProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="rgba(0, 229, 255, 0.35)"
+                strokeWidth={1.2}
+                strokeDasharray={staticPathLength}
+                animatedProps={animatedForwardsTrailProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="rgba(0, 229, 255, 0.35)"
+                strokeWidth={1.2}
+                strokeDasharray={staticPathLength}
+                animatedProps={animatedBackwardsTrailProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#4F9DFF"
+                strokeWidth={6}
+                strokeDasharray={[40, 3000]}
+                opacity={0.2}
+                animatedProps={animatedForwardsGlowProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#00E5FF"
+                strokeWidth={2.2}
+                strokeDasharray={[20, 3000]}
+                opacity={0.7}
+                animatedProps={animatedForwardsGlowProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth={1.0}
+                strokeDasharray={[10, 3000]}
+                animatedProps={animatedForwardsGlowProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#4F9DFF"
+                strokeWidth={6}
+                strokeDasharray={[40, 3000]}
+                opacity={0.2}
+                animatedProps={animatedBackwardsGlowProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#00E5FF"
+                strokeWidth={2.2}
+                strokeDasharray={[20, 3000]}
+                opacity={0.7}
+                animatedProps={animatedBackwardsGlowProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth={1.0}
+                strokeDasharray={[10, 3000]}
+                animatedProps={animatedBackwardsGlowProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#00E5FF"
+                strokeWidth={4}
+                animatedProps={animatedOutlineGlowProps}
+              />
+              <AnimatedPath
+                d={CLOUD_PATH}
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth={1.2}
+                animatedProps={animatedOutlineGlowProps}
+              />
+              <AnimatedPath
+                ref={handlePathRef}
+                d={CLOUD_PATH}
+                fill="#FFFFFF"
+                stroke="none"
+                animatedProps={animatedPathFillProps}
+              />
+            </Svg>
+          </Animated.View>
 
-      {/* Welcome Screen Tech Grid Background */}
-      <GridBackground isDark={true} opacity={welcomeTransition} themeTransition={bgThemeTransition} />
-
-      {/* Welcome Screen Giant Watermark Logo */}
-      <Animated.View style={[styles.watermarkContainer, watermarkStyle]}>
-        <Svg width={550} height={550} viewBox="0 0 874 552">
-          <Path
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth={1.5}
-          />
-        </Svg>
-      </Animated.View>
-
-      {/* Header Branding Logo Images (Cross-fading between light and dark versions) */}
-      <Animated.View style={[styles.headerContainer, { top: insets.top + 16, left: 24 }, headerTextStyle]}>
-        <Animated.Image
-          source={require('@/assets/cloudcodelogolight.png')}
-          style={[{ width: 132.8, height: 32, position: 'absolute' }, lightLogoStyle]}
-          resizeMode="contain"
-        />
-        <Animated.Image
-          source={require('@/assets/cloudcodelogo.png')}
-          style={[{ width: 132.8, height: 32 }, darkLogoStyle]}
-          resizeMode="contain"
-        />
-      </Animated.View>
-
-      {/* Skip Button (Low opacity skip in top right corner for Screens 0-4) */}
-      {isWelcomePhase && currentScreen < 5 && (
-        <TouchableOpacity
-          activeOpacity={0.6}
-          style={[styles.skipButton, { top: insets.top + 16 }]}
-          onPress={() => setCurrentScreen(5)}
-        >
-          <Animated.Text style={[styles.skipText, { fontFamily: 'Inter_500Medium' }, skipButtonStyle]}>
-            Skip
-          </Animated.Text>
-        </TouchableOpacity>
+          <Animated.View style={[styles.brandTextContainer, brandTextStyle]}>
+            <Text style={styles.brandTitle}>CloudCode</Text>
+          </Animated.View>
+        </View>
       )}
 
-      {/* Iris-closing White Background Overlay */}
-      <Animated.View style={[styles.whiteOverlay, whiteOverlayStyle]} />
+      {/* Main Onboarding Carousel Content */}
+      <Animated.View style={[styles.onboardingContainer, onboardingContainerStyle]}>
+        {/* Top Bar Header */}
+        <View style={[styles.headerBar, { top: insets.top + 16 }]}>
+          <Image
+            source={require('@/assets/cloudcodelogolight.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          {currentScreen < ONBOARDING_SCREENS.length - 1 && (
+            <TouchableOpacity
+              activeOpacity={0.6}
+              onPress={handleSkip}
+              style={styles.skipButton}
+            >
+              <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Centered Splash Logo (Translates to header in Phase 5) */}
-      <Animated.View style={[styles.logoCenterContainer, splashLogoStyle]}>
-        <Svg width={100} height={100} viewBox="0 0 874 552">
-          {/* Phase 1 — Sleeping outline */}
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="rgba(0, 229, 255, 0.15)"
-            strokeWidth={1.2}
-            animatedProps={animatedBaseOutlineProps}
-          />
-
-          {/* Phase 2 — Forwards trail */}
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="rgba(0, 229, 255, 0.35)"
-            strokeWidth={1.2}
-            strokeDasharray={staticPathLength}
-            animatedProps={animatedForwardsTrailProps}
-          />
-
-          {/* Phase 2 — Backwards trail */}
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="rgba(0, 229, 255, 0.35)"
-            strokeWidth={1.2}
-            strokeDasharray={staticPathLength}
-            animatedProps={animatedBackwardsTrailProps}
-          />
-
-          {/* Phase 2 — Forwards laser shine (Aura, Glow, and White Core) */}
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#4F9DFF"
-            strokeWidth={6}
-            strokeDasharray={[40, 3000]}
-            opacity={0.2}
-            animatedProps={animatedForwardsGlowProps}
-          />
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#00E5FF"
-            strokeWidth={2.2}
-            strokeDasharray={[20, 3000]}
-            opacity={0.7}
-            animatedProps={animatedForwardsGlowProps}
-          />
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth={1.0}
-            strokeDasharray={[10, 3000]}
-            animatedProps={animatedForwardsGlowProps}
-          />
-
-          {/* Phase 2 — Backwards laser shine (Aura, Glow, and White Core) */}
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#4F9DFF"
-            strokeWidth={6}
-            strokeDasharray={[40, 3000]}
-            opacity={0.2}
-            animatedProps={animatedBackwardsGlowProps}
-          />
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#00E5FF"
-            strokeWidth={2.2}
-            strokeDasharray={[20, 3000]}
-            opacity={0.7}
-            animatedProps={animatedBackwardsGlowProps}
-          />
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth={1.0}
-            strokeDasharray={[10, 3000]}
-            animatedProps={animatedBackwardsGlowProps}
-          />
-
-          {/* Phase 2.5 — Full Outline Shine Glow (Neon blue) */}
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#00E5FF"
-            strokeWidth={4}
-            animatedProps={animatedOutlineGlowProps}
-          />
-
-          {/* Phase 2.5 — Full Outline Shine Core (White-hot) */}
-          <AnimatedPath
-            d={CLOUD_PATH}
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth={1.2}
-            animatedProps={animatedOutlineGlowProps}
-          />
-
-          {/* Phase 3 & Transition — Fill of the Cloud logo */}
-          <AnimatedPath
-            ref={handlePathRef}
-            d={CLOUD_PATH}
-            fill="#0F172A"
-            stroke="none"
-            animatedProps={animatedPathFillProps}
-          />
-        </Svg>
-      </Animated.View>
-
-      {/* Phase 4 — Splash Brand Reveal Text */}
-      <Animated.View style={[styles.brandTextContainer, brandTextStyle]}>
-        <Text style={[styles.brandTitle, { color: '#0F172A', fontFamily: 'Inter_800ExtraBold' }]}>
-          CloudCode
-        </Text>
-      </Animated.View>
-
-      {/* Onboarding Pages (Horizontally Swipeable & Paged) */}
-      {isWelcomePhase && (
+        {/* Swipeable Paged Screens */}
         <ScrollView
           ref={scrollViewRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={(e) => {
+          onMomentumScrollEnd={(e: NativeSyntheticEvent<NativeScrollEvent>) => {
             const offsetX = e.nativeEvent.contentOffset.x
             const index = Math.round(offsetX / width)
-            if (index !== currentScreen && index >= 0 && index <= 5) {
+            if (
+              index !== currentScreen &&
+              index >= 0 &&
+              index < ONBOARDING_SCREENS.length
+            ) {
               setCurrentScreen(index)
             }
           }}
@@ -669,116 +511,87 @@ export default function WelcomeScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
         >
-          {ONBOARDING_DATA.map((page, index) => (
+          {ONBOARDING_SCREENS.map((screen, idx) => (
             <OnboardingPage
-              key={index}
-              index={index}
+              key={screen.id}
+              index={idx}
               currentScreen={currentScreen}
-              illustration={page.illustration}
-              title={page.title}
-              description={page.description}
+              backgroundImage={screen.image}
+              title={screen.title}
+              subtitle={screen.subtitle}
+              textPosition={screen.textPosition}
             />
           ))}
         </ScrollView>
-      )}
 
-      {/* Fixed Bottom Indicators and Primary CTA Button */}
-      {isWelcomePhase && (
-        <Animated.View style={[styles.welcomeContentFixed, welcomeContentStyle, { bottom: 40 + insets.bottom }]}>
-          {/* Dots Indicator */}
-          <View style={styles.dotsContainer}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <AnimatedDot 
-                key={i} 
-                index={i} 
-                currentScreen={currentScreen} 
-                bgThemeTransition={bgThemeTransition} 
-              />
-            ))}
-          </View>
-
-          {/* Primary Action CTA Buttons */}
-          {currentScreen === 5 ? (
-            <View style={{ gap: 10, width: '100%' }}>
-              {/* Continue with GitHub */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={signInWithGitHub}
-                disabled={signingIn}
-              >
-                <Animated.View style={[styles.ctaButton, ctaButtonStyle]}>
-                  {signingIn ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <View style={styles.ctaButtonContent}>
-                      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2} style={{ marginRight: 8 }}>
-                        <Path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-                      </Svg>
-                      <Text style={[styles.ctaText, { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold' }]}>
-                        Continue with GitHub
-                      </Text>
-                    </View>
-                  )}
-                </Animated.View>
-              </TouchableOpacity>
-
-              {/* Terms & Privacy Agreement */}
-              <Text style={{
-                color: isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.45)',
-                fontSize: 11,
-                textAlign: 'center',
-                marginTop: 6,
-                lineHeight: 16,
-                paddingHorizontal: 16,
-                fontFamily: 'Inter_400Regular'
-              }}>
-                By continuing, you agree to our{' '}
-                <Text 
-                  style={{ color: isDark ? '#94A3B8' : '#475569', textDecorationLine: 'underline', fontFamily: 'Inter_500Medium' }}
-                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/terms')}
-                >
-                  Terms of Service
-                </Text>{' '}
-                and{' '}
-                <Text 
-                  style={{ color: isDark ? '#94A3B8' : '#475569', textDecorationLine: 'underline', fontFamily: 'Inter_500Medium' }}
-                  onPress={() => WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/privacy')}
-                >
-                  Privacy Policy
-                </Text>
-                .
-              </Text>
-
+        {/* Unified Bottom Action Container */}
+        <View
+          style={[
+            styles.bottomActionContainer,
+            { bottom: Math.max(insets.bottom, 16) + 12 },
+          ]}
+        >
+          {/* Bottom Title & Subtitle sitting directly on top of the button */}
+          {activeScreenData.textPosition === 'bottom' && (
+            <View style={styles.bottomTextWrapper}>
+              <Text style={styles.bottomTitle}>{activeScreenData.title}</Text>
+              <Text style={styles.bottomSubtitle}>{activeScreenData.subtitle}</Text>
             </View>
-          ) : (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleContinue}
-              disabled={signingIn}
-            >
-              <Animated.View style={[styles.ctaButton, ctaButtonStyle]}>
-                <Animated.Text style={[
-                  styles.ctaText, 
-                  ctaButtonTextStyle,
-                  { fontFamily: 'Inter_600SemiBold' }
-                ]}>
-                  Continue
-                </Animated.Text>
-              </Animated.View>
-            </TouchableOpacity>
           )}
-        </Animated.View>
-      )}
-    </Animated.View>
+
+          {/* Primary Action Button */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handleContinue}
+            disabled={signingIn}
+            style={styles.ctaButton}
+          >
+            {signingIn ? (
+              <ActivityIndicator color="#0F0F0F" size="small" />
+            ) : (
+              <Text style={styles.ctaButtonText}>
+                {activeScreenData.ctaLabel}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Terms & Privacy text on the last screen */}
+          {activeScreenData.showTerms && (
+            <Text style={styles.termsText}>
+              By Continuing, you agree to our{' '}
+              <Text
+                style={styles.termsLink}
+                onPress={() =>
+                  WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/terms')
+                }
+              >
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text
+                style={styles.termsLink}
+                onPress={() =>
+                  WebBrowser.openBrowserAsync('https://cloudcode.cerprise.in/privacy')
+                }
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+          )}
+        </View>
+      </Animated.View>
+    </View>
   )
 }
 
-// -------------------------------------------------------------
-// Stylesheet Definitions
-// -------------------------------------------------------------
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#05070B',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoCenterContainer: {
     position: 'absolute',
@@ -792,555 +605,109 @@ const styles = StyleSheet.create({
   },
   brandTextContainer: {
     position: 'absolute',
-    left: 24,
-    right: 24,
+    left: 20,
+    right: 20,
     top: height / 2 + 44,
     alignItems: 'center',
     zIndex: 6,
   },
   brandTitle: {
     fontSize: 32,
-    color: '#0F172A',
+    color: '#FFFFFF',
+    fontFamily: 'Inter_800ExtraBold',
     letterSpacing: -0.5,
-    marginBottom: 4,
   },
-  whiteOverlay: {
-    position: 'absolute',
-    backgroundColor: '#FAFAFA',
-    zIndex: 5,
-  },
-  headerContainer: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 2,
-  },
-  watermarkContainer: {
-    position: 'absolute',
-    left: '-45%',
-    top: '12%',
-    transform: [{ rotate: '-15deg' }],
-    zIndex: 1,
-  },
-  welcomeContent: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: 40,
-    zIndex: 3,
-  },
-  title: {
-    fontSize: 42,
-    lineHeight: 48,
-    letterSpacing: -1,
-    marginBottom: 16,
-  },
-  description: {
-    fontSize: 15,
-    lineHeight: 23,
-    marginBottom: 24,
-    maxWidth: '90%',
-  },
-  ctaButton: {
-    height: 58,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  ctaText: {
-    fontSize: 16,
-    letterSpacing: -0.2,
-  },
-  // Showcase Illustrations & Layout Styles
-  showcaseIllustrationContainer: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    top: height * 0.14,
-    height: height * 0.42,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 4,
-  },
-  showcaseWrapper: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  workspaceCard: {
-    width: width - 80,
-    height: 140,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  workspaceBlur: {
-    flex: 1,
-    padding: 16,
-  },
-  workspaceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  windowDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  windowTitle: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginLeft: 4,
-    fontFamily: 'Inter_500Medium',
-  },
-  workspaceBody: {
+  onboardingContainer: {
     flex: 1,
   },
-  codeText: {
-    fontSize: 10,
-    color: '#E2E8F0',
-    fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 14,
-  },
-  floatingBadge: {
+  headerBar: {
     position: 'absolute',
-    borderRadius: 99,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  badgeBlur: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    color: '#FFFFFF',
-    fontFamily: 'Inter_500Medium',
-  },
-  aiPromptCardBack: {
-    position: 'absolute',
-    width: width - 120,
-    height: 80,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    padding: 12,
-    justifyContent: 'center',
-    opacity: 0.15,
-  },
-  aiPromptBackText: {
-    fontSize: 11,
-    color: '#FFFFFF',
-    fontFamily: 'Inter_400Regular',
-  },
-  aiPromptCardActive: {
-    width: width - 80,
-    height: 110,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  aiPromptBlur: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'space-between',
-  },
-  aiPromptText: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    fontFamily: 'Inter_500Medium',
-    lineHeight: 18,
-  },
-  cursor: {
-    color: '#00E5FF',
-    fontFamily: 'Inter_700Bold',
-  },
-  aiPromptFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  aiPromptBtn: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 99,
-  },
-  aiPromptBtnText: {
-    fontSize: 10,
-    color: '#94A3B8',
-    fontFamily: 'Inter_500Medium',
-  },
-  aiSendCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#00E5FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  aiIconBadge: {
-    position: 'absolute',
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  aiIconBlur: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  terminalContainer: {
-    width: width - 80,
-    height: 130,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  terminalBlur: {
-    flex: 1,
-    padding: 14,
-  },
-  terminalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  terminalTitle: {
-    fontSize: 10,
-    color: '#94A3B8',
-    marginLeft: 4,
-    fontFamily: 'Inter_500Medium',
-  },
-  terminalBody: {
-    flex: 1,
-  },
-  terminalLine: {
-    fontSize: 10,
-    color: '#E2E8F0',
-    fontFamily: 'JetBrainsMono_400Regular',
-    lineHeight: 15,
-  },
-  gitDiagram: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  pulseCircle: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: 'rgba(167, 139, 250, 0.4)',
-  },
-  gitActiveDot: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#A78BFA',
-  },
-  previewWindow: {
-    width: width - 110,
-    height: 120,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    zIndex: 2,
-  },
-  previewBlur: {
-    flex: 1,
-    padding: 12,
-  },
-  previewHeader: {
-    height: 18,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 4,
-    marginBottom: 12,
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  previewAddressBar: {
-    alignItems: 'center',
-  },
-  previewUrl: {
-    fontSize: 8,
-    color: '#94A3B8',
-    fontFamily: 'Inter_400Regular',
-  },
-  previewBody: {
-    flex: 1,
-    gap: 8,
-  },
-  previewBoxSmall: {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  previewLineWide: {
-    width: '100%',
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  previewLineMedium: {
-    width: '70%',
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  cloudNodesContainer: {
-    position: 'absolute',
-    left: 10,
-    bottom: 20,
-    zIndex: 1,
-  },
-  shieldContainer: {
-    position: 'absolute',
+    left: 20,
     right: 20,
-    top: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    zIndex: 3,
-  },
-  shieldBlur: {
-    padding: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gridOuterContainer: {
-    width: width,
-    height: height * 0.40,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    overflow: 'hidden',
+    zIndex: 50,
   },
-  gridColumn: {
-    width: (width - 64) / 3,
-    gap: 12,
-  },
-  gridItemCard: {
-    width: '100%',
-    height: 90,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(15, 23, 42, 0.08)',
-    padding: 10,
-    justifyContent: 'space-between',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  gridItemHeader: {
-    fontSize: 9,
-    fontFamily: 'Inter_700Bold',
-    color: '#64748B',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  gridItemBody: {
-    fontSize: 9,
-    fontFamily: 'JetBrainsMono_400Regular',
-    color: '#0F172A',
-    lineHeight: 12,
-  },
-  welcomeTextWrapper: {
-    marginBottom: 24,
-  },
-  textWrapper: {
-    width: '100%',
-    paddingHorizontal: 24,
-    height: 120,
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  showcaseTitle: {
-    fontSize: 32,
-    lineHeight: 38,
-    letterSpacing: -0.8,
-    marginBottom: 12,
-    textAlign: 'left',
-  },
-  showcaseDescription: {
-    fontSize: 14,
-    lineHeight: 22,
-    maxWidth: '95%',
-    textAlign: 'left',
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 32,
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  ctaButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 131,
+    height: 27,
   },
   skipButton: {
-    position: 'absolute',
-    right: 24,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    zIndex: 100,
+    borderRadius: 16,
+    backgroundColor: 'transparent',
+    opacity: 0.5,
   },
   skipText: {
+    color: '#FFFFFF',
     fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
   },
   scrollView: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: height,
-    zIndex: 4,
+    flex: 1,
   },
   scrollViewContent: {
-    alignItems: 'center',
+    flexDirection: 'row',
   },
-  pageContainer: {
-    width: width,
-    height: '100%',
-    justifyContent: 'space-between',
+  bottomActionContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
     alignItems: 'center',
+    zIndex: 50,
   },
-  pageIllustrationContainer: {
+  bottomTextWrapper: {
     width: '100%',
-    height: height * 0.38,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  glassCard3d: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    borderWidth: 1.5,
-    shadowColor: '#00E5FF',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  welcomeContentFixed: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: 40,
-    zIndex: 10,
-  },
-  checkListContainer: {
-    marginTop: 8,
-    gap: 2,
-  },
-  checkListItem: {
-    fontSize: 9,
-    color: '#34D399',
-    fontFamily: 'Inter_500Medium',
-  },
-  gitDiagramCard: {
-    width: width - 130,
-    height: 98,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  gitDiagramBlur: {
-    flex: 1,
-    padding: 8,
-    justifyContent: 'space-between',
-  },
-  gitStatusBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 99,
-    marginTop: 2,
-  },
-  gitStatusText: {
-    fontSize: 8,
-    color: '#60A5FA',
-    fontFamily: 'Inter_500Medium',
-  },
-  infraContainer: {
-    position: 'absolute',
-    width: 260,
-    height: 180,
-    zIndex: 1,
-  },
-  browserAppContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    marginTop: 4,
-  },
-  browserSidebar: {
-    width: 20,
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(255, 255, 255, 0.05)',
-    paddingVertical: 4,
-    gap: 6,
-  },
-  sidebarItem: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  browserMainContent: {
-    flex: 1,
-    paddingLeft: 8,
-    paddingVertical: 2,
-  },
-  metricRow: {
-    flexDirection: 'row',
+    marginBottom: 10,
     gap: 4,
-    marginTop: 4,
   },
-  metricCard: {
-    flex: 1,
-    height: 12,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  bottomTitle: {
+    fontSize: 24,
+    lineHeight: 29,
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.3,
   },
-  aiIconBlurMini: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  bottomSubtitle: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: 'rgba(255, 255, 255, 0.88)',
+    fontFamily: 'Inter_400Regular',
+    letterSpacing: -0.1,
+  },
+  ctaButton: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  ctaButtonText: {
+    color: '#0F0F0F',
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.2,
+  },
+  termsText: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 10,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 14,
+    paddingHorizontal: 8,
+  },
+  termsLink: {
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
+    fontFamily: 'Inter_500Medium',
   },
 })
