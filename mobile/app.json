@@ -25,7 +25,6 @@
       "backgroundColor": "#0a0a0f"
     },
     "android": {
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#0a0a0f"
@@ -47,14 +46,7 @@
     "plugins": [
       "./plugins/withExcludeSupport",
       "expo-router",
-      "expo-secure-store",
-      [
-        "@sentry/react-native",
-        {
-          "organization": "cloudcode-ja",
-          "project": "react-native"
-        }
-      ]
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
