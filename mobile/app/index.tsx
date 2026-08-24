@@ -134,17 +134,17 @@ export default function WelcomeScreen() {
   // Measure path length dynamically
   const [pathLength, setPathLength] = useState(0)
 
-  // Handle auto redirect if logged in after the splash screen completes (3.6s)
+  // Handle auto redirect if logged in after the splash screen completes (4.1s)
   useEffect(() => {
     if (!loading && user) {
       const redirectTimer = setTimeout(async () => {
         router.replace('/(tabs)/dashboard')
-      }, 3600)
+      }, 4100)
       return () => clearTimeout(redirectTimer)
     }
   }, [user, loading, router])
 
-  // Trigger initial tracing animations
+  // Trigger initial tracing animations on white background
   useEffect(() => {
     if (!loading) {
       // 0.0s → 1.6s: Outline drawing
@@ -153,7 +153,7 @@ export default function WelcomeScreen() {
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       })
 
-      // 1.2s → 1.6s: Final fill fade in
+      // 1.2s → 1.6s: Final fill fade in with #0F172A
       fillOpacity.value = withDelay(
         1200,
         withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) })
@@ -191,16 +191,16 @@ export default function WelcomeScreen() {
         withTiming(0, { duration: 700, easing: Easing.bezier(0.16, 1, 0.3, 1) })
       )
 
-      // If user is not authenticated, smoothly transition to the Onboarding carousel
+      // At 4.1s: Transition to the Onboarding carousel with Iris closing to top-left
       if (!user) {
         welcomeTransition.value = withDelay(
-          3600,
-          withTiming(1, { duration: 600, easing: Easing.bezier(0.16, 1, 0.3, 1) })
+          4100,
+          withTiming(1, { duration: 500, easing: Easing.bezier(0.16, 1, 0.3, 1) })
         )
 
         const timer = setTimeout(() => {
           setIsWelcomePhase(true)
-        }, 3600)
+        }, 4100)
 
         return () => clearTimeout(timer)
       }
@@ -268,16 +268,52 @@ export default function WelcomeScreen() {
     setCurrentScreen(ONBOARDING_SCREENS.length - 1)
   }
 
-  // Centered Splash Logo animated styles
+  // Iris-closing white background overlay style (shrinks into top-left)
+  const whiteOverlayStyle = useAnimatedStyle(() => {
+    const t = welcomeTransition.value
+    const maxDim = Math.max(width, height)
+    const startSize = maxDim * 2.5
+    const endSize = 32
+    const size = interpolate(t, [0, 1], [startSize, endSize])
+
+    const initialCenterX = width / 2
+    const initialCenterY = height / 2
+    const targetCenterX = 24 + 16
+    const targetCenterY = insets.top + 16 + 16
+
+    const centerX = interpolate(t, [0, 1], [initialCenterX, targetCenterX])
+    const centerY = interpolate(t, [0, 1], [initialCenterY, targetCenterY])
+    const opacity = interpolate(t, [0, 0.85, 1], [1, 1, 0])
+
+    return {
+      width: size,
+      height: size,
+      left: centerX - size / 2,
+      top: centerY - size / 2,
+      borderRadius: size / 2,
+      opacity: opacity,
+    }
+  })
+
+  // Centered Splash Logo animated styles (translates and scales to top-left)
   const splashLogoStyle = useAnimatedStyle(() => {
     const t = welcomeTransition.value
-    const scale = interpolate(t, [0, 1], [logoScale.value, 0.4])
+    const targetCenterX = 24 + 16
+    const targetCenterY = insets.top + 16 + 16
+
+    const initialCenterX = width / 2
+    const initialCenterY = height / 2
+
+    const transX = interpolate(t, [0, 1], [0, targetCenterX - initialCenterX])
+    const transY = interpolate(t, [0, 1], [logoTranslateY.value, targetCenterY - initialCenterY])
+    const scale = interpolate(t, [0, 1], [logoScale.value, 0.32])
     const opacity = interpolate(t, [0, 1], [1, 0])
 
     return {
       opacity: opacity,
       transform: [
-        { translateY: logoTranslateY.value },
+        { translateX: transX },
+        { translateY: transY },
         { scale: scale },
       ],
     }
@@ -321,7 +357,7 @@ export default function WelcomeScreen() {
   const animatedPathFillProps = useAnimatedProps(() => {
     return {
       fillOpacity: fillOpacity.value,
-      fill: '#FFFFFF',
+      fill: '#0F172A',
     }
   })
 
@@ -345,6 +381,10 @@ export default function WelcomeScreen() {
     opacity: welcomeTransition.value,
   }))
 
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: welcomeTransition.value,
+  }))
+
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -358,122 +398,128 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" translucent />
+      <StatusBar style={isWelcomePhase ? "light" : "dark"} translucent />
 
-      {/* Initial Splash Tracing Animation Overlay (fades out as onboarding loads) */}
-      {!isWelcomePhase && (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Animated.View style={[styles.logoCenterContainer, splashLogoStyle]}>
-            <Svg width={100} height={100} viewBox="0 0 874 552">
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="rgba(0, 229, 255, 0.15)"
-                strokeWidth={1.2}
-                animatedProps={animatedBaseOutlineProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="rgba(0, 229, 255, 0.35)"
-                strokeWidth={1.2}
-                strokeDasharray={staticPathLength}
-                animatedProps={animatedForwardsTrailProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="rgba(0, 229, 255, 0.35)"
-                strokeWidth={1.2}
-                strokeDasharray={staticPathLength}
-                animatedProps={animatedBackwardsTrailProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#4F9DFF"
-                strokeWidth={6}
-                strokeDasharray={[40, 3000]}
-                opacity={0.2}
-                animatedProps={animatedForwardsGlowProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#00E5FF"
-                strokeWidth={2.2}
-                strokeDasharray={[20, 3000]}
-                opacity={0.7}
-                animatedProps={animatedForwardsGlowProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#FFFFFF"
-                strokeWidth={1.0}
-                strokeDasharray={[10, 3000]}
-                animatedProps={animatedForwardsGlowProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#4F9DFF"
-                strokeWidth={6}
-                strokeDasharray={[40, 3000]}
-                opacity={0.2}
-                animatedProps={animatedBackwardsGlowProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#00E5FF"
-                strokeWidth={2.2}
-                strokeDasharray={[20, 3000]}
-                opacity={0.7}
-                animatedProps={animatedBackwardsGlowProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#FFFFFF"
-                strokeWidth={1.0}
-                strokeDasharray={[10, 3000]}
-                animatedProps={animatedBackwardsGlowProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#00E5FF"
-                strokeWidth={4}
-                animatedProps={animatedOutlineGlowProps}
-              />
-              <AnimatedPath
-                d={CLOUD_PATH}
-                fill="none"
-                stroke="#FFFFFF"
-                strokeWidth={1.2}
-                animatedProps={animatedOutlineGlowProps}
-              />
-              <AnimatedPath
-                ref={handlePathRef}
-                d={CLOUD_PATH}
-                fill="#FFFFFF"
-                stroke="none"
-                animatedProps={animatedPathFillProps}
-              />
-            </Svg>
-          </Animated.View>
+      {/* Iris-closing White Background Overlay */}
+      <Animated.View style={[styles.whiteOverlay, whiteOverlayStyle]} pointerEvents="none" />
 
-          <Animated.View style={[styles.brandTextContainer, brandTextStyle]}>
-            <Text style={styles.brandTitle}>CloudCode</Text>
-          </Animated.View>
-        </View>
-      )}
+      {/* Centered Splash Logo (Translates to top-left corner on transition) */}
+      <Animated.View style={[styles.logoCenterContainer, splashLogoStyle]} pointerEvents="none">
+        <Svg width={100} height={100} viewBox="0 0 874 552">
+          {/* Sleeping outline */}
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="rgba(0, 229, 255, 0.15)"
+            strokeWidth={1.2}
+            animatedProps={animatedBaseOutlineProps}
+          />
+          {/* Forwards trail */}
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="rgba(0, 229, 255, 0.35)"
+            strokeWidth={1.2}
+            strokeDasharray={staticPathLength}
+            animatedProps={animatedForwardsTrailProps}
+          />
+          {/* Backwards trail */}
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="rgba(0, 229, 255, 0.35)"
+            strokeWidth={1.2}
+            strokeDasharray={staticPathLength}
+            animatedProps={animatedBackwardsTrailProps}
+          />
+          {/* Laser shine glow & aura */}
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#4F9DFF"
+            strokeWidth={6}
+            strokeDasharray={[40, 3000]}
+            opacity={0.2}
+            animatedProps={animatedForwardsGlowProps}
+          />
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#00E5FF"
+            strokeWidth={2.2}
+            strokeDasharray={[20, 3000]}
+            opacity={0.7}
+            animatedProps={animatedForwardsGlowProps}
+          />
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeWidth={1.0}
+            strokeDasharray={[10, 3000]}
+            animatedProps={animatedForwardsGlowProps}
+          />
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#4F9DFF"
+            strokeWidth={6}
+            strokeDasharray={[40, 3000]}
+            opacity={0.2}
+            animatedProps={animatedBackwardsGlowProps}
+          />
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#00E5FF"
+            strokeWidth={2.2}
+            strokeDasharray={[20, 3000]}
+            opacity={0.7}
+            animatedProps={animatedBackwardsGlowProps}
+          />
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeWidth={1.0}
+            strokeDasharray={[10, 3000]}
+            animatedProps={animatedBackwardsGlowProps}
+          />
+          {/* Outline shine flash */}
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#00E5FF"
+            strokeWidth={4}
+            animatedProps={animatedOutlineGlowProps}
+          />
+          <AnimatedPath
+            d={CLOUD_PATH}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeWidth={1.2}
+            animatedProps={animatedOutlineGlowProps}
+          />
+          {/* Dark fill of the Cloud logo */}
+          <AnimatedPath
+            ref={handlePathRef}
+            d={CLOUD_PATH}
+            fill="#0F172A"
+            stroke="none"
+            animatedProps={animatedPathFillProps}
+          />
+        </Svg>
+      </Animated.View>
+
+      {/* Brand Reveal Text on Splash */}
+      <Animated.View style={[styles.brandTextContainer, brandTextStyle]} pointerEvents="none">
+        <Text style={styles.brandTitle}>CloudCode</Text>
+      </Animated.View>
 
       {/* Main Onboarding Carousel Content */}
       <Animated.View style={[styles.onboardingContainer, onboardingContainerStyle]}>
         {/* Top Bar Header */}
-        <View style={[styles.headerBar, { top: insets.top + 16 }]}>
+        <Animated.View style={[styles.headerBar, { top: insets.top + 16 }, headerStyle]}>
           <Image
             source={require('@/assets/cloudcodelogolight.png')}
             style={styles.logoImage}
@@ -488,7 +534,7 @@ export default function WelcomeScreen() {
               <Text style={styles.skipText}>Skip</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </Animated.View>
 
         {/* Swipeable Paged Screens */}
         <ScrollView
@@ -593,6 +639,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  whiteOverlay: {
+    position: 'absolute',
+    backgroundColor: '#FAFAFA',
+    zIndex: 5,
+  },
   logoCenterContainer: {
     position: 'absolute',
     left: width / 2 - 50,
@@ -613,7 +664,7 @@ const styles = StyleSheet.create({
   },
   brandTitle: {
     fontSize: 32,
-    color: '#FFFFFF',
+    color: '#0F172A',
     fontFamily: 'Inter_800ExtraBold',
     letterSpacing: -0.5,
   },
