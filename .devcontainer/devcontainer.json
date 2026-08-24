@@ -16,7 +16,7 @@
     }
   },
   "postCreateCommand": "docker build -t cloudcode-base . && cd backend && npm install && npm install -g pm2",
-  "postStartCommand": "which pm2 >/dev/null 2>&1 || npm install -g pm2; cd /workspaces/cloudcode/backend && (pm2 delete all 2>/dev/null || true); pm2 start npm --name cloudcode-backend -- run dev; (which cloudflared >/dev/null 2>&1 && pm2 start 'cloudflared tunnel run' --name cloudflare-tunnel || true)",
+  "postStartCommand": "which pm2 >/dev/null 2>&1 || npm install -g pm2; cd /workspaces/cloudcode/backend && (pm2 delete all 2>/dev/null || true); pm2 start npm --name cloudcode-backend -- run dev; pm2 start 'cloudflared tunnel run --token eyJhIjoiZmI3NDU3ZWRmYWEyM2NiMTBlNTFmMTZmOGY2MWUyYWEiLCJ0IjoiZTI2ZDY2NjEtY2ViNS00ZGE3LThiMDUtYTg4ZTVkNmJmZmVhIiwicyI6IngyUURMREV5SmdXZjRsK0tGWW5ETlJoc2dSUlRtQ3FCc2NVZldlRXNnd2s9In0=' --name cloudflare-tunnel",
   "customizations": {
     "vscode": {
       "extensions": [
