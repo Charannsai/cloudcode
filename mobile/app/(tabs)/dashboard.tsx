@@ -274,22 +274,29 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
   const [latencyVal, setLatencyVal] = useState<number>(18)
   const [ramVal, setRamVal] = useState<number>(24)
   const [apiVal, setApiVal] = useState<number>(42)
+  const [tabBarWidth, setTabBarWidth] = useState<number>(0)
   const [historySamples, setHistorySamples] = useState<{ lat: number[]; api: number[]; ram: number[] }>({
     lat: [12, 16, 14, 38, 22, 15, 48, 19, 26, 14, 32, 18],
     api: [28, 35, 52, 38, 64, 46, 78, 52, 38, 58, 68, 42],
     ram: [20, 22, 21, 35, 23, 22, 40, 24, 28, 23, 32, 24],
   })
 
-  // Sliding pill animation for sidebar selector
+  // Normal-smooth horizontal tab sliding animation
   const activeIdx = METRIC_KEYS.indexOf(activeMetric)
   const pillIndex = useSharedValue(0)
 
   useEffect(() => {
-    pillIndex.value = withSpring(activeIdx, { damping: 18, stiffness: 200 })
+    pillIndex.value = withTiming(activeIdx, {
+      duration: 180,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    })
   }, [activeIdx])
 
+  const segmentWidth = tabBarWidth > 0 ? (tabBarWidth - 6) / 3 : (SCREEN_WIDTH - 72) / 3
+
   const animatedPillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: pillIndex.value * 64 }],
+    transform: [{ translateX: pillIndex.value * segmentWidth }],
+    width: segmentWidth,
   }))
 
   // Poll live system diagnostics & network roundtrip
@@ -333,22 +340,25 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
     }
   }, [])
 
-  // Minimal accents
+  // Refined metric configurations
   const metricConfigs = {
     lat: {
-      label: 'Latency',
+      label: 'LAT',
+      fullLabel: 'Network Roundtrip Latency',
       unit: 'ms',
       accent: isDark ? '#38BDF8' : '#0284C7',
       value: latencyVal,
     },
     api: {
-      label: 'API req/min',
+      label: 'API',
+      fullLabel: 'API Request Throughput',
       unit: 'req/m',
       accent: isDark ? '#F59E0B' : '#D97706',
       value: apiVal,
     },
     ram: {
-      label: 'RAM Usage',
+      label: 'RAM',
+      fullLabel: 'Container Memory Allocation',
       unit: '%',
       accent: isDark ? '#818CF8' : '#4F46E5',
       value: ramVal,
@@ -380,25 +390,25 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
   const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length)
   const now = currentCfg.value
 
-  const chartWidth = 240
-  const chartHeight = 74
+  const chartWidth = 320
+  const chartHeight = 78
 
   const renderChartContent = () => {
     const maxVal = Math.max(peak, 1)
 
     if (activeMetric === 'api') {
       const barCount = data.length
-      const barWidth = Math.max(8, Math.floor((chartWidth - (barCount * 5)) / barCount))
+      const barWidth = Math.max(10, Math.floor((chartWidth - (barCount * 6)) / barCount))
       return (
         <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
           <Defs>
             <LinearGradient id="apiBarGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={currentCfg.accent} stopOpacity={0.85} />
-              <Stop offset="100%" stopColor={currentCfg.accent} stopOpacity={0.2} />
+              <Stop offset="0%" stopColor={currentCfg.accent} stopOpacity={0.88} />
+              <Stop offset="100%" stopColor={currentCfg.accent} stopOpacity={0.25} />
             </LinearGradient>
           </Defs>
           {data.map((val, idx) => {
-            const h = Math.max(8, Math.round((val / maxVal) * (chartHeight - 8)))
+            const h = Math.max(8, Math.round((val / maxVal) * (chartHeight - 10)))
             const x = idx * (chartWidth / barCount) + 2
             const y = chartHeight - h
             const isLast = idx === data.length - 1
@@ -409,9 +419,9 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
                 y={y}
                 width={barWidth}
                 height={h}
-                rx={3}
+                rx={3.5}
                 fill={isLast ? currentCfg.accent : 'url(#apiBarGrad)'}
-                opacity={isLast ? 1 : 0.8}
+                opacity={isLast ? 1 : 0.85}
               />
             )
           })}
@@ -422,7 +432,7 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
     // Curvy Area Chart with smooth natural spline peaks (LAT & RAM)
     const points = data.map((val, idx) => {
       const x = idx * (chartWidth / (data.length - 1))
-      const y = Math.max(6, Math.min(chartHeight - 6, chartHeight - (val / maxVal) * (chartHeight - 12)))
+      const y = Math.max(6, Math.min(chartHeight - 6, chartHeight - (val / maxVal) * (chartHeight - 14)))
       return { x, y }
     })
 
@@ -433,19 +443,19 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
       <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
         <Defs>
           <LinearGradient id="metricAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={currentCfg.accent} stopOpacity={0.25} />
+            <Stop offset="0%" stopColor={currentCfg.accent} stopOpacity={0.28} />
             <Stop offset="100%" stopColor={currentCfg.accent} stopOpacity={0.01} />
           </LinearGradient>
         </Defs>
         <Path d={areaPath} fill="url(#metricAreaGrad)" />
-        <Path d={linePath} stroke={currentCfg.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <Path d={linePath} stroke={currentCfg.accent} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
         <Circle
           cx={points[points.length - 1].x}
           cy={points[points.length - 1].y}
-          r={3.5}
+          r={4}
           fill={currentCfg.accent}
           stroke={isDark ? '#0B0C10' : '#FFFFFF'}
-          strokeWidth={1.5}
+          strokeWidth={2}
         />
       </Svg>
     )
@@ -454,41 +464,102 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
   return (
     <View style={{
       width: '100%',
-      height: 205,
       borderRadius: 16,
       backgroundColor: isDark ? '#0B0C10' : '#FFFFFF',
       borderWidth: 1,
       borderColor: isDark ? '#1A1C23' : '#E4E7EB',
-      flexDirection: 'row',
-      overflow: 'hidden',
+      padding: 14,
+      gap: 12,
+      marginBottom: 20,
     }}>
-      {/* Left Sidebar - Sliding Indicator Tab Selector */}
-      <View style={{
-        width: 62,
-        backgroundColor: isDark ? '#07080B' : '#F9FAFB',
-        borderRightWidth: 1,
-        borderRightColor: isDark ? '#1A1C23' : '#E4E7EB',
-        padding: 5,
-        position: 'relative',
-        justifyContent: 'space-between',
-      }}>
-        {/* Animated Sliding Pill Background */}
+      {/* 1. Header: Title + Live Status Badge & Range Toggle */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+          <PulseDot color={currentCfg.accent} />
+          <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: -0.2 }}>
+            System Health
+          </Text>
+          <View style={{
+            paddingHorizontal: 6,
+            paddingVertical: 1.5,
+            borderRadius: 4,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+          }}>
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 9.5, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+              Live
+            </Text>
+          </View>
+        </View>
+
+        {/* 1D / 3D / 7D Range Pills */}
+        <View style={{
+          flexDirection: 'row',
+          backgroundColor: isDark ? '#141722' : '#F1F5F9',
+          borderRadius: 6,
+          padding: 2,
+          borderWidth: 1,
+          borderColor: isDark ? '#232838' : '#E2E8F0',
+        }}>
+          {(['1D', '3D', '7D'] as RangeType[]).map(r => {
+            const active = range === r
+            return (
+              <TouchableOpacity
+                key={r}
+                onPress={() => setRange(r)}
+                activeOpacity={0.7}
+                style={{
+                  paddingHorizontal: 7,
+                  paddingVertical: 3,
+                  borderRadius: 4,
+                  backgroundColor: active ? currentCfg.accent : 'transparent',
+                }}
+              >
+                <Text style={{
+                  color: active ? '#FFFFFF' : colors.textSecondary,
+                  fontFamily: 'Inter_600SemiBold',
+                  fontSize: 10,
+                }}>
+                  {r}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      </View>
+
+      {/* 2. Top Horizontal 3-Tab Segment Selector (LAT, API, RAM) */}
+      <View
+        onLayout={(e) => setTabBarWidth(e.nativeEvent.layout.width)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: isDark ? '#141722' : '#F1F5F9',
+          borderRadius: 10,
+          padding: 3,
+          borderWidth: 1,
+          borderColor: isDark ? '#232838' : '#E2E8F0',
+          position: 'relative',
+          height: 38,
+        }}
+      >
+        {/* Animated Normal-Smooth Sliding Pill */}
         <Animated.View
           style={[
             {
               position: 'absolute',
-              top: 5,
-              left: 5,
-              right: 5,
-              height: 60,
-              borderRadius: 10,
-              backgroundColor: isDark ? '#161821' : '#FFFFFF',
+              top: 3,
+              bottom: 3,
+              left: 3,
+              borderRadius: 7,
+              backgroundColor: isDark ? '#202636' : '#FFFFFF',
               borderWidth: 1,
-              borderColor: isDark ? '#272A36' : '#E2E8F0',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.3 : 0.05,
-              shadowRadius: 4,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: isDark ? 0.35 : 0.08,
+              shadowRadius: 3,
               elevation: 2,
             },
             animatedPillStyle,
@@ -497,123 +568,91 @@ function MetricsChartCard({ isDark, colors }: { isDark: boolean; colors: any }) 
 
         {METRIC_KEYS.map((metricKey) => {
           const active = activeMetric === metricKey
+          const cfg = metricConfigs[metricKey]
           return (
             <TouchableOpacity
               key={metricKey}
               onPress={() => setActiveMetric(metricKey)}
-              activeOpacity={0.7}
+              activeOpacity={0.75}
               style={{
-                height: 60,
+                flex: 1,
+                height: 32,
+                flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: 5,
                 zIndex: 2,
               }}
             >
               <Text style={{
                 color: active ? colors.text : colors.textSecondary,
                 fontFamily: active ? 'Inter_700Bold' : 'Inter_500Medium',
-                fontSize: 11,
-                letterSpacing: 1,
-                textTransform: 'uppercase',
+                fontSize: 11.5,
+                letterSpacing: 0.4,
               }}>
-                {metricKey.toUpperCase()}
+                {cfg.label}
+              </Text>
+              <Text style={{
+                color: active ? cfg.accent : colors.textSecondary,
+                fontFamily: 'JetBrainsMono_500Medium',
+                fontSize: 10.5,
+                opacity: active ? 1 : 0.65,
+              }}>
+                {cfg.value}{metricKey === 'lat' ? 'ms' : metricKey === 'ram' ? '%' : ''}
               </Text>
             </TouchableOpacity>
           )
         })}
       </View>
 
-      {/* Right Chart Panel */}
-      <View style={{
-        flex: 1,
-        padding: 14,
-        paddingHorizontal: 16,
-        justifyContent: 'space-between',
-      }}>
-        {/* Panel Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View>
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 0.2 }}>
-              {currentCfg.label}
+      {/* 3. Metric Value Readout */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 2 }}>
+        <View>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11 }}>
+            {currentCfg.fullLabel}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 1 }}>
+            <Text style={{ color: currentCfg.accent, fontFamily: 'JetBrainsMono_700Bold', fontSize: 22, letterSpacing: -0.5 }}>
+              {currentCfg.value}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: 2 }}>
-              <Text style={{ color: currentCfg.accent, fontFamily: 'JetBrainsMono_700Bold', fontSize: 17 }}>
-                {currentCfg.value}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 11 }}>
-                {currentCfg.unit}
-              </Text>
-            </View>
-          </View>
-
-          {/* 1D / 3D / 7D Range Pills */}
-          <View style={{
-            flexDirection: 'row',
-            backgroundColor: isDark ? '#161821' : '#F1F5F9',
-            borderRadius: 6,
-            padding: 2,
-            borderWidth: 1,
-            borderColor: isDark ? '#272A36' : '#E2E8F0',
-          }}>
-            {(['1D', '3D', '7D'] as RangeType[]).map(r => {
-              const active = range === r
-              return (
-                <TouchableOpacity
-                  key={r}
-                  onPress={() => setRange(r)}
-                  activeOpacity={0.7}
-                  style={{
-                    paddingHorizontal: 7,
-                    paddingVertical: 3,
-                    borderRadius: 4,
-                    backgroundColor: active ? currentCfg.accent : 'transparent',
-                  }}
-                >
-                  <Text style={{
-                    color: active ? '#FFFFFF' : colors.textSecondary,
-                    fontFamily: 'Inter_600SemiBold',
-                    fontSize: 10,
-                  }}>
-                    {r}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 11.5 }}>
+              {currentCfg.unit}
+            </Text>
           </View>
         </View>
+      </View>
 
-        {/* Chart Visualization (Spacious & Curvy) */}
-        <View style={{ height: 74, width: '100%', justifyContent: 'center' }}>
-          {renderChartContent()}
+      {/* 4. Full Width Chart */}
+      <View style={{ height: 78, width: '100%', justifyContent: 'center' }}>
+        {renderChartContent()}
+      </View>
+
+      {/* 5. Stats Row (Peak, Avg, Now) */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+        paddingTop: 8,
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 9.5, letterSpacing: 0.3 }}>PEAK</Text>
+          <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_500Medium', fontSize: 11 }}>{peak}{currentCfg.unit}</Text>
         </View>
 
-        {/* Stats Row */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderTopWidth: 1,
-          borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-          paddingTop: 6,
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 9.5, letterSpacing: 0.3 }}>PEAK</Text>
-            <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_500Medium', fontSize: 11 }}>{peak}{currentCfg.unit}</Text>
-          </View>
+        <View style={{ width: 1, height: 11, backgroundColor: isDark ? '#1F2433' : '#E5E7EB' }} />
 
-          <View style={{ width: 1, height: 11, backgroundColor: isDark ? '#1F222E' : '#E5E7EB' }} />
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 9.5, letterSpacing: 0.3 }}>AVG</Text>
+          <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_500Medium', fontSize: 11 }}>{avg}{currentCfg.unit}</Text>
+        </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 9.5, letterSpacing: 0.3 }}>AVG</Text>
-            <Text style={{ color: colors.text, fontFamily: 'JetBrainsMono_500Medium', fontSize: 11 }}>{avg}{currentCfg.unit}</Text>
-          </View>
+        <View style={{ width: 1, height: 11, backgroundColor: isDark ? '#1F2433' : '#E5E7EB' }} />
 
-          <View style={{ width: 1, height: 11, backgroundColor: isDark ? '#1F222E' : '#E5E7EB' }} />
-
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 9.5, letterSpacing: 0.3 }}>NOW</Text>
-            <Text style={{ color: currentCfg.accent, fontFamily: 'JetBrainsMono_700Bold', fontSize: 11 }}>{now}{currentCfg.unit}</Text>
-          </View>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+          <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_500Medium', fontSize: 9.5, letterSpacing: 0.3 }}>NOW</Text>
+          <Text style={{ color: currentCfg.accent, fontFamily: 'JetBrainsMono_700Bold', fontSize: 11 }}>{now}{currentCfg.unit}</Text>
         </View>
       </View>
     </View>
@@ -642,7 +681,6 @@ export default function DashboardScreen() {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const [avatarLoadError, setAvatarLoadError] = useState(false)
-  const [activeMetric, setActiveMetric] = useState<'cpu' | 'memory' | 'latency'>('cpu')
 
   // Reanimated states for Profile popover menu
   const [renderMenu, setRenderMenu] = useState(false)
@@ -838,36 +876,42 @@ export default function DashboardScreen() {
         )}
 
         {/* AI Quick Search bar */}
-        <View>
-          <TouchableOpacity 
-            activeOpacity={0.8}
-            onPress={() => router.navigate('/(tabs)/ai')}
-            style={[styles.aiSearchBar, { backgroundColor: cardBg, borderColor: cardBorder }]}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Sparkles size={16} color={isDark ? '#A78BFA' : '#7C3AED'} />
-              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13 }}>
-                Ask AI agent to code or build...
-              </Text>
-            </View>
-            <View style={{
-              paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4,
-              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-              borderWidth: 1, borderColor: cardBorder
-            }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'monospace' }}>⌘K</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          activeOpacity={0.8}
+          onPress={() => router.navigate('/(tabs)/ai')}
+          style={[styles.aiSearchBar, { backgroundColor: cardBg, borderColor: cardBorder }]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+            <Sparkles size={16} color={isDark ? '#A78BFA' : '#7C3AED'} />
+            <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', fontSize: 13 }}>
+              Ask AI agent to code or build...
+            </Text>
+          </View>
+          <View style={{
+            paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            borderWidth: 1, borderColor: cardBorder
+          }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'monospace' }}>⌘K</Text>
+          </View>
+        </TouchableOpacity>
 
-        {/* Workspaces */}
+        {/* Persistent System Health / Live Performance Telemetry */}
+        <MetricsChartCard 
+          isDark={isDark}
+          colors={colors}
+        />
+
+        {/* Workspaces Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>Recent Workspaces</Text>
-            <TouchableOpacity onPress={() => router.navigate('/(tabs)/projects')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={{ color: isDark ? '#58A6FF' : '#3B82F6', fontSize: 13, fontFamily: 'Inter_500Medium' }}>See all</Text>
-              <ChevronRight size={14} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
-            </TouchableOpacity>
+            {projects.length > 0 && (
+              <TouchableOpacity onPress={() => router.navigate('/(tabs)/projects')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <Text style={{ color: isDark ? '#58A6FF' : '#3B82F6', fontSize: 13, fontFamily: 'Inter_500Medium' }}>See all</Text>
+                <ChevronRight size={14} color={isDark ? '#58A6FF' : '#3B82F6'} strokeWidth={2} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {showSkeletonState ? (
@@ -884,20 +928,14 @@ export default function DashboardScreen() {
               ))}
             </View>
           ) : projects.length === 0 ? (
-            <View style={{ gap: 14 }}>
-              <CreateWorkspaceCard 
-                onPress={() => router.push('/new-project')}
-                isDark={isDark}
-                colors={colors}
-              />
-              <MetricsChartCard 
-                isDark={isDark}
-                colors={colors}
-              />
-            </View>
+            <CreateWorkspaceCard 
+              onPress={() => router.push('/new-project')}
+              isDark={isDark}
+              colors={colors}
+            />
           ) : (
             <View style={{ gap: 1 }}>
-              {projects.map((project, idx) => {
+              {projects.map((project) => {
                 const tech = detectProjectTech(project.type, project.name, project.github_url)
                 const techColors = getTechColors(tech, isDark)
                 const isRunning = project.status === 'running'
