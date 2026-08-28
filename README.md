@@ -1,4 +1,4 @@
-# CloudCode - Cloud Development Environment
+# CloudCode 
 
 CloudCode is a cloud development environment (CDE) platform that allows developers to spin up, edit, build, run, and preview full-stack applications directly from a mobile client. The architecture replicates a native PC development experience by running isolated Docker containers on a Virtual Private Server (VPS) and proxying HTTP/WebSocket traffic dynamically to the client.
 
